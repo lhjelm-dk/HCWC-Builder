@@ -43,23 +43,41 @@ def limit_colours(limit_set) -> dict[str, str]:
     return out
 
 
-def render(n: Numbering | None = None) -> None:
+def render(n: Numbering | None = None, *, posterior=None) -> None:
+    """The contact distribution and what produced it, geological or DHI-updated.
+
+    ``posterior`` is a :class:`hcwc.core.dhi.DhiPosterior` or ``None``. With one, every figure is
+    drawn on the reweighted sample and the tab number, colour and basis banner follow. **The same
+    figures in the same order either way** -- which is what makes flipping between tab ④ and tab ⑤
+    a comparison rather than a hunt, and why the basis is a parameter here rather than a control
+    the user could set inconsistently.
+    """
     # The Numbering is passed in when this shares a tab with the depth-risk decomposition, so the
     # two sub-tabs draw from one sequence and `Figure 4.6` means one figure rather than two.
-    n = n or Numbering(TAB)
+    given_dhi = posterior is not None
+    tab = 5 if given_dhi else TAB
+    weights = posterior.weights if given_dhi else None
+    n = n or Numbering(tab)
     limit_set = st.session_state.get("limit_set")
     if limit_set is None:
         st.info("Define the limits on tab ③ first.")
         return
 
-    result = run.current(limit_set)
+    result = posterior.result if given_dhi else run.current(limit_set)
     h_min = limit_set.min_column_m
 
-    st.subheader("Results")
-    theme.basis_banner(
-        theme.GEOLOGICAL,
-        "The competing limits alone. If this prospect has a DHI, its updated results are on "
-        "tab ⑤ and are a different distribution — not a different view of this one.")
+    st.subheader("Results | given the DHI" if given_dhi else "Results")
+    if given_dhi:
+        theme.basis_banner(
+            theme.GIVEN_DHI,
+            "Every figure below carries the amplitude evidence. The purely geological versions of "
+            "the same figures are on tab ④, in the same order — they are a different "
+            "distribution, not a different view of this one.")
+    else:
+        theme.basis_banner(
+            theme.GEOLOGICAL,
+            "The competing limits alone. If this prospect has a DHI, its updated results are on "
+            "tab ⑤ and are a different distribution — not a different view of this one.")
 
     # ------------------------------------------------------------------ headline
     #
@@ -69,9 +87,24 @@ def render(n: Numbering | None = None) -> None:
     # app showed only the conditional one here and called it "POS", which is the exact confusion
     # the rest of the tool is arranged to prevent -- Lars caught it on the report sheet, where a
     # 79.8 % read as a prospect chance when the prospect chance was 32.6 %.
+    # Every probability below reads through these, so the basis is decided once rather than at
+    # each of fifteen call sites -- one place to be wrong instead of fifteen.
+    def pos_at(h: float) -> float:
+        return (float(posterior.exceedance(h)[0]) if given_dhi
+                else float(result.exceedance(h)[0]))
+
+    def pct(p: float) -> float:
+        return (float(posterior.percentiles(p)[0]) if given_dhi
+                else float(result.percentiles(p)[0]))
+
+    def exceed(grid_m):
+        return posterior.exceedance(grid_m) if given_dhi else result.exceedance(grid_m)
+
+    column_pos = pos_at(h_min)
+
     element_pos = st.session_state.get("element_pos") or {}
     p_geological = float(np.prod([float(v) for v in element_pos.values()])) if element_pos else 1.0
-    prospect_pos = p_geological * result.pos
+    prospect_pos = p_geological * column_pos
 
     if h_min <= 0:
         # **No number, rather than a number and a correction.** At a minimum of zero the column
@@ -83,7 +116,7 @@ def render(n: Numbering | None = None) -> None:
         trust_panel.stop_card(trust.assessment_minimum(result))
         c1, c2, c3 = st.columns(3)
         for col, p in ((c1, 90), (c2, 50), (c3, 10)):
-            col.metric(f"Contact P{p}", f"{result.percentiles(p)[0]:,.0f} m",
+            col.metric(f"Contact P{p}", f"{pct(p):,.0f} m",
                        "all realisations — no minimum set", delta_color="off")
         st.caption(
             "**The contact distribution is still real; only the chance is not.** With no minimum "
@@ -96,16 +129,16 @@ def render(n: Numbering | None = None) -> None:
         m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric(f"Prospect POS at h ≥ {h_min:.0f} m", f"{prospect_pos:.1%}",
                   "the reportable number", delta_color="off")
-        m2.metric(f"P(column ≥ {h_min:.0f} m | G)", f"{result.pos:.1%}",
+        m2.metric(f"P(column ≥ {h_min:.0f} m | G)", f"{column_pos:.1%}",
                   "conditional — this tab only", delta_color="off")
         for col, p in ((m3, 90), (m4, 50), (m5, 10)):
-            col.metric(f"Contact P{p}", f"{result.percentiles(p)[0]:,.0f} m",
+            col.metric(f"Contact P{p}", f"{pct(p):,.0f} m",
                        "success cases only", delta_color="off")
         st.markdown(
             f"**The prospect chance is a product of two things, and this tab computes only one of "
             f"them.**\n\n"
             f"`Prospect POS = P(G) × P(column ≥ h | G)` = "
-            f"**{p_geological:.3f} × {result.pos:.3f} = {prospect_pos:.3f}**\n\n"
+            f"**{p_geological:.3f} × {column_pos:.3f} = {prospect_pos:.3f}**\n\n"
             f"`P(G)` is the **geological POS** from tab ② — the product of the four element "
             f"chances, the chance the prospect works *at all*. It is E-POS's headline number and "
             f"it says nothing about how tall the column is. `P(column ≥ h | G)` is everything on "
@@ -122,20 +155,19 @@ def render(n: Numbering | None = None) -> None:
         )
 
     # ------------------------------------------------------------------ 1 · exceedance
-    theme.heading(TAB, "1 · Where is the contact?")
+    theme.heading(tab, "1 · Where is the contact?")
     grid = np.linspace(0.0, float(result.column_m.max()) * 1.02, 400)
-    f = result.exceedance(grid)
+    f = exceed(grid)
     apex_med = float(np.median(result.apex_m))
     fig = go.Figure()
     fig.add_scatter(x=f, y=apex_med + grid, mode="lines", name="P(contact deeper than this)",
                     line=dict(color="#4C72B0", width=3))
     if h_min > 0:
         fig.add_hline(y=apex_med + h_min, line=dict(color="#C44E52", dash="dash"),
-                      annotation_text=f"assessment minimum — P(column ≥ h | G) = {result.pos:.1%}",
+                      annotation_text=f"assessment minimum — P(column ≥ h | G) = {column_pos:.1%}",
                       annotation_position="bottom right")
     for p, dash in ((90, "dot"), (50, "solid"), (10, "dot")):
-        fig.add_hline(y=float(result.percentiles(p)[0]), line=dict(color="#888", dash=dash,
-                                                                  width=1),
+        fig.add_hline(y=pct(p), line=dict(color="#888", dash=dash, width=1),
                       annotation_text=f"P{p}", annotation_position="top left")
     fig.update_layout(xaxis_title="Probability the contact is deeper", xaxis_range=[0, 1],
                       yaxis_title="Depth (m TVDSS)", yaxis=dict(autorange="reversed"),
@@ -145,11 +177,11 @@ def render(n: Numbering | None = None) -> None:
                 "curve is the risk output**; POS at any threshold is a reading of it.")
 
     # ------------------------------------------------------------------ 2 · which limit controls
-    theme.heading(TAB, "2 · Which limit controls the contact?")
+    theme.heading(tab, "2 · Which limit controls the contact?")
     edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 26)
     centres = 0.5 * (edges[:-1] + edges[1:])
-    shares = engine.controlling_share_by_depth(result, edges)
-    ranked = [name for name, _ in engine.limit_ranking(result)]
+    shares = engine.controlling_share_by_depth(result, edges, weights=weights)
+    ranked = [name for name, _ in engine.limit_ranking(result, weights=weights)]
     group_of = dict(zip(limit_set.names, limit_set.groups))
     colour_of = limit_colours(limit_set)
     # Stacked horizontal bars rather than a stacked area. Plotly's `stackgroup` accumulates along
@@ -179,15 +211,16 @@ def render(n: Numbering | None = None) -> None:
                  "per-element curves built from it are, as far as I can find, unpublished.")
 
     # ------------------------------------------------------------------ 3 · ranking
-    theme.heading(TAB, "3 · Which limit — and which elicited number — actually matters?")
+    theme.heading(tab, "3 · Which limit — and which elicited number — actually matters?")
     successes_only = st.toggle(
         "Restrict to realisations above the assessment minimum", value=False,
+        key=f"restrict_successes_{tab}",
         help="The two answer different questions. Unrestricted: what controls this closure? "
              "Restricted: what controls it, given it is worth drilling? Reporting only the "
              "restricted one repeats, one level up, the selection error this tool criticises in "
              "the published column-height statistics.")
-    ranking = engine.limit_ranking(result, successes_only=successes_only)
-    other = engine.limit_ranking(result, successes_only=not successes_only)
+    ranking = engine.limit_ranking(result, successes_only=successes_only, weights=weights)
+    other = engine.limit_ranking(result, successes_only=not successes_only, weights=weights)
     other_map = dict(other)
     live = [(name, share) for name, share in ranking if share > 0.0005]
     fig3 = go.Figure()
@@ -204,13 +237,15 @@ def render(n: Numbering | None = None) -> None:
     # ---- the other half of this section's question --------------------------------------
     swing_space = st.radio(
         "Swing measured on", ["Column below apex", "Contact depth"], horizontal=True,
-        key="tornado_space",
+        key=f"tornado_space_{tab}",
         help="They rank differently and both are honest. The apex barely moves the COLUMN and "
              "moves the CONTACT one-for-one, so a tool offering only one would hide half the "
              "sensitivity.")
     space = "column" if swing_space.startswith("Column") else "depth"
-    effects = sensitivity.tornado(result, space=space)
-    centre = sensitivity.baseline(result, space=space)
+    effects = (sensitivity.dhi_tornado(posterior, space=space) if given_dhi
+               else sensitivity.tornado(result, space=space))
+    centre = (sensitivity.dhi_baseline(posterior, space=space) if given_dhi
+              else sensitivity.baseline(result, space=space))
 
     if effects:
         shown = effects[:12]
@@ -270,7 +305,7 @@ def render(n: Numbering | None = None) -> None:
                 "severe.** Both columns are wanted; neither alone is the answer.")
 
     # ------------------------------------------------------------------ group minima
-    theme.heading(TAB, "4 · By risk element")
+    theme.heading(tab, "4 · By risk element")
     rows = []
     for group in Group:
         gm = result.group_minimum(group)
@@ -291,7 +326,7 @@ def render(n: Numbering | None = None) -> None:
             "chance-versus-depth curves on the *Risk against depth* sub-tab are derived from.")
 
     # ------------------------------------------------------------------ 5 · one axis
-    theme.heading(TAB, "5 · Every limit, and the answer, on one axis")
+    theme.heading(tab, "5 · Every limit, and the answer, on one axis")
     st.markdown(
         "The competition, drawn. **A limit that is only sometimes present flattens at its "
         "`P(active)`** — read that number off the right-hand end of its curve — and **the result is "
@@ -301,12 +336,12 @@ def render(n: Numbering | None = None) -> None:
     c1, c2, c3 = st.columns([2, 2, 1])
     space = c1.radio(
         "Show depths as", [limits_mod.DEPTH, limits_mod.COLUMN], horizontal=True,
-        key="stack_space",
+        key=f"stack_space_{tab}",
         format_func=lambda s_: "m TVDSS" if s_ == limits_mod.DEPTH else "m column below apex",
         help="Display only. The model always competes in column height, because that is the space "
              "where comparing a seal capacity with a spill point means anything.")
-    mode = c2.selectbox("Draw as", limit_stack.MODES, key="stack_mode")
-    every = c3.number_input("Every n-th point", 1, 500, 10, 1, key="stack_every",
+    mode = c2.selectbox("Draw as", limit_stack.MODES, key=f"stack_mode_{tab}")
+    every = c3.number_input("Every n-th point", 1, 500, 10, 1, key=f"stack_every_{tab}",
                             disabled=mode != "Points")
 
     apex_med = float(np.median(result.apex_m))
@@ -314,14 +349,15 @@ def render(n: Numbering | None = None) -> None:
                                                 limit_stack._spill(result, apex_med))
     lo_def, hi_def = float(min(lo_def, hi_def)), float(max(lo_def, hi_def))
     pad = 0.35 * (hi_def - lo_def)
-    window = st.slider(
+    window = st.slider(  # keyed below, by tab and space
         f"Depth range ({limits_mod.Limit.label_for(space)})",
-        float(lo_def - pad), float(hi_def + pad), (lo_def, hi_def), key=f"stack_window_{space}",
+        float(lo_def - pad), float(hi_def + pad), (lo_def, hi_def), key=f"stack_window_{tab}_{space}",
         help="Defaults to 1 % above the apex and 1 % below the spill point. Several limits carry "
              "tails reaching far below anything the structure contains, and letting those set the "
              "range squeezes the part that matters into the top of the plot.")
 
-    n.plot(limit_stack.figure(result, space=space, mode=mode, window=window, every=int(every)),
+    n.plot(limit_stack.figure(result, space=space, mode=mode, window=window,
+                              every=int(every), posterior=weights),
            "One axis, five ways of looking at it. **Exceedance curves** is the analytic view — "
            "flattening levels are `P(active)`, and the bold line is the lower envelope. "
            "**Violin** and **half violin** show where each limit's mass sits, which is better for "
@@ -330,6 +366,10 @@ def render(n: Numbering | None = None) -> None:
            "**Points** shows the sample itself.")
 
     # ------------------------------------------------------------------ 6 · trust
-    trust_panel.render(n, result, tab=TAB,
-                       posterior=(st.session_state.get("dhi_posterior")
-                                  if st.session_state.get("dhi_on") else None))
+    # Geological only. The panel audits the run -- realisation counts, seed
+    # repeatability, the correlation projection -- and those are properties of the sample, not of
+    # the reweighting. Its DHI check already reports the effective sample size behind the update.
+    if not given_dhi:
+        trust_panel.render(n, result, tab=tab,
+                           posterior=(st.session_state.get("dhi_posterior")
+                                      if st.session_state.get("dhi_on") else None))

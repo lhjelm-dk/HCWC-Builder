@@ -127,7 +127,10 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
                  "concept_section", "area_depth_charge", "family_burial", "family_scale",
                  # Which axis the tornado measures its swing on. A reading choice, not an
                  # input to the model.
-                 "tornado_space", "dhi_tornado_space",
+                 # Display choices, now suffixed by tab because the results renderer draws
+                 # on both ④ and ⑤ and the two keep separate state.
+                 "tornado_space", "dhi_tornado_space", "tornado_space_4", "tornado_space_5",
+                 "restrict_successes_4", "restrict_successes_5",
                  # A one-shot action, not state: saving "the user pressed a button once" would
                  # reload the example every time the file was opened.
                  "load_example",

@@ -311,15 +311,18 @@ class TestTabCrossReferences:
     def test_no_module_points_the_reader_at_its_own_tab(self):
         """A module telling you to go to the tab you are already on is always a leftover from a move.
 
-        `depth_risk_tab` is the one exception: it renders on both tab ④ and tab ⑤, so it cannot
-        avoid naming one of them. Every other module must point at a **sub-tab by name** when it
+        `depth_risk_tab` and `results_tab` are the exceptions: each renders on both tab ④ and
+        tab ⑤ — the same analysis on the geological sample and on the DHI posterior — so neither
+        can avoid naming one of them. Every other module must point at a **sub-tab by name** when it
         means the other half of its own tab — "the *Risk against depth* sub-tab", not "tab ④".
         That is clearer to the reader, and it is what keeps this guard sharp now that the merge
         from ten tabs to eight has made same-tab references possible for three modules that
         previously could not make one.
         """
         import importlib
-        allowed = {"depth_risk_tab.py"}
+        # Both of these render on tab ④ AND tab ⑤ -- the same analysis on the geological
+        # sample and on the DHI posterior -- so each has to name one of the two.
+        allowed = {"depth_risk_tab.py", "results_tab.py"}
         for name, number, _, _ in self._references():
             module = name.replace(".py", "")
             if name in allowed or name == "app.py":

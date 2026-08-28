@@ -283,12 +283,32 @@ with tab4:
     with _depth:
         depth_risk_tab.render(n=_n4)
 
-# --------------------------------------------------------------------------- ④ Results | DHI
+# --------------------------------------------------------------------------- ⑤ Results | DHI
+#
+# **Three sub-tabs, because the first one was doing two jobs.** It elicited the DHI evidence AND
+# presented the result, so the result half never grew the structure tab ④ has -- six of tab ④'s
+# objects had no counterpart here, and the controlling mechanism against depth existed only as a
+# table. Splitting the evidence off makes room for the results to mirror tab ④ exactly.
+#
+# Sub-tab ② is `results_tab.render` with a posterior: the same figures in the same order as tab ④,
+# on the reweighted sample. The basis is a parameter rather than a control, so no widget can
+# misroute it.
 with tab5:
     _n5 = Numbering(5)
-    _contact_dhi, _depth_dhi = st.tabs(["① Contact and chance | DHI", "② Risk against depth | DHI"])
-    with _contact_dhi:
+    _evidence, _contact_dhi, _depth_dhi = st.tabs(
+        ["① The evidence", "② Contact and chance | DHI", "③ Risk against depth | DHI"])
+    with _evidence:
         dhi_tab.render(_n5)
+    with _contact_dhi:
+        _post = st.session_state.get("dhi_posterior") if st.session_state.get("dhi_on") else None
+        if _post is None:
+            st.info(
+                "**Nothing to show until the evidence is described.** Turn on *This is a DHI "
+                "prospect* on tab ② and fill in sub-tab ① — the figures here are tab ④'s, drawn "
+                "on the updated distribution, so they need an update to draw."
+            )
+        else:
+            results_tab.render(_n5, posterior=_post)
     with _depth_dhi:
         depth_risk_tab.render(depth_risk_tab.TAB_DHI, with_dhi=True, n=_n5)
 

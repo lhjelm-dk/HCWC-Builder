@@ -113,7 +113,8 @@ class EngineResult:
         """
         return correlate.realised_spearman(self.uniforms)
 
-    def controlling_shares(self, *, successes_only: bool = False) -> dict[str, float]:
+    def controlling_shares(self, *, successes_only: bool = False,
+                           weights: np.ndarray | None = None) -> dict[str, float]:
         """Share of realisations each limit controlled the contact in.
 
         ``successes_only`` restricts to realisations above the assessment minimum, and **the two
@@ -124,13 +125,19 @@ class EngineResult:
         the selection error this tool criticises in the published column-height statistics: a limit
         that usually kills the prospect outright is under-represented among the survivors
         **because** it is the most severe.
+
+        ``weights`` are per-realisation importance weights — a DHI posterior. Counting becomes
+        summing, and the result is *which mechanism controls the contact given the seismic*, which
+        is a different answer from the geological one and worth seeing beside it.
         """
         mask = self.above_minimum if successes_only else np.ones(self.n, dtype=bool)
-        total = int(mask.sum())
-        if total == 0:
+        w = np.ones(self.n) if weights is None else np.asarray(weights, dtype=float)
+        total = float(w[mask].sum())
+        if total <= 0:
             return {name: 0.0 for name in self.limit_set.names}
-        counts = np.bincount(self.controller[mask], minlength=len(self.limit_set))
-        return {name: float(counts[i] / total)
+        summed = np.bincount(self.controller[mask], weights=w[mask],
+                             minlength=len(self.limit_set))
+        return {name: float(summed[i] / total)
                 for i, name in enumerate(self.limit_set.names)}
 
     def percentiles(self, exceedance_pct: np.ndarray | float) -> np.ndarray:
@@ -220,18 +227,20 @@ def run(limit_set: LimitSet, n: int = 10_000, seed: int = 20260825) -> EngineRes
                         active=active, column_m=column, controller=controller, seed=seed)
 
 
-def limit_ranking(result: EngineResult, *, successes_only: bool = False) -> list[tuple[str, float]]:
+def limit_ranking(result: EngineResult, *, successes_only: bool = False,
+                  weights: np.ndarray | None = None) -> list[tuple[str, float]]:
     """Limits ordered by how often they controlled the contact, most first.
 
     This is the answer to *which of the numbers I elicited actually mattered*. A limit near zero
     can be left rough; the top two or three are where elicitation effort belongs. It is meant to be
     used as a workflow step, not read once at the end.
     """
-    shares = result.controlling_shares(successes_only=successes_only)
+    shares = result.controlling_shares(successes_only=successes_only, weights=weights)
     return sorted(shares.items(), key=lambda kv: kv[1], reverse=True)
 
 
-def controlling_share_by_depth(result: EngineResult, edges: np.ndarray) -> dict[str, np.ndarray]:
+def controlling_share_by_depth(result: EngineResult, edges: np.ndarray,
+                               weights: np.ndarray | None = None) -> dict[str, np.ndarray]:
     """Which limit controls the contact, as a function of contact depth.
 
     Output 2 of the design, and the figure that answers *how does the controlling mechanism change
@@ -239,19 +248,27 @@ def controlling_share_by_depth(result: EngineResult, edges: np.ndarray) -> dict[
 
     Returns, per limit, the fraction of realisations in each depth bin that limit controlled.
     Columns sum to 1 in any bin that contains realisations.
+
+    ``weights`` are per-realisation importance weights, so the same figure can be drawn on a DHI
+    posterior. **That version is the more interesting one**: a fluid indicator does not re-attribute
+    the geological risk, but it does change which mechanism is most likely to have stopped the
+    column *at the depth the amplitude points to* — and until this took weights, the DHI tab could
+    only say that in a table.
     """
     edges = np.asarray(edges, dtype=float)
     if edges.size < 2:
         raise ValueError("need at least two bin edges")
+    w = np.ones(result.n) if weights is None else np.asarray(weights, dtype=float)
     which = np.digitize(result.contact_m, edges) - 1
     n_bins = edges.size - 1
     out = {name: np.zeros(n_bins) for name in result.limit_set.names}
     for b in range(n_bins):
         in_bin = which == b
-        total = int(in_bin.sum())
-        if total == 0:
+        total = float(w[in_bin].sum())
+        if total <= 0:
             continue
-        counts = np.bincount(result.controller[in_bin], minlength=len(result.limit_set))
+        summed = np.bincount(result.controller[in_bin], weights=w[in_bin],
+                             minlength=len(result.limit_set))
         for i, name in enumerate(result.limit_set.names):
-            out[name][b] = counts[i] / total
+            out[name][b] = summed[i] / total
     return out
