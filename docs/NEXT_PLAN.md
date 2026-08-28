@@ -45,8 +45,12 @@ closure height needs an apex and a spill picked off depth-converted 3D per field
 of interpretation rather than a database query. **Do not repeat the search without new
 information.** The import path is the response.
 
-**Units.** Metres throughout. Correct for the NCS, and a hard stop anywhere else. Not worth doing
-until someone outside the NCS actually asks.
+**Units: metric, and that is settled.** Metres throughout, decided 28 Aug 2026 — not deferred and
+not a gap waiting to be filled. Every depth, column and capacity in the tool is metres; every
+density is g/cm³; interfacial tension is dyne/cm because that is how laboratories report it. A
+field-unit mode was considered and rejected: two unit systems in a tool whose central argument is
+that a *unit conversion error* made published seal capacities ten times too optimistic would be
+buying the exact risk the tool exists to warn about.
 
 **An imported benchmark does not travel.** It lives in the browser session and is deliberately
 excluded from a saved prospect, because the file may be a company's confidential field list and a

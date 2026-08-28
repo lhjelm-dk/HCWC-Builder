@@ -30,7 +30,6 @@ from hcwc.io import geox, report
 from hcwc.io import wellvolpos as wvp
 from hcwc.ui import (depth_risk_tab, dhi_tab, empirical, limiters_tab, prospect_tab,
                      results_tab, theme)
-from hcwc.ui import numbering
 from hcwc.ui.numbering import Numbering
 
 ROOT = Path(__file__).parent
@@ -49,17 +48,10 @@ if _pending is not None:
         st.session_state[_key] = _value
     st.session_state["_loaded_name"] = _pending.get("prospect_name", "prospect")
 
-_title, _detail = st.columns([4, 1])
-_title.title("HCWC Distribution Builder")
-_title.caption(
+st.title("HCWC Distribution Builder")
+st.caption(
     "Where is the hydrocarbon–water contact, why is it there, and what does that mean for the risk?"
 )
-# Three paragraphs under every figure is reassuring on the first prospect and noise on the tenth.
-# Brief keeps the finding and folds the argument behind a "why" — collapsed rather than dropped,
-# because the later paragraphs are where the caveats live.
-_detail.radio("Captions", ["Full", "Brief"], key=numbering.DETAIL_KEY, horizontal=True,
-              help="Brief keeps the first line of every caption and folds the rest behind a "
-                   "'why'. Nothing is removed — the caveats are in there.")
 
 (tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8) = st.tabs(theme.tab_labels())
 

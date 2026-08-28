@@ -38,32 +38,18 @@ Kind = Literal["Figure", "Table"]
 # be, which is worse than no label at all.
 
 
-#: Session key for the density control. Read through :func:`detail_is_full` so a run that never
-#: created the widget -- a headless test, an `AppTest` -- still renders everything.
-DETAIL_KEY = "caption_detail"
-
-
-def detail_is_full() -> bool:
-    return st.session_state.get(DETAIL_KEY, "Full") == "Full"
-
-
 def render_caption(label: str, caption: str) -> None:
-    """One numbered caption, at the density the reader asked for.
+    """One numbered caption, whole.
 
-    Split on the first blank line: paragraph one is the finding and always shows; the rest is the
-    argument for it and collapses in Brief. **Collapsed, not removed** -- later paragraphs
-    routinely carry the caveat that stops a figure being over-read, and a control that could hide
-    one would cost more than the words it saves.
+    There was briefly a Full/Brief control that folded everything after the first paragraph behind
+    a "why". Lars removed it (28 Aug 2026): a caption that can be half-read is a caption whose
+    second half nobody reads, and the second half is where the caveats are. If the captions are too
+    long the answer is to write shorter ones, not to hide the end of them.
+
+    The function stays as the single place a label and a caption are joined, which is worth having
+    even with nothing to decide inside it.
     """
-    head, _, tail = caption.partition("\n\n")
-    st.caption(f"**{label}** \u2014 {head}", unsafe_allow_html=True)
-    if not tail.strip():
-        return
-    if detail_is_full():
-        st.caption(tail, unsafe_allow_html=True)
-    else:
-        with st.expander("why", expanded=False):
-            st.caption(tail, unsafe_allow_html=True)
+    st.caption(f"**{label}** \u2014 {caption}", unsafe_allow_html=True)
 
 
 @dataclass
