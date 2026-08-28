@@ -1,130 +1,240 @@
-# Half the evidence for seal capacity is not evidence for seal capacity
+# Stop choosing a distribution for the hydrocarbon–water contact. Derive one.
 
-**Draft. Written to be read on LinkedIn, and to be argued with.**
+**Draft for LinkedIn. Written to be argued with.**
 
 ---
 
-If you have ever put a hydrocarbon column height into a prospect assessment, you have almost
-certainly used a number that came, directly or by inheritance, from a compilation of discoveries.
-It is the sensible thing to do. Somebody measured 242 real accumulations; why would you not use
-them?
+Ask an explorationist where the hydrocarbon–water contact will be and you get a distribution. Ask
+*why it is that distribution* and the answer is usually some version of "it looked reasonable", or
+"that is what we used on the last one".
 
-Here is the problem, and it took me a while to see it.
+That is the wrong question being answered. The useful question is not
 
-**A trap that filled to spill does not tell you what the seal could hold. It tells you what the
-closure could hold.**
+> *what is my HCWC distribution?*
 
-The hydrocarbons stopped at the spill point because they ran out of trap, not because the seal
-gave up. The seal might have held twice as much. It might have held ten times as much. The
-observation is silent on the question — it is a *lower bound* on seal capacity, not a measurement
-of it.
+but
 
-In the statistics of survival analysis this has a name. It is a **right-censored observation**, and
-there is a hundred years of method for handling it. What you must not do is treat it as a
-measurement.
+> **what geological mechanism stops the hydrocarbon column at this depth — and what stops it if
+> that one does not?**
 
-## How much of the record is like this
+Answer the second and the first falls out. The contact depth is not an input to be chosen. It is
+the **outcome of a competition between mechanisms**, any one of which can arrest the column, and
+only one of which wins in any given realisation of the subsurface.
 
-In Edmundson et al.'s open dataset of 242 Norwegian Continental Shelf discoveries — published
-under CC-BY, which is why any of this is checkable — **111 are filled to spill.**
+## What is actually competing
 
-Forty-six per cent of the evidence for how much seal capacity a rock has, is not evidence about
-seal capacity.
+Filling starts at the structural apex and works downward, so every limit below is a depth at which
+the column could stop:
 
-## What it does to the numbers
+**Charge.** Source quality and maturity, generation and expulsion timing, migration efficiency and
+carrier effectiveness, access to this particular trap, and phase behaviour. Charge that fills past
+the deepest mapped point is not a shallow limit — it is *no* limit, and belongs in that mechanism's
+probability of being active rather than as a contact at the base of the structure.
 
-Fit column height against trap height and burial depth the ordinary way, and against the same data
-with the filled traps treated as censored:
+**Trap geometry.** Closure geometry and the spill point, with the uncertainty on the spill pick
+carried explicitly; fault-bounded and wedge geometries; pinch-out and truncation ending the closure
+down-dip; compartmentalisation.
+
+**Top and base seal capacity.** Capillary entry pressure through pore-throat radius and seal
+lithology — Schowalter's balance, `h_max = 2γcosθ(1/r − 1/R) / (gΔρ)` — plus seal thickness and
+integrity. And note that this is *phase-dependent*: the same seal holds a much shorter gas column
+than an oil one, because Δρ is in the denominator.
+
+**Seal continuity**, which is a different failure from capillary breakthrough: a sand-filled
+channel, an erosional window, a breaching fault tip.
+
+**Lateral and fault seal.** Juxtaposition, fault-rock properties and SGR, membrane seal, the fault
+leak point across all bounding faults, and reactivation.
+
+**Regional and dynamic controls.** Post-charge tilt spilling part of a column or leaving a
+palaeo-contact behind; hydrodynamic gradients; remigration and hydraulic reconfiguration.
+
+**Reservoir.** Presence, continuity, quality and effective pore volume.
+
+In each realisation, sample each of these, ask which are present, and take **the shallowest one
+that is active**. Record which one won. Do it ten thousand times and you have a contact
+distribution that is an *answer* rather than an assumption — and, because you kept the argmin, you
+also have the thing a distribution alone can never give you: **which mechanism controls this
+prospect, and how that changes with depth**.
+
+Crucially, nothing is blended. Merging a leak into a background column-height distribution
+suppresses outcomes *above* the leak, and can make apparent volume rise when you add a leak (Hood,
+2019, 2024). A leak is a competing limit, not a downward nudge on a curve.
+
+**That list is the geology. It is not a claim about what my implementation samples**, and the
+difference matters if you are going to use it. Charge, spill and fault geometry, wedge and
+pinch-out, top and base seal capacity and continuity, fault leakage and post-charge tilt are
+sampled as competing limits. **Hydrodynamic tilting and remigration are not modelled at all** —
+they belong on the list because they genuinely stop columns, and their absence is a stated
+limitation rather than an oversight. Reservoir presence and effectiveness are carried as an
+*element chance* rather than as a contact-moving limit, because a reservoir that is not there has
+no contact to distribute; only its geometric end — the pinch-out — moves the contact.
+Compartmentalisation is not modelled: it turns one contact into several, which is a different
+object from the one this builds.
+
+## This idea is not mine, and saying so makes the case stronger
+
+**Beha, Christensen & Young (2012)** set out a general method for consistent volume assessment of
+complex hydrocarbon traps by enumerating the combinations of trapping elements being present or
+failing, assigning a probability to each resulting scenario, and deriving the leak point that
+follows. Their worked example — a faulted four-way with two faults at 2050 m and 2100 m and a
+lowest closing contour at 2150 m — collapses four scenarios onto three leak points with
+probabilities 0.60, 0.12 and 0.28.
+
+Their own headline observation is the one worth quoting:
+
+> it is not intuitively obvious that a deep leak point can be statistically more likely than a leak
+> point higher up the structure, although the deeper leak point requires more elements to seal
+> simultaneously.
+
+That is the competing-limits principle, in print, in 2012. **It is one of the closest published
+precedents for the engine I have implemented**, and the logic is theirs, not mine.
+
+What I have built is an implementation and an extension. Beha et al. enumerate *discrete* leak
+points by hand and explicitly assume no dependency between their two faults. I sample each
+mechanism as a *continuous distribution*, which lets a seal capacity or a charge volume enter
+directly rather than as a fixed depth; I let the mechanisms be correlated through a Gaussian copula
+— including, deliberately, the apex against any depth-stated limit, since both are picked off the
+same depth-converted surface; and I record the controlling mechanism per realisation. They are the
+same model at two levels of generality, and their hand enumeration is exact where mine is a
+simulation.
+
+Others got there too. **Grant (2020)** published Monte Carlo column-height modelling with fault
+effects and what he calls "column height control statistics" — the controlling-mechanism diagnostic,
+already in the literature. **Lowry, Suttill & Taylor (2005)** built a variable risk array across
+column heights for exactly the fill-to-spill-versus-seal-capacity case, which is depth-dependent
+risk two decades ago.
+
+So: the engine is not the contribution. What follows is.
+
+## The empirical record has a hole in it, and it is a statistical one
+
+If you calibrate a column-height model against discoveries — and you should — you run into
+something that took me a while to see.
+
+**A trap that filled to spill tells you what the closure could hold. It does not tell you what the
+seal could hold.**
+
+That sentence is deliberately blunt, and it needs one qualification. Such an observation is not
+*uninformative* about seal capacity: it tells you the seal held **at least** the full closure. It is
+a **lower bound** — in survival-analysis terms a **right-censored observation** — and the error is
+to treat it as a *measurement* of the maximum seal-supported column. The seal might have held twice
+that. Nothing in the observation distinguishes the two cases.
+
+In **Edmundson et al.'s (2021)** open dataset of 242 NCS discoveries — published under CC-BY, which
+is the only reason any of this is checkable — **111 are classified as filled to spill.** Forty-six
+per cent of the record is censored, not measured.
+
+Fit column height on trap height and burial depth the ordinary way, then fit it treating filled
+traps as censored:
 
 | | trap height | burial depth |
 |---|---|---|
 | ordinary least squares | 0.880 | 0.143 |
 | censoring-corrected | **0.701** | **0.277** |
 
-Two things happen, and the second is the one that changes what you would say in a meeting.
+Censoring **inflates** the trap-height term — unsurprising, since a filled trap is a point where
+column equals trap by construction, so a naive fit is partly fitting an identity. And it **halves**
+the burial-depth term. "Burial depth is the weaker control" is a fair reading of the uncorrected
+fit; it does not survive the correction.
 
-**Censoring inflates the trap-height term.** Of course it does: every filled trap is a point where
-column *equals* trap by construction, so a fit that takes them at face value is partly fitting an
-identity rather than a relationship.
+*The third digit is not robust: the trap-height coefficient runs 0.720 / 0.701 / 0.697 as you move
+the tolerance for "at its spill" from 0.5 m to 1 m to 2 m. The direction and size of the effect are.*
 
-**And it nearly doubles the burial-depth term.** "Burial depth is the weaker control" is a
-reasonable reading of the uncorrected fit. It does not survive the correction. Burial depth comes
-out about twice as important as the naive fit suggests, and trap height about a fifth less.
-
-*Before anyone quotes the third decimal: the trap-height coefficient moves with the tolerance you
-use to decide when a column counts as "at" its spill — 0.720 at half a metre, 0.701 at one metre,
-0.697 at two. The direction and the size of the effect are robust. The third digit is not.*
-
-## The check that convinced me
-
-A coefficient moving is not, by itself, an argument. Anyone can produce a different number with a
-different estimator.
-
-So here is a test the model has to pass on its own terms. Take the fitted relationship, sample seal
-capacities from it, apply the same `min(capacity, closure)` the geology applies, and ask: **what
-fraction of the resulting traps fill to spill?** The answer has to match the fraction actually
-observed, or the model is not describing the data it was fitted to.
+**The check that convinced me** needs no simulated data. Ask each fit to reproduce the one statistic
+anyone can verify — how often a discovery fills to spill:
 
 ```
 observed in the dataset        45.9 %
 censoring-corrected model      47.2 %
-the published relationship     32.1 %
+the uncorrected relationship   32.1 %
 ```
 
-The corrected fit reproduces the fill rate. The uncorrected one is out by fourteen points — it
-predicts a third of traps filling where nearly half of them do.
+The corrected fit reproduces the filling behaviour of the dataset it was fitted to. The uncorrected
+one is out by fourteen points, in the direction the omitted censoring predicts. *(Both computed
+exactly, both given the same residual spread so only the mean function differs — the choice less
+flattering to my argument, since letting the naive fit keep its own narrower spread gives 24.1 %.)*
 
-*Both are computed exactly rather than simulated, and both are given the same spread so that only
-the mean function differs. That choice is the one less flattering to my argument: let the naive fit
-use its own narrower residual spread instead and it predicts 24.1 %, which is worse still.*
+## A DHI is evidence to be weighed, not a contact to be substituted
 
-## Why this is not an academic point
+This is where the workflow earns its keep, and it is the second half of the argument.
 
-Column height is the largest single driver of prospect volume, and the only input that turns a
-prospect-level chance into a chance at a *specific well location*. A biased column-height prior
-propagates into every volume you quote and every well you rank.
+The common treatment of a possible flat event is a scenario switch: *if* the DHI is valid, the
+contact is at the flat spot; otherwise the geological contact stands. That is honest, it needs no
+new elicitation, and it moves the contact **without moving the chance**. Hood's rule — merge late,
+never blend into the input distribution — applies.
 
-And the direction is not neutral. Overweighting trap height and underweighting burial depth makes
-your big shallow structures look better than they are and your deep ones worse.
+But it discards information. The order that uses it is:
 
-## What I am not claiming
+1. **Build the geological HCWC distribution first**, from the competing mechanisms above. The DHI
+   never edits it.
+2. **State the depth of the interpreted flat event and its uncertainty** — flat-spot pick error
+   *plus* depth conversion, and the second is usually the larger.
+3. **State how detectable a column of a given height would be.** A thin column produces no anomaly;
+   a thick one usually does. This detection function is what makes an *absent* anomaly usable
+   evidence rather than a special case, since the likelihood becomes `1 − D(h)`.
+4. **Update the distribution**, and therefore the depth-dependent chance, rather than replacing it.
 
-**The competing-limits model is not new.** Sample every mechanism that could stop the column — the
-spill point, capillary failure of the top seal, a leaking fault, tilting after charge — take the
-shallowest active one in each realisation, and never blend them. Hood set that out in 2019 and
-2024. Beha et al. (2012) sampled it. Grant (2020) published the diagnostic that says which
-mechanism won. Lowry et al. (2005) had chance-as-a-function-of-column-height in print two decades
-ago. I have implemented their idea, not had it.
+On the precision of that word "update": the geometric channel **is** a Bayesian likelihood update.
+The engine's realisations are draws from the prior, so weighting each by `L(seismic | h)` and
+normalising is self-normalised importance sampling — posterior ∝ prior × likelihood, with the
+controlling-mechanism bookkeeping surviving intact. The amplitude-character channel is a two-state
+Bayes update in odds form, `posterior = R·prior / (R·prior + (1−prior))`.
 
-**The dataset is not mine.** Edmundson and co-authors did the hard part: an apex and a spill point
-picked off depth-converted maps for 242 fields. Then they published the raw table openly, which is
-rare and is the only reason I could check anything at all. Nothing here detracts from that. It is a
-disagreement about **one estimator**, not about the data.
+**Combining the two channels is not Bayes, and I will not pretend it is.** Multiplying the two
+likelihood ratios would assume the geometry of the anomaly and its character are conditionally
+independent evidence. They are not, and neither are they the same evidence. So the implementation
+interpolates between the product and the stronger single channel, with the dependence exposed as a
+number you set. That is **probabilistic evidence weighting with a stated assumption**, not a
+theorem, and it is labelled as such in the tool.
 
-**And it is one basin.** I went looking for a second public dataset relating column height to
-closure height, outside Norway, and could not find one. Not a paywalled one — *any* one. The
-reason is in Edmundson's own introduction: measuring a closure height means picking an apex and a
-spill off a depth-converted 3D volume, per field, which is months of interpretation rather than a
-database query. So they say, in as many words, that "few studies of this kind have been carried out
-before". Every other compilation I could find reports column-height *distributions* with no trap
-geometry at all, which cannot answer this question.
+Two consequences worth stating. The likelihoods are **elicited, not calibrated** — the detection
+function and the pick sigma are modelling choices, and a posterior is only as defensible as they
+are. So the tool also plots what the answer is most sensitive to; when a typed seismic assumption
+moves the contact further than the geology does, that is a finding about your assumptions, not
+about the prospect.
 
-If you know of one, I would genuinely like to hear about it.
+## What this is all for
 
-## The tool
+Column height, HCWC depth, spill point and seal capacity are four different quantities and it is
+worth keeping them apart. The spill point is one *limit*. Seal capacity is another. The column
+height is what the winning limit leaves you. The HCWC depth is the apex plus that column. And the
+chance of success is a reading of the resulting curve at whatever minimum column you decided makes
+the well a discovery — which is why a probability of success means nothing until you say what
+counts as success.
 
-I have built the whole thing as a free, open-source app: the competing-limits engine, the
-censoring correction, the comparison of your own prospect against the corrected record, and an
-importer so a company can run the same correction on its own confidential trap-fill database
-without the data leaving the browser.
+Get the mechanism right and all four are consistent by construction. Choose a distribution because
+it looks reasonable and none of them are.
 
-It is one of four tools I maintain, each doing one job: **E-POS** for element risk, **SCOPE-HC**
-for volumetrics, **HCWC Distribution Builder** for the contact, and **WellVolPOS** for the chance
-at a well location.
+The tool is free and open source: the competing-limits engine, the censoring-aware calibration
+against the NCS record, depth-dependent risk per element, the DHI update, and an importer so a
+company can run the same correction on its own trap-fill database without the data leaving the
+browser.
 
 It will not tell you whether to drill. It produces one input to that decision, honestly, with its
 provenance attached.
 
 ---
 
-*Lars Hjelm. The app, the code and the data are open — links in the comments.*
+**References**
+
+Beha, A., Christensen, J. E. & Young, R. (2012). A general method for the consistent volume
+assessment of complex hydrocarbon traps. *Journal of Petroleum Geology* **35**(1), 85–98.
+
+Edmundson, I. et al. (2021). An empirical approach to estimating hydrocarbon column heights for
+improved pre-drill volume prediction in hydrocarbon exploration. *AAPG Bulletin* **105**(12),
+2381–2403.
+
+Grant, N. T. (2020). Using Monte Carlo models to predict hydrocarbon column heights and to
+illustrate how faults influence buoyant fluid entrapment. *Petroleum Geoscience* **27**(2).
+
+Hood, K. C. (2024). *Hydrocarbon Column Heights*, Parts 1 and 2. Rose & Associates, from Hood
+(2019).
+
+Lowry, D. C., Suttill, R. J. & Taylor, R. J. (2005). Advances in risking exploration prospects.
+*APPEA Journal* **45**(1), 143–158.
+
+Schowalter, T. T. (1979). Mechanics of secondary hydrocarbon migration and entrapment. *AAPG
+Bulletin* **63**(5), 723–760.
+
+*Lars Hjelm. App, code and data open — links in the comments.*
