@@ -93,11 +93,18 @@ precedents for the engine I have implemented**, and the logic is theirs, not min
 What I have built is an implementation and an extension. Beha et al. enumerate *discrete* leak
 points by hand and explicitly assume no dependency between their two faults. I sample each
 mechanism as a *continuous distribution*, which lets a seal capacity or a charge volume enter
-directly rather than as a fixed depth; I let the mechanisms be correlated through a Gaussian copula
-— including, deliberately, the apex against any depth-stated limit, since both are picked off the
-same depth-converted surface; and I record the controlling mechanism per realisation. They are the
-same model at two levels of generality, and their hand enumeration is exact where mine is a
-simulation.
+directly rather than as a fixed depth; I let the *depths* at which mechanisms bite be correlated
+through a Gaussian copula — including, deliberately, the apex against any depth-stated limit, since
+both are picked off the same depth-converted surface; and I record the controlling mechanism per
+realisation.
+
+One honest gap there: **whether** a mechanism is present is still drawn independently, so I can say
+that two faults leak at similar depths but not that they are the same fault and therefore stand or
+fall together. Beha et al. make the same independence assumption explicitly. Neither of us has
+solved it.
+
+They are the same model at two levels of generality, and their hand enumeration is exact where mine
+is a simulation.
 
 Others got there too. **Grant (2020)** published Monte Carlo column-height modelling with fault
 effects and what he calls "column height control statistics" — the controlling-mechanism diagnostic,

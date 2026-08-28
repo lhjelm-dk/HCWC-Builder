@@ -221,7 +221,18 @@ geological.*
 
     **Hydrodynamics and tilted contacts are not modelled.** A hydrodynamic gradient tilts the contact
     and changes the effective seal capacity. Grant (2020) includes it; this assumes a hydrostatic,
-    horizontal contact.
+    horizontal contact. **Remigration and hydraulic reconfiguration** are absent for the same reason:
+    both genuinely stop columns, and neither is here.
+
+    **Compartmentalisation is out of scope, not merely unmodelled.** It turns one contact into
+    several, and this tool builds one — a compartmentalised trap needs a contact per compartment,
+    which is a different object rather than a harder version of this one.
+
+    **Whether a mechanism is present is drawn independently for each.** The copula correlates the
+    *depths* at which limits bite, so you can say two faults leak at similar depths — but not that
+    they are the same fault and therefore stand or fall together. Beha et al. (2012) make the same
+    independence assumption explicitly, which makes this a shared limitation of the approach rather
+    than a defect of this implementation, and it is still a limitation.
 
     **The empirical benchmarks are conditioned on discovery**, censored above and truncated below.
     Tab ⑥ sets out exactly what that does and what it means for using them as a pre-drill prior.
@@ -232,9 +243,15 @@ geological.*
     the only one there is — no published dataset of competing-limit models exists to test against, so
     the engine's *behaviour* is verified by its own test suite and its *result* by one worked example.
 
-    **The competing-limits model is not new.** Beha et al. (2012) describe it, and Grant (2020)
-    publishes the controlling-limit diagnostic. What is new here is the continuous, correlated form of
-    it, and the censoring correction on tab ⑥ — see tab ⑧ → *Beha et al. (2012)*.
+    **The competing-limits model is not new, and it is worth knowing whose it is.** Beha, Christensen
+    & Young (2012) set it out: enumerate the combinations of trapping elements sealing or failing,
+    assign each scenario a probability, and derive the leak point that follows. Their observation
+    that *a deeper leak point can be more likely than a shallower one* — because it needs more
+    elements to seal at once — is the principle in a sentence. Grant (2020) publishes the
+    controlling-limit diagnostic as "column height control statistics"; Lowry et al. (2005) had
+    chance against column height two decades ago. What is new here is the continuous, correlated
+    form of it, and the censoring correction on tab ⑥ — see tab ⑧ → *Beha et al. (2012)* and
+    *The article*.
     """
         )
 
