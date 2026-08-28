@@ -18,6 +18,7 @@ background, so it comes out of a printer looking like a document rather than a w
 """
 from __future__ import annotations
 
+import base64 as _b64
 import datetime as _dt
 import html
 from dataclasses import dataclass
@@ -32,6 +33,9 @@ from hcwc.core.limits import DEPTH
 #: confused, so it is in the header band and again in the provenance line.
 BASIS_LABEL = {"geological": "GEOLOGICAL", "given_dhi": "GIVEN DHI"}
 BASIS_COLOUR = {"geological": "#4C72B0", "given_dhi": "#8C5FA8"}
+
+#: Any inline HTML tag. See :func:`_markdownish`.
+_TAG = __import__("re").compile(r"<[^>]+>")
 
 LEVEL_COLOUR = {"ok": "#4E8C61", "watch": "#D9822B", "stop": "#C44E52"}
 
@@ -339,4 +343,123 @@ distribution is the primary object and the chance multiplies it, never the other
 
 <p class="prov">{' · '.join(prov_bits)}</p>
 </div></body></html>
+"""
+
+
+# --------------------------------------------------------------------------- the full report
+#
+# The one-page summary above and this are different documents for different moments, and the
+# difference is worth stating rather than leaving to the filenames.
+#
+# The **one-pager** is the thing you hand across a table. It is deliberately one sheet, its two
+# charts are hand-drawn at report size, and every number on it is one somebody will quote.
+#
+# **This** is the working record: every figure the app actually drew, at the size it was drawn,
+# with the caption that says what it means and what it cannot tell you. Nobody reads it end to
+# end. It exists so that a number quoted six months later can be traced to the figure it came
+# from, and so a reviewer can disagree with a specific chart rather than with the tool.
+
+#: Vector, not raster. An SVG of a Plotly figure is a few kilobytes, prints at the printer's
+#: resolution rather than the screen's, and stays legible when someone zooms into a tail — which is
+#: exactly where the arguments about a column-height distribution happen.
+FIGURE_FORMAT = "svg"
+FIGURE_WIDTH, FIGURE_HEIGHT = 1100, 560
+
+
+def _figure_block(label: str, caption: str, payload: bytes) -> str:
+    """One figure and its caption, as a page-breakable unit."""
+    encoded = _b64.b64encode(payload).decode("ascii")
+    return (
+        f"<figure class='fig'>"
+        f"<img src='data:image/svg+xml;base64,{encoded}' alt='{_e(label)}'>"
+        f"<figcaption><b>{_e(label)}</b> — {_markdownish(caption)}</figcaption>"
+        f"</figure>"
+    )
+
+
+def _markdownish(text: str) -> str:
+    """The bold, italic, code and paragraph breaks these captions actually use.
+
+    Deliberately not a Markdown library: the captions use four constructs, a dependency to render
+    four constructs is a dependency to keep up to date, and anything richer belongs in prose rather
+    than under a figure.
+
+    **Inline HTML is unwrapped, not escaped.** Some captions open with the GEOLOGICAL / GIVEN THE
+    DHI chip from :func:`hcwc.ui.theme.basis_tag`, which is a styled ``<span>``. Escaping it printed
+    ``<span style='background:rgba(...)`` in the middle of the report; dropping it would lose the
+    one thing a reader of a bare figure cannot recover, which is **which distribution it is of**.
+    So the tags go and their text stays.
+    """
+    # Tags out, then entities in: a caption carrying `&nbsp;` between the chip and the sentence
+    # would otherwise be escaped a second time and print as `&amp;nbsp;`.
+    text = html.unescape(_TAG.sub("", text))
+    out = html.escape(text)
+    for marker, tag in (("**", "b"), ("*", "i"), ("`", "code")):
+        parts = out.split(marker)
+        out = "".join(part if i % 2 == 0 else f"<{tag}>{part}</{tag}>"
+                      for i, part in enumerate(parts))
+    return out.replace("\n\n", "</p><p>")
+
+
+def build_full(result: EngineResult, provenance: Provenance, figures: dict, *,
+               checks=(), p_geological: float = 1.0, colours=None,
+               note: str = "") -> tuple[str, list[str]]:
+    """The working record: the one-page summary, then every figure with its caption.
+
+    Returns the HTML and a list of figures that would not render, so the caller can say which are
+    missing rather than shipping a document that is quietly short.
+
+    ``figures`` is ``{label: (plotly_figure, caption)}`` — :data:`hcwc.ui.numbering.FIGURES_KEY`
+    as the app fills it during a run.
+    """
+    from hcwc.ui.numbering import figure_order
+
+    blocks, failed = [], []
+    for label in sorted(figures, key=figure_order):
+        figure, caption = figures[label]
+        try:
+            payload = figure.to_image(format=FIGURE_FORMAT,
+                                      width=FIGURE_WIDTH, height=FIGURE_HEIGHT)
+        except Exception as exc:                        # noqa: BLE001 — reported, not raised
+            failed.append(f"{label} ({type(exc).__name__})")
+            continue
+        blocks.append(_figure_block(label, caption, payload))
+
+    summary = build(result, provenance, checks=checks, p_geological=p_geological,
+                    colours=colours, note=note)
+    # The one-pager is a complete document; splice its body in rather than rebuilding it, so the
+    # two can never disagree about a number.
+    body = summary.split("<body>", 1)[1].rsplit("</body>", 1)[0]
+
+    missing = ("" if not failed else
+               "<p class='note'><b>Not every figure rendered.</b> Missing: "
+               + _e(", ".join(failed)) + ". They are absent rather than substituted.</p>")
+
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>{_e(provenance.prospect)} — HCWC working record</title>
+<style>{_CSS}{_FULL_CSS}</style></head>
+<body>
+{body}
+<div class="sheet">
+  <h2>Every figure drawn</h2>
+  <p class="note"><b>The working record, not the summary.</b> Nobody reads this end to end. It
+  exists so a number quoted six months from now can be traced to the figure it came from, and so a
+  reviewer can disagree with a specific chart rather than with the tool. Each caption is the one
+  shown in the app, including what the figure <i>cannot</i> tell you.</p>
+  {missing}
+  {''.join(blocks)}
+</div>
+</body></html>
+""", failed
+
+
+#: Layout for the figure pages. Kept apart from ``_CSS`` so the one-pager is unaffected by it.
+_FULL_CSS = """
+.fig { margin: 0 0 7mm; padding: 0; break-inside: avoid; page-break-inside: avoid; }
+.fig img { width: 100%; height: auto; display: block; border: 1px solid #e6e9ec;
+           border-radius: 3px; }
+.fig figcaption { font-size: 8.4pt; color: #1c2128; margin-top: 1.5mm; line-height: 1.4; }
+.fig figcaption p { margin: 1mm 0 0; }
+.sheet h2:first-of-type { margin-top: 0; }
 """

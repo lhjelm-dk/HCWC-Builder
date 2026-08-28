@@ -415,7 +415,9 @@ with tab7:
             _failed: list[str] = []
             _progress = st.progress(0.0, text="Rendering…")
             with _zipfile.ZipFile(_buffer, "w", _zipfile.ZIP_DEFLATED) as _zf:
-                for _i, (_label, _fig) in enumerate(sorted(_figs.items()), start=1):
+                for _i, (_label, (_fig, _)) in enumerate(
+                        sorted(_figs.items(), key=lambda kv: numbering.figure_order(kv[0])),
+                        start=1):
                     try:
                         _png = _fig.to_image(format="png", width=1600, height=900, scale=2)
                     except Exception as _exc:                       # noqa: BLE001 — reported below
@@ -472,8 +474,43 @@ with tab7:
         st.text_area("A note for the sheet (optional)", key="report_note", height=68,
                      placeholder="One or two sentences — the seal argument, the analogue, "
                                  "whatever a reader will ask about first.")
-        st.download_button("Download the one-page summary (HTML)", _html,
-                           f"{_name.replace(' ', '_')}_HCWC_summary.html", "text/html")
+        d1, d2 = st.columns(2)
+        d1.download_button("Download the one-page summary (HTML)", _html,
+                           f"{_name.replace(' ', '_')}_HCWC_summary.html", "text/html",
+                           use_container_width=True)
+        # The working record: the same summary, then every figure drawn this run with the caption
+        # shown beside it in the app. Built on demand rather than every rerun -- it renders each
+        # figure through kaleido, which is about a second apiece.
+        if d2.button("Build the full report (with every figure)", key="build_full_report",
+                     use_container_width=True):
+            _full, _missing = report.build_full(
+                result,
+                report.Provenance(prospect=_name, basis=basis,
+                                  trials=int(st.session_state.get("n_trials", 10_000)),
+                                  seed=int(st.session_state.get("seed", 20260825)),
+                                  source_file=st.session_state.get("_loaded_name", "")),
+                st.session_state.get(numbering.FIGURES_KEY) or {},
+                checks=_checks, p_geological=_p_g,
+                colours=results_tab.limit_colours(limit_set),
+                note=st.session_state.get("report_note", ""))
+            if _missing:
+                st.warning("**These figures would not render** and are absent from the report "
+                           "rather than substituted:\n\n"
+                           + "\n".join(f"- {x}" for x in _missing))
+            st.download_button("Download the full report (HTML)", _full,
+                               f"{_name.replace(' ', '_')}_HCWC_report.html", "text/html",
+                               key="download_full_report")
+        st.caption(
+            "**Two documents, two moments.** The **one-pager** is what you hand across a table: one "
+            "sheet, two charts drawn at report size, every number on it one somebody will quote. "
+            "The **full report** is the working record — the same summary followed by every figure "
+            "the app actually drew, each with the caption that says what it means and what it "
+            "cannot tell you. Nobody reads that end to end; it exists so a number quoted six "
+            "months from now can be traced to the figure it came from, and so a reviewer can "
+            "disagree with a specific chart rather than with the tool.\n\n"
+            "Figures embed as **vector SVG** — a few kilobytes each, sharp at any zoom, which "
+            "matters because the arguments about a column-height distribution happen in the tails."
+        )
         st.caption(
             "**HTML rather than PDF, on purpose.** A PDF would need a rendering engine this app "
             "cannot rely on having; the browser already has one, and its print dialogue makes a "

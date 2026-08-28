@@ -52,11 +52,24 @@ def render_caption(label: str, caption: str) -> None:
     st.caption(f"**{label}** \u2014 {caption}", unsafe_allow_html=True)
 
 
-#: Where every figure drawn this run is kept, keyed by its number, so the Export tab can render
-#: them all without each tab having to hand its figures anywhere. Cleared at the top of each run by
-#: `Numbering.__post_init__` on the first instance created -- Streamlit reruns top to bottom, so
-#: "the first Numbering of the run" is a reliable moment to reset.
+#: Where every figure drawn this run is kept as ``{label: (figure, caption)}``, so the Export tab
+#: can build a document without each tab having to hand its figures anywhere. Cleared at the top of
+#: each run by `Numbering.__post_init__` on the first instance created -- Streamlit reruns top to
+#: bottom, so "the first Numbering of the run" is a reliable moment to reset.
+#:
+#: **The caption travels with the figure.** A figure without one is a picture; the captions here
+#: are where the finding is stated and where the caveat lives.
 FIGURES_KEY = "_figures"
+
+
+def figure_order(label: str) -> tuple:
+    """Sort key for a figure label, so ``4.10`` follows ``4.9`` rather than ``4.1``.
+
+    Lexical order would put `Figure 4.10` between `Figure 4.1` and `Figure 4.2`, which reads as a
+    mis-numbered document rather than as a sorting artefact.
+    """
+    digits = label.replace("Figure", "").replace("Table", "").strip()
+    return tuple(int(part) if part.isdigit() else 0 for part in digits.split("."))
 
 
 def _plotly_config(label: str) -> dict:
@@ -135,7 +148,7 @@ class Numbering:
         st.plotly_chart(fig, use_container_width=use_container_width, key=label,
                         config=_plotly_config(label))
         # Kept so the Export tab can render every figure without each tab publishing its own.
-        st.session_state.setdefault(FIGURES_KEY, {})[label] = fig
+        st.session_state.setdefault(FIGURES_KEY, {})[label] = (fig, caption)
         render_caption(label, caption)
         return label
 
