@@ -57,8 +57,28 @@ def _fit():
     return fit, naive
 
 
+#: The shipped errors-in-variables curve. See :func:`_bias_curve`.
+_BIAS_CURVE = benchmarks.REFERENCE / "bias_curve.json"
+
+
 @st.cache_data(show_spinner=False)
 def _bias_curve(sigmas: tuple[float, ...]):
+    """Mean fitted elasticity against apex-pick error, for both estimators.
+
+    **Loaded, not computed, unless the sigmas have changed.** It is 540 censored MLE fits and it
+    took about six seconds of every cold start -- while being *constant*: fixed sigmas, a seeded
+    generator, and nothing the user enters reaching it. It demonstrates how the two estimators
+    behave under depth-conversion error; it is not a result about anyone's prospect.
+
+    The file records the sigmas it was built for and is ignored if they no longer match, because a
+    stale curve would be worse than a slow one. Regenerate with ``scripts/bias_curve.py``.
+    """
+    if _BIAS_CURVE.exists():
+        import json
+        cached = json.loads(_BIAS_CURVE.read_text(encoding="utf-8"))
+        if tuple(cached.get("sigmas_m", ())) == tuple(sigmas):
+            return cached["naive"], cached["censored"]
+
     rng = np.random.default_rng(5)
     naive_out, censored_out = [], []
     for sigma in sigmas:
@@ -664,9 +684,8 @@ What follows is a disagreement about **one estimator**, not about the data.
     limit_set = st.session_state.get("limit_set")
     own_relief = None
     if limit_set is not None:
-        from hcwc.ui.results_tab import _run
-        built = _run(limit_set.to_dict(), int(st.session_state.get("n_trials", 10_000)),
-                     int(st.session_state.get("seed", 20260825)))
+        from hcwc.ui import run as engine_run
+        built = engine_run.current(limit_set)
         column = built.column_m
         built_grid = np.linspace(0.0, float(np.max(column)), 300)
 
@@ -843,11 +862,9 @@ What follows is a disagreement about **one estimator**, not about the data.
                 "the benchmarks.")
     else:
         from hcwc.core import calibration
-        from hcwc.ui.results_tab import _run as _run_engine
+        from hcwc.ui import run as engine_run
 
-        built_result = _run_engine(limit_set_cal.to_dict(),
-                                   int(st.session_state.get("n_trials", 10_000)),
-                                   int(st.session_state.get("seed", 20260825)))
+        built_result = engine_run.current(limit_set_cal)
         built_column = built_result.column_m[built_result.above_minimum]
 
         st.markdown(

@@ -1,0 +1,30 @@
+{
+  "_comment": "Mean fitted trap-height elasticity against apex-pick error, for the naive and censored estimators. Regenerate with scripts/bias_curve.py. Constant by construction: fixed sigmas, seeded generator, no user input -- shipped because recomputing it costs about six seconds of every cold start and returns the same numbers every time.",
+  "seed": 5,
+  "replicates": 60,
+  "n_per_replicate": 242,
+  "sigmas_m": [
+    0.0,
+    10.0,
+    25.0,
+    50.0,
+    75.0,
+    100.0
+  ],
+  "naive": [
+    0.5794306599215802,
+    0.5982283667375581,
+    0.668058700725034,
+    0.8786836727013568,
+    1.0189877051506657,
+    1.102780524103239
+  ],
+  "censored": [
+    -0.0166565242854056,
+    0.011959532450511911,
+    0.11743977917379447,
+    0.5999789528074503,
+    0.9134435879315043,
+    1.095833629328941
+  ]
+}

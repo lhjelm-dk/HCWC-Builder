@@ -15,17 +15,12 @@ from hcwc.core import decompose as dc
 from hcwc.core import engine
 from hcwc.core.decompose import ELEMENTS, ReservoirEffectiveness
 from hcwc.core.limits import Group
-from hcwc.ui import results_tab, theme
+from hcwc.ui import results_tab, run, theme
 from hcwc.ui.numbering import Numbering
 
 TAB = 4
 #: The same tab, run against the DHI-updated model. See :func:`render`.
 TAB_DHI = 5
-
-@st.cache_data(show_spinner="Running the competing-limits model…")
-def _run(payload: dict, n: int, seed: int):
-    from hcwc.core.limits import LimitSet
-    return engine.run(LimitSet.from_dict(payload), n, seed)
 
 
 def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None) -> None:
@@ -43,8 +38,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     if limit_set is None:
         st.info("Define the limits on tab ③ first.")
         return
-    result = _run(limit_set.to_dict(), st.session_state.get("n_trials", 10_000),
-                  st.session_state.get("seed", 20260825))
+    result = run.current(limit_set)
 
     if with_dhi and not st.session_state.get("dhi_on", False):
         st.subheader("Risk against depth, per element | DHI")

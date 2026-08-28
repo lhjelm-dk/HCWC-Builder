@@ -284,9 +284,10 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
     rough, and the restricted view is where it disappears.
     """
     from hcwc.core import engine
-    from hcwc.ui.results_tab import _run, limit_colours
+    from hcwc.ui import run as engine_run
+    from hcwc.ui.results_tab import limit_colours
 
-    result = _run(limit_set.to_dict(), n_trials, seed)
+    result = engine_run.run(limit_set.to_dict(), n_trials, seed)
     ranking = engine.limit_ranking(result)
     live = [(name, share) for name, share in ranking if share > 0.0005]
     if not live:

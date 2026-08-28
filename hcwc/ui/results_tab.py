@@ -20,15 +20,10 @@ import streamlit as st
 from hcwc.core import engine, sensitivity, trust
 from hcwc.core import limits as limits_mod
 from hcwc.core.limits import Group
-from hcwc.ui import limit_stack, theme, trust_panel
+from hcwc.ui import limit_stack, run, theme, trust_panel
 from hcwc.ui.numbering import Numbering
 
 TAB = 4
-
-@st.cache_data(show_spinner="Running the competing-limits model…")
-def _run(payload: dict, n: int, seed: int):
-    from hcwc.core.limits import LimitSet
-    return engine.run(LimitSet.from_dict(payload), n, seed)
 
 
 def limit_colours(limit_set) -> dict[str, str]:
@@ -57,8 +52,7 @@ def render(n: Numbering | None = None) -> None:
         st.info("Define the limits on tab ③ first.")
         return
 
-    result = _run(limit_set.to_dict(), st.session_state.get("n_trials", 10_000),
-                  st.session_state.get("seed", 20260825))
+    result = run.current(limit_set)
     h_min = limit_set.min_column_m
 
     st.subheader("Results")

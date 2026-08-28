@@ -31,6 +31,7 @@ from hcwc.io import wellvolpos as wvp
 from hcwc.ui import (depth_risk_tab, dhi_tab, empirical, limiters_tab, prospect_tab,
                      results_tab, theme)
 from hcwc.ui import numbering
+from hcwc.ui import run as engine_run
 from hcwc.ui.numbering import Numbering
 
 ROOT = Path(__file__).parent
@@ -342,9 +343,7 @@ with tab7:
             "in a volumetrics package is an error nothing downstream can catch."
         )
     else:
-        result = results_tab._run(limit_set.to_dict(),
-                                  int(st.session_state.get("n_trials", 10_000)),
-                                  int(st.session_state.get("seed", 20260825)))
+        result = engine_run.current(limit_set)
         if basis == theme.GIVEN_DHI:
             samples = np.asarray(_overlay["contact_samples"], dtype=float)
         else:

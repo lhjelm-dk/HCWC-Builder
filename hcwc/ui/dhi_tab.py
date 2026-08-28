@@ -17,18 +17,12 @@ from hcwc.core import dhi as dhi_core
 from hcwc.core import engine
 from hcwc.core import sensitivity
 from hcwc.core.dhi import DetectionFunction, DhiObservation
-from hcwc.ui import theme
+from hcwc.ui import run, theme
 from hcwc.ui.numbering import Numbering
 
 TAB = 5
 PRIOR = "#8CB7FC"
 POSTERIOR = "#C44E52"
-
-
-@st.cache_data(show_spinner="Running the competing-limits model…")
-def _run(payload: dict, n: int, seed: int):
-    from hcwc.core.limits import LimitSet
-    return engine.run(LimitSet.from_dict(payload), n, seed)
 
 
 def _fmt_r(r: float) -> str:
@@ -45,7 +39,6 @@ def _fmt_r(r: float) -> str:
     if r <= 1.0 / 1000.0:
         return f"{r:.1e}"
     return f"{r:.2f}"
-
 
 
 def _resample(values: np.ndarray, weights: np.ndarray, n: int = 20_000) -> np.ndarray:
@@ -74,8 +67,7 @@ def render(n: Numbering | None = None) -> None:
     if limit_set is None:
         st.info("Define the limits on tab ③ first.")
         return
-    result = _run(limit_set.to_dict(), st.session_state.get("n_trials", 10_000),
-                  st.session_state.get("seed", 20260825))
+    result = run.current(limit_set)
     h_min = limit_set.min_column_m
     apex = float(np.median(result.apex_m))
 
