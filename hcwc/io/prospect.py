@@ -31,7 +31,7 @@ FORMAT_VERSION = 1
 #: expander or a stale DHI overlay.
 EXACT: frozenset[str] = frozenset({
     "prospect_name", "apex_p1", "apex_p99", "spill_input", "burial_input",
-    "dhi_toggle", "min_column_input", "n_trials_input", "seed_input",
+    "dhi_toggle", "min_column_input", "n_trials_input", "seed_input", "gradient_range",
     "stack_space", "stack_mode",
 })
 

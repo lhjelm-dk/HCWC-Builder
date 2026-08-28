@@ -83,7 +83,7 @@ provenance attached.
 """
     )
 
-    theme.heading(1, "What can set a hydrocarbon–water contact")
+    theme.heading(1, "1 · What can set a hydrocarbon–water contact")
     concept_png = ROOT / "reference" / "concept.png"
     if concept_png.exists():
         st.image(str(concept_png), use_container_width=True)
@@ -96,7 +96,7 @@ provenance attached.
             "panel, which tab ④ builds from live data."
         )
 
-    theme.heading(1, "The rule the whole tool rests on")
+    theme.heading(1, "2 · The rule the whole tool rests on")
     st.markdown(
         """
 **A probability of success is not a probability of anything until you say what counts as success.**
@@ -125,7 +125,7 @@ contact; only whether an element works *at the crest* belongs in the chance on t
 """
     )
 
-    theme.heading(1, "Where to start")
+    theme.heading(1, "3 · Where to start")
     st.markdown(
         """
 Eight tabs is a lot to meet cold. There are only four steps, and the third is the one people skip
@@ -158,84 +158,84 @@ geological.*
 """
     )
 
-    theme.heading(1, "How it is arranged")
-    st.markdown(
-        "**Tab ② is the prospect** — apex, spill point, burial depth, the element risk from E-POS, "
-        "and whether this is a DHI prospect. **Tab ③ is every mechanism that could limit the "
-        "column**, grouped by risk element: Charge, Closure, Retention. Everything after that is "
-        "output.\n\n"
-        "**Calculators are not tabs.** The charge filling and the seal-capacity calculation each "
-        "live inside the limit they fill in, behind a *Typed / Computed* radio, beside the inputs "
-        "they consume — the area–depth table sits next to the charge integration that reads it, "
-        "and nowhere else.\n\n"
-        "**Tab ④ is geological only.** The DHI update has its own tab, ⑤. That is "
-        "not tidiness: a fluid indicator may move the total chance and may **not** re-attribute it "
-        "between elements, so the geological model has to stay readable on its own."
-    )
+    with st.expander("**4 · How it is arranged**", expanded=False):
+        st.markdown(
+            "**Tab ② is the prospect** — apex, spill point, burial depth, the element risk from E-POS, "
+            "and whether this is a DHI prospect. **Tab ③ is every mechanism that could limit the "
+            "column**, grouped by risk element: Charge, Closure, Retention. Everything after that is "
+            "output.\n\n"
+            "**Calculators are not tabs.** The charge filling and the seal-capacity calculation each "
+            "live inside the limit they fill in, behind a *Typed / Computed* radio, beside the inputs "
+            "they consume — the area–depth table sits next to the charge integration that reads it, "
+            "and nowhere else.\n\n"
+            "**Tab ④ is geological only.** The DHI update has its own tab, ⑤. That is "
+            "not tidiness: a fluid indicator may move the total chance and may **not** re-attribute it "
+            "between elements, so the geological model has to stay readable on its own."
+        )
 
-    theme.heading(1, "Where this sits")
-    st.markdown(
-        "Four free tools, each doing one job. Every one is open source and runs in the browser — "
-        "**app** to use it, **code** to check what it does."
-    )
-    left, mid, right = st.columns(3)
-    left.markdown(
-        "**Upstream — E-POS**\n"
-        "[app](https://e-pos.streamlit.app) · "
-        "[code](https://github.com/lhjelm-dk/E-POS)\n"
-        "Element risk: play and conditional for Charge, Closure, Reservoir and Retention, "
-        "Italian-flag evidence support, and the Bayesian DHI/DFI update. Supplies the element "
-        "chances on tab ②, and the DHI strength model on tab ⑤ is adapted from its custom-R tool."
-    )
-    mid.markdown(
-        "**Volumetrics — SCOPE-HC**\n"
-        "[app](https://scope-hc.streamlit.app) · "
-        "[code](https://github.com/lhjelm-dk/SCOPE-HC)\n"
-        "Probabilistic volumes from GRV, reservoir and fluid inputs. It is what supplies the "
-        "`resource` column the WellVolPOS export on tab ⑦ deliberately leaves out. **Planned:** it "
-        "will read the 101-percentile contact distribution exported there."
-    )
-    right.markdown(
-        "**Downstream — WellVolPOS**\n"
-        "[app](https://wellvolpos.streamlit.app) · "
-        "[code](https://github.com/lhjelm-dk/WellVolPOS)\n"
-        "Turns a contact distribution into well-location chance and at-the-well volume. Consumes "
-        "the trial table and the per-element curves from tab ⑦."
-    )
+    with st.expander("**5 · Where this sits**", expanded=False):
+        st.markdown(
+            "Four free tools, each doing one job. Every one is open source and runs in the browser — "
+            "**app** to use it, **code** to check what it does."
+        )
+        left, mid, right = st.columns(3)
+        left.markdown(
+            "**Upstream — E-POS**\n"
+            "[app](https://e-pos.streamlit.app) · "
+            "[code](https://github.com/lhjelm-dk/E-POS)\n"
+            "Element risk: play and conditional for Charge, Closure, Reservoir and Retention, "
+            "Italian-flag evidence support, and the Bayesian DHI/DFI update. Supplies the element "
+            "chances on tab ②, and the DHI strength model on tab ⑤ is adapted from its custom-R tool."
+        )
+        mid.markdown(
+            "**Volumetrics — SCOPE-HC**\n"
+            "[app](https://scope-hc.streamlit.app) · "
+            "[code](https://github.com/lhjelm-dk/SCOPE-HC)\n"
+            "Probabilistic volumes from GRV, reservoir and fluid inputs. It is what supplies the "
+            "`resource` column the WellVolPOS export on tab ⑦ deliberately leaves out. **Planned:** it "
+            "will read the 101-percentile contact distribution exported there."
+        )
+        right.markdown(
+            "**Downstream — WellVolPOS**\n"
+            "[app](https://wellvolpos.streamlit.app) · "
+            "[code](https://github.com/lhjelm-dk/WellVolPOS)\n"
+            "Turns a contact distribution into well-location chance and at-the-well volume. Consumes "
+            "the trial table and the per-element curves from tab ⑦."
+        )
 
-    theme.heading(1, "Known limitations")
-    st.markdown(
-        """
-Stated here rather than discovered later. None of these is a bug; each is a thing the model does
-not do, and knowing which is which is part of using it honestly.
+    with st.expander("**6 · Known limitations**", expanded=False):
+        st.markdown(
+            """
+    Stated here rather than discovered later. None of these is a bug; each is a thing the model does
+    not do, and knowing which is which is part of using it honestly.
 
-**Seal capacity is treated as phase-independent, and it is not.**
-`h_max = P_c / (Δρ · g)`, so it depends on the density contrast between hydrocarbon and water. **A
-gas column and an oil column below the same seal are very different heights** — Sales (1997), cited
-by Graham et al. (2015) as the interplay among closure height, seal capacity and fluid type. The
-seal calculator takes a fluid, but a **mixed-phase** prospect needs the gas cap and the oil leg
-limited by different capacities with a gas–oil contact between them, and this tool does not do that.
-Run the phases as separate cases; treat a single mixed-phase run as indicative. A deliberate scope
-decision, not an oversight.
+    **Seal capacity is treated as phase-independent, and it is not.**
+    `h_max = P_c / (Δρ · g)`, so it depends on the density contrast between hydrocarbon and water. **A
+    gas column and an oil column below the same seal are very different heights** — Sales (1997), cited
+    by Graham et al. (2015) as the interplay among closure height, seal capacity and fluid type. The
+    seal calculator takes a fluid, but a **mixed-phase** prospect needs the gas cap and the oil leg
+    limited by different capacities with a gas–oil contact between them, and this tool does not do that.
+    Run the phases as separate cases; treat a single mixed-phase run as indicative. A deliberate scope
+    decision, not an oversight.
 
-**Hydrodynamics and tilted contacts are not modelled.** A hydrodynamic gradient tilts the contact
-and changes the effective seal capacity. Grant (2020) includes it; this assumes a hydrostatic,
-horizontal contact.
+    **Hydrodynamics and tilted contacts are not modelled.** A hydrodynamic gradient tilts the contact
+    and changes the effective seal capacity. Grant (2020) includes it; this assumes a hydrostatic,
+    horizontal contact.
 
-**The empirical benchmarks are conditioned on discovery**, censored above and truncated below.
-Tab ⑥ sets out exactly what that does and what it means for using them as a pre-drill prior.
+    **The empirical benchmarks are conditioned on discovery**, censored above and truncated below.
+    Tab ⑥ sets out exactly what that does and what it means for using them as a pre-drill prior.
 
-**The engine is validated against one published case, not against a population.** Beha et al.
-(2012) enumerate a two-fault closure by hand and get 0.60 / 0.12 / 0.28 at three leak points, and
-the engine reproduces all three to Monte Carlo error. That is a genuine external check and it is
-the only one there is — no published dataset of competing-limit models exists to test against, so
-the engine's *behaviour* is verified by its own test suite and its *result* by one worked example.
+    **The engine is validated against one published case, not against a population.** Beha et al.
+    (2012) enumerate a two-fault closure by hand and get 0.60 / 0.12 / 0.28 at three leak points, and
+    the engine reproduces all three to Monte Carlo error. That is a genuine external check and it is
+    the only one there is — no published dataset of competing-limit models exists to test against, so
+    the engine's *behaviour* is verified by its own test suite and its *result* by one worked example.
 
-**The competing-limits model is not new.** Beha et al. (2012) describe it, and Grant (2020)
-publishes the controlling-limit diagnostic. What is new here is the continuous, correlated form of
-it, and the censoring correction on tab ⑥ — see tab ⑧ → *Beha et al. (2012)*.
-"""
-    )
+    **The competing-limits model is not new.** Beha et al. (2012) describe it, and Grant (2020)
+    publishes the controlling-limit diagnostic. What is new here is the continuous, correlated form of
+    it, and the censoring correction on tab ⑥ — see tab ⑧ → *Beha et al. (2012)*.
+    """
+        )
 
 # --------------------------------------------------------------------------- ② Prospect
 with tab2:

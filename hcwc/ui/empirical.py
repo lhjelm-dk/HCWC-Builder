@@ -563,8 +563,11 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
                 y=np.interp(built_grid, posterior_column,
                             np.asarray(overlay["pos_curve"], dtype=float)
                             / max(float(overlay["posterior_pos"]), 1e-12)),
+                # Same weight and style as the geological curve, different colour. They are two
+                # readings of the same prospect and the question is which is deeper -- a dotted
+                # line reads as provisional or as a construction line, which this is not.
                 mode="lines", name="THIS PROSPECT, given the DHI",
-                line=dict(color="#4C72B0", width=3, dash="dot"))
+                line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], width=4.5))
 
         fam.add_scatter(x=built_grid, y=_exceedance(column, built_grid), mode="lines",
                         name="THIS PROSPECT, geological",
@@ -582,7 +585,9 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
                  "— the six coloured curves are the family it sits inside, not its comparators. "
                  "Read the gap between orange and dashed grey: to the right of it your model is "
                  "more optimistic than the empirical record for a closure of this size, to the "
-                 "left more pessimistic.  "
+                 "left more pessimistic. **When the prospect has a DHI, its updated curve is drawn "
+                 "in red at the same weight** — two readings of one prospect, and the question is "
+                 "which of them sits deeper. Neither is dotted, because neither is provisional.  "
                  if limit_set is not None and own_relief else "")
                 + f"Column-height exceedance by closure height — **{source}**"
                 + ("" if source in ("Graham et al. (2015)", CC_LABEL)

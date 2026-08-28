@@ -53,6 +53,20 @@ GRADIENT_C_PER_KM = (25.0, 40.0)
 SURFACE_C = 5.0
 
 
+def gradient_range() -> tuple[float, float]:
+    """The geothermal gradient in force: the slider in §1 · Geometry, or the default.
+
+    Read through a function rather than off the constant so every consumer sees the same value:
+    the temperature read-out here and the seal calculator's default on tab ③ are the same
+    quantity, and a gradient the user moved that reached only one of them would let a prospect be
+    assessed at two temperatures at once.
+    """
+    value = st.session_state.get("gradient_range")
+    if value and len(value) == 2:
+        return float(value[0]), float(value[1])
+    return GRADIENT_C_PER_KM
+
+
 def temperature_range(burial_m: float) -> tuple[float, float]:
     """Reservoir temperature implied by a burial depth, as a range.
 
@@ -64,7 +78,7 @@ def temperature_range(burial_m: float) -> tuple[float, float]:
     typed independently, which meant a 4 000 m prospect could be assessed with a 70 °C seal without
     anything objecting.
     """
-    lo, hi = GRADIENT_C_PER_KM
+    lo, hi = gradient_range()
     km = max(burial_m, 0.0) / 1000.0
     return SURFACE_C + lo * km, SURFACE_C + hi * km
 
@@ -73,7 +87,7 @@ def render() -> None:
     n = Numbering(TAB)
     st.subheader("The prospect")
 
-    st.session_state.setdefault("prospect_name", "Prospect")
+    st.session_state.setdefault("prospect_name", "Tiramisu-C4")
     st.text_input("Prospect name", key="prospect_name")
 
     if st.session_state.pop("_loaded_name", None):
@@ -182,15 +196,25 @@ def render() -> None:
              "averages 2 442 m against a mean trap height of 212 m in that dataset — so the apex "
              "is the right default, but set it to mid-reservoir if that is what you mean.")
     st.session_state["burial_depth"] = float(burial)
+    st.session_state.setdefault("gradient_range", GRADIENT_C_PER_KM)
+    g_lo, g_hi = b2.slider(
+        "Geothermal gradient (°C/km)", 15.0, 60.0, step=0.5, key="gradient_range",
+        help="The uncertain part of the temperature, so it is stated as a range rather than a "
+             "number. 25–40 spans normal to hot; the NCS default sits high on purpose, because "
+             "70–90 °C at about 2 050 m is ordinary there. Moving it moves the seal calculator's "
+             "temperature on tab ③ with it.")
     t_lo, t_hi = temperature_range(burial)
-    b2.metric("Implied reservoir temperature", f"{t_lo:,.0f}–{t_hi:,.0f} °C",
-              f"{GRADIENT_C_PER_KM[0]:.0f}–{GRADIENT_C_PER_KM[1]:.0f} °C/km from {SURFACE_C:.0f} °C",
-              delta_color="off")
+    b2.markdown(
+        f"<div style='margin-top:-0.4rem;font-size:0.9rem'>"
+        f"<b>Implied reservoir temperature &nbsp;{t_lo:,.0f}–{t_hi:,.0f} °C</b>"
+        f"<span style='opacity:0.7'> &nbsp;— {g_lo:.1f}–{g_hi:.1f} °C/km from "
+        f"{SURFACE_C:.0f} °C surface</span></div>", unsafe_allow_html=True)
     st.caption(
         f"**Structural relief {spill - apex_mid:,.0f} m** at the mid apex. The temperature seeds "
         f"the seal calculator on tab ③ → Retention, so a deep prospect cannot be assessed with a "
         f"shallow prospect's seal — interfacial tension falls with temperature, so deeper is a "
-        f"weaker seal."
+        f"weaker seal. **Move the gradient and that default moves with it**; the seal tab can still "
+        f"override the temperature outright if it is measured."
     )
 
     # ------------------------------------------------------------------ element risk
@@ -263,21 +287,51 @@ def render() -> None:
 
     st.session_state["element_pos"] = element_pos
     product = float(np.prod(list(element_pos.values())))
+
+    # Its own line, at size, because it is the number this section exists to produce and it was
+    # previously the smallest thing on the page -- a figure inside a grey caption, under a table
+    # whose individual cells were louder than their product.
+    accent = theme.accent(TAB)
+    st.markdown(
+        f"<div style='margin:0.6rem 0 0.2rem;padding:0.55rem 0.9rem;border-left:5px solid {accent};"
+        f"background:{theme.rgba(accent, 0.10)};border-radius:0 5px 5px 0'>"
+        f"<span style='font-size:0.82rem;letter-spacing:0.05em;text-transform:uppercase;"
+        f"color:{theme.shade_hex(accent, -0.45)};font-weight:700'>Element chance &nbsp;P(G)</span>"
+        f"<div style='font-size:2rem;font-weight:700;line-height:1.15;"
+        f"color:{theme.shade_hex(accent, -0.5)}'>{product:.1%}</div>"
+        f"<span style='font-size:0.85rem;opacity:0.8'>every element works "
+        f"<b>at the crest</b> — the product of the four above</span></div>",
+        unsafe_allow_html=True)
+
     st.caption(
-        f"**Geological POS, `P(G)` = {product:.1%}** — the product of the four, and E-POS's "
-        f"headline number: the chance the prospect works *at all*. **It is not the prospect POS, "
-        f"and it is not a chance at any particular column height.**\n\n"
-        f"`Prospect POS = P(G) × P(column ≥ h | G)`. The second term is the whole of tab ④ — the "
-        f"competing limits, conditional on the elements having worked — and tab ④ shows the "
-        f"product. Taken down structure rather than read at one threshold, the same quantity is "
-        f"the depth-risk curve on tab ④, and it falls as you go deeper."
+        f"**What this number is, and what it is not.** `P(G)` is the chance that every element "
+        f"works **at the crest**: charge arrived, there is a closure, there is reservoir, there is "
+        f"a seal. It carries no statement about how far *down* the column reaches.\n\n"
+        f"**The geological POS of this prospect is not this number.** In this tool success is "
+        f"defined as a column of at least `h_min`, so\n\n"
+        f"`Geological POS = P(G) × P(column ≥ h_min | G)`\n\n"
+        f"and tab ④ shows both terms and their product. The second comes from the competing "
+        f"limits; taken down structure rather than read at one threshold, it is the depth-risk "
+        f"curve on tab ④'s second sub-tab.\n\n"
+        f"**Why the split falls exactly there.** A trapping element that fails *below* the crest "
+        f"does not reduce the chance of finding hydrocarbons — it reduces the chance of a *deeper "
+        f"contact*. Elicit these four for the crest only; seal capacity, spill and fault leakage "
+        f"belong on tab ③, where they move the contact. Folding them in here would count them "
+        f"twice and, because volume is conditioned on the chance, **overstate volume**."
     )
 
     # ------------------------------------------------------------------ DHI
     theme.heading(TAB, "3 · Direct hydrocarbon indicator")
+    # On by default, at Lars's request (27 Aug 2026). The reasoning that had it off was that a
+    # tool assuming a DHI will find one -- but the tab is inert until an amplitude is actually
+    # described, and leaving it off hid the whole DHI half of the app behind a switch most users
+    # never found. A prospect without one turns it off in a click and the geological tabs are
+    # unchanged either way.
+    st.session_state.setdefault("dhi_toggle", True)
     dhi_on = st.toggle(
-        "This is a DHI prospect", key="dhi_toggle", help="Off by default. A DHI is evidence, and a tool that assumes one is present will find "
-             "one.")
+        "This is a DHI prospect", key="dhi_toggle",
+        help="On by default. Turn it off for a prospect with no amplitude support: tab ⑤ then "
+             "says so and nothing else changes, because a DHI never edits the geological model.")
     st.session_state["dhi_on"] = bool(dhi_on)
     st.caption(
         "With this on, two further tabs become live: **Results | DHI** and **Depth risk | DHI**, "

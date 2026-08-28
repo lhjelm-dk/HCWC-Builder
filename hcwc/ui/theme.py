@@ -22,6 +22,8 @@ survives greyscale printing, because this is a tool people will put in reports.
 """
 from __future__ import annotations
 
+import re
+
 import streamlit as st
 
 #: Body ink. Tab labels stay this colour at every tint — see the note above on why the
@@ -199,10 +201,26 @@ def accent(tab: int) -> str:
     return TAB_COLOURS[tab][0]
 
 
+#: A leading section number, in the form the tabs write it: ``"1 · Geometry"``.
+_SECTION = re.compile(r"^(\d+)\s*·\s*(.*)$", re.DOTALL)
+
+
 def heading(tab: int, text: str) -> None:
-    """A section heading in the tab's own colour, tying the content to the tab strip."""
+    """A section heading in the tab's own colour, tying the content to the tab strip.
+
+    **The section number carries its tab.** A heading written as ``"1 · Geometry"`` renders as
+    **2.1 Geometry** on tab ②, matching ``Figure 2.1`` and ``Table 2.3`` below it. Before this, a
+    reader looking at "1 · Geometry" beside "Figure 2.1" had two numbering schemes on one screen
+    and no way to tell that the first was a section and the second a figure.
+
+    Composed here rather than typed into each call so the two can never disagree, and so a tab that
+    moves renumbers its own sections — which is exactly what the ten-to-eight merge did to the
+    depth-risk sections.
+    """
+    match = _SECTION.match(text)
+    label = f"{tab}.{match.group(1)} {match.group(2)}" if match else text
     st.markdown(
-        f"<h3 style='color:{accent(tab)};margin-top:1.2rem'>{text}</h3>",
+        f"<h3 style='color:{accent(tab)};margin-top:1.2rem'>{label}</h3>",
         unsafe_allow_html=True,
     )
 
