@@ -826,8 +826,10 @@ What follows is a disagreement about **one estimator**, not about the data.
             "**The sharpest way to see it needs no simulated data at all.** Ask each fit to "
             "reproduce the one statistic everybody can check — how often a discovery fills to "
             "spill. In the 242 discoveries, **45.9 %** do. Draw a column for every discovery at its "
-            "own closure height and burial depth: the corrected fit predicts **47.4 %**, the "
-            "published fit **32.3 %**. The published estimator cannot reproduce the filling "
+            "own closure height and burial depth: the corrected fit predicts **47.2 %**, the "
+            "published fit **32.1 %** — both computed exactly rather than simulated, and both "
+            "given the *same* spread so that only the mean function differs. The published "
+            "estimator cannot reproduce the filling "
             "behaviour of the dataset it was fitted to, and it fails in the direction the omitted "
             "censoring predicts."
         )

@@ -133,3 +133,106 @@ def baseline(result: EngineResult, *, space: str = "column",
     outcome = result.column_m if space == "column" else result.contact_m
     mask = result.above_minimum if successes_only else np.ones(result.n, dtype=bool)
     return _mean_or_nan(outcome[mask])
+
+
+# --------------------------------------------------------------------------- the DHI tornado
+#
+# A DHI posterior is sensitive to two very different kinds of input, and separating them is the
+# whole value of the figure.
+#
+# **The geology** still varies realisation by realisation, so it slices exactly as above -- except
+# the means are weighted, because after the update a realisation is worth its likelihood. That
+# already says something: a DHI can change which limit the answer is sensitive to, and the
+# geological tornado on tab ④ cannot show it.
+#
+# **The DHI's own numbers do not vary at all.** A picked contact, a pick sigma, a detection ceiling
+# are single typed values -- so their influence has to be found by moving them, one at a time, and
+# recomputing. That is cheap here: each perturbation is a new set of weights on the *same*
+# realisations, not a new Monte Carlo, which is the one real advantage of importance weighting.
+#
+# It is also where the uncomfortable answers live. The pick sigma and the detection ceiling are
+# usually the least defensible numbers on the tab and frequently the most influential, and a
+# posterior that moves more when you change your mind about the ceiling than when you change the
+# geology is one to say out loud rather than quote.
+
+#: How far each typed DHI input is moved to measure its influence. Chosen to be defensible rather
+#: than dramatic: a factor of two on an uncertainty, half a sigma on a pick, and the full plausible
+#: span on the two shape parameters an assessor genuinely cannot pin down.
+DHI_INPUT = "DHI input, moved"
+
+
+def _weighted_mean(values: np.ndarray, weights: np.ndarray) -> float:
+    total = float(weights.sum())
+    return float((values * weights).sum() / total) if total > 0 else float("nan")
+
+
+def dhi_tornado(posterior, *, space: str = "column") -> list[Effect]:
+    """What the DHI-updated mean is sensitive to — the geology, and the DHI's own numbers.
+
+    ``posterior`` is a :class:`hcwc.core.dhi.DhiPosterior`.
+    """
+    from hcwc.core import dhi as dhi_core
+
+    result = posterior.result
+    outcome = result.column_m if space == "column" else result.contact_m
+    base_weights = posterior.weights
+    effects: list[Effect] = []
+
+    # ---- the geology, reweighted --------------------------------------------------------
+    for j, limit in enumerate(result.limit_set.limits):
+        u = result.uniforms[:, j]
+        low, high = u <= TAIL, u >= 1.0 - TAIL
+        if low.any() and high.any():
+            effects.append(Effect(
+                name=limit.name, kind=DEPTH_EFFECT,
+                low=_weighted_mean(outcome[low], base_weights[low]),
+                high=_weighted_mean(outcome[high], base_weights[high]),
+                support=int(min(low.sum(), high.sum()))))
+
+    # ---- the DHI's own typed numbers ----------------------------------------------------
+    observation, detection = posterior.observation, posterior.detection
+
+    def mean_for(det, obs) -> float:
+        try:
+            w = dhi_core.likelihood(result, det, obs)
+        except (ValueError, ZeroDivisionError):
+            return float("nan")
+        return _weighted_mean(outcome, w)
+
+    import dataclasses as _dc
+
+    variations: list[tuple[str, object, object]] = [
+        ("Pick σ", _dc.replace(observation, pick_sigma_m=observation.pick_sigma_m * 0.5),
+         _dc.replace(observation, pick_sigma_m=observation.pick_sigma_m * 2.0)),
+    ]
+    if observation.seen and observation.contact_m is not None:
+        half = 0.5 * observation.pick_sigma_m
+        variations.append(
+            ("Picked contact", _dc.replace(observation, contact_m=observation.contact_m - half),
+             _dc.replace(observation, contact_m=observation.contact_m + half)))
+
+    for name, low_obs, high_obs in variations:
+        effects.append(Effect(name=name, kind=DHI_INPUT, support=result.n,
+                              low=mean_for(detection, low_obs),
+                              high=mean_for(detection, high_obs)))
+
+    for name, low_det, high_det in (
+        ("Detection ceiling", _dc.replace(detection, ceiling=max(0.05, detection.ceiling - 0.25)),
+         _dc.replace(detection, ceiling=min(1.0, detection.ceiling + 0.09))),
+        ("50 % detection column", _dc.replace(detection, h50_m=detection.h50_m * 0.5),
+         _dc.replace(detection, h50_m=detection.h50_m * 2.0)),
+        ("Transition width", _dc.replace(detection, steepness_m=detection.steepness_m * 0.5),
+         _dc.replace(detection, steepness_m=detection.steepness_m * 2.0)),
+    ):
+        effects.append(Effect(name=name, kind=DHI_INPUT, support=result.n,
+                              low=mean_for(low_det, observation),
+                              high=mean_for(high_det, observation)))
+
+    return sorted((e for e in effects if np.isfinite(e.swing)), key=lambda e: -e.magnitude)
+
+
+def dhi_baseline(posterior, *, space: str = "column") -> float:
+    """The posterior mean the DHI swings are measured against."""
+    result = posterior.result
+    outcome = result.column_m if space == "column" else result.contact_m
+    return _weighted_mean(outcome, posterior.weights)

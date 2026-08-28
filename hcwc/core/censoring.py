@@ -167,9 +167,15 @@ def censored_loglinear(predictors: dict[str, np.ndarray], column: np.ndarray,
     Coefficients are log-log elasticities. Pass ``{"trap_height": H, "burial_depth": D}``
     to get the result that matters: on the published NCS data the naive fit reports
     ``b_trap_height = 0.880`` and ``b_burial_depth = 0.143``, while the censored fit
-    reports ``0.721`` and ``0.276``. Censoring *inflates* the trap-height term and
+    reports ``0.701`` and ``0.277`` at the default tolerance. Censoring *inflates* the trap-height term and
     *halves* the burial-depth term, which is why "burial depth is the weaker control"
     does not survive the correction.
+
+    **The trap-height coefficient is mildly sensitive to** ``tol_m``, which decides how close to
+    its closure a column has to be before it counts as censored: 0.720 at 0.5 m, 0.701 at the
+    1 m default, 0.697 at 2 m. Worth knowing before quoting the third decimal -- an earlier version
+    of this docstring quoted 0.721, which is the 0.5 m answer, against a function that defaults to
+    1 m.
     """
     if not predictors:
         raise ValueError("at least one predictor is required")

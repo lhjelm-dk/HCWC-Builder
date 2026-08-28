@@ -525,16 +525,34 @@ with tab8:
     # what is not, what was decided and why -- and a user reading it learns which parts the
     # author is unsure about, which is not the same as learning what the tool does. It stays in
     # the repo for whoever works on this next.
-    doc = st.radio("Document", ["Benchmark sources", "Beha et al. (2012)", "Seal capacity",
-                                "Lowry et al. (2005)", "DHI alignment", "References"],
+    doc = st.radio("Document", ["The article", "Benchmark sources", "Beha et al. (2012)",
+                                "Seal capacity", "Lowry et al. (2005)", "DHI alignment",
+                                "References"],
                    horizontal=True, label_visibility="collapsed")
-    path = {"Benchmark sources": "BENCHMARK_SOURCES.md",
+    path = {"The article": "ARTICLE.md",
+            "Benchmark sources": "BENCHMARK_SOURCES.md",
             "Beha et al. (2012)": "BEHA_2012_REVIEW.md",
             "Seal capacity": "SEAL_CAPACITY_REVIEW.md",
             "Lowry et al. (2005)": "LOWRY_2005_REVIEW.md",
             "DHI alignment": "DHI_alignment.md", "References": "REFERENCES.md"}[doc]
     target = DOCS / path
     if target.exists():
-        st.markdown(target.read_text(encoding="utf-8"))
+        _text = target.read_text(encoding="utf-8")
+        if doc == "The article":
+            st.info(
+                "**Every number below is computed from the shipped dataset, not typed in.** The "
+                "coefficients, the fill rates and the censored count are the ones this app "
+                "produces — §3 of tab ⑥ draws them. If you change the tolerance or the dataset "
+                "they will move, and the article says so where it matters."
+            )
+            with st.expander("**Copy the source** — Markdown, for LinkedIn or a document"):
+                st.caption(
+                    "LinkedIn strips Markdown, so the headings and bold will not survive a paste "
+                    "into the post box — paste it somewhere that keeps them, or into LinkedIn's "
+                    "article editor, which does. The em dashes and the ± are deliberate; the "
+                    "tables will need rebuilding by hand in the post box."
+                )
+                st.code(_text, language="markdown")
+        st.markdown(_text)
     else:
         st.info(f"`docs/{path}` not found in this checkout.")

@@ -15,6 +15,7 @@ import streamlit as st
 from hcwc.core import charge as ch
 from hcwc.core import dhi as dhi_core
 from hcwc.core import engine
+from hcwc.core import sensitivity
 from hcwc.core.dhi import DetectionFunction, DhiObservation
 from hcwc.ui import theme
 from hcwc.ui.numbering import Numbering
@@ -117,7 +118,7 @@ def render(n: Numbering | None = None) -> None:
              "the larger, and it is the same uncertainty that moves the well's entry depth — the "
              "one place this tool and WellVolPOS genuinely couple.")
     area = o3.number_input("Anomaly area (km²), optional", 0.0, 1000.0, 0.0, 0.5,
-                           help="Used for the cross-check in §7. Leave at zero to skip.")
+                           help="Used for the cross-check in §8. Leave at zero to skip.")
 
     # ------------------------------------------------------------------ strength channel
     theme.heading(TAB, "2 · DHI strength — the amplitude channel")
@@ -472,7 +473,60 @@ So the combination is discounted rather than taken raw.
 
     # ------------------------------------------------------------------ cross-checks
     # ------------------------------------------------------------- success attribution
-    theme.heading(TAB, "6 · Which mechanism set the contact, given the DHI")
+    theme.heading(TAB, "6 · What is this answer most sensitive to?")
+    st.markdown(
+        "**Two kinds of input, and the figure keeps them apart because they are argued about "
+        "differently.** The geology varies realisation by realisation and is sliced the same way "
+        "as on tab \u2463 \u2014 except the means are now *weighted*, because after the update a "
+        "realisation is worth its likelihood. The DHI's own numbers do not vary at all: a picked "
+        "contact and a pick \u03c3 are single typed values, so their influence is found by moving "
+        "them and recomputing.\n\n"
+        "**Moving them is cheap and that is the point of importance weighting.** Each variation is "
+        "a new set of weights on the *same* realisations \u2014 no second Monte Carlo \u2014 so a "
+        "one-at-a-time sensitivity over the DHI inputs costs nothing."
+    )
+    dhi_space = st.radio(
+        "Swing measured on", ["Column below apex", "Contact depth"], horizontal=True,
+        key="dhi_tornado_space")
+    _space = "column" if dhi_space.startswith("Column") else "depth"
+    _effects = sensitivity.dhi_tornado(post, space=_space)
+    _centre = sensitivity.dhi_baseline(post, space=_space)
+
+    if _effects:
+        _shown = _effects[:12]
+        figt = go.Figure()
+        for _kind, _colour in ((sensitivity.DEPTH_EFFECT, PRIOR),
+                               (sensitivity.DHI_INPUT, POSTERIOR)):
+            _rows = [e for e in _shown if e.kind == _kind]
+            if not _rows:
+                continue
+            figt.add_bar(y=[f"{e.name} \u2014 {e.kind}" for e in _rows][::-1],
+                         x=[e.high - e.low for e in _rows][::-1],
+                         base=[e.low - _centre for e in _rows][::-1],
+                         orientation="h", name=_kind, marker_color=_colour,
+                         hovertemplate="%{y}<br>%{x:,.0f} m of swing<extra></extra>")
+        figt.add_vline(x=0.0, line=dict(color="#555", width=1.5))
+        figt.update_layout(xaxis_title=f"Metres from the posterior mean of {_centre:,.0f} m",
+                           height=max(300, 34 * len(_shown)), margin=dict(t=20),
+                           barmode="overlay", legend=dict(orientation="h", y=-0.22))
+        n.plot(figt,
+               f"**What the DHI-updated mean actually rests on.** Blue bars are geological inputs, "
+               f"sliced by decile and weighted by the likelihood; red bars are the DHI's own typed "
+               f"numbers, each moved one at a time \u2014 the pick \u03c3 halved and doubled, the picked "
+               f"contact by half a \u03c3, the detection parameters across the span an assessor "
+               f"genuinely cannot pin down.\n\n"
+               f"**Read the red bars against the blue ones.** If a typed DHI number moves the "
+               f"answer further than the geology does, the posterior is a statement about your "
+               f"seismic assumptions rather than about the prospect \u2014 and the pick \u03c3 and the "
+               f"detection ceiling are usually the least defensible numbers on this tab. That is "
+               f"worth saying out loud rather than quoting.\n\n"
+               f"**The geological ranking can differ from tab \u2463's.** Reweighting changes which "
+               f"limits the answer is sensitive to, which is a real consequence of the update and "
+               f"not visible anywhere else.")
+    else:
+        st.info("Not enough weight spread to slice a sensitivity from this posterior.")
+
+    theme.heading(TAB, "7 · Which mechanism set the contact, given the DHI")
     st.markdown(
         "**This is not the risk re-attributed — it is the *shallowest active limit* re-attributed, "
         "and the two are different questions.**\n\n"
@@ -505,7 +559,7 @@ So the combination is discounted rather than taken raw.
             f"one that naturally produces exactly that contact gains it. **Read it as *what "
             f"stopped the column*, never as *where the risk is*.**")
 
-    theme.heading(TAB, "7 · Cross-checks")
+    theme.heading(TAB, "8 · Cross-checks")
     if not (seen and area):
         st.caption("Enter an anomaly area in §1 to enable the area cross-check.")
     else:
@@ -541,7 +595,7 @@ So the combination is discounted rather than taken raw.
         )
 
     # ------------------------------------------------------------------ formulation A
-    theme.heading(TAB, "8 · The scenario-switch formulation, for comparison")
+    theme.heading(TAB, "9 · The scenario-switch formulation, for comparison")
     st.markdown(
         "`IF(DHI valid, DHI contact, geological contact)` — the older and simpler way to use a "
         "fluid indicator, and Hood's rule: merge late, never blend into the input distribution. "
