@@ -48,10 +48,11 @@ information.** The import path is the response.
 **Units.** Metres throughout. Correct for the NCS, and a hard stop anywhere else. Not worth doing
 until someone outside the NCS actually asks.
 
-**The C&C benchmark is machine-local.** It loads from `reference/private/` and the app degrades
-silently without it — three benchmark families instead of four, with no indication a fourth ever
-existed. That is the right behaviour and it is worth remembering: nobody else's run will look like
-this one on tab ⑥ §6.
+**An imported benchmark does not travel.** It lives in the browser session and is deliberately
+excluded from a saved prospect, because the file may be a company's confidential field list and a
+prospect sent to a colleague must not carry it. Consequence worth remembering: a saved prospect
+reopened elsewhere shows three benchmark families, not four, and nothing says a fourth was ever
+there. Load the dataset beside the prospect.
 
 ---
 
@@ -67,7 +68,7 @@ print two decades ago. **What is new is the censoring correction**, and it is a 
 > the published figure is 32.3 %.
 
 Everything needed to write that is in the repo: the estimator, the fit, the diagnostic figures, and
-the comparison against three independent benchmark families. The tool is the apparatus; the paper is
+the comparison against independent benchmark families. The tool is the apparatus; the paper is
 the result.
 
 ---
