@@ -1,0 +1,45 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+.DS_Store
+*.egg-info/
+build/
+dist/
+pytest*.xml
+
+# Local editor/agent tooling. .claude/launch.json carries absolute paths to this
+# machine's interpreter; the repo is meant to stay runnable by a stranger in one
+# command, so it is convenience, not configuration the project depends on.
+.claude/
+
+# --- The working folder is not the repository -------------------------------
+# Everything that is source material rather than source code lives under
+# `_private/`, which never leaves this machine: the spreadsheets the method was
+# worked out in, the third-party papers (copyright), the manuscript drafts and
+# the figure originals. They are the *specification and the background reading*,
+# not an input the app reads, and the app must run for a stranger who has none
+# of them.
+/_private/
+
+# Loose source material at the root, in case anything lands there before it is
+# filed. Same reasoning; belt and braces.
+/*.xlsx
+/*.xlsm
+/*.pdf
+/*.doc
+/*.docx
+/*.pptx
+/~$*
+
+# Spreadsheets never belong in `reference/`, whatever they are.
+reference/*.xlsx
+reference/*.xlsm
+
+# Non-public benchmark data. The "C&C" reservoir statistics come from an
+# unpublished study and must not leave this machine. The app reads them from here
+# if present and silently omits that comparison series if not, so a clone without
+# them is a working clone.
+reference/private/

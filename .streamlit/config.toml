@@ -1,0 +1,7 @@
+# Shared with E-POS and SCOPE-HC so the three tools read as one system.
+[theme]
+primaryColor = "#FF6B6B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F1E6"
+textColor = "#1E1B16"
+font = "sans serif"

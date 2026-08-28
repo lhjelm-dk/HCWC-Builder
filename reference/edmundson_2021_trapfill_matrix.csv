@@ -1,0 +1,25 @@
+# Edmundson et al. -- EXACT normalised forward trap-fill probabilities (their Fig. 11),
+# read from the authors' own supplement (sheet 'Probability Tree 4x3x3 matrix'), NOT
+# digitised from the figure. Source https://osf.io/6ysbv/ , CC-BY 4.0.
+#
+# n and the two censored counts are recounted here from the 242-row input table.
+# p_fill_100 reproduces exactly as n_filled_authors / n.
+#
+# The probability-tree sheet writes the middle trap-height bin as "251-300"; the input
+# table calls the same bin "151-300m" and the 12/55/20 counts match. A typo, not a bin.
+#
+# CAVEATS. Discoveries only, so this is P(trap fill | discovery). And the 100% column
+# is not a fill outcome like the other three -- it is the RIGHT-CENSORING rate, the
+# fraction of traps whose seal capacity was never observed because geometry bound the
+# column first. Reading it as "how often do traps fill" is fine; reading the four
+# columns together as a column-height distribution is not. See hcwc/core/censoring.py.
+trap_height_bin,burial_depth_bin,n,n_filled_authors,n_filled_rule,p_fill_0_50,p_fill_51_75,p_fill_76_99,p_fill_100
+0-150m,0-1500m,23,13,13,0.130435,0.130435,0.173913,0.565217
+0-150m,1501-3000m,55,33,32,0.090909,0.218182,0.090909,0.6
+0-150m,3000+m,27,20,20,0.037037,0.074074,0.148148,0.740741
+151-300m,0-1500m,12,1,1,0.25,0.5,0.166667,0.083333
+151-300m,1501-3000m,55,24,24,0.109091,0.236364,0.218182,0.436364
+151-300m,3000+m,20,10,10,0.05,0.25,0.2,0.5
+300+m,0-1500m,3,0,0,0.666667,0.333333,0,0
+300+m,1501-3000m,23,2,2,0.304348,0.347826,0.26087,0.086957
+300+m,3000+m,24,8,9,0.125,0.291667,0.25,0.333333

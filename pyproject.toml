@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hcwc-builder"
+version = "0.0.1"
+description = "Builds a hydrocarbon-water contact distribution from competing geological limits"
+requires-python = ">=3.11"
+# Floors kept identical to requirements.txt on purpose. Two lists that disagree is
+# one list too many -- the same lesson WellVolPOS learned on 2026-08-19.
+dependencies = [
+    "numpy>=2.1",
+    "pandas>=2.2",
+    "scipy>=1.14",
+    "plotly>=5.24",
+    "streamlit>=1.40",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+    "error::RuntimeWarning",
+    "ignore::DeprecationWarning",
+    "ignore:.*deprecated.*:UserWarning",
+]
+
+[tool.setuptools.packages.find]
+include = ["hcwc*"]

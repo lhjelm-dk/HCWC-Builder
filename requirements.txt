@@ -1,0 +1,13 @@
+# What the app needs to run. Nothing here is optional.
+#
+# **Floors, not pins**, matching WellVolPOS and E-POS: the test suite guards against
+# drift, while pinned versions break installation wherever no matching wheel exists.
+# These floors imply Python 3.11+; numpy 2.1 and scipy 1.14 publish no wheels for 3.9.
+# On Streamlit Community Cloud set the Python version under *Advanced settings* when
+# you create the app -- it cannot be changed afterwards.
+numpy>=2.1
+pandas>=2.2
+scipy>=1.14
+plotly>=5.24
+streamlit>=1.40
+openpyxl>=3.1

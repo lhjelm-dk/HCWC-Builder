@@ -1,0 +1,402 @@
+"""Seal capacity: capillary entry pressure, buoyancy, and the column a seal can hold.
+
+Schowalter's (1979) balance, from published entry-pressure calibrations, with every intermediate
+quantity carrying its unit in its name.
+
+**That naming is not decoration**, and :data:`UNIT_TRAPS` is why. Two conversions in this
+calculation are easy to get wrong, both fail *upward*, and both produce seal capacities that look
+entirely plausible on a chart. They are stated there and asserted in ``tests/test_seals.py``.
+
+Sources:
+
+* **Aplin & Yang (1998)** — interfacial tension against temperature; pore-throat radius against void ratio.
+* **Hansen (1996)** — the porosity–depth calibration.
+* **Sperrevik et al. (2002)**, **Manzocchi et al. (1999)** — fault-rock permeability.
+* Entry-pressure-against-porosity curves from four independent datasets, reproduced as published:
+  Ibrahim, Hildebrand, PetroMod(R) and Greenland.
+"""
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+from typing import Callable
+
+import numpy as np
+
+#: Standard gravity, m/s^2.
+G = 9.81
+
+#: 1 dyne/cm = 1e-5 N / 1e-2 m = 1e-3 N/m. Identical to 1 mN/m, which is how modern
+#: laboratory reports quote interfacial tension.
+DYNE_PER_CM_TO_N_PER_M = 1e-3
+
+UNIT_TRAPS = """
+Two conversions in this calculation are easy to get wrong. Both fail *upward*, both give a
+seal capacity that looks plausible, and they compound.
+
+1  Interfacial tension is quoted in dyne/cm. The conversion to N/m is `x 1e-3`. Doing it
+   with `/100` makes the capillary entry pressure, and every column height derived from
+   it, **10x too high** — 787 m where the same inputs give 79 m.
+
+2  Schowalter's balance divides by `g x (rho_w - rho_hc)`. Dropping `g` and dividing by the
+   density contrast alone is **9.81x too high** on its own, and **98.1x** combined with the
+   first: 4828 m where the correct answer is 49 m.
+
+The cross-check that catches both: the published entry-pressure models return 67-351 m across
+the four datasets at 2050 m. A corrected calculation gives 79 m and sits among them. Anything
+in the hundreds or thousands does not.
+"""
+
+
+# --------------------------------------------------------------------------- fluid properties
+def interfacial_tension_gas_dyne_cm(temperature_c: float) -> float:
+    """Gas/water interfacial tension, after Aplin & Yang (1998)."""
+    return 91.657 * math.exp(-0.0126 * temperature_c)
+
+
+def interfacial_tension_oil_dyne_cm(temperature_c: float) -> float:
+    """Oil/water interfacial tension, after Aplin & Yang (1998).
+
+    Linear, so it goes negative above about 132 C. Guarded here, because a negative interfacial
+    tension would silently produce a negative column height.
+    """
+    gamma = -0.1886 * temperature_c + 24.866
+    if gamma <= 0:
+        raise ValueError(
+            f"the Aplin & Yang oil correlation gives a non-positive interfacial tension "
+            f"({gamma:.3g} dyne/cm) at {temperature_c} C; it is a linear fit and is not valid "
+            f"above about 132 C"
+        )
+    return gamma
+
+
+# --------------------------------------------------------------------------- pore geometry
+def void_ratio_from_porosity(porosity_frac: float) -> float:
+    """``e = phi / (1 - phi)``.
+
+    Provided because porosity and void ratio are commonly entered as two independent numbers and
+    then disagree: 0.30 porosity is a void ratio of 0.4286, not 0.40. Deriving one from the other
+    removes the chance to disagree.
+    """
+    if not 0.0 < porosity_frac < 1.0:
+        raise ValueError(f"porosity must be a fraction strictly inside (0, 1), got {porosity_frac}")
+    return porosity_frac / (1.0 - porosity_frac)
+
+
+def pore_throat_radius_nm(void_ratio: float) -> float:
+    """Pore-throat radius in nanometres from void ratio, after Aplin & Yang (1998).
+
+   . A quartic fit, so it is only meaningful over the range it was fitted to —
+    roughly void ratios 0.1 to 1.0, i.e. porosities of about 9 % to 50 %.
+    """
+    e = void_ratio
+    return 393.974 * e**4 + 463.27 * e**3 - 323.62 * e**2 + 89.439 * e + 8.7528
+
+
+def pore_throat_radius_m(void_ratio: float) -> float:
+    """As :func:`pore_throat_radius_nm`, in metres — the unit the pressure formulae want."""
+    return pore_throat_radius_nm(void_ratio) * 1e-9
+
+
+def porosity_from_depth(depth_m: float) -> float:
+    """Porosity as a fraction, from the Hansen (1996) depth calibration."""
+    return 0.71 * math.exp(-0.00051 * depth_m)
+
+
+def depth_from_porosity(porosity_frac: float) -> float:
+    """Inverse of :func:`porosity_from_depth`."""
+    if not 0.0 < porosity_frac < 0.71:
+        raise ValueError(
+            f"the Hansen calibration reaches 0.71 at the surface and decays; "
+            f"{porosity_frac} is outside (0, 0.71)"
+        )
+    return math.log(porosity_frac / 0.71) / -0.00051
+
+
+# --------------------------------------------------------------------------- pressures
+def capillary_entry_pressure_pa(interfacial_tension_dyne_cm: float, contact_angle_rad: float,
+                                pore_throat_radius_m: float) -> float:
+    """``Pc = 2 gamma cos(theta) / r``, in pascals.
+
+    **This is the function the first unit trap lives in**: converting dyne/cm with ``/100``
+    instead of ``x 1e-3`` makes it ten times too large. See :data:`UNIT_TRAPS`.
+    """
+    if pore_throat_radius_m <= 0:
+        raise ValueError("pore-throat radius must be positive")
+    gamma = interfacial_tension_dyne_cm * DYNE_PER_CM_TO_N_PER_M
+    return 2.0 * gamma * math.cos(contact_angle_rad) / pore_throat_radius_m
+
+
+def buoyancy_pressure_pa(column_height_m: float, water_density_g_cm3: float,
+                         hc_density_g_cm3: float) -> float:
+    """``dP = (rho_w - rho_hc) g h``, in pascals."""
+    delta_rho = (water_density_g_cm3 - hc_density_g_cm3) * 1000.0
+    if delta_rho <= 0:
+        raise ValueError(
+            f"water density ({water_density_g_cm3}) must exceed hydrocarbon density "
+            f"({hc_density_g_cm3}); nothing is buoyant otherwise"
+        )
+    return delta_rho * G * column_height_m
+
+
+def max_column_height_m(interfacial_tension_dyne_cm: float, contact_angle_rad: float,
+                        seal_pore_throat_radius_m: float, water_density_g_cm3: float,
+                        hc_density_g_cm3: float,
+                        reservoir_pore_throat_radius_m: float | None = None) -> float:
+    """The tallest column the seal can hold, in metres.
+
+    With ``reservoir_pore_throat_radius_m``, the reservoir's own entry pressure is subtracted —
+    the physically complete form, since hydrocarbon already occupies the reservoir pores and only
+    the *difference* in entry pressure has to be overcome. That is where the second unit trap
+    lives — see :data:`UNIT_TRAPS`. Without it, the seal-only form.
+    """
+    delta_rho = (water_density_g_cm3 - hc_density_g_cm3) * 1000.0
+    if delta_rho <= 0:
+        raise ValueError(
+            f"water density ({water_density_g_cm3}) must exceed hydrocarbon density "
+            f"({hc_density_g_cm3}); nothing is buoyant otherwise"
+        )
+    pc = capillary_entry_pressure_pa(interfacial_tension_dyne_cm, contact_angle_rad,
+                                     seal_pore_throat_radius_m)
+    if reservoir_pore_throat_radius_m is not None:
+        if reservoir_pore_throat_radius_m <= seal_pore_throat_radius_m:
+            raise ValueError(
+                "the reservoir's pore throats must be larger than the seal's, or it is not a seal; "
+                f"got seal {seal_pore_throat_radius_m:g} m, reservoir "
+                f"{reservoir_pore_throat_radius_m:g} m"
+            )
+        pc -= capillary_entry_pressure_pa(interfacial_tension_dyne_cm, contact_angle_rad,
+                                          reservoir_pore_throat_radius_m)
+    return pc / (delta_rho * G)
+
+
+def column_height_from_entry_pressure_m(entry_pressure_bar: float, water_density_g_cm3: float,
+                                        hc_density_g_cm3: float) -> float:
+    """Column height from a measured or modelled entry pressure in bar.
+
+    The independent route to the same answer, and therefore the cross-check that catches both unit
+    traps: two routes disagreeing by an order of magnitude means only one of them can be right.
+    """
+    delta_rho = (water_density_g_cm3 - hc_density_g_cm3) * 1000.0
+    if delta_rho <= 0:
+        raise ValueError("water density must exceed hydrocarbon density")
+    if entry_pressure_bar <= 0:
+        raise ValueError(
+            f"entry pressure is {entry_pressure_bar:.3g} bar, which is not physical. The four "
+            f"published curves are *fits*, and the linear and polynomial ones go negative when "
+            f"extrapolated to high porosity -- PetroMod crosses zero at about 28.5 %. The "
+            f"chart will happily plot those negative values; this refuses them, because a rock "
+            f"with no entry pressure is not a seal."
+        )
+    return entry_pressure_bar * 1e5 / (delta_rho * G)
+
+
+# --------------------------------------------------------------------------- entry pressure models
+def _ibrahim(porosity_pct: float) -> float:
+    p = porosity_pct
+    return (-0.0000003 * p**5 + 0.00007 * p**4 - 0.0063 * p**3
+            + 0.2756 * p**2 - 5.9528 * p + 52.836)
+
+
+def _hildebrand(porosity_pct: float) -> float:
+    return 48.793 * math.exp(-0.123 * porosity_pct)
+
+
+def _petromod(porosity_pct: float) -> float:
+    return -1.7345 * porosity_pct + 49.485
+
+
+def _greenland(porosity_pct: float) -> float:
+    if porosity_pct <= 0:
+        raise ValueError("the Greenland power law is undefined at zero porosity")
+    return 260.19 * porosity_pct**-0.964
+
+
+#: name -> entry pressure in **bar** from porosity in **percent**. Four independent datasets,
+#: reproduced as published. They disagree by a factor of five at
+#: 25 % porosity, which is the honest state of the art and is why all four are offered rather
+#: than one being chosen.
+#:
+#: **They are fits, and they misbehave outside the porosity range they were fitted over.**
+#: PetroMod is linear and crosses zero near 28.5 % porosity; Ibrahim is a quintic and turns over;
+#: Greenland is a power law and diverges towards zero porosity. Callers get NaN rather than a
+#: negative or absurd column height -- see :func:`column_height_from_entry_pressure_m`.
+ENTRY_PRESSURE_MODELS: dict[str, Callable[[float], float]] = {
+    "Ibrahim": _ibrahim,
+    "Hildebrand": _hildebrand,
+    "PetroMod": _petromod,
+    "Greenland": _greenland,
+}
+
+#: The uncertainty convention: shift porosity by +/- 5 **percentage points**, which moves entry
+#: pressure the opposite way.
+POROSITY_UNCERTAINTY_PCT = 5.0
+
+
+def entry_pressure_bar(model: str, porosity_pct: float, *, case: str = "mid") -> float:
+    """Entry pressure in bar for one model, with low/mid/high porosity cases.
+
+    ``case`` is ``"low"``, ``"mid"`` or ``"high"`` in **entry pressure**, not in porosity — a *low*
+    entry pressure is the *high* porosity case. Naming the case after the answer rather than the
+    input is deliberate: it is the seal capacity the user is reasoning about, and a
+    ``-0.05 / mid / +0.05`` heading is a standing invitation to read it backwards.
+    """
+    if model not in ENTRY_PRESSURE_MODELS:
+        raise ValueError(f"unknown model {model!r}; choose from {sorted(ENTRY_PRESSURE_MODELS)}")
+    shift = {"low": +POROSITY_UNCERTAINTY_PCT, "mid": 0.0, "high": -POROSITY_UNCERTAINTY_PCT}
+    if case not in shift:
+        raise ValueError(f"case must be low, mid or high; got {case!r}")
+    return ENTRY_PRESSURE_MODELS[model](porosity_pct + shift[case])
+
+
+def entry_pressure_spread(porosity_pct: float) -> dict[str, dict[str, float]]:
+    """All four models at low/mid/high, for the comparison plot. Bar."""
+    out: dict[str, dict[str, float]] = {}
+    for name in ENTRY_PRESSURE_MODELS:
+        row = {}
+        for case in ("low", "mid", "high"):
+            try:
+                value = entry_pressure_bar(name, porosity_pct, case=case)
+            except ValueError:
+                # Greenland is a power law and is undefined at or below zero porosity, which the
+                # high case reaches for a shallow section. A spreadsheet shows #NUM! and says nothing.
+                value = float("nan")
+            # A fit extrapolated past its range can return a negative pressure. That is not a
+            # weaker seal, it is no longer a seal, and it must not be plotted as a column height.
+            row[case] = value if value > 0 else float("nan")
+        out[name] = row
+    return out
+
+
+# --------------------------------------------------------------------------- fault permeability
+def sperrevik_permeability_md(sgr: float, max_burial_depth_m: float,
+                              faulting_depth_m: float) -> float:
+    """Fault-rock permeability in mD, after Sperrevik et al. (2002).
+
+    ``k = 80000 exp[-(19.4 SGR + 0.00403 Zmax + (0.0055 Zf - 12.5)(1 - SGR)^7)]``
+
+    ``sgr`` is the shale gouge ratio as a **fraction**. ``faulting_depth_m`` is the depth at which
+    the fault was active, which is generally shallower than the maximum burial depth.
+    """
+    if not 0.0 <= sgr <= 1.0:
+        raise ValueError(f"SGR is a fraction in [0, 1], got {sgr}")
+    exponent = (19.4 * sgr + 0.00403 * max_burial_depth_m
+                + (0.0055 * faulting_depth_m - 12.5) * (1.0 - sgr) ** 7)
+    return 80000.0 * math.exp(-exponent)
+
+
+def manzocchi_permeability_md(sgr: float, throw_m: float, a1: float = 4.0, a2: float = 0.25,
+                              a3: float = 5.0) -> float:
+    """Fault-rock permeability in mD, after Manzocchi et al. (1999).
+
+    ``log10(k) = -a1 SGR - a2 log10(D) (1 - SGR)^a3``
+
+    Worth transcribing carefully: ``(1-SGR)*A3`` for ``(1-SGR)^A3`` is a single character and
+    changes the permeability by orders of magnitude. The published form is what is implemented.
+    """
+    if not 0.0 <= sgr <= 1.0:
+        raise ValueError(f"SGR is a fraction in [0, 1], got {sgr}")
+    if throw_m <= 0:
+        raise ValueError("fault throw must be positive; log10 of it is taken")
+    return 10.0 ** (-a1 * sgr - a2 * math.log10(throw_m) * (1.0 - sgr) ** a3)
+
+
+# --------------------------------------------------------------------------- vectorised helper
+def max_column_height_curve(depths_m: np.ndarray, water_density_g_cm3: float,
+                            hc_density_g_cm3: float, model: str = "Hildebrand",
+                            case: str = "mid") -> np.ndarray:
+    """Seal capacity against depth, via Hansen porosity and one entry-pressure model.
+
+    The natural input to the capillary limits in the engine: it produces the column a seal can
+    support at each depth, which is what the limit distribution is elicited around.
+    """
+    out = np.empty(np.shape(depths_m), dtype=float)
+    for i, z in np.ndenumerate(np.asarray(depths_m, dtype=float)):
+        phi_pct = porosity_from_depth(float(z)) * 100.0
+        try:
+            pe = entry_pressure_bar(model, phi_pct, case=case)
+            out[i] = column_height_from_entry_pressure_m(pe, water_density_g_cm3, hc_density_g_cm3)
+        except ValueError:
+            out[i] = float("nan")
+    return out
+
+
+# --------------------------------------------------------------------------- sampled capacity
+@dataclass(frozen=True)
+class SealInputs:
+    """Seal-capacity inputs as ranges, so the calculator can produce a *distribution*.
+
+    The deterministic form above answers "what column does this seal hold". A limit needs "what
+    column *might* it hold", and the two differ by a lot: ``Pc`` goes as ``1/r``, so the spread on
+    pore-throat radius dominates everything else here. A calculator that returns one number invites
+    an assessor to type it in as a mode and invent a spread — this samples the spread they actually
+    stated instead.
+
+    Each pair is a (low, high) range sampled uniformly. Uniform rather than triangular on purpose:
+    nothing constrains the shape, and a PERT here would be inventing a mode nobody
+    elicited.
+    """
+    temperature_c: tuple[float, float] = (70.0, 90.0)
+    contact_angle_deg: tuple[float, float] = (0.0, 30.0)
+    seal_radius_um: tuple[float, float] = (0.1, 0.5)
+    reservoir_radius_um: tuple[float, float] = (0.8, 3.0)
+    water_density_g_cm3: tuple[float, float] = (1.00, 1.10)
+    hc_density_g_cm3: tuple[float, float] = (0.70, 0.85)
+    fluid: str = "Gas"
+    subtract_reservoir: bool = True
+
+    def __post_init__(self) -> None:
+        for name in ("temperature_c", "contact_angle_deg", "seal_radius_um",
+                     "reservoir_radius_um", "water_density_g_cm3", "hc_density_g_cm3"):
+            lo, hi = getattr(self, name)
+            if hi < lo:
+                raise ValueError(f"{name}: the high value must not be below the low one")
+        if self.seal_radius_um[1] >= self.reservoir_radius_um[0]:
+            raise ValueError(
+                "the seal's pore throats overlap the reservoir's. A seal is a seal because its "
+                "throats are tighter; if the ranges overlap, some realisations have a reservoir "
+                "tighter than its own seal and no column at all"
+            )
+        if self.hc_density_g_cm3[1] >= self.water_density_g_cm3[0]:
+            raise ValueError(
+                "the hydrocarbon and water density ranges overlap, so some realisations have "
+                "nothing buoyant"
+            )
+        if self.fluid not in ("Gas", "Oil"):
+            raise ValueError("fluid must be 'Gas' or 'Oil'")
+
+
+def sample_max_column_m(inputs: SealInputs, n: int, seed: int = 20260825) -> np.ndarray:
+    """A distribution of the column the seal can hold, for use as a limit.
+
+    Vectorised over realisations. The interfacial-tension correlation is applied per realisation
+    from the sampled temperature, so a hot prospect gets a weaker seal in every draw rather than on
+    average.
+    """
+    rng = np.random.default_rng(seed)
+
+    def u(pair: tuple[float, float]) -> np.ndarray:
+        lo, hi = pair
+        return np.full(n, lo) if hi == lo else rng.uniform(lo, hi, n)
+
+    temperature = u(inputs.temperature_c)
+    if inputs.fluid == "Gas":
+        gamma = 91.657 * np.exp(-0.0126 * temperature)
+    else:
+        gamma = -0.1886 * temperature + 24.866
+        if np.any(gamma <= 0):
+            raise ValueError(
+                "the Aplin & Yang oil correlation goes non-positive above about 132 C, and the "
+                "temperature range reaches it"
+            )
+    theta = np.radians(u(inputs.contact_angle_deg))
+    r_seal = u(inputs.seal_radius_um) * 1e-6
+    rho_w = u(inputs.water_density_g_cm3)
+    rho_hc = u(inputs.hc_density_g_cm3)
+    delta_rho = (rho_w - rho_hc) * 1000.0
+
+    pc = 2.0 * gamma * DYNE_PER_CM_TO_N_PER_M * np.cos(theta) / r_seal
+    if inputs.subtract_reservoir:
+        r_res = u(inputs.reservoir_radius_um) * 1e-6
+        pc = pc - 2.0 * gamma * DYNE_PER_CM_TO_N_PER_M * np.cos(theta) / r_res
+    return pc / (delta_rho * G)
