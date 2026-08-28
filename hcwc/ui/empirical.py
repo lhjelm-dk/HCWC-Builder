@@ -132,6 +132,21 @@ def _samples_for(source: str, closures: tuple[float, ...], burial_m: float,
     return _family_samples(source, closures, burial_m, n)
 
 
+#: Probabilities the probit axis is ticked at. Chosen to be the ones people quote (P90/P50/P10)
+#: plus enough tail to show where the curves separate, which is the point of the scale.
+PROBIT_TICKS = (0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99)
+
+#: How close to 0 or 1 a probability may get before the probit transform sends it to infinity.
+#: An exceedance curve legitimately reaches exactly 1 at the origin and exactly 0 past the spill,
+#: and both would otherwise take the axis with them.
+PROBIT_CLIP = 1e-4
+
+
+def _probit(p: np.ndarray) -> np.ndarray:
+    """``z = Phi^-1(p)``, clipped so the certain ends of an exceedance curve stay on the page."""
+    return norm.ppf(np.clip(np.asarray(p, dtype=float), PROBIT_CLIP, 1.0 - PROBIT_CLIP))
+
+
 def _exceedance(samples: np.ndarray, grid: np.ndarray) -> np.ndarray:
     return (samples[None, :] >= grid[:, None]).mean(axis=1)
 
@@ -595,7 +610,7 @@ What follows is a disagreement about **one estimator**, not about the data.
     if imported is not None:
         options.append(imported_label(imported))
 
-    f1, f2 = st.columns([2, 1])
+    f1, f2, f3 = st.columns([2, 1, 1])
     source = f1.radio(
         "Benchmark", options, horizontal=True,
         help="The second option is the paper's own naive fit, drawn on the same axes. The gap "
@@ -610,6 +625,17 @@ What follows is a disagreement about **one estimator**, not about the data.
                                   "not move with depth. The NCS fits use burial depth, and so "
                                   "does an imported dataset that carries one \u2014 disabled here when "
                                   "it does not.")
+    scale = f3.radio(
+        "Vertical scale", ["Linear", "Probit"], horizontal=True, key="family_scale",
+        help="Probit plots the normal score of the probability, so a lognormal column-height "
+             "distribution becomes a straight line. Curvature then means departure from "
+             "lognormal, and the tails stop being squashed against the top and bottom.")
+    probit = scale == "Probit"
+
+    def _y(p):
+        """Every probability on this figure goes through here, so none can miss the transform."""
+        return _probit(p) if probit else p
+
 
     samples = _samples_for(source, CLOSURE_FAMILY, float(burial))
     grid = np.linspace(0.0, max(CLOSURE_FAMILY), 400)
@@ -620,15 +646,16 @@ What follows is a disagreement about **one estimator**, not about the data.
         drawn = samples[closure]
         spill = float(np.mean(drawn >= closure - 1e-9))
         inside = grid[grid < closure]
-        fam.add_scatter(x=inside, y=_exceedance(drawn, inside), mode="lines",
+        fam.add_scatter(x=inside, y=_y(_exceedance(drawn, inside)), mode="lines",
                         name=f"{closure:,.0f} m closure",
                         line=dict(color=colour, width=2.5))
         # The drop: the curve does not decay to zero, it stops, and the height of the stop is the
         # filled-to-spill mass. Dashed so it reads as a discontinuity rather than as data.
-        fam.add_scatter(x=[closure, closure], y=[spill, 0.0], mode="lines", showlegend=False,
+        fam.add_scatter(x=[closure, closure], y=_y([spill, PROBIT_CLIP]), mode="lines",
+                        showlegend=False,
                         line=dict(color=colour, width=2.0, dash="dot"),
                         hovertemplate=f"fills to spill: {spill:.0%}<extra></extra>")
-        fam.add_scatter(x=[closure], y=[spill], mode="markers", showlegend=False,
+        fam.add_scatter(x=[closure], y=_y([spill]), mode="markers", showlegend=False,
                         marker=dict(color=colour, size=8),
                         hovertemplate=f"{closure:,.0f} m closure<br>"
                                       f"fills to spill: {spill:.0%}<extra></extra>")
@@ -652,7 +679,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             matched = _samples_for(source, (round(own_relief, 1),), float(burial))
             if matched:
                 drawn = next(iter(matched.values()))
-                fam.add_scatter(x=built_grid, y=_exceedance(drawn, built_grid), mode="lines",
+                fam.add_scatter(x=built_grid, y=_y(_exceedance(drawn, built_grid)), mode="lines",
                                 name=f"benchmark at YOUR relief ({own_relief:,.0f} m)",
                                 line=dict(color="#555555", width=3, dash="dash"))
 
@@ -664,26 +691,53 @@ What follows is a disagreement about **one estimator**, not about the data.
             posterior_column = np.asarray(overlay["depths_m"], dtype=float) - apex_mid
             fam.add_scatter(
                 x=built_grid,
-                y=np.interp(built_grid, posterior_column,
-                            np.asarray(overlay["pos_curve"], dtype=float)
-                            / max(float(overlay["posterior_pos"]), 1e-12)),
+                y=_y(np.interp(built_grid, posterior_column,
+                               np.asarray(overlay["pos_curve"], dtype=float)
+                               / max(float(overlay["posterior_pos"]), 1e-12))),
                 # Same weight and style as the geological curve, different colour. They are two
                 # readings of the same prospect and the question is which is deeper -- a dotted
                 # line reads as provisional or as a construction line, which this is not.
                 mode="lines", name="THIS PROSPECT, given the DHI",
                 line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], width=4.5))
 
-        fam.add_scatter(x=built_grid, y=_exceedance(column, built_grid), mode="lines",
+        fam.add_scatter(x=built_grid, y=_y(_exceedance(column, built_grid)), mode="lines",
                         name="THIS PROSPECT, geological",
                         line=dict(color=PROSPECT, width=4.5))
-        fam.add_scatter(x=[float(np.median(column))], y=[0.5], mode="markers", showlegend=False,
+        fam.add_scatter(x=[float(np.median(column))], y=_y([0.5]), mode="markers",
+                        showlegend=False,
                         marker=dict(color=PROSPECT, size=11, symbol="diamond"),
                         hovertemplate="built P50 %{x:,.0f} m<extra></extra>")
 
     fam.update_layout(xaxis_title="Hydrocarbon column (m)",
                       yaxis_title="Probability the column is at least this tall",
-                      yaxis=dict(range=[0, 1.02]), height=460, margin=dict(t=20),
-                      legend=dict(orientation="h", y=-0.18))
+                      height=460, margin=dict(t=20), legend=dict(orientation="h", y=-0.18))
+    if probit:
+        # Ticked in probability and positioned in normal score, so the reader never has to think
+        # in z: the axis still says 0.9, it is just no longer evenly spaced.
+        fam.update_yaxes(tickmode="array",
+                         tickvals=[float(_probit(p)) for p in PROBIT_TICKS],
+                         ticktext=[f"{p:.2f}".rstrip("0").rstrip(".") for p in PROBIT_TICKS],
+                         range=[float(_probit(PROBIT_TICKS[0])) - 0.3,
+                                float(_probit(PROBIT_TICKS[-1])) + 0.3],
+                         title_text="P(column at least this tall) \u2014 probit scale")
+        # **And the x-axis goes logarithmic with it.** A lognormal is straight on probit-y against
+        # LOG-x, not against linear x -- measured on a pure lognormal, r = -1.00000 against log x
+        # and only -0.921 against linear. Offering probit with a linear x would be offering the
+        # scale without the property it exists for, and the reader would read the residual
+        # curvature as a finding.
+        fam.update_xaxes(type="log", title_text="Hydrocarbon column (m) — log scale")
+    else:
+        fam.update_yaxes(range=[0, 1.02])
+    if probit:
+        st.caption(
+            "**Probit, and the x-axis has gone logarithmic with it.** A lognormal column-height "
+            "distribution is a **straight line** on these axes, so curvature is a departure from "
+            "lognormal rather than something to interpret — and the tails, squashed into a few "
+            "pixels on a linear axis, open up. The benchmark families are lognormal capacities "
+            "clipped at the closure, so each one runs straight and then turns over where the "
+            "closure starts binding: **the bend is the fill-to-spill point mass**, and where it "
+            "sits is the most useful thing on this chart."
+        )
     n.plot(fam, ("**Orange is the prospect you built on tab ③; the dashed grey beside it is the "
                  "benchmark at your own structural relief.** Those two are the like-for-like pair "
                  "— the six coloured curves are the family it sits inside, not its comparators. "

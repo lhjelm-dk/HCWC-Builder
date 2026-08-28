@@ -296,11 +296,11 @@ def render() -> None:
         f"<div style='margin:0.6rem 0 0.2rem;padding:0.55rem 0.9rem;border-left:5px solid {accent};"
         f"background:{theme.rgba(accent, 0.10)};border-radius:0 5px 5px 0'>"
         f"<span style='font-size:0.82rem;letter-spacing:0.05em;text-transform:uppercase;"
-        f"color:{theme.shade_hex(accent, -0.45)};font-weight:700'>Element chance &nbsp;P(G)</span>"
+        f"color:{theme.shade_hex(accent, -0.45)};font-weight:700'>Combined element chance &nbsp;P(G)</span>"
         f"<div style='font-size:2rem;font-weight:700;line-height:1.15;"
         f"color:{theme.shade_hex(accent, -0.5)}'>{product:.1%}</div>"
-        f"<span style='font-size:0.85rem;opacity:0.8'>every element works "
-        f"<b>at the crest</b> — the product of the four above</span></div>",
+        f"<span style='font-size:0.85rem;opacity:0.8'>the <b>product</b> of the four above — "
+        f"all four elements working <b>at the crest</b></span></div>",
         unsafe_allow_html=True)
 
     st.caption(
