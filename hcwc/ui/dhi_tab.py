@@ -54,9 +54,9 @@ def _resample(values: np.ndarray, weights: np.ndarray, n: int = 20_000) -> np.nd
     realisations*. Anything that wants a distribution rather than a curve needs those weights
     collapsed into a sample, and resampling with replacement is the standard way.
 
-    Its cost is honest and already reported: the effective sample size on this tab. A posterior
-    resting on 300 distinct realisations resampled to 20 000 is still a posterior resting on 300,
-    and the figure that says so is two sections up.
+    Its cost is honest and already reported: the effective sample size, in §5. A posterior
+    resting on 300 distinct realisations resampled to 20 000 is still a posterior resting on
+    300, and the number that says so is on the same tab.
     """
     total = float(np.sum(weights))
     if values.size == 0 or not np.isfinite(total) or total <= 0:
@@ -119,7 +119,89 @@ def render(n: Numbering | None = None) -> None:
     area = o3.number_input("Anomaly area (km²), optional", 0.0, 1000.0, 0.0, 0.5,
                            help="Used for the cross-check in §7. Leave at zero to skip.")
 
-    theme.heading(TAB, "2 · Detection function D(h)")
+    # ------------------------------------------------------------------ strength channel
+    theme.heading(TAB, "2 · DHI strength — the amplitude channel")
+    st.markdown(
+        """
+**A DHI carries two independent kinds of evidence, and this is the second one.** §1 recorded
+*where* the anomaly terminates; §§3–4 turn that geometry into a likelihood. This section is about
+its **character** instead: how bright, how consistent with the expected fluid response, how
+convincing as an amplitude. §5 combines the two.
+
+The construction is E-POS's, adapted from the custom R tool. Draw how a hydrocarbon-bearing
+prospect tends to look on a common strength axis, draw how a non-hydrocarbon one looks, then read
+off where *this* prospect sits. The likelihood ratio is the ratio of the two curve heights at that
+reading, `R = pdf_HC(s) / pdf_NoHC(s)`.
+
+**The axis has no units and does not need any.** R depends only on the *relative* heights of the
+two curves where you read them, so −100 to 100 is a canvas, not a measurement. What carries meaning
+is where your prospect sits relative to the two populations you drew.
+"""
+    )
+
+    strength = st.slider(
+        "DHI strength", -100.0, 100.0, dhi_core.DEFAULT_STRENGTH, 1.0,
+        help="E-POS's default is 7 — just above the crossing point, so an assessor who moves "
+             "nothing states a barely-supportive DHI rather than a neutral one.")
+
+    with st.expander("The two populations (E-POS defaults)"):
+        st.caption(
+            "Each case is a Gaussian given by its 1st and 99th percentiles. Widen a case to say "
+            "that class of prospect is more variable on this axis; move them apart to say the DHI "
+            "separates the two populations well. **Overlapping curves are the honest default** — a "
+            "DHI that cleanly separated hydrocarbon from brine would not need a probability.")
+        h1, h2, h3, h4 = st.columns(4)
+        hc = dhi_core.StrengthCase(
+            h1.number_input("HC, P1", -200.0, 200.0, -50.0, 5.0),
+            h2.number_input("HC, P99", -200.0, 200.0, 100.0, 5.0))
+        no_hc = dhi_core.StrengthCase(
+            h3.number_input("No HC, P1", -200.0, 200.0, -100.0, 5.0),
+            h4.number_input("No HC, P99", -200.0, 200.0, 50.0, 5.0))
+    model = dhi_core.StrengthModel(hc=hc, no_hc=no_hc)
+    r_strength = model.r_at(strength)
+    band, band_note = dhi_core.strength_bands(r_strength)
+
+    axis = np.linspace(-160.0, 160.0, 400)
+    figs = go.Figure()
+    figs.add_scatter(x=axis, y=hc.pdf(axis), mode="lines", name="hydrocarbon-bearing",
+                     line=dict(color=POSTERIOR, width=2.5))
+    figs.add_scatter(x=axis, y=no_hc.pdf(axis), mode="lines", name="not hydrocarbon-bearing",
+                     line=dict(color=PRIOR, width=2.5))
+    figs.add_scatter(x=[strength, strength], y=[0.0, max(float(hc.pdf(strength)),
+                                                         float(no_hc.pdf(strength)))],
+                     mode="lines", name="this prospect", line=dict(color=theme.INK, dash="dot"))
+    for case, colour in ((hc, POSTERIOR), (no_hc, PRIOR)):
+        figs.add_scatter(x=[strength], y=[float(case.pdf(strength))], mode="markers",
+                         showlegend=False, marker=dict(color=colour, size=9))
+    figs.update_layout(xaxis_title="DHI strength (arbitrary axis)", yaxis_title="Density",
+                       height=340, margin=dict(t=20), legend=dict(orientation="h", y=-0.22))
+    n.plot(figs, f"The two-curve strength model, read at **{strength:,.0f}**. R is the ratio of the "
+                 f"two marked heights — which is why the units on the axis never matter.")
+
+    # Two metrics, not three. "POS on strength alone" needs the prior, which is not computed until
+    # the channels are combined -- and a chance is a result rather than an input, so it belongs
+    # there and not here. It moved with the reorder rather than being dropped.
+    s1, s2 = st.columns(2)
+    s1.metric("R from strength", f"{r_strength:.2f}", band, delta_color="off")
+    s2.metric("DHI volume weight", f"{dhi_core.volume_weight(r_strength):.3f}",
+              "R / (R + 1)", delta_color="off")
+    st.caption(
+        f"**{band} — {band_note}** Simm's caution is worth repeating: for a *single* line of "
+        f"fluid-indicator evidence an honest R rarely exceeds about 3 either way, and anything past "
+        f"10 should send you back to the two curves rather than into the volumetrics.\n\n"
+        f"**Never read the band alone \u2014 read it against what it does to the prior, in \u00a75.** They "
+        f"can disagree in a way that misleads: at the default reading of 7 the band is "
+        f"*Negligible*, and yet a 30 % prior becomes **37.5 %**, a 7.5-point move from a slider "
+        f"nobody touched. The band grades the strength of the *evidence*; the shift also depends "
+        f"on where the prior already sat, and it is largest for the mid priors most prospects "
+        f"have.\n\n"
+        f"**The volume weight is not a POS.** It is `R / (R + 1)` — the weight the amplitude "
+        f"evidence alone would carry against an even prior. Quoting it as a chance of success is "
+        f"the error the name invites, and it is a common one."
+    )
+
+    # ------------------------------------------------------------------ combining
+    theme.heading(TAB, "3 · Detection function D(h)")
     st.markdown(
         "The chance a column of height *h* produces a **detectable** anomaly. Near zero below "
         "tuning thickness, rising through the resolution limit, then flat. It is what makes an "
@@ -151,7 +233,7 @@ def render(n: Numbering | None = None) -> None:
                  "hard-coded for that reason.")
 
     # ------------------------------------------------------------------ the update
-    theme.heading(TAB, "3 · POS against threshold")
+    theme.heading(TAB, "4 · POS against threshold")
     observation = DhiObservation(seen=seen, contact_m=contact if seen else None,
                                  pick_sigma_m=sigma, area_km2=area or None)
     try:
@@ -269,85 +351,6 @@ def render(n: Numbering | None = None) -> None:
         "separate numbers — which is why a volume must be taken at the same row as the chance "
         "beside it.")
 
-    # ------------------------------------------------------------------ strength channel
-    theme.heading(TAB, "4 · DHI strength — the amplitude channel")
-    st.markdown(
-        """
-§3 used the anomaly's **geometry** — where its termination was picked, and how likely an anomaly
-was to be detectable at all. This section uses its **character**: how bright, how consistent with
-the expected fluid response, how convincing as an amplitude.
-
-The construction is E-POS's, adapted from the custom R tool. Draw how a hydrocarbon-bearing
-prospect tends to look on a common strength axis, draw how a non-hydrocarbon one looks, then read
-off where *this* prospect sits. The likelihood ratio is the ratio of the two curve heights at that
-reading, `R = pdf_HC(s) / pdf_NoHC(s)`.
-
-**The axis has no units and does not need any.** R depends only on the *relative* heights of the
-two curves where you read them, so −100 to 100 is a canvas, not a measurement. What carries meaning
-is where your prospect sits relative to the two populations you drew.
-"""
-    )
-
-    strength = st.slider(
-        "DHI strength", -100.0, 100.0, dhi_core.DEFAULT_STRENGTH, 1.0,
-        help="E-POS's default is 7 — just above the crossing point, so an assessor who moves "
-             "nothing states a barely-supportive DHI rather than a neutral one.")
-
-    with st.expander("The two populations (E-POS defaults)"):
-        st.caption(
-            "Each case is a Gaussian given by its 1st and 99th percentiles. Widen a case to say "
-            "that class of prospect is more variable on this axis; move them apart to say the DHI "
-            "separates the two populations well. **Overlapping curves are the honest default** — a "
-            "DHI that cleanly separated hydrocarbon from brine would not need a probability.")
-        h1, h2, h3, h4 = st.columns(4)
-        hc = dhi_core.StrengthCase(
-            h1.number_input("HC, P1", -200.0, 200.0, -50.0, 5.0),
-            h2.number_input("HC, P99", -200.0, 200.0, 100.0, 5.0))
-        no_hc = dhi_core.StrengthCase(
-            h3.number_input("No HC, P1", -200.0, 200.0, -100.0, 5.0),
-            h4.number_input("No HC, P99", -200.0, 200.0, 50.0, 5.0))
-    model = dhi_core.StrengthModel(hc=hc, no_hc=no_hc)
-    r_strength = model.r_at(strength)
-    band, band_note = dhi_core.strength_bands(r_strength)
-
-    axis = np.linspace(-160.0, 160.0, 400)
-    figs = go.Figure()
-    figs.add_scatter(x=axis, y=hc.pdf(axis), mode="lines", name="hydrocarbon-bearing",
-                     line=dict(color=POSTERIOR, width=2.5))
-    figs.add_scatter(x=axis, y=no_hc.pdf(axis), mode="lines", name="not hydrocarbon-bearing",
-                     line=dict(color=PRIOR, width=2.5))
-    figs.add_scatter(x=[strength, strength], y=[0.0, max(float(hc.pdf(strength)),
-                                                         float(no_hc.pdf(strength)))],
-                     mode="lines", name="this prospect", line=dict(color=theme.INK, dash="dot"))
-    for case, colour in ((hc, POSTERIOR), (no_hc, PRIOR)):
-        figs.add_scatter(x=[strength], y=[float(case.pdf(strength))], mode="markers",
-                         showlegend=False, marker=dict(color=colour, size=9))
-    figs.update_layout(xaxis_title="DHI strength (arbitrary axis)", yaxis_title="Density",
-                       height=340, margin=dict(t=20), legend=dict(orientation="h", y=-0.22))
-    n.plot(figs, f"The two-curve strength model, read at **{strength:,.0f}**. R is the ratio of the "
-                 f"two marked heights — which is why the units on the axis never matter.")
-
-    s1, s2, s3 = st.columns(3)
-    s1.metric("R from strength", f"{r_strength:.2f}", band, delta_color="off")
-    s2.metric("DHI volume weight", f"{dhi_core.volume_weight(r_strength):.3f}",
-              "R / (R + 1)", delta_color="off")
-    s3.metric("POS on strength alone", f"{dhi_core.simm_update(prior_pos, r_strength):.1%}",
-              f"prior {prior_pos:.1%}")
-    st.caption(
-        f"**{band} — {band_note}** Simm's caution is worth repeating: for a *single* line of "
-        f"fluid-indicator evidence an honest R rarely exceeds about 3 either way, and anything past "
-        f"10 should send you back to the two curves rather than into the volumetrics.\n\n"
-        f"**Read the band and the POS move together, never the band alone.** They can disagree in a "
-        f"way that misleads: at the default reading of 7 the band is *Negligible*, and yet a 30 % "
-        f"prior becomes **37.5 %** — a 7.5-point move from a slider nobody touched. The band grades "
-        f"the strength of the *evidence*; the shift also depends on where the prior already sat, "
-        f"and it is largest for the mid priors most prospects have.\n\n"
-        f"**The volume weight is not a POS.** It is `R / (R + 1)` — the weight the amplitude "
-        f"evidence alone would carry against an even prior. Quoting it as a chance of success is "
-        f"the error the name invites, and it is a common one."
-    )
-
-    # ------------------------------------------------------------------ combining
     theme.heading(TAB, "5 · Combining the two channels")
     st.markdown(
         """
@@ -373,9 +376,13 @@ So the combination is discounted rather than taken raw.
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("R, geometry", _fmt_r(post.r_dhi),
-              "from §3" if not np.isnan(post.r_dhi) else "needs an assessment minimum",
+              "from §4" if not np.isnan(post.r_dhi) else "needs an assessment minimum",
               delta_color="off")
-    c2.metric("R, strength", _fmt_r(r_strength), "from §4", delta_color="off")
+    c2.metric("R, strength", _fmt_r(r_strength), "from §2", delta_color="off")
+    # Moved here from §2 by the reorder: it needs the prior, and a chance is a result rather than
+    # an input. It is the number to read the strength band against — see the caption in §2.
+    c2.metric("POS on strength alone", f"{dhi_core.simm_update(prior_pos, r_strength):.1%}",
+              f"prior {prior_pos:.1%}", delta_color="off")
     c3.metric("R, combined", _fmt_r(combined.r_combined),
               dhi_core.strength_bands(combined.r_combined)[0], delta_color="off")
     c4.metric("Prospect POS", f"{combined.posterior_pos:.1%}",
@@ -439,7 +446,7 @@ So the combination is discounted rather than taken raw.
             "away from — not a statement about the seismic. **Simm's caution applies: for a single "
             "line of fluid-indicator evidence an honest R rarely exceeds about 3 either way.** "
             "Widen the pick σ in §1, raise the assessment minimum on tab ②, or lower the detection "
-            "ceiling in §2, and watch it fall. If it will not fall, the model — not the DHI — is "
+            "ceiling in §3, and watch it fall. If it will not fall, the model — not the DHI — is "
             "asserting the answer."
         )
 

@@ -380,143 +380,156 @@ What follows is a disagreement about **one estimator**, not about the data.
                  "twice as steep, because censoring was suppressing the depth signal.")
 
     # ------------------------------------------------------------------ the issue
-    theme.heading(TAB, "3 · Why the published regression measures the wrong thing")
-    st.markdown(
-        """
-The quantity a pre-drill model needs is **seal capacity `S`** — the column the seal *could* hold.
-What is measured is the column that is *there*, and the two differ by the same identity this whole
-tool is built on:
-
-```
-observed column  C = min(S, H)          H = closure height
-```
-
-* **Underfilled** (`C < H`) — the seal bound the column, so `C = S`. Seal capacity is observed.
-* **Filled to spill** (`C = H`) — geometry bound it. All that is learned is `S ≥ H`.
-  **The observation is right-censored**; the seal's capacity was never tested.
-
-Hood (2019) states the geology plainly — pools controlled by geometric limits *"document the minimum
-column that the seal can support but not the upper limit"* — but the statistical consequence has not
-been carried into the published estimators. **111 of 242 rows, 46 %, are of this kind.**
-"""
-    )
-
-    n.markdown_table(
-        f"""
-| Log-log elasticity | As published (OLS) | Censoring-corrected (MLE) | |
-|---|---:|---:|---|
-| **Closure height** | {naive[1]:.3f} | **{fit.coefficients['trap_height']:.3f}** | overstated |
-| **Burial depth** | {naive[2]:.3f} | **{fit.coefficients['burial_depth']:.3f}** | **understated — roughly doubles** |
-""",
-        "Censoring biases the two **in opposite directions**, which is why fitting them one at a "
-        "time cannot reveal it. Closure height and burial depth are essentially uncorrelated here "
-        "(r = 0.085), so this is not confounding. Both terms are significant by likelihood ratio "
-        "(p = 8e-19 and p = 5e-4).",
-    )
-
-    st.markdown(
-        """
-**What this does to the paper's conclusions.** The primary finding — closure height matters — stands,
-but is overstated. The secondary finding, that burial depth is the *weaker* control, does **not**
-survive: corrected, it roughly doubles. That is the physically expected direction, because seals
-compact and strengthen with depth. Censoring was hiding the depth signal, because deep closures fill
-to spill more often and so contribute censored rather than informative observations.
-"""
-    )
-
-    with st.expander("Why not simply drop the filled-to-spill points?"):
+    # Sections 3 to 5 argue for the METHOD rather than about the reader's prospect, and they
+    # were about half of the longest tab in the app -- sitting between "here is the data" and
+    # "here is your prospect against it", which is the line a reader actually wants to walk.
+    # Folded rather than moved to a document: they are live figures computed from the data, and
+    # a static page would lose the calibration plot and the bias curve, which ARE the evidence.
+    with st.expander("**The case for the correction** — why the published fit is biased, "
+                     "whether ours holds up, and the bias it does not remove", expanded=False):
+        st.caption(
+            "Three sections of argument, kept because a correction nobody can check is worth "
+            "nothing — and folded because they are about the estimator, not about your "
+            "prospect. Open them when you want to disagree with the method; skip them when you "
+            "want to use it."
+        )
+        theme.heading(TAB, "3.1 · Why the published regression measures the wrong thing")
         st.markdown(
             """
-It is the obvious fix and it does not work. Dropping them trades censoring bias for **truncation
-bias**: conditioning on `S < H` keeps only low capacity at low closure height, which manufactures
-the same positive relationship a second way.
+    The quantity a pre-drill model needs is **seal capacity `S`** — the column the seal *could* hold.
+    What is measured is the column that is *there*, and the two differ by the same identity this whole
+    tool is built on:
 
-Simulated with seal capacity **completely independent** of closure height — zero physics, by
-construction, 242 points to match:
+    ```
+    observed column  C = min(S, H)          H = closure height
+    ```
 
-| Estimator | Slope (truth = 0.000) |
-|---|---:|
-| Naive OLS, all points | 0.580 |
-| OLS after dropping filled-to-spill | 0.543 |
-| **Censored MLE** | **−0.009** |
+    * **Underfilled** (`C < H`) — the seal bound the column, so `C = S`. Seal capacity is observed.
+    * **Filled to spill** (`C = H`) — geometry bound it. All that is learned is `S ≥ H`.
+      **The observation is right-censored**; the seal's capacity was never tested.
 
-Only the censored likelihood recovers the truth, at every correlation tested. Asserted in
-`tests/test_censoring.py`, so if the claim is wrong the suite fails.
-"""
+    Hood (2019) states the geology plainly — pools controlled by geometric limits *"document the minimum
+    column that the seal can support but not the upper limit"* — but the statistical consequence has not
+    been carried into the published estimators. **111 of 242 rows, 46 %, are of this kind.**
+    """
         )
 
-    # ------------------------------------------------------------------ calibration
-    theme.heading(TAB, "4 · Does the corrected model fit?")
-    bands = [(0, 150), (150, 250), (250, 400), (400, 10**9)]
-    labels, obs, mod, ns = [], [], [], []
-    for lo, hi in bands:
-        m = (h >= lo) & (h < hi)
-        labels.append(f"{lo}–{hi} m" if hi < 10**8 else f"> {lo} m")
-        obs.append(float(filled[m].mean()))
-        mod.append(float(np.mean([_p_spill(fit, hh, zz) for hh, zz in zip(h[m], z[m])])))
-        ns.append(int(m.sum()))
-    cal = go.Figure()
-    cal.add_bar(x=labels, y=obs, name="observed fill-to-spill rate", marker_color=CENSORED,
-                text=[f"n={v}" for v in ns], textposition="outside")
-    cal.add_bar(x=labels, y=mod, name="predicted by the censored model", marker_color=FITTED)
-    cal.update_layout(barmode="group", yaxis_title="P(filled to spill)", height=380,
-                      yaxis_range=[0, 0.8], legend=dict(orientation="h", y=-0.2),
-                      margin=dict(t=20), xaxis_title="Closure height")
-    n.plot(cal, "Calibration by closure-height band. The fitted model reproduces the observed fill "
-                "rate throughout — **this is what validates the parametric form**. The correction "
-                "is not buying a better story at the cost of fit.")
+        n.markdown_table(
+            f"""
+    | Log-log elasticity | As published (OLS) | Censoring-corrected (MLE) | |
+    |---|---:|---:|---|
+    | **Closure height** | {naive[1]:.3f} | **{fit.coefficients['trap_height']:.3f}** | overstated |
+    | **Burial depth** | {naive[2]:.3f} | **{fit.coefficients['burial_depth']:.3f}** | **understated — roughly doubles** |
+    """,
+            "Censoring biases the two **in opposite directions**, which is why fitting them one at a "
+            "time cannot reveal it. Closure height and burial depth are essentially uncorrelated here "
+            "(r = 0.085), so this is not confounding. Both terms are significant by likelihood ratio "
+            "(p = 8e-19 and p = 5e-4).",
+        )
 
-    st.warning(
-        f"""**A correction to an earlier draft of this tab.** It previously claimed the model's 39 %
-fill rate *at* 250 m matched Graham et al.'s independent global 40 %, and called that a cross-check.
-It was not one — Graham states a population **average** over closures *below* 250 m, not the value
-at 250 m. Compared properly the NCS gives **{filled[h < 250].mean():.0%}** against Graham's 40 %.
-That gap is a **real regional difference**, not a discrepancy: Edmundson et al. note the NCS is
-charge-rich, so its closures fill more often than the global average — itself a good illustration of
-Graham's warning against global benchmarks without trap-specific geology."""
-    )
+        st.markdown(
+            """
+    **What this does to the paper's conclusions.** The primary finding — closure height matters — stands,
+    but is overstated. The secondary finding, that burial depth is the *weaker* control, does **not**
+    survive: corrected, it roughly doubles. That is the physically expected direction, because seals
+    compact and strengthen with depth. Censoring was hiding the depth signal, because deep closures fill
+    to spill more often and so contribute censored rather than informative observations.
+    """
+        )
 
-    # ------------------------------------------------------------------ second bias
-    theme.heading(TAB, "5 · A second bias, which the correction does not remove")
-    st.markdown(
-        """
-The corrected closure-height elasticity is still ~0.70, higher than a rock property should be —
-seal capacity has no business caring how tall the closure is. The reason is not selection, it is
-measurement, and it applies to **every** study of this kind:
+        with st.expander("Why not simply drop the filled-to-spill points?"):
+            st.markdown(
+                """
+    It is the obvious fix and it does not work. Dropping them trades censoring bias for **truncation
+    bias**: conditioning on `S < H` keeps only low capacity at low closure height, which manufactures
+    the same positive relationship a second way.
 
-```
-column  height = contact − apex
-closure height = spill   − apex        ← the same apex pick
-```
+    Simulated with seal capacity **completely independent** of closure height — zero physics, by
+    construction, 242 points to match:
 
-They **share the apex**. A depth-conversion error moves both in the same direction and manufactures
-a relationship out of nothing — and no censored estimator can see it, because it is handed the
-mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing the same way.
-"""
-    )
-    sigmas = (0.0, 10.0, 25.0, 50.0, 75.0, 100.0)
-    nv, cn = _bias_curve(sigmas)
-    bias = go.Figure()
-    bias.add_scatter(x=list(sigmas), y=nv, mode="lines+markers", name="naive OLS",
-                     line=dict(color=PUBLISHED, width=3))
-    bias.add_scatter(x=list(sigmas), y=cn, mode="lines+markers", name="censored MLE",
-                     line=dict(color=FITTED, width=3))
-    bias.add_hline(y=0.0, line=dict(dash="dash", color="#555"),
-                   annotation_text="truth — no relationship at all", annotation_position="top left")
-    bias.add_vrect(x0=25, x1=75, fillcolor=CENSORED, opacity=0.10, line_width=0,
-                   annotation_text="typical NCS depth conversion, 1–3 % of 2 500 m",
-                   annotation_position="top right")
-    bias.update_layout(xaxis_title="Apex pick error σ (m)",
-                       yaxis_title="Estimated closure-height elasticity", height=400,
-                       legend=dict(orientation="h", y=-0.2), margin=dict(t=20))
-    n.plot(bias, f"Spurious elasticity from a shared apex pick, on data with **no true relationship "
-                 f"whatsoever**. At 50 m — 2 % at 2 500 m, ordinary depth conversion — the censored "
-                 f"estimator returns ~0.58. Our own {fit.coefficients['trap_height']:.2f} is "
-                 f"therefore an **upper bound, not an estimate**. The burial-depth result survives "
-                 f"this: the same absolute error is ~25 % of a 200 m closure but ~2 % of a 2 500 m "
-                 f"burial depth.")
+    | Estimator | Slope (truth = 0.000) |
+    |---|---:|
+    | Naive OLS, all points | 0.580 |
+    | OLS after dropping filled-to-spill | 0.543 |
+    | **Censored MLE** | **−0.009** |
 
-    # ------------------------------------------------------------------ benchmark families
+    Only the censored likelihood recovers the truth, at every correlation tested. Asserted in
+    `tests/test_censoring.py`, so if the claim is wrong the suite fails.
+    """
+            )
+
+        # ------------------------------------------------------------------ calibration
+        theme.heading(TAB, "3.2 · Does the corrected model fit?")
+        bands = [(0, 150), (150, 250), (250, 400), (400, 10**9)]
+        labels, obs, mod, ns = [], [], [], []
+        for lo, hi in bands:
+            m = (h >= lo) & (h < hi)
+            labels.append(f"{lo}–{hi} m" if hi < 10**8 else f"> {lo} m")
+            obs.append(float(filled[m].mean()))
+            mod.append(float(np.mean([_p_spill(fit, hh, zz) for hh, zz in zip(h[m], z[m])])))
+            ns.append(int(m.sum()))
+        cal = go.Figure()
+        cal.add_bar(x=labels, y=obs, name="observed fill-to-spill rate", marker_color=CENSORED,
+                    text=[f"n={v}" for v in ns], textposition="outside")
+        cal.add_bar(x=labels, y=mod, name="predicted by the censored model", marker_color=FITTED)
+        cal.update_layout(barmode="group", yaxis_title="P(filled to spill)", height=380,
+                          yaxis_range=[0, 0.8], legend=dict(orientation="h", y=-0.2),
+                          margin=dict(t=20), xaxis_title="Closure height")
+        n.plot(cal, "Calibration by closure-height band. The fitted model reproduces the observed fill "
+                    "rate throughout — **this is what validates the parametric form**. The correction "
+                    "is not buying a better story at the cost of fit.")
+
+        st.warning(
+            f"""**A correction to an earlier draft of this tab.** It previously claimed the model's 39 %
+    fill rate *at* 250 m matched Graham et al.'s independent global 40 %, and called that a cross-check.
+    It was not one — Graham states a population **average** over closures *below* 250 m, not the value
+    at 250 m. Compared properly the NCS gives **{filled[h < 250].mean():.0%}** against Graham's 40 %.
+    That gap is a **real regional difference**, not a discrepancy: Edmundson et al. note the NCS is
+    charge-rich, so its closures fill more often than the global average — itself a good illustration of
+    Graham's warning against global benchmarks without trap-specific geology."""
+        )
+
+        # ------------------------------------------------------------------ second bias
+        theme.heading(TAB, "3.3 · A second bias, which the correction does not remove")
+        st.markdown(
+            """
+    The corrected closure-height elasticity is still ~0.70, higher than a rock property should be —
+    seal capacity has no business caring how tall the closure is. The reason is not selection, it is
+    measurement, and it applies to **every** study of this kind:
+
+    ```
+    column  height = contact − apex
+    closure height = spill   − apex        ← the same apex pick
+    ```
+
+    They **share the apex**. A depth-conversion error moves both in the same direction and manufactures
+    a relationship out of nothing — and no censored estimator can see it, because it is handed the
+    mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing the same way.
+    """
+        )
+        sigmas = (0.0, 10.0, 25.0, 50.0, 75.0, 100.0)
+        nv, cn = _bias_curve(sigmas)
+        bias = go.Figure()
+        bias.add_scatter(x=list(sigmas), y=nv, mode="lines+markers", name="naive OLS",
+                         line=dict(color=PUBLISHED, width=3))
+        bias.add_scatter(x=list(sigmas), y=cn, mode="lines+markers", name="censored MLE",
+                         line=dict(color=FITTED, width=3))
+        bias.add_hline(y=0.0, line=dict(dash="dash", color="#555"),
+                       annotation_text="truth — no relationship at all", annotation_position="top left")
+        bias.add_vrect(x0=25, x1=75, fillcolor=CENSORED, opacity=0.10, line_width=0,
+                       annotation_text="typical NCS depth conversion, 1–3 % of 2 500 m",
+                       annotation_position="top right")
+        bias.update_layout(xaxis_title="Apex pick error σ (m)",
+                           yaxis_title="Estimated closure-height elasticity", height=400,
+                           legend=dict(orientation="h", y=-0.2), margin=dict(t=20))
+        n.plot(bias, f"Spurious elasticity from a shared apex pick, on data with **no true relationship "
+                     f"whatsoever**. At 50 m — 2 % at 2 500 m, ordinary depth conversion — the censored "
+                     f"estimator returns ~0.58. Our own {fit.coefficients['trap_height']:.2f} is "
+                     f"therefore an **upper bound, not an estimate**. The burial-depth result survives "
+                     f"this: the same absolute error is ~25 % of a 200 m closure but ~2 % of a 2 500 m "
+                     f"burial depth.")
+
+        # ------------------------------------------------------------------ benchmark families
     theme.heading(TAB, "6 · The benchmark families, and adding your own")
     imported = st.session_state.get("imported_dataset")
     n.table(

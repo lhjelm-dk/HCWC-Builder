@@ -38,6 +38,34 @@ Kind = Literal["Figure", "Table"]
 # be, which is worse than no label at all.
 
 
+#: Session key for the density control. Read through :func:`detail_is_full` so a run that never
+#: created the widget -- a headless test, an `AppTest` -- still renders everything.
+DETAIL_KEY = "caption_detail"
+
+
+def detail_is_full() -> bool:
+    return st.session_state.get(DETAIL_KEY, "Full") == "Full"
+
+
+def render_caption(label: str, caption: str) -> None:
+    """One numbered caption, at the density the reader asked for.
+
+    Split on the first blank line: paragraph one is the finding and always shows; the rest is the
+    argument for it and collapses in Brief. **Collapsed, not removed** -- later paragraphs
+    routinely carry the caveat that stops a figure being over-read, and a control that could hide
+    one would cost more than the words it saves.
+    """
+    head, _, tail = caption.partition("\n\n")
+    st.caption(f"**{label}** \u2014 {head}", unsafe_allow_html=True)
+    if not tail.strip():
+        return
+    if detail_is_full():
+        st.caption(tail, unsafe_allow_html=True)
+    else:
+        with st.expander("why", expanded=False):
+            st.caption(tail, unsafe_allow_html=True)
+
+
 @dataclass
 class Numbering:
     """One numbering sequence, for one tab.
@@ -94,7 +122,7 @@ class Numbering:
         """
         label = self.optional("Figure") if optional else self._label("Figure")
         st.plotly_chart(fig, use_container_width=use_container_width, key=label)
-        st.caption(f"**{label}** — {caption}", unsafe_allow_html=True)
+        render_caption(label, caption)
         return label
 
     def table(self, data, caption: str, *, hide_index: bool = True,
@@ -105,7 +133,7 @@ class Numbering:
         """
         label = self.optional("Table") if optional else self._label("Table")
         st.dataframe(data, hide_index=hide_index, use_container_width=True, key=label, **kwargs)
-        st.caption(f"**{label}** — {caption}", unsafe_allow_html=True)
+        render_caption(label, caption)
         return label
 
     def markdown_table(self, body: str, caption: str) -> str:
@@ -116,5 +144,5 @@ class Numbering:
         """
         label = self._label("Table")
         st.markdown(body)
-        st.caption(f"**{label}** — {caption}", unsafe_allow_html=True)
+        render_caption(label, caption)
         return label
