@@ -127,7 +127,7 @@ def _figure(samples: np.ndarray, colour: str, unit: str) -> go.Figure:
 def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
            default_form: str = "pert", span: tuple[float, float] = (50.0, 300.0),
            default_p_active: float = 1.0, n_preview: int = 20_000,
-           colour: str | None = None, help_text: str = "",
+           colour: str | None = None, help_text: str = "", default_source: str = "Typed",
            computed=None) -> Limit | None:
     """Render one limit's inputs and return the :class:`Limit`, or ``None`` if it is switched off.
 
@@ -135,6 +135,10 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
     ``(DepthDistribution, p_active, summary)`` triple. A radio at the top of the block chooses
     between *Typed* and any of them — the replacement for the buried Source cell, and the reason
     the charge filling, the seal capacity and the empirical fit are reachable at all.
+
+    ``default_source`` picks which of them the block opens on. It is *Typed* everywhere except the
+    top seal, where the calculator is the better answer than anything an assessor would type: `P_c`
+    goes as `1/r`, so the spread on pore-throat radius dominates, and a typed capacity hides that.
     """
     colour = colour or theme.PILLAR_COLOURS[group.value]
     include = st.toggle("Include this limit", value=True, key=f"{key}_on",
@@ -149,6 +153,10 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
 
     source = "Typed"
     if computed:
+        # Seeded once, then owned by the widget -- passing an index every run would fight a
+        # loaded prospect that had chosen differently.
+        if default_source in computed:
+            st.session_state.setdefault(f"{key}_src", default_source)
         source = st.radio("Distribution from", ["Typed", *computed], horizontal=True,
                           key=f"{key}_src",
                           format_func=lambda s_: LABELS.get(s_, s_),

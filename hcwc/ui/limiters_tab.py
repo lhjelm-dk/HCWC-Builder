@@ -54,6 +54,9 @@ class LimitSpec:
     form: str = "pert"
     help: str = ""
     computed: str | None = None
+    #: Which source the block opens on. ``None`` means *Typed*; naming a calculator opens on it,
+    #: which is right only where the calculator beats anything the assessor would type.
+    opens_on: str | None = None
     #: Open on arrival. Reserved for the blocks worth meeting first — the seal
     #: calculator is the piece with real physics and a published calibration, and it
     #: spent a week three clicks deep where nobody found it.
@@ -95,7 +98,7 @@ SPECS: tuple[LimitSpec, ...] = (
               "The column the top seal can hold against buoyancy. Use the calculator to derive it "
               "from pore-throat radius and the density contrast rather than typing a number — "
               "`P_c` goes as `1/r`, so the spread on radius dominates everything else.",
-              computed="seal", expanded=True),
+              computed="seal", expanded=True, opens_on="seal"),
     LimitSpec("Base seal (capillary)", Group.RETENTION, COLUMN, (80.0, 280.0), 0.0, "pert",
               "The same physics below the reservoir. Usually correlated with the top seal — see "
               "the Correlations sub-tab."),
@@ -179,6 +182,7 @@ def _render_group(group: Group, n_trials: int, seed: int) -> list[Limit]:
                 spec.name, spec.group, key=f"lim_{spec.name}", default_kind=spec.kind,
                 default_form=spec.form, span=_span_for(spec), default_p_active=spec.p_active,
                 colour=colour, help_text=spec.help,
+                default_source=spec.opens_on or "Typed",
                 computed={name: (lambda key, fn=COMPUTED[name]: fn(key, n_trials, seed))
                           for name in options} or None)
         if limit is not None:
