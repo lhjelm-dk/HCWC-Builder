@@ -131,7 +131,13 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
                  # A display choice on the export, and one that must NOT persist: a saved
                  # geological prospect reopened with a stale "given the DHI" selection would
                  # export the wrong distribution, which is the defect B exists to prevent.
-                 "export_basis"}
+                 "export_basis",
+                 # An imported benchmark dataset does NOT travel with a saved prospect, and this
+                 # is a privacy decision rather than an oversight. The file may be a company's
+                 # confidential field list; a prospect saved by one person and sent to another
+                 # must not carry it, and a name or a source string is enough to identify the
+                 # dataset without embedding it. Reload it beside the prospect instead.
+                 "import_name", "import_source", "import_upload", "forget_import"}
     missed = {k for k in literal
               if k not in prospect.EXACT and not k.startswith(prospect.PREFIXES)
               and k not in transient and not k.startswith(("r1_", "sub_el_", "z_entry_"))}

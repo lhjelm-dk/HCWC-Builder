@@ -80,8 +80,10 @@ def _bias_curve(sigmas: tuple[float, ...]):
 
 CLOSURE_FAMILY = (100.0, 200.0, 300.0, 400.0, 600.0, 800.0)
 
-#: Shown only when reference/private/cc_shape.json is on this machine.
-CC_LABEL = "C&C (banded model)"
+#: The label a loaded dataset appears under. Its own name, so two people comparing screens
+#: can tell whose data they are looking at rather than both seeing "imported".
+def imported_label(dataset) -> str:
+    return f"{dataset.name} (yours)"
 
 
 @st.cache_data(show_spinner=False)
@@ -99,12 +101,6 @@ def _family_samples(source: str, closures: tuple[float, ...], burial_m: float,
         if source == "Graham et al. (2015)":
             out[closure] = benchmarks.graham_column_height(rng, closure, n)
             continue
-        if source == CC_LABEL:
-            drawn = benchmarks.cc_column_height(rng, closure, n)
-            if drawn is None:                     # the shape is not on this machine
-                return {}
-            out[closure] = drawn
-            continue
         if source == "NCS, as the paper fits it":
             mu = naive[0] + naive[1] * np.log(closure) + naive[2] * np.log(burial_m)
             sigma = fit.sigma
@@ -114,6 +110,26 @@ def _family_samples(source: str, closures: tuple[float, ...], burial_m: float,
             sigma = fit.sigma
         out[closure] = np.minimum(np.exp(rng.normal(mu, sigma, n)), closure)
     return out
+
+
+def _samples_for(source: str, closures: tuple[float, ...], burial_m: float,
+                 n: int = 40_000) -> dict[float, np.ndarray]:
+    """Samples from whichever benchmark is selected, built-in or imported.
+
+    The dispatch exists because `_family_samples` is cached on its arguments and an imported
+    dataset cannot be one: it holds a DataFrame, it is different for every user, and caching it
+    would mean one person's confidential data sitting in a cache keyed by a name someone else
+    might also use. The imported path is deliberately uncached -- it costs one fit per rerun and
+    keeps the data in the session where it belongs.
+    """
+    imported = st.session_state.get("imported_dataset")
+    if imported is not None and source == imported_label(imported):
+        from hcwc.io import datasets
+        rng = np.random.default_rng(20260825)
+        fitted = datasets.fit(imported)
+        return {h: datasets.column_height(imported, rng, h, burial_m, n, fitted=fitted)
+                for h in closures}
+    return _family_samples(source, closures, burial_m, n)
 
 
 def _exceedance(samples: np.ndarray, grid: np.ndarray) -> np.ndarray:
@@ -151,6 +167,63 @@ def _add_prospect_violin(fig, x: float, samples: np.ndarray, width: float) -> No
         fig.add_scatter(x=[x - width / 2, x + width / 2], y=[v, v], mode="lines",
                         line=dict(color=PROSPECT, width=2, dash=dash),
                         showlegend=False, hovertext=f"P{pct} = {v:.0f} m", hoverinfo="text")
+
+
+def _render_import() -> None:
+    """Load a column-height dataset of your own, and use it as a fourth benchmark family.
+
+    **Nothing leaves the session.** The file is parsed in memory, fitted in memory, and gone when
+    the browser tab closes: no cache file, no upload, no network call. That is asserted in
+    ``tests/test_datasets.py`` against the source of :mod:`hcwc.io.datasets`, because the property
+    worth protecting is that nobody adds a cache later without noticing what it would mean.
+    """
+    from hcwc.io import datasets
+
+    with st.expander("**Load your own dataset** — raw discoveries, fitted here, never stored",
+                     expanded=st.session_state.get("imported_dataset") is None):
+        st.markdown(
+            "**One row per discovery, two columns required:** a closure height and a hydrocarbon "
+            "column height, in metres. The reader accepts the usual spellings — `trap_height_m`, "
+            "`closure_height`, `relief_m` for the first; `hc_column_m`, `column_height`, "
+            "`hcwc_height` for the second.\n\n"
+            "**Worth adding if you have them.** `burial_depth_m` makes the fit a two-predictor "
+            "model rather than a one-predictor one; `apex_depth_m` stands in for it if you do "
+            "not. `filled_to_spill` is used directly if present and derived at "
+            f"{datasets.FILLED_RULE:.0%} of the closure if not — and **that flag is what the "
+            "whole correction turns on**, because a filled trap measures the closure rather than "
+            "the seal.\n\n"
+            "**Why raw rows rather than a fitted curve.** The censoring correction runs here, on "
+            "your data. Handing the tool someone else's fitted shape would give you their answer "
+            "to their question; handing it your discoveries gives you the finding on yours."
+        )
+        c1, c2 = st.columns(2)
+        name = c1.text_input("Name it", key="import_name", placeholder="e.g. internal fields, 2026")
+        source = c2.text_input("Source", key="import_source",
+                               placeholder="citation, internal reference, or 'unknown'")
+        upload = st.file_uploader("Dataset (.csv)", type=["csv"], key="import_upload")
+
+        if upload is not None:
+            try:
+                loaded = datasets.read_csv(upload.getvalue(),
+                                           name=name or upload.name.rsplit(".", 1)[0],
+                                           source=source)
+            except datasets.DatasetError as exc:
+                st.session_state.pop("imported_dataset", None)
+                st.error(f"**That file cannot be read as a column-height dataset.** {exc}")
+            else:
+                st.session_state["imported_dataset"] = loaded
+                st.success(
+                    f"**{loaded.name}** — {len(loaded.usable):,} usable rows of {loaded.n:,}, "
+                    f"{loaded.censored_fraction:.0%} filled to spill, fitted on "
+                    + (" and ".join(x.replace("_", " ") for x in loaded.predictors)) + ".")
+                if loaded.notes:
+                    st.warning("**What the reader had to assume.** Every one of these is a "
+                               "decision it made on your behalf:\n\n"
+                               + "\n\n".join(f"- {note}" for note in loaded.notes))
+        elif st.session_state.get("imported_dataset") is not None:
+            if st.button("Forget the loaded dataset", key="forget_import"):
+                st.session_state.pop("imported_dataset", None)
+                st.rerun()
 
 
 def render() -> None:
@@ -444,27 +517,26 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
                  f"burial depth.")
 
     # ------------------------------------------------------------------ benchmark families
-    theme.heading(TAB, "6 · The three benchmark families")
-    cc_set = benchmarks.load_cc_reservoir_stats()
+    theme.heading(TAB, "6 · The benchmark families, and adding your own")
+    imported = st.session_state.get("imported_dataset")
     n.table(
         pd.DataFrame({
             "Benchmark": ["Edmundson (2021) — NCS", "Graham et al. (2015) — global",
-                          "C&C reservoir statistics"],
+                          imported.name if imported else "your own data"],
             "Size": ["242 discoveries, per-observation", "not stated; parameters only",
-                     f"{cc_set.n} rows" if cc_set else "not on this machine"],
-            "Stratified by": ["burial depth × closure height", "closure height band", "—"],
+                     f"{len(imported.usable):,} usable of {imported.n:,}" if imported
+                     else "none loaded"],
+            "Stratified by": ["burial depth × closure height", "closure height band",
+                              "burial × closure" if imported and imported.full_model
+                              else "closure height" if imported else "—"],
             "Status": ["open, CC-BY 4.0", "abstract only — distributions never published",
-                       "loaded" if cc_set else "absent; series omitted"],
+                       f"source: {imported.source}" if imported else "load one below"],
         }),
         "Kept separate rather than merged into one 'empirical prior'. They are conditioned "
-        "differently and disagree informatively — the NCS/global gap in §4 is an example. "
-        "The C&C statistics are non-public and load from `reference/private/`; a clone without them "
-        "still runs.",
+        "differently and disagree informatively — the NCS/global gap in §4 is an example, and a "
+        "benchmark that agrees with the others tells you less than one that does not.",
     )
-    if cc_set is None:
-        st.caption(
-            "C&C not present in this checkout — expected on any machine but Lars's."
-        )
+    _render_import()
 
     # ------------------------------------------------------------------ family curves
     theme.heading(TAB, "7 · The prior a benchmark actually gives you")
@@ -491,8 +563,9 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
     )
 
     options = ["NCS, censoring-corrected", "NCS, as the paper fits it", "Graham et al. (2015)"]
-    if benchmarks.load_cc_shape() is not None:
-        options.append(CC_LABEL)
+    imported = st.session_state.get("imported_dataset")
+    if imported is not None:
+        options.append(imported_label(imported))
 
     f1, f2 = st.columns([2, 1])
     source = f1.radio(
@@ -502,12 +575,15 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
              "than to a coefficient.")
     burial = f2.number_input("Burial depth (m)", 500.0, 6000.0, 2500.0, 100.0,
                              key="family_burial",
-                             disabled=source in ("Graham et al. (2015)", CC_LABEL),
-                             help="Both generated families are stratified by closure height only, "
-                                  "so their curves do not move with depth. Only the NCS fits use "
-                                  "burial depth, and that is one of the things they add.")
+                             disabled=source == "Graham et al. (2015)"
+                             or (imported is not None and source == imported_label(imported)
+                                 and not imported.full_model),
+                             help="Graham is stratified by closure height only, so its curve does "
+                                  "not move with depth. The NCS fits use burial depth, and so "
+                                  "does an imported dataset that carries one \u2014 disabled here when "
+                                  "it does not.")
 
-    samples = _family_samples(source, CLOSURE_FAMILY, float(burial))
+    samples = _samples_for(source, CLOSURE_FAMILY, float(burial))
     grid = np.linspace(0.0, max(CLOSURE_FAMILY), 400)
     shades = theme.element_shades("Closure", len(CLOSURE_FAMILY))
 
@@ -544,8 +620,8 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
         # to be nearest, which is the wrong comparison and an easy one to make by accident.
         apex_mid = float(np.mean(st.session_state.get("apex", (2049.0, 2051.0))))
         own_relief = float(st.session_state.get("spill_point", apex_mid + 350.0)) - apex_mid
-        if own_relief > 0 and source != CC_LABEL:
-            matched = _family_samples(source, (round(own_relief, 1),), float(burial))
+        if own_relief > 0:
+            matched = _samples_for(source, (round(own_relief, 1),), float(burial))
             if matched:
                 drawn = next(iter(matched.values()))
                 fam.add_scatter(x=built_grid, y=_exceedance(drawn, built_grid), mode="lines",
@@ -590,7 +666,7 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
                  "which of them sits deeper. Neither is dotted, because neither is provisional.  "
                  if limit_set is not None and own_relief else "")
                 + f"Column-height exceedance by closure height — **{source}**"
-                + ("" if source in ("Graham et al. (2015)", CC_LABEL)
+                + ("" if source == "Graham et al. (2015)"
                    else f", at {burial:,.0f} m burial")
                 + ". Dotted segments are the filled-to-spill point mass, marked at its height. "
                   "This is the chart shape used as a pre-drill benchmark family across the "
@@ -638,7 +714,7 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
             "far the evidence moved you, not to judge whether you are calibrated."
         )
 
-    if source == CC_LABEL:
+    if imported is not None and source == imported_label(imported):
         st.info(
             "**What this series is, precisely.** The C&C and ExxonMobil families are the *same* "
             "banded model, sharing the same fill-to-spill weight. They differ in exactly one "
@@ -700,13 +776,15 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
             f"needs interpreting."
         )
 
-        sources = ["NCS, censoring-corrected", "NCS, as the paper fits it", "Graham et al. (2015)"]
-        if benchmarks.load_cc_shape() is not None:
-            sources.append(CC_LABEL)
+        sources = ["NCS, censoring-corrected", "NCS, as the paper fits it",
+                   "Graham et al. (2015)"]
+        loaded = st.session_state.get("imported_dataset")
+        if loaded is not None:
+            sources.append(imported_label(loaded))
 
         comparisons = []
         for label in sources:
-            drawn = _family_samples(label, (round(own_relief, 1),), float(burial))
+            drawn = _samples_for(label, (round(own_relief, 1),), float(burial))
             if not drawn:
                 continue
             comparisons.append(
@@ -766,7 +844,7 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
                            line=dict(color="#555", width=1.6, dash="dash"))
 
             for c, colour in zip(comparisons, (FITTED, PUBLISHED, "#E8A33D", "#4C72B0")):
-                drawn = next(iter(_family_samples(
+                drawn = next(iter(_samples_for(
                     c.name, (round(own_relief, 1),), float(burial)).values()))
                 mine, theirs = calibration.quantile_pairs(built_column, drawn)
                 share = calibration.corridor_share(built_column, drawn)
@@ -848,7 +926,7 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
             ratio.add_hline(y=1.0, line=dict(color="#555", width=1.6, dash="dash"))
 
             for c, colour in zip(comparisons, (FITTED, PUBLISHED, "#E8A33D", "#4C72B0")):
-                drawn = next(iter(_family_samples(
+                drawn = next(iter(_samples_for(
                     c.name, (round(own_relief, 1),), float(burial)).values()))
                 ratio.add_scatter(
                     x=probabilities, y=calibration.quantile_ratios(built_column, drawn),
