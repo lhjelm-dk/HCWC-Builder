@@ -436,10 +436,12 @@ with tab7:
 # --------------------------------------------------------------------------- ⑥ Theory & Guide
 with tab8:
     theme.heading(8, "Documents")
-    doc = st.radio("Document", ["What to build next", "Beha et al. (2012)", "Seal capacity",
-                                "Lowry et al. (2005)", "DHI alignment", "References"],
+    doc = st.radio("Document", ["What to build next", "Benchmark sources", "Beha et al. (2012)",
+                                "Seal capacity", "Lowry et al. (2005)", "DHI alignment",
+                                "References"],
                    horizontal=True, label_visibility="collapsed")
     path = {"What to build next": "NEXT_PLAN.md",
+            "Benchmark sources": "BENCHMARK_SOURCES.md",
             "Beha et al. (2012)": "BEHA_2012_REVIEW.md",
             "Seal capacity": "SEAL_CAPACITY_REVIEW.md",
             "Lowry et al. (2005)": "LOWRY_2005_REVIEW.md",

@@ -536,6 +536,21 @@ mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing t
         "differently and disagree informatively — the NCS/global gap in §4 is an example, and a "
         "benchmark that agrees with the others tells you less than one that does not.",
     )
+    st.warning(
+        "**The measured dataset is Norwegian, and there is no second one.** A search for a public "
+        "non-NCS dataset relating column height to *closure* height (28 Aug 2026) found none — "
+        "tab ⑧ → *Benchmark sources* records what was checked. Edmundson et al. explain why in "
+        "their own introduction: picking an apex and a spill point for every field needs 3D "
+        "seismic and a velocity model, so *\"few studies of this kind have been carried out "
+        "before\"*. The prior compilations — Gulf of Mexico, Malay Basin — report column-height "
+        "distributions with **no trap geometry**, which cannot answer the question this tab asks."
+        "\n\n"
+        "**So a prospect outside the NCS is being compared against Norwegian rock.** Not fatal — "
+        "the physics travels further than the stratigraphy does — but it is a real limitation and "
+        "it belongs in any document that quotes these curves. If you have an in-house trap-fill "
+        "database, loading it below is the only way to get a benchmark conditioned on your own "
+        "basin."
+    )
     _render_import()
 
     # ------------------------------------------------------------------ family curves
