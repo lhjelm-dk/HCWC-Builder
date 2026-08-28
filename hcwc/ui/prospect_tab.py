@@ -347,11 +347,21 @@ def render() -> None:
     # ------------------------------------------------------------------ run settings
     theme.heading(TAB, "4 · Assessment and run settings")
     r0, r1, r2 = st.columns(3)
+    # **Five metres, not zero.** Lars, 28 Aug 2026: a minimum of zero says a contact exactly at
+    # the apex counts as success, which is a column of nothing -- arithmetically fine and
+    # operationally meaningless, because a testing tool cannot be placed on a drill string to that
+    # precision and a column of a metre or two cannot be tested at all. Zero also made the app open
+    # with a chance of 100 % by construction, which tab (4) then had to refuse to display. Five is
+    # a floor with a physical reason, not a guess at anyone's commercial threshold -- which is why
+    # it is the smallest defensible number rather than a realistic one.
+    st.session_state.setdefault("min_column_input", 5.0)
     min_column = r0.number_input(
-        "Assessment minimum (m column)", 0.0, 2000.0, 0.0, 5.0, key="min_column_input",
+        "Assessment minimum (m column)", 0.0, 2000.0, step=5.0, key="min_column_input",
         help="The minimum-volume risking criterion, stated as a **column height** rather than a "
-             "volume — Hood's reason being that only a column height links to seal capacity. POS "
-             "is then F(h) read at this value, the same object as the contact distribution.")
+             "volume — Hood's reason being that only a column height links to seal capacity. The "
+             "chance is then F(h) read at this value, the same object as the contact distribution. "
+             "Defaults to 5 m as a physical floor, not as a commercial threshold: set it to the "
+             "smallest column that would make YOUR well a discovery.")
     n_trials = r1.number_input(
         "Realisations", 1_000, 1_000_000, 10_000, 1_000, key="n_trials_input", help="At 10 000, P99.5 sits on 50 realisations, which is enough to be stable; at 1 000 it "
              "is five, which is not.")
@@ -364,11 +374,25 @@ def render() -> None:
     st.session_state["n_trials"] = int(n_trials)
     st.session_state["seed"] = int(seed)
 
+    st.caption(
+        "**This is a column height, not a depth, and it is measured from the apex.** The contact "
+        "it names is `apex + h_min`; at `h_min = 0` that *is* the apex, which is a column of "
+        "nothing. **Nothing in the limits produces this number** — the limits say how deep the "
+        "column could reach, and this says how deep it must reach to be worth drilling. They meet "
+        "at one point: the chance is the exceedance curve read here.\n\n"
+        "**Why the default is 5 m rather than 0.** A column of a metre or two cannot be tested. A "
+        "testing tool cannot be placed on a drill string to that precision, so a contact you "
+        "cannot straddle is not a discovery whatever the model says. Five is a physical floor and "
+        "**not a commercial threshold** — most operators will want tens of metres, and some will "
+        "want a rate rather than a height. Set it to the smallest column that would make *your* "
+        "well a discovery, and say which definition you used when the number travels."
+    )
     if min_column == 0:
-        st.caption(
-            "At zero, every realisation counts as a success — so POS reads 100 % and the DHI "
-            "likelihood ratio is undefined, because there is no failure set to compare against. "
-            "Set a real minimum to get either."
+        st.warning(
+            "**At zero every realisation counts as a success.** The column term reads 100 % by "
+            "construction, so the prospect chance collapses to the element product alone, and the "
+            "DHI likelihood ratio is undefined because there is no failure set to compare "
+            "against. Tab ④ will refuse to print a chance until this is above zero."
         )
     tail = n_trials * 0.005
     (st.success if tail >= 20 else st.warning)(
