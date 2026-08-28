@@ -11,3 +11,7 @@ scipy>=1.14
 plotly>=5.24
 streamlit>=1.40
 openpyxl>=3.1
+# Server-side figure rendering for the 'every figure as PNG' export on tab 7. The
+# per-figure camera button needs nothing -- it renders in the browser -- so a
+# deployment where kaleido fails loses the zip and keeps everything else.
+kaleido>=1.0

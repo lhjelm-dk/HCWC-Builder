@@ -134,6 +134,11 @@ class DepthDistribution:
 #: How a limit's distribution is stated. See :class:`Limit`.
 COLUMN, DEPTH = "column", "depth"
 
+#: The name the apex answers to in a correlation pair. It is not a limit -- it is the datum every
+#: limit is measured from -- but it *is* a sampled depth, and a depth-stated limit shares its
+#: depth-conversion error with it. Reserved, so no limit may take the name.
+APEX = "Apex"
+
 
 def to_depth(column_m, apex_m):
     """Column height below the apex -> depth in m TVDSS."""
@@ -256,6 +261,12 @@ class LimitSet:
             # The controlling-limit diagnostic reports by name, so duplicates would merge two
             # mechanisms into one bar and nobody would notice.
             raise ValueError(f"limit names must be unique; repeated: {sorted(duplicates)}")
+        if APEX in names:
+            raise ValueError(
+                f"{APEX!r} is reserved: it is the name the apex answers to in a correlation pair, "
+                f"so a limit called {APEX!r} would make 'Apex|Closure / spill' ambiguous. Rename "
+                f"the limit."
+            )
         if not any(limit.always_active for limit in self.limits):
             raise ValueError(
                 "at least one limit must have p_active = 1. Every prospect has a spill point, so "
@@ -273,6 +284,16 @@ class LimitSet:
     @property
     def names(self) -> tuple[str, ...]:
         return tuple(limit.name for limit in self.limits)
+
+    @property
+    def correlated_names(self) -> tuple[str, ...]:
+        """Everything the copula spans: the apex first, then the limits in order.
+
+        The apex leads because it is the datum. Its position is also load-bearing -- the engine
+        reads column 0 of the uniforms as the apex draw -- so this is the single definition of that
+        ordering rather than a convention repeated in two places.
+        """
+        return (APEX, *self.names)
 
     @property
     def groups(self) -> tuple[Group, ...]:

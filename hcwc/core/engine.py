@@ -158,18 +158,25 @@ def run(limit_set: LimitSet, n: int = 10_000, seed: int = 20260825) -> EngineRes
     rng = np.random.default_rng(seed)
     k = len(limit_set)
 
-    apex = limit_set.apex.ppf(rng.random(n))
-
-    # One uniform per limit per realisation, taken through each limit's quantile function.
-    # This is the line Phase 2 was arranged to make replaceable: correlation is entirely a question
-    # of where the uniforms come from, and no limit definition knows anything about it. With no
-    # correlations declared the copula is the identity, which is `rng.random((n, k))` in
-    # distribution -- so the branch is for speed and reproducibility, not for correctness.
+    # One uniform per **correlated variable** per realisation: the apex first, then each limit.
+    # Correlation is entirely a question of where the uniforms come from, and no limit definition
+    # knows anything about it. With nothing declared the copula is the identity, which is
+    # `rng.random` in distribution -- so the branch is for speed and reproducibility, not
+    # correctness.
+    #
+    # **The apex is column 0 and that is the point.** A depth-stated limit and the apex are picked
+    # off the same depth-converted surface, so their errors are shared; leaving the apex outside
+    # the copula forced them independent and made `Apex|Spill` inexpressible, while the engine's
+    # own refusal message advised exactly that pairing. `LimitSet.correlated_names` owns the
+    # ordering.
+    names = limit_set.correlated_names
     if limit_set.correlations:
-        spearman = correlate.build_matrix(limit_set.names, limit_set.correlations)
-        uniforms = correlate.correlated_uniforms(rng, spearman, n)
+        spearman = correlate.build_matrix(names, limit_set.correlations)
+        draws = correlate.correlated_uniforms(rng, spearman, n)
     else:
-        uniforms = rng.random((n, k))
+        draws = rng.random((n, k + 1))
+    apex = limit_set.apex.ppf(draws[:, 0])
+    uniforms = draws[:, 1:]
     sampled = np.empty((n, k), dtype=float)
     for j, limit in enumerate(limit_set.limits):
         drawn = limit.distribution.ppf(uniforms[:, j])

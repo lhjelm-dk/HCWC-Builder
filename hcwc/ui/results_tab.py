@@ -17,7 +17,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from hcwc.core import engine, trust
+from hcwc.core import engine, sensitivity, trust
 from hcwc.core import limits as limits_mod
 from hcwc.core.limits import Group
 from hcwc.ui import limit_stack, theme, trust_panel
@@ -206,6 +206,58 @@ def render(n: Numbering | None = None) -> None:
     n.plot(fig3, "Limits ordered by how often they set the contact. **Use this as a workflow "
                  "step, not a summary:** run once, then spend elicitation effort only on the top "
                  "two or three. A limit near zero can be left rough — it is not moving the answer.")
+
+    # ---- the other half of this section's question --------------------------------------
+    swing_space = st.radio(
+        "Swing measured on", ["Column below apex", "Contact depth"], horizontal=True,
+        key="tornado_space",
+        help="They rank differently and both are honest. The apex barely moves the COLUMN and "
+             "moves the CONTACT one-for-one, so a tool offering only one would hide half the "
+             "sensitivity.")
+    space = "column" if swing_space.startswith("Column") else "depth"
+    effects = sensitivity.tornado(result, space=space)
+    centre = sensitivity.baseline(result, space=space)
+
+    if effects:
+        shown = effects[:12]
+        fig4 = go.Figure()
+        for kind, colour, opacity in ((sensitivity.DEPTH_EFFECT, None, 1.0),
+                                      (sensitivity.PRESENCE_EFFECT, "#7d8794", 0.75)):
+            rows = [e for e in shown if e.kind == kind]
+            if not rows:
+                continue
+            fig4.add_bar(
+                y=[f"{e.name} — {e.kind}" for e in rows][::-1],
+                x=[e.high - e.low for e in rows][::-1],
+                base=[min(e.low, e.high) - centre if False else e.low - centre
+                      for e in rows][::-1],
+                orientation="h", name=kind,
+                marker_color=([colour_of.get(e.name, "#7d8794") for e in rows][::-1]
+                              if colour is None else colour),
+                marker_opacity=opacity,
+                hovertemplate="%{y}<br>low %{base:,.0f} → high %{x:,.0f} m from the mean"
+                              "<extra></extra>")
+        fig4.add_vline(x=0.0, line=dict(color="#555", width=1.5))
+        fig4.update_layout(
+            xaxis_title=f"Metres from the mean of {centre:,.0f} m",
+            height=max(280, 34 * len(shown)), margin=dict(t=20),
+            barmode="overlay", legend=dict(orientation="h", y=-0.22))
+        n.plot(fig4,
+               f"**How much each elicited number moves the mean**, which is a different question "
+               f"from how often it controls the contact — the figure above. A limit can set the "
+               f"contact in most realisations and still be worth no effort, because it always "
+               f"bites at nearly the same depth.\n\n"
+               f"Each bar is a **conditional mean**: the average outcome when that input came out "
+               f"in its top tenth, against its bottom tenth, taken from the run already on screen. "
+               f"Because the slices come from the actual joint sample, the bars respect the "
+               f"correlations — couple the apex to the spill and the spill's bar changes.\n\n"
+               f"**Two kinds of bar.** *Where it bites* is the distribution; *whether it is there* "
+               f"is `P(active)`. They are different elicitations, and which one is longer tells "
+               f"you whether to go and argue about a depth or about a probability. **The mean, not "
+               f"the median** — it is what a volume is built from, and a median can sit still "
+               f"while the tail moves underneath it.")
+    else:
+        st.info("Too few realisations to slice into deciles for a sensitivity.")
 
     if h_min > 0:
         table = pd.DataFrame([

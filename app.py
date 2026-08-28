@@ -30,6 +30,7 @@ from hcwc.io import geox, report
 from hcwc.io import wellvolpos as wvp
 from hcwc.ui import (depth_risk_tab, dhi_tab, empirical, limiters_tab, prospect_tab,
                      results_tab, theme)
+from hcwc.ui import numbering
 from hcwc.ui.numbering import Numbering
 
 ROOT = Path(__file__).parent
@@ -392,8 +393,55 @@ with tab7:
         st.caption(wvp.provenance(result, int(st.session_state.get("seed", 20260825)),
                                   int(st.session_state.get("n_trials", 10_000))))
 
+        # ------------------------------------------------------------- figures
+        theme.heading(7, "3 · Every figure, as images")
+        _figs = st.session_state.get(numbering.FIGURES_KEY) or {}
+        st.markdown(
+            f"**{len(_figs)} figures were drawn on this run**, and each is exported under its own "
+            f"number — `Figure_4-3.png`, not `newplot.png`. Rendered at 1600 px and 2× device "
+            f"scale, which is enough for a slide or a printed page.\n\n"
+            f"**The camera button on any figure does one at a time**, in the browser, at the same "
+            f"resolution and with the same filename. Use that when you want a single chart; use "
+            f"this when you want the set."
+        )
+        if not _figs:
+            st.info("No figures yet — visit the tabs you want, then come back. Only figures that "
+                    "actually rendered this run can be exported, because a stale one would be "
+                    "worse than a missing one.")
+        elif st.button("Render every figure to PNG", key="render_figures"):
+            import io as _io
+            import zipfile as _zipfile
+            _buffer = _io.BytesIO()
+            _failed: list[str] = []
+            _progress = st.progress(0.0, text="Rendering…")
+            with _zipfile.ZipFile(_buffer, "w", _zipfile.ZIP_DEFLATED) as _zf:
+                for _i, (_label, _fig) in enumerate(sorted(_figs.items()), start=1):
+                    try:
+                        _png = _fig.to_image(format="png", width=1600, height=900, scale=2)
+                    except Exception as _exc:                       # noqa: BLE001 — reported below
+                        _failed.append(f"{_label}: {type(_exc).__name__}")
+                        continue
+                    _zf.writestr(f"{_label.replace(' ', '_').replace('.', '-')}.png", _png)
+                    _progress.progress(_i / len(_figs), text=f"Rendering… {_label}")
+            _progress.empty()
+            if _failed:
+                # Named rather than swallowed: a zip that is quietly short of what was asked for is
+                # the kind of thing nobody notices until the figure is missing from the report.
+                st.warning("**These would not render**, and are not in the archive:\n\n"
+                           + "\n".join(f"- {x}" for x in _failed))
+            st.download_button(
+                f"Download {len(_figs) - len(_failed)} figures (.zip)", _buffer.getvalue(),
+                f"{str(st.session_state.get('prospect_name', 'prospect')).replace(' ', '_')}"
+                f"_figures.zip", "application/zip", key="download_figures")
+        st.caption(
+            "**Server-side rendering, via kaleido.** It is the one thing the browser cannot do — a "
+            "page cannot zip twelve charts — and it is why kaleido is in `requirements.txt`. If "
+            "this fails on a deployment, the camera button on each figure still works, because it "
+            "never leaves the browser."
+        )
+
         # ------------------------------------------------------------- one page
-        theme.heading(7, "3 · One page, for the well proposal")
+        theme.heading(7, "4 · One page, for the well proposal")
         _elements = st.session_state.get("element_pos") or {}
         _p_g = float(np.prod([float(v) for v in _elements.values()])) if _elements else 1.0
         st.markdown(

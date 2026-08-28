@@ -22,7 +22,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from hcwc.core import correlate
-from hcwc.core.limits import COLUMN, DEPTH, DepthDistribution, Group, Limit, LimitSet
+from hcwc.core.limits import APEX, COLUMN, DEPTH, DepthDistribution, Group, Limit, LimitSet
 from hcwc.ui import limit_block, theme
 from hcwc.ui.numbering import Numbering
 from hcwc.ui.sources import (render_charge_computed, render_empirical_computed,
@@ -209,6 +209,11 @@ def _render_group(group: Group, n_trials: int, seed: int) -> list[Limit]:
 
 
 def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
+    # **The apex is selectable, and until 28 Aug 2026 it was not.** The box below has always said
+    # apex-to-spill is the pair most worth setting, and the engine's own refusal message advised
+    # exactly that pairing -- while the matrix was built from limit names only, so neither could be
+    # acted on. `LimitSet.correlated_names` owns the ordering; this owns the offer.
+    choices = (APEX, *names)
     st.markdown(
         "Pairs, not a matrix. A full matrix over twelve limits is 66 numbers and nobody fills that "
         "in; an assessor states the couplings they believe in and the rest are zero — which is "
@@ -223,7 +228,11 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
         "both together. Leaving them independent is what lets a realisation put the spill above "
         "the apex — and it is the same errors-in-variables coupling that inflates the published "
         "column-height regression on tab ⑥. Correlating them is the honest default, not a "
-        "refinement."
+        "refinement.\n\n"
+        "**How much it is worth.** On a 120 m apex uncertainty with a mapped spill, treating the "
+        "two as independent gives the derived closure height a spread of 33 m; correlating them at "
+        "0.9 gives 11 m. Two thirds of that spread was manufactured by the assumption, not by the "
+        "geology."
     )
 
     if CORR_KEY not in st.session_state:
@@ -236,8 +245,8 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
     rows = st.data_editor(
         st.session_state[CORR_KEY], num_rows="dynamic", use_container_width=True,
         column_config={
-            "Limit A": st.column_config.SelectboxColumn(options=list(names), width="medium"),
-            "Limit B": st.column_config.SelectboxColumn(options=list(names), width="medium"),
+            "Limit A": st.column_config.SelectboxColumn(options=list(choices), width="medium"),
+            "Limit B": st.column_config.SelectboxColumn(options=list(choices), width="medium"),
             "Rank correlation": st.column_config.NumberColumn(
                 min_value=-1.0, max_value=1.0, step=0.05, format="%.2f",
                 help="Spearman. Top and base seal at 1.0 would be perfect dependence — a claim that "
@@ -248,7 +257,7 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
     pairs: dict[str, float] = {}
     for _, row in rows.iterrows():
         a, b = str(row["Limit A"]).strip(), str(row["Limit B"]).strip()
-        if not a or not b or a == b or a not in names or b not in names:
+        if not a or not b or a == b or a not in choices or b not in choices:
             continue
         try:
             pairs[f"{a}|{b}"] = float(row["Rank correlation"])

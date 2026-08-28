@@ -52,6 +52,24 @@ def render_caption(label: str, caption: str) -> None:
     st.caption(f"**{label}** \u2014 {caption}", unsafe_allow_html=True)
 
 
+#: Where every figure drawn this run is kept, keyed by its number, so the Export tab can render
+#: them all without each tab having to hand its figures anywhere. Cleared at the top of each run by
+#: `Numbering.__post_init__` on the first instance created -- Streamlit reruns top to bottom, so
+#: "the first Numbering of the run" is a reliable moment to reset.
+FIGURES_KEY = "_figures"
+
+
+def _plotly_config(label: str) -> dict:
+    """Modebar options, so the camera button saves something worth keeping.
+
+    Named by the figure's own number and rendered at 3x, because the default is `newplot.png` at
+    whatever the browser window happens to be -- fine for a glance, useless in a document.
+    """
+    return {"toImageButtonOptions": {"format": "png", "scale": 3,
+                                     "filename": label.replace(" ", "_").replace(".", "-")},
+            "displaylogo": False}
+
+
 @dataclass
 class Numbering:
     """One numbering sequence, for one tab.
@@ -62,6 +80,13 @@ class Numbering:
     """
     tab: int
     _count: int = field(default=0, init=False)
+
+    def __post_init__(self) -> None:
+        # The figure store is per *run*, not per session: a figure drawn on the previous run may
+        # no longer exist, and exporting a stale one would be worse than exporting none. Tab ① has
+        # no Numbering, so the first one created is tab ②'s and that is early enough.
+        if self.tab <= 2:
+            st.session_state[FIGURES_KEY] = {}
 
     _optional: int = field(default=0, init=False)
 
@@ -107,7 +132,10 @@ class Numbering:
         makes the number we already compute the right key.
         """
         label = self.optional("Figure") if optional else self._label("Figure")
-        st.plotly_chart(fig, use_container_width=use_container_width, key=label)
+        st.plotly_chart(fig, use_container_width=use_container_width, key=label,
+                        config=_plotly_config(label))
+        # Kept so the Export tab can render every figure without each tab publishing its own.
+        st.session_state.setdefault(FIGURES_KEY, {})[label] = fig
         render_caption(label, caption)
         return label
 

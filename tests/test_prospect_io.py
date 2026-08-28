@@ -125,6 +125,9 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
     transient = {"prospect_upload", "epos_upload", "corr_editor", "limiter_corr_editor",
                  "stack_every", "stack_window_depth", "stack_window_column",
                  "concept_section", "area_depth_charge", "family_burial", "family_scale",
+                 # Which axis the tornado measures its swing on. A reading choice, not an
+                 # input to the model.
+                 "tornado_space",
                  # A one-shot action, not state: saving "the user pressed a button once" would
                  # reload the example every time the file was opened.
                  "load_example",
