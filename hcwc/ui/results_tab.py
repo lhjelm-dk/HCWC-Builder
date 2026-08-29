@@ -95,14 +95,6 @@ def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
     marks = [("your assessment minimum", apex + h_min)]
     if observation.seen and observation.contact_m is not None:
         marks.append(("the DHI's picked contact", float(observation.contact_m)))
-    for label, depth in marks:
-        fig.add_hline(y=depth, line=dict(color="#555", dash="dash", width=1.4),
-                      annotation_text=label, annotation_position="top left")
-
-    fig.update_layout(xaxis_title="Chance of a column at least this tall  —  P(G) × P(column ≥ h)",
-                      xaxis_range=[0, min(1.0, p_geological * 1.15)],
-                      yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
-                      height=560, margin=dict(t=20), legend=dict(orientation="h", y=-0.16))
 
     rows = []
     for label, depth in marks:
@@ -113,6 +105,42 @@ def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
         rows.append({"Read at": label, "Depth": f"{depth:,.0f} m",
                      "Column": f"{h:,.0f} m", "Geological": f"{geo:.1%}",
                      "Given the DHI": f"{upd:.1%}", "Move": f"{upd - geo:+.1%}"})
+        fig.add_hline(y=depth, line=dict(color="#555", dash="dash", width=1.4),
+                      annotation_text=label, annotation_position="top left")
+        # **The readings, printed where they are taken.** The chance at the picked contact is
+        # roughly half the chance at the assessment minimum, and reading the first while quoting
+        # the second is the mistake this whole section exists to prevent. Both numbers now sit on
+        # the curve they come from, so neither has to be inferred from the other.
+        fig.add_scatter(x=[upd], y=[depth], mode="markers+text",
+                        marker=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], size=11,
+                                    symbol="diamond", line=dict(color="white", width=1.5)),
+                        text=[f"  {upd:.1%}"], textposition="middle right",
+                        textfont=dict(size=12, color=theme.BASIS_COLOUR[theme.GIVEN_DHI]),
+                        showlegend=False, hoverinfo="skip")
+        fig.add_scatter(x=[geo], y=[depth], mode="markers+text",
+                        marker=dict(color=theme.BASIS_COLOUR[theme.GEOLOGICAL], size=11,
+                                    symbol="diamond", line=dict(color="white", width=1.5)),
+                        text=[f"{geo:.1%}  "], textposition="middle left",
+                        textfont=dict(size=12, color=theme.BASIS_COLOUR[theme.GEOLOGICAL]),
+                        showlegend=False, hoverinfo="skip")
+
+    # **Where the posterior's median contact sits.** The DHI is an estimate of the contact, not a
+    # floor under it, so the update leaves about half the remaining probability *deeper* than the
+    # pick and half shallower. That is why the curve passes through roughly half the headline POS
+    # at the pick depth rather than through the headline itself — a reading that looks like an
+    # error until the median is on the page beside it.
+    _bayes = dhi_core.combination_exceedance(result, detection, observation, grid,
+                                             method=dhi_core.BAYES)
+    _median = float(np.interp(0.5, _bayes[::-1], depths[::-1]))
+    fig.add_scatter(x=[p_geological * 0.5], y=[_median], mode="markers",
+                    marker=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], size=13,
+                                symbol="circle-open", line=dict(width=3)),
+                    name=f"posterior median contact, {_median:,.0f} m", hoverinfo="skip")
+
+    fig.update_layout(xaxis_title="Chance of a column at least this tall  —  P(G) × P(column ≥ h)",
+                      xaxis_range=[0, min(1.0, p_geological * 1.15)],
+                      yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
+                      height=560, margin=dict(t=20), legend=dict(orientation="h", y=-0.16))
 
     n.plot(fig,
            "**Both curves, both thresholds, four readings.** The chance falls as the threshold "
@@ -120,7 +148,12 @@ def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
            "and is not something the DHI causes.\n\n"
            "**A DHI is not a lift; it is a reshaping.** It raises the chance at thresholds near "
            "and above the picked contact and *lowers* it below — a flat spot at 200 m is bad news "
-           "if you were hoping for 400 m, and the curves cross where that changes.")
+           "if you were hoping for 400 m, and the curves cross where that changes.\n\n"
+           "**The open circle is the posterior median contact,** and it lands on the pick. That is "
+           "the whole reason the lower reading is about half the upper one: the amplitude is being "
+           "read as an *estimate* of the contact, so half the remaining probability lies deeper "
+           "than it. Reading the full prospect chance at the picked depth would require treating "
+           "the pick as a floor — a claim no flat spot supports.")
     n.table(pd.DataFrame(rows),
             "**The answer to \"which chance do I quote?\" is: whichever threshold your volume was "
             "computed at.** The prospect chance is the row at your assessment minimum. The chance "

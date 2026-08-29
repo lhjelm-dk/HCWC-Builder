@@ -183,6 +183,39 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                         y=d.depths_m, mode="lines", name="prospect chance, after the DHI",
                         line=dict(color="#C44E52", width=3.5))
 
+        # **Where the curve reads the headline, and where it does not.** Read at the assessment
+        # minimum this curve IS the quoted prospect POS. Read at the picked contact it is roughly
+        # half of it -- because the DHI puts the posterior MEDIAN at the pick, so about half the
+        # remaining probability lies deeper. That is the DHI working, not the curve failing, and
+        # it is a reading confusing enough that both are now labelled.
+        _apex = float(np.median(result.apex_m))
+        def _pos_at(depth_m: float) -> float:
+            return float(np.interp(depth_m, overlay["depths_m"], overlay["pos_curve"]))
+
+        _min_depth = _apex + float(overlay["h_min"])
+        fig.add_scatter(x=[_pos_at(_min_depth)], y=[_min_depth], mode="markers+text",
+                        marker=dict(color="#C44E52", size=11, symbol="diamond",
+                                    line=dict(color="white", width=1.5)),
+                        text=[f"  {_pos_at(_min_depth):.1%} — the quoted POS, at your minimum"],
+                        textposition="middle right", textfont=dict(size=11, color="#8A2F33"),
+                        showlegend=False, hoverinfo="skip")
+
+        _pick = overlay.get("picked_contact_m")
+        if _pick:
+            _samples = np.asarray(overlay["contact_samples"], dtype=float)
+            _median = float(np.median(_samples)) if _samples.size else None
+            fig.add_scatter(x=[_pos_at(_pick)], y=[_pick], mode="markers+text",
+                            marker=dict(color="#C44E52", size=11, symbol="circle",
+                                        line=dict(color="white", width=1.5)),
+                            text=[f"  {_pos_at(_pick):.1%} — chance of a column at least this deep"],
+                            textposition="middle right", textfont=dict(size=11, color="#8A2F33"),
+                            showlegend=False, hoverinfo="skip")
+            if _median is not None:
+                fig.add_hline(y=_median, line=dict(color="#C44E52", dash="dot", width=1.2),
+                              annotation_text=f"posterior median contact {_median:,.0f} m",
+                              annotation_position="bottom right",
+                              annotation_font=dict(size=10, color="#8A2F33"))
+
     fig.update_layout(xaxis_title="Probability", xaxis_range=[0, 1],
                       yaxis_title="Depth (m TVDSS)", yaxis=dict(autorange="reversed"),
                       height=620, margin=dict(t=20), legend=dict(orientation="h", y=-0.15))

@@ -414,6 +414,9 @@ So the combination is discounted rather than taken raw.
         # The raw per-realisation weights, so the sibling sub-tab can rebuild the decomposition as its
         # posterior twin rather than being handed one pre-computed curve.
         "weights": post.weights,
+        # The picked contact, so the sibling figures can mark it and say what the curve
+        # reads there -- the reading Lars made and had to ask about.
+        "picked_contact_m": float(contact) if seen else None,
         "prior_pos": float(combined.prior_pos),
         "posterior_pos": float(combined.posterior_pos),
         "h_min": float(h_min),
