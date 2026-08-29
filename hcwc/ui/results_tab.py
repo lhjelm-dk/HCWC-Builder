@@ -76,7 +76,20 @@ def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
     grid = np.linspace(0.0, float(np.percentile(result.column_m, 99.5)), 300)
     depths = apex + grid
     fig = go.Figure()
-    fig.add_scatter(x=p_geological * result.exceedance(grid), y=depths, mode="lines",
+
+    # Each curve is anchored at the assessment minimum, where it must read its own quoted POS.
+    # `combination_exceedance` returns a normalised contact distribution, so scaling it by the
+    # element product alone would draw the DHI's *reshaping* while silently dropping its uplift to
+    # the chance -- a curve starting at the prior POS beside a headline quoting the posterior one.
+    overlay = st.session_state.get("dhi_overlay") or {}
+    prior_pos = float(overlay.get("prior_pos", p_geological * float(result.exceedance(h_min)[0])))
+    posterior_pos = float(overlay.get("posterior_pos", prior_pos))
+
+    def _anchored(curve: np.ndarray, at_min: float, pos: float) -> np.ndarray:
+        return pos * curve / max(at_min, 1e-12)
+
+    geological = _anchored(result.exceedance(grid), float(result.exceedance(h_min)[0]), prior_pos)
+    fig.add_scatter(x=geological, y=depths, mode="lines",
                     name="geological", line=dict(color=theme.BASIS_COLOUR[theme.GEOLOGICAL],
                                                  width=3.5))
 
@@ -85,9 +98,12 @@ def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
     methods = dhi_core.COMBINATIONS if show_all else (dhi_core.BAYES,)
     for method in methods:
         dash, width = styles[method]
-        curve = dhi_core.combination_exceedance(result, detection, observation, grid,
-                                                method=method)
-        fig.add_scatter(x=p_geological * curve, y=depths, mode="lines",
+        curve = _anchored(
+            dhi_core.combination_exceedance(result, detection, observation, grid, method=method),
+            float(dhi_core.combination_exceedance(
+                result, detection, observation, np.array([h_min]), method=method)[0]),
+            posterior_pos)
+        fig.add_scatter(x=curve, y=depths, mode="lines",
                         name=f"given the DHI — {method}",
                         line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], width=width,
                                   dash=dash))
@@ -99,9 +115,12 @@ def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
     rows = []
     for label, depth in marks:
         h = depth - apex
-        geo = p_geological * float(result.exceedance(h)[0])
-        upd = p_geological * float(dhi_core.combination_exceedance(
-            result, detection, observation, np.array([h]))[0])
+        geo = float(_anchored(result.exceedance(h), float(result.exceedance(h_min)[0]),
+                              prior_pos)[0])
+        upd = float(_anchored(
+            dhi_core.combination_exceedance(result, detection, observation, np.array([h])),
+            float(dhi_core.combination_exceedance(
+                result, detection, observation, np.array([h_min]))[0]), posterior_pos)[0])
         rows.append({"Read at": label, "Depth": f"{depth:,.0f} m",
                      "Column": f"{h:,.0f} m", "Geological": f"{geo:.1%}",
                      "Given the DHI": f"{upd:.1%}", "Move": f"{upd - geo:+.1%}"})
@@ -131,14 +150,17 @@ def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
     # error until the median is on the page beside it.
     _bayes = dhi_core.combination_exceedance(result, detection, observation, grid,
                                              method=dhi_core.BAYES)
-    _median = float(np.interp(0.5, _bayes[::-1], depths[::-1]))
-    fig.add_scatter(x=[p_geological * 0.5], y=[_median], mode="markers",
+    _at_min = float(dhi_core.combination_exceedance(
+        result, detection, observation, np.array([h_min]), method=dhi_core.BAYES)[0])
+    _scaled = _bayes / max(_at_min, 1e-12)
+    _median = float(np.interp(0.5, _scaled[::-1], depths[::-1]))
+    fig.add_scatter(x=[posterior_pos * 0.5], y=[_median], mode="markers",
                     marker=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], size=13,
                                 symbol="circle-open", line=dict(width=3)),
                     name=f"posterior median contact, {_median:,.0f} m", hoverinfo="skip")
 
     fig.update_layout(xaxis_title="Chance of a column at least this tall  —  P(G) × P(column ≥ h)",
-                      xaxis_range=[0, min(1.0, p_geological * 1.15)],
+                      xaxis_range=[0, min(1.0, max(prior_pos, posterior_pos) * 1.15)],
                       yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
                       height=560, margin=dict(t=20), legend=dict(orientation="h", y=-0.16))
 
