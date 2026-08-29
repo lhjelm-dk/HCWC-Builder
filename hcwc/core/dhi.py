@@ -398,3 +398,74 @@ class CombinedUpdate:
     @property
     def volume_weight(self) -> float:
         return volume_weight(self.r_combined)
+
+
+# --------------------------------------------------------------------------- three combinations
+#
+# There are three things people mean by "combining the DHI with the geological model", and they
+# give different answers. Offering all three is not indecision -- it is the only way to show that
+# the choice matters, and which one is defensible.
+#
+# The framing to be suspicious of is "the DHI's HCWC distribution". **A DHI is not a distribution
+# over the contact; it is an observation of one.** Turning it into a distribution and combining it
+# with the geological one treats evidence as a competing opinion, and that is where two of these
+# three go wrong.
+
+SCENARIO, POOLED, BAYES = "scenario switch", "pooled distributions", "Bayesian update"
+
+#: In the order a reader should meet them: the common one, the plausible-looking wrong one, the
+#: defensible one.
+COMBINATIONS = (SCENARIO, POOLED, BAYES)
+
+
+def combination_exceedance(result: EngineResult, detection: DetectionFunction,
+                           observation: DhiObservation, columns_m: np.ndarray, *,
+                           method: str = BAYES, p_valid: float = 0.655) -> np.ndarray:
+    """``P(column >= h)`` under one of the three ways of combining a DHI with the geology.
+
+    ``SCENARIO`` — a Bernoulli on whether the DHI is a valid contact indicator. Where it is, the
+    contact is the picked one; where it is not, the geological model stands. A **mixture**, so it
+    moves the contact and *widens* the answer, and it cannot move the chance at all: mixing two
+    distributions can never be sharper than both. Hood's rule, and honest as far as it goes.
+
+    ``POOLED`` — the prior multiplied by the pick likelihood alone. This is what "combine the two
+    distributions" produces if you do it by multiplying, and it is **the same arithmetic as the
+    Bayesian update with the detection function left out**. That omission is the whole difference:
+    it conditions on having seen an anomaly without accounting for the fact that seeing one was
+    more likely when the column is tall, so it inherits a selection effect it cannot see.
+
+    ``BAYES`` — prior x D(h) x pick likelihood. The detection function is what turns "I saw it"
+    into evidence about the column rather than about your own attention, and it is what lets an
+    *absent* anomaly be evidence at all.
+    """
+    h = np.atleast_1d(np.asarray(columns_m, dtype=float))
+    above = result.column_m[None, :] >= h[:, None]
+
+    if method == SCENARIO:
+        if not 0.0 <= p_valid <= 1.0:
+            raise ValueError("P(DHI is a valid contact indicator) must be in [0, 1]")
+        geological = above.mean(axis=1)
+        if not observation.seen or observation.contact_m is None:
+            return geological
+        # The DHI branch on its own: the contact is the pick, blurred by its own uncertainty, and
+        # the apex it is measured against still varies realisation by realisation.
+        dhi_column = observation.contact_m - result.apex_m
+        spread = np.random.default_rng(20260828).normal(
+            0.0, observation.pick_sigma_m, result.n)
+        dhi_only = ((dhi_column + spread)[None, :] >= h[:, None]).mean(axis=1)
+        return (1.0 - p_valid) * geological + p_valid * dhi_only
+
+    if method == POOLED:
+        if not observation.seen or observation.contact_m is None:
+            return above.mean(axis=1)
+        residual = (observation.contact_m - result.contact_m) / observation.pick_sigma_m
+        w = norm.pdf(residual)
+    elif method == BAYES:
+        w = likelihood(result, detection, observation)
+    else:
+        raise ValueError(f"method must be one of {COMBINATIONS}, got {method!r}")
+
+    total = float(w.sum())
+    if total <= 0:
+        return np.full(h.shape, np.nan)
+    return (above * w[None, :]).sum(axis=1) / total

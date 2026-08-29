@@ -43,6 +43,93 @@ def limit_colours(limit_set) -> dict[str, str]:
     return out
 
 
+
+def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min) -> None:
+    """Chance against depth, before and after the DHI, with both thresholds marked.
+
+    The one figure that resolves the confusion between *the chance at my risk criterion* and *the
+    chance of the DHI-sized case*. They are two readings of one curve, the second is always smaller
+    because the curve is decreasing, and neither is wrong -- what is wrong is quoting one beside a
+    volume computed at the other.
+    """
+    from hcwc.core import dhi as dhi_core
+
+    observation, detection = posterior.observation, posterior.detection
+    apex = float(np.median(result.apex_m))
+
+    theme.heading(tab, "0 · What the DHI did to the chance, and at which depth")
+    st.markdown(
+        "**The chance is a curve, not a number.** Every point on it is `P(G) × P(column ≥ h)` at "
+        "one threshold, so a chance only means something once you say *at least how much column*. "
+        "The two dashed lines are the two thresholds anyone quotes: your **assessment minimum**, "
+        "and the **contact the amplitude points at**.\n\n"
+        "Read along a line to see what the DHI did. Read between the lines to see what the "
+        "*threshold* did — and that second gap is the one that causes trouble, because it is "
+        "there before any DHI and has nothing to do with one."
+    )
+
+    show_all = st.toggle("Show all three ways of combining", value=False,
+                         key=f"combo_all_{tab}",
+                         help="They are not equivalent. Seeing them together is the only way to "
+                              "make that concrete.")
+
+    grid = np.linspace(0.0, float(np.percentile(result.column_m, 99.5)), 300)
+    depths = apex + grid
+    fig = go.Figure()
+    fig.add_scatter(x=p_geological * result.exceedance(grid), y=depths, mode="lines",
+                    name="geological", line=dict(color=theme.BASIS_COLOUR[theme.GEOLOGICAL],
+                                                 width=3.5))
+
+    styles = {dhi_core.BAYES: ("solid", 3.5), dhi_core.POOLED: ("dash", 2.0),
+              dhi_core.SCENARIO: ("dot", 2.0)}
+    methods = dhi_core.COMBINATIONS if show_all else (dhi_core.BAYES,)
+    for method in methods:
+        dash, width = styles[method]
+        curve = dhi_core.combination_exceedance(result, detection, observation, grid,
+                                                method=method)
+        fig.add_scatter(x=p_geological * curve, y=depths, mode="lines",
+                        name=f"given the DHI — {method}",
+                        line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], width=width,
+                                  dash=dash))
+
+    marks = [("your assessment minimum", apex + h_min)]
+    if observation.seen and observation.contact_m is not None:
+        marks.append(("the DHI's picked contact", float(observation.contact_m)))
+    for label, depth in marks:
+        fig.add_hline(y=depth, line=dict(color="#555", dash="dash", width=1.4),
+                      annotation_text=label, annotation_position="top left")
+
+    fig.update_layout(xaxis_title="Chance of a column at least this tall  —  P(G) × P(column ≥ h)",
+                      xaxis_range=[0, min(1.0, p_geological * 1.15)],
+                      yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
+                      height=560, margin=dict(t=20), legend=dict(orientation="h", y=-0.16))
+
+    rows = []
+    for label, depth in marks:
+        h = depth - apex
+        geo = p_geological * float(result.exceedance(h)[0])
+        upd = p_geological * float(dhi_core.combination_exceedance(
+            result, detection, observation, np.array([h]))[0])
+        rows.append({"Read at": label, "Depth": f"{depth:,.0f} m",
+                     "Column": f"{h:,.0f} m", "Geological": f"{geo:.1%}",
+                     "Given the DHI": f"{upd:.1%}", "Move": f"{upd - geo:+.1%}"})
+
+    n.plot(fig,
+           "**Both curves, both thresholds, four readings.** The chance falls as the threshold "
+           "deepens because more column is a stronger requirement — that is true before any DHI "
+           "and is not something the DHI causes.\n\n"
+           "**A DHI is not a lift; it is a reshaping.** It raises the chance at thresholds near "
+           "and above the picked contact and *lowers* it below — a flat spot at 200 m is bad news "
+           "if you were hoping for 400 m, and the curves cross where that changes.")
+    n.table(pd.DataFrame(rows),
+            "**The answer to \"which chance do I quote?\" is: whichever threshold your volume was "
+            "computed at.** The prospect chance is the row at your assessment minimum. The chance "
+            "of the DHI-sized case is the other row, and it is smaller — not because the DHI is "
+            "bad news, but because it is a bigger prize. Quote a chance from one row beside a "
+            "volume from the other and the statement is incoherent; that pairing is the single "
+            "error this tool is arranged to prevent.")
+
+
 def render(n: Numbering | None = None, *, posterior=None) -> None:
     """The contact distribution and what produced it, geological or DHI-updated.
 
@@ -153,6 +240,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             "from another is the error tab ⑥ is written to prevent, and quoting the conditional "
             "term as though it were the prospect chance is the same error one level up."
         )
+
+    if given_dhi:
+        _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
 
     # ------------------------------------------------------------------ 1 · exceedance
     theme.heading(tab, "1 · Where is the contact?")
