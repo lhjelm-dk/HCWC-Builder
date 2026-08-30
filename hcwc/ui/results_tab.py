@@ -346,13 +346,25 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # geological twin on tab ④ in your head and flip between tabs. Three views of one figure fixes
     # that, and the third is the one worth having — the difference is where the finding is.
     GIVEN, GEOLOGICAL, DIFFERENCE = "Given the DHI", "Geological", "What the DHI changed"
-    view = GEOLOGICAL
+    view, scaled = GEOLOGICAL, False
     if given_dhi:
         view = st.radio("Show", (GIVEN, GEOLOGICAL, DIFFERENCE), horizontal=True,
                         key=f"controlling_view_{tab}",
                         help="A DHI cannot tell you which element failed. It can tell you which "
                              "limit set the contact, because knowing roughly where the contact "
                              "sits is evidence about which mechanism put it there.")
+        # **Without this the first two views are indistinguishable, and correctly so.** Normalising
+        # each bin against itself conditions on contact depth, and the detection function is
+        # saturated at its ceiling for every column in every occupied bin — so once the depth is
+        # fixed the amplitude has nothing left to discriminate on. What it does move is *how many
+        # realisations reach each depth*, by up to ten points, and that only shows when the bars
+        # are left as shares of the whole sample.
+        scaled = st.checkbox(
+            "Scale bars by how many realisations reach each depth", value=True,
+            key=f"controlling_scaled_{tab}", disabled=view == DIFFERENCE,
+            help="On: bars are shares of all realisations, so bin height carries the contact "
+                 "distribution and the two bases differ visibly. Off: each bin is normalised "
+                 "against itself — the classic diagnostic, and a view a DHI cannot move.")
     basis_weights = weights if view != GEOLOGICAL else None
     if view == DIFFERENCE:
         # **Not the difference of the two views above, and it cannot be.** Those normalise within
@@ -369,7 +381,8 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                                                        within_bin=False)
         shares = {name: shares[name] - geological[name] for name in shares}
     else:
-        shares = engine.controlling_share_by_depth(result, edges, weights=basis_weights)
+        shares = engine.controlling_share_by_depth(result, edges, weights=basis_weights,
+                                                   within_bin=not scaled)
     ranked = [name for name, _ in engine.limit_ranking(result, weights=basis_weights)]
     group_of = dict(zip(limit_set.names, limit_set.groups))
     colour_of = limit_colours(limit_set)
@@ -404,9 +417,21 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                            yaxis=dict(autorange="reversed"), height=560, margin=dict(t=20),
                            legend=dict(orientation="h", y=-0.18))
     else:
+        # **One axis for both bases, or the toggle lies.** Auto-scaling each view to its own peak
+        # made the geological spread and the DHI's sharp concentration look like the same picture
+        # at different labels — 12 % and 22 % both drawn to the right-hand edge. The whole point of
+        # switching between them is the height difference, so both are drawn to the taller one.
+        def _peak(w):
+            return float(np.sum(list(engine.controlling_share_by_depth(
+                result, edges, weights=w, within_bin=False).values()), axis=0).max())
+
+        reach = max(_peak(None), _peak(weights)) if (scaled and given_dhi) else (
+            float(np.sum(list(shares.values()), axis=0).max()) if shares else 1.0)
         fig2.update_layout(barmode="stack", bargap=0.06,
-                           xaxis_title="Share of realisations controlled by this limit",
-                           xaxis_range=[0, 1], xaxis_tickformat=".0%",
+                           xaxis_title="Share of all realisations, by controlling limit" if scaled
+                           else "Share of realisations at this depth, by controlling limit",
+                           xaxis_range=[0, reach * 1.05 if scaled else 1.0],
+                           xaxis_tickformat=".0%" if not scaled else ".1%",
                            yaxis_title="Contact depth (m TVDSS)",
                            yaxis=dict(autorange="reversed"), height=560, margin=dict(t=20),
                            legend=dict(orientation="h", y=-0.18))
@@ -436,14 +461,20 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      "element. Grant (2020) publishes an equivalent as \"column height control "
                      "statistics\"; the per-element curves built from it are, as far as I can "
                      "find, unpublished."
-                     + ("\n\n**These two views look nearly identical, and that is a finding rather "
-                        "than a fault.** Each bin is normalised within itself, which conditions on "
-                        "contact depth — and contact depth is almost the whole of what a DHI "
-                        "knows, so conditioning on it leaves the amplitude barely anything left to "
-                        f"move: **{_within_bin_move(result, edges, weights):.1%}** at most on this "
-                        "prospect, weighted by how many realisations each bin actually holds. "
-                        "Switch to *What the DHI changed* for the view that does not throw that "
-                        "information away."
+                     + (("\n\n**Bin height carries the contact distribution here**, which is why "
+                         "*Given the DHI* and *Geological* differ visibly: the amplitude moves "
+                         "which depths are reached, by up to ten points, far more than it moves "
+                         "the mechanism mix at any one depth."
+                         if scaled else
+                         "\n\n**In this view *Given the DHI* and *Geological* are "
+                         f"indistinguishable — they differ by {_within_bin_move(result, edges, weights):.1%} "
+                         "at most — and that is a property of the evidence, not a broken control.** "
+                         "Normalising each bin against itself conditions on contact depth, and the "
+                         "detection function sits at its ceiling for every column in every "
+                         "occupied bin, so with the depth fixed the amplitude has nothing left to "
+                         "discriminate on. It moves *which depths are reached*, not *what stops "
+                         "the column once you are at one*. **Tick the box above** to see the "
+                         "half it does move.")
                         if given_dhi else ""))
 
     # ------------------------------------------------------------------ 3 · ranking
