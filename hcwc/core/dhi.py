@@ -17,13 +17,23 @@ much* hydrocarbon is there, not merely whether any is::
 so the updated POS and the updated contact distribution are **the same object**, read at different
 thresholds. That is the answer to the question the note was written for.
 
-Two formulations are offered, as decided in that note.
+**There is one model, and two things it is worth being compared against.** The note offered the
+scenario switch and the likelihood as rival formulations, and that framing survived longer than it
+should have. What settled it was moving ``p_valid`` — the chance the picked event really is the
+contact — *inside* the likelihood, where it makes the update robust rather than dogmatic. The
+scenario switch's one genuine contribution was that parameter; with it accounted for, the other two
+formulations are not alternative models but arithmetic with a term left out:
 
-* **A — scenario switch.** ``IF(DHI valid, DHI contact, geological contact)``. The older and
-  simpler approach, and what Hood recommends: merge late, never blend into the input distribution.
-  Honest, needs no new elicitation, and does not move POS.
-* **B — the likelihood above.** Needs two numbers a geophysicist can actually state — a
-  tuning-thickness-scale ``h50`` and a pick sigma — and moves POS and the contact together.
+* **scenario switch** — ``IF(DHI valid, DHI contact, geological contact)``. A mixture, so it can
+  move the contact and *widen* the answer but can never sharpen it, and cannot move POS at all.
+  Hood's rule, and honest as far as it goes.
+* **pooled** — the prior times the pick likelihood alone. Literally the Bayesian update with the
+  detection function omitted, so it conditions on having seen an anomaly without accounting for the
+  fact that seeing one was more likely when the column is tall.
+* **Bayes** — ``prior x D(h) x pick``, mixed against a flat branch by ``p_valid``. The model.
+
+The first two stay in the code and on the tab as a **teaching comparison**, never as a choice of
+model, because seeing what a dropped term costs is the only way to make the argument concrete.
 
 **What the DHI may not do.** E-POS's ``logic/dfi_pillar_update.py`` sets the ceiling: a fluid
 indicator can sense whether a reservoir exists and what fluid fills it, but *not which of charge,
@@ -158,6 +168,20 @@ class DhiObservation:
         if self.pick_shape == UNIFORM:
             return dists.uniform_pdf(z, self.shallowest_m, self.deepest_m)
         return dists.pert_pdf(z, self.shallowest_m, self.contact_m, self.deepest_m)
+
+    def pick_ppf(self, u: np.ndarray) -> np.ndarray:
+        """Draws from the same pick, for the code that needs samples rather than a density.
+
+        The scenario-switch comparison builds a *branch* of realisations rather than reweighting
+        one, so it needs to sample the pick. Without this it sampled a Gaussian regardless of the
+        shape chosen, which quietly made the comparison a comparison with something else.
+        """
+        u = np.asarray(u, dtype=float)
+        if self.pick_shape == NORMAL:
+            return norm.ppf(u, loc=self.contact_m, scale=self.pick_sigma_m)
+        if self.pick_shape == UNIFORM:
+            return dists.uniform_ppf(u, self.shallowest_m, self.deepest_m)
+        return dists.pert_ppf(u, self.shallowest_m, self.contact_m, self.deepest_m)
 
 
 def spurious_density(contact_m: np.ndarray) -> float:
@@ -542,7 +566,7 @@ COMBINATIONS = (SCENARIO, POOLED, BAYES)
 
 def combination_exceedance(result: EngineResult, detection: DetectionFunction,
                            observation: DhiObservation, columns_m: np.ndarray, *,
-                           method: str = BAYES, p_valid: float = 0.655) -> np.ndarray:
+                           method: str = BAYES, p_valid: float | None = None) -> np.ndarray:
     """``P(column >= h)`` under one of the three ways of combining a DHI with the geology.
 
     ``SCENARIO`` — a Bernoulli on whether the DHI is a valid contact indicator. Where it is, the
@@ -564,17 +588,23 @@ def combination_exceedance(result: EngineResult, detection: DetectionFunction,
     above = result.column_m[None, :] >= h[:, None]
 
     if method == SCENARIO:
+        # `p_valid` lives on the observation now, where the Bayesian likelihood also reads it, so
+        # the comparison uses the same number as the model it is being compared against. It used to
+        # default to a constant 0.655 while the update ran on a value derived from the DHI
+        # strength -- two different answers to one question, a section apart.
+        p_valid = observation.p_valid if p_valid is None else p_valid
         if not 0.0 <= p_valid <= 1.0:
             raise ValueError("P(DHI is a valid contact indicator) must be in [0, 1]")
         geological = above.mean(axis=1)
         if not observation.seen or observation.contact_m is None:
             return geological
-        # The DHI branch on its own: the contact is the pick, blurred by its own uncertainty, and
-        # the apex it is measured against still varies realisation by realisation.
-        dhi_column = observation.contact_m - result.apex_m
-        spread = np.random.default_rng(20260828).normal(
-            0.0, observation.pick_sigma_m, result.n)
-        dhi_only = ((dhi_column + spread)[None, :] >= h[:, None]).mean(axis=1)
+        # The DHI branch on its own: the contact is drawn from the pick, and the apex it is
+        # measured against still varies realisation by realisation. Sampled through `pick_ppf` so
+        # a bounded or skewed pick is compared as itself rather than as a Gaussian.
+        rng = np.random.default_rng(20260828)
+        picked = observation.pick_ppf(rng.random(result.n))
+        dhi_column = picked - result.apex_m
+        dhi_only = (dhi_column[None, :] >= h[:, None]).mean(axis=1)
         return (1.0 - p_valid) * geological + p_valid * dhi_only
 
     if method == POOLED:

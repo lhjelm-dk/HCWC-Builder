@@ -83,10 +83,18 @@ def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
         "there before any DHI and has nothing to do with one."
     )
 
-    show_all = st.toggle("Show all three ways of combining", value=False,
+    # **Not a choice of model.** This used to read "show all three ways of combining", which
+    # presented a dogmatic construction and a robust one as equals. Since `p_valid` moved inside
+    # the likelihood — which was the scenario switch's one real contribution — the other two are
+    # not rival formulations but the same arithmetic with a term dropped. Kept, because seeing
+    # what a dropped term costs is the only way to make that concrete; relabelled, because
+    # offering them as options invited someone to pick one.
+    show_all = st.toggle("Show what dropping a term would give", value=False,
                          key=f"combo_all_{tab}",
-                         help="They are not equivalent. Seeing them together is the only way to "
-                              "make that concrete.")
+                         help="Two comparisons, not two alternatives: the pooled curve is this "
+                              "update with the detection function left out, and the scenario "
+                              "switch is a mixture, which can widen the answer but never sharpen "
+                              "it and cannot move the chance at all.")
 
     grid = np.linspace(0.0, float(np.percentile(result.column_m, 99.5)), 300)
     depths = apex + grid
@@ -118,10 +126,12 @@ def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
             float(dhi_core.combination_exceedance(
                 result, detection, observation, np.array([h_min]), method=method)[0]),
             posterior_pos)
-        fig.add_scatter(x=curve, y=depths, mode="lines",
-                        name=f"given the DHI — {method}",
+        labels = {dhi_core.BAYES: "given the DHI",
+                  dhi_core.POOLED: "…with the detection function dropped",
+                  dhi_core.SCENARIO: "…as a scenario switch (a mixture)"}
+        fig.add_scatter(x=curve, y=depths, mode="lines", name=labels[method],
                         line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], width=width,
-                                  dash=dash))
+                                  dash=dash), opacity=1.0 if method == dhi_core.BAYES else 0.65)
 
     marks = [("your assessment minimum", apex + h_min)]
     if observation.seen and observation.contact_m is not None:

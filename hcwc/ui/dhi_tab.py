@@ -154,6 +154,44 @@ def render(n: Numbering | None = None) -> None:
         st.error("**The most likely contact must lie between the two bounds.**")
         return
 
+    # ------------------------------------------------------------------ the pick, against the prior
+    # An over-confident pick is almost impossible to recognise from its own parameters -- 20 m
+    # sounds modest until you see it against a prior three hundred metres wide -- and it is the
+    # input that most quietly decides the answer. So it is drawn where it is typed, on the same
+    # axis as the distribution it is about to reweight.
+    if seen:
+        preview = DhiObservation(seen=True, contact_m=contact, pick_sigma_m=sigma,
+                                 pick_shape=shape, shallowest_m=shallowest, deepest_m=deepest)
+        lo = min(float(result.contact_m.min()), float(preview.pick_ppf(np.array([0.001]))[0]))
+        hi = max(float(result.contact_m.max()), float(preview.pick_ppf(np.array([0.999]))[0]))
+        axis = np.linspace(lo - 10.0, hi + 10.0, 500)
+        figv = go.Figure()
+        figv.add_histogram(x=result.contact_m, nbinsx=70, histnorm="probability density",
+                           marker_color=PRIOR, opacity=0.75,
+                           name="geological prior — tab ④")
+        figv.add_scatter(x=axis, y=preview.pick_pdf(axis), mode="lines", name="your pick",
+                         line=dict(color=POSTERIOR, width=3), fill="tozeroy",
+                         fillcolor="rgba(196,78,82,0.15)")
+        figv.add_vline(x=contact, line=dict(color=POSTERIOR, dash="dot"),
+                       annotation_text=f"{contact:,.0f} m", annotation_position="top right")
+        figv.update_layout(xaxis_title="Contact depth (m TVDSS)", yaxis_title="Density",
+                           height=300, margin=dict(t=30), legend=dict(orientation="h", y=-0.28))
+
+        prior_span = float(np.percentile(result.contact_m, 90) - np.percentile(result.contact_m, 10))
+        pick_span = float(preview.pick_ppf(np.array([0.9]))[0] - preview.pick_ppf(np.array([0.1]))[0])
+        sharper = prior_span / max(pick_span, 1e-9)
+        sits_at = float((result.contact_m <= contact).mean())
+        n.plot(figv,
+               f"**Your pick is {sharper:,.0f}× sharper than the geological prior**, and its centre "
+               f"sits where {sits_at:.0%} of the prior lies shallower. Both numbers are worth a "
+               "second look before anything downstream is read.\n\n"
+               "**Sharpness is a claim about the depth conversion, not about the seismic.** The "
+               "pick uncertainty that belongs here is the flat-spot pick *plus* the time-to-depth "
+               "error, and on most prospects the second is the larger. A pick far narrower than "
+               "the prior will dominate the answer; a pick centred out in the prior's tail will "
+               "produce a posterior resting on very few realisations, which §4 reports as the "
+               "effective sample size.")
+
     # ------------------------------------------------------------------ strength channel
     theme.heading(TAB, "2 · DHI strength — the amplitude channel")
     st.markdown(
@@ -728,19 +766,18 @@ So the combination is discounted rather than taken raw.
         )
 
     # ------------------------------------------------------------------ formulation A
-    theme.heading(TAB, "9 · The scenario-switch formulation, for comparison")
+    theme.heading(TAB, "9 · What the scenario switch would have said")
     st.markdown(
         "`IF(DHI valid, DHI contact, geological contact)` — the older and simpler way to use a "
         "fluid indicator, and Hood's rule: merge late, never blend into the input distribution. "
-        "It moves the contact but **not** the chance, which is the difference between the two "
-        "formulations."
+        "It moves the contact but **not** the chance.\n\n"
+        "**This is a comparison, not an alternative model.** Its one real contribution was the "
+        f"parameter — *is the picked event actually the contact* — and that now lives inside the "
+        f"likelihood in §2, at **p_valid = {p_valid:.3f}**, where it does more than switch between "
+        "two stories: it puts a floor under the whole update, so no contact depth is ever ruled "
+        "out. There is no second slider here because there is no second number; running the "
+        "comparison on a different one would be comparing against something else."
     )
-    p_valid = st.slider("P(DHI is a valid contact indicator)", 0.0, 1.0, 0.655, 0.005,
-                        help="A single typed number, as this formulation requires. Under the "
-                             "likelihood formulation above it is revealed as a collapsed detection "
-                             "function — a scalar standing in for D(h) evaluated somewhere "
-                             "unspecified — which is why it never equals E-POS's "
-                             "`dhi_volume_weight`.")
     if seen:
         switched = dhi_core.scenario_switch(result, p_valid, contact, sigma)
         s1, s2, s3 = st.columns(3)
