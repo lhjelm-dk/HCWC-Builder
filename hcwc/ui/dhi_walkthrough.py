@@ -233,7 +233,7 @@ def render(n: Numbering | None = None) -> None:
     c1.metric("Prior odds", f"{prior_odds:.3f}", f"POS {prior_pos:.1%}", delta_color="off")
     c2.metric("× R combined", f"{r_combined:.3f}", "both channels, discounted", delta_color="off")
     c3.metric("= Posterior odds", f"{posterior_odds:.3f}", delta_color="off")
-    c4.metric("Posterior POS", f"{posterior_pos:.1%}", f"{posterior_pos - prior_pos:+.1%}")
+    c4.metric("POS given the DHI", f"{posterior_pos:.1%}", f"{posterior_pos - prior_pos:+.1%}")
     st.latex(rf"{prior_odds:.3f} \times {r_combined:.3f} = {posterior_odds:.3f} "
              rf"\quad\Longrightarrow\quad \frac{{{posterior_odds:.3f}}}"
              rf"{{1 + {posterior_odds:.3f}}} = \mathbf{{{posterior_pos:.1%}}}")

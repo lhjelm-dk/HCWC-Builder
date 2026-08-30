@@ -1,7 +1,7 @@
 """Tab ⑤ — the DHI update.
 
-The headline is one figure: **POS against threshold**, prior and posterior, with markers at every
-threshold anyone quotes a chance at. It exists to make one error impossible to commit — quoting a
+The headline is one figure: **prospect POS against threshold**, geological and given the DHI, with
+markers at every threshold anyone quotes a chance at. It exists to make one error impossible to commit — quoting a
 POS read at the assessment minimum beside a volume read at the DHI case. On a scalar readout that
 mistake is invisible; on this curve it is two different points.
 """
@@ -166,9 +166,12 @@ def render(n: Numbering | None = None) -> None:
         hi = max(float(result.contact_m.max()), float(preview.pick_ppf(np.array([0.999]))[0]))
         axis = np.linspace(lo - 10.0, hi + 10.0, 500)
         figv = go.Figure()
+        # Named for what it is, not for the role it plays in the arithmetic. "Prior" is the
+        # Bayesian word for a distribution you already had, and using it as a *label* asks the
+        # reader to translate before they can read the figure.
         figv.add_histogram(x=result.contact_m, nbinsx=70, histnorm="probability density",
                            marker_color=PRIOR, opacity=0.75,
-                           name="geological prior — tab ④")
+                           name="geological HCWC — the competing limits, tab ④")
         figv.add_scatter(x=axis, y=preview.pick_pdf(axis), mode="lines", name="your pick",
                          line=dict(color=POSTERIOR, width=3), fill="tozeroy",
                          fillcolor="rgba(196,78,82,0.15)")
@@ -182,15 +185,22 @@ def render(n: Numbering | None = None) -> None:
         sharper = prior_span / max(pick_span, 1e-9)
         sits_at = float((result.contact_m <= contact).mean())
         n.plot(figv,
-               f"**Your pick is {sharper:,.0f}× sharper than the geological prior**, and its centre "
-               f"sits where {sits_at:.0%} of the prior lies shallower. Both numbers are worth a "
-               "second look before anything downstream is read.\n\n"
+               "**Blue is the hydrocarbon–water contact your geology produced** — every "
+               "realisation of the competing-limits model from tab ③, which is the distribution "
+               "tab ④ draws. Red is what the amplitude says. Everything the DHI does downstream is "
+               "these two meeting.\n\n"
+               f"**Your pick is {sharper:,.0f}× sharper than the geological HCWC**, and its centre "
+               f"sits where {sits_at:.0%} of that distribution lies shallower. Both numbers are "
+               "worth a second look before anything downstream is read.\n\n"
                "**Sharpness is a claim about the depth conversion, not about the seismic.** The "
                "pick uncertainty that belongs here is the flat-spot pick *plus* the time-to-depth "
                "error, and on most prospects the second is the larger. A pick far narrower than "
-               "the prior will dominate the answer; a pick centred out in the prior's tail will "
-               "produce a posterior resting on very few realisations, which §4 reports as the "
-               "effective sample size.")
+               "the geology will dominate the answer; a pick centred out in its tail will produce "
+               "a posterior resting on very few realisations, which §4 reports as the effective "
+               "sample size.\n\n"
+               "*(Where the rest of this tab says **prior**, it means this blue distribution. It "
+               "is the Bayesian word for what you already believed before the seismic spoke — not "
+               "a different object.)*")
 
     # ------------------------------------------------------------------ strength channel
     theme.heading(TAB, "2 · DHI strength — the amplitude channel")
@@ -467,9 +477,9 @@ is where your prospect sits relative to the two populations you drew.
     post_at_min = float(post.exceedance(np.array([h_min]))[0])
     fig.add_scatter(x=hs, y=_anchored(post.exceedance(hs, posterior=False), prior_at_min,
                                       combined.prior_pos),
-                    mode="lines", name="prior — geological", line=dict(color=PRIOR, width=3))
+                    mode="lines", name="geological — before the DHI", line=dict(color=PRIOR, width=3))
     fig.add_scatter(x=hs, y=_anchored(post.exceedance(hs), post_at_min, combined.posterior_pos),
-                    mode="lines", name="posterior — with the DHI",
+                    mode="lines", name="given the DHI",
                     line=dict(color=POSTERIOR, width=3))
     markers = [("assessment minimum", h_min, "#333")]
     if seen:
@@ -499,9 +509,9 @@ is where your prospect sits relative to the two populations you drew.
             {"Threshold": label,
              "Column (m)": f"{h:,.0f}",
              "Contact (m TVDSS)": f"{apex + h:,.0f}",
-             "Prior POS":
+             "POS, geological":
                  f"{_anchored(post.exceedance(h, posterior=False), prior_at_min, combined.prior_pos)[0]:.1%}",
-             "Posterior POS":
+             "POS, given the DHI":
                  f"{_anchored(post.exceedance(h), post_at_min, combined.posterior_pos)[0]:.1%}"}
             for label, h, _ in markers if 0 <= h <= hs[-1]
         ]),
@@ -619,9 +629,9 @@ So the combination is discounted rather than taken raw.
         x=span,
         y=[dhi_core.CombinedUpdate(combined.prior_pos, combined.r_geometry,
                                    combined.r_strength, float(d)).posterior_pos for d in span],
-        mode="lines", name="posterior POS", line=dict(color=POSTERIOR, width=2.5))
+        mode="lines", name="POS given the DHI", line=dict(color=POSTERIOR, width=2.5))
     figc.add_hline(y=combined.prior_pos, line=dict(color=PRIOR, dash="dash"),
-                   annotation_text="prior POS", annotation_position="bottom right")
+                   annotation_text="geological POS", annotation_position="bottom right")
     figc.add_scatter(x=[dependence], y=[combined.posterior_pos], mode="markers",
                      showlegend=False, marker=dict(color=theme.INK, size=10))
     figc.update_layout(xaxis_title="Assumed dependence between the channels",
