@@ -271,7 +271,42 @@ class TestAsAnEngineLimit:
         only charge and seal, so it was code with no route to it for two days.
         """
         from hcwc.ui.limiters_tab import COMPUTED, SPECS
-        named = {spec.computed for spec in SPECS if spec.computed}
+        # `LimitSpec.computed` holds a *tuple* of calculators since the base seal began offering
+        # both its own and a "same as the top seal" shortcut, so the names have to be flattened
+        # out of it rather than collected as they stand.
+        named = {name for spec in SPECS for name in spec.computed}
         # "empirical" is offered on every column-stated limit rather than named in SPECS.
         assert named | {"empirical"} == set(COMPUTED)
         assert all(callable(fn) for fn in COMPUTED.values())
+
+
+class TestTheBaseSealCanBorrowTheTopSeal:
+    """*Same as the top seal* reads the top seal's widgets by key, which is a coupling worth pinning.
+
+    Nothing would raise if the two drifted apart: the source would simply report that the top seal
+    is not on its calculator, on every prospect, for ever. A renamed limit is all it would take.
+    """
+
+    def test_the_borrowed_key_matches_the_key_the_tab_actually_builds(self):
+        from hcwc.ui.limiters_tab import SPECS
+        from hcwc.ui.sources import TOP_SEAL_KEY
+        top = next(s for s in SPECS if s.name == "Top seal (capillary)")
+        assert TOP_SEAL_KEY == f"lim_{top.name}"
+
+    def test_the_base_seal_offers_both_its_own_calculator_and_the_shortcut(self):
+        from hcwc.ui.limiters_tab import COMPUTED, SPECS
+        base = next(s for s in SPECS if s.name == "Base seal (capillary)")
+        assert base.computed == ("seal", "seal_as_top")
+        assert all(name in COMPUTED for name in base.computed)
+
+    def test_borrowing_reproduces_the_top_seal_capacity_exactly(self):
+        """Same inputs, same seed, same numbers — or it is not 'the same as the top seal'."""
+        from hcwc.core import seals
+        inputs = seals.SealInputs(
+            temperature_c=(70.0, 90.0), contact_angle_deg=(0.0, 30.0),
+            seal_radius_um=(0.03, 0.12), reservoir_radius_um=(0.8, 3.0),
+            water_density_g_cm3=(1.00, 1.10), hc_density_g_cm3=(0.70, 0.85),
+            fluid="Gas", subtract_reservoir=True)
+        seed = 4242
+        assert np.array_equal(seals.sample_max_column_m(inputs, 5_000, seed + 313),
+                              seals.sample_max_column_m(inputs, 5_000, seed + 313))

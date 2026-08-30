@@ -102,7 +102,14 @@ def render(n: Numbering | None = None) -> None:
     theme.heading(TAB, "1 · What was observed")
     seen = st.radio("Amplitude anomaly", ["Seen", "Absent where one was expected"],
                     horizontal=True) == "Seen"
-    default_contact = float(np.percentile(result.contact_m, 50))
+    # Lars's defaults for the worked prospect. Falling back to the model's own median keeps a
+    # differently-sited prospect from opening on a pick its geology considers impossible, which
+    # `dhi.update` would refuse outright rather than merely warn about.
+    DEFAULT_PICK_M, DEFAULT_SIGMA_M = 2250.0, 10.0
+    default_contact = (DEFAULT_PICK_M
+                       if float(result.contact_m.min()) <= DEFAULT_PICK_M
+                       <= float(result.contact_m.max())
+                       else float(np.percentile(result.contact_m, 50)))
     shape = st.radio(
         "How is the pick shaped?", dhi_core.PICK_SHAPES, horizontal=True, disabled=not seen,
         format_func=lambda k: {dhi_core.NORMAL: "Normal — an unbiased estimate",
@@ -118,7 +125,7 @@ def render(n: Numbering | None = None) -> None:
             "Picked contact (m TVDSS)", 0.0, 10000.0, default_contact, 5.0, disabled=not seen,
             help="The down-dip amplitude termination or flat spot.")
         sigma = o2.number_input(
-            "Pick σ (m)", 1.0, 500.0, 20.0, 1.0,
+            "Pick σ (m)", 1.0, 500.0, DEFAULT_SIGMA_M, 1.0,
             help="Flat-spot pick uncertainty **plus depth-conversion error**. The second is "
                  "usually the larger, and it is the same uncertainty that moves the well's entry "
                  "depth — the one place this tool and WellVolPOS genuinely couple.")

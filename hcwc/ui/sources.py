@@ -156,7 +156,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     theta = c3.slider("Contact angle θ (°)", 0.0, 60.0, (0.0, 30.0), key=f"{key}_theta")
 
     c4, c5 = st.columns(2)
-    r_seal = c4.slider("Seal pore-throat radius (µm)", 0.01, 2.0, (0.03, 0.20), 0.01,
+    r_seal = c4.slider("Seal pore-throat radius (µm)", 0.01, 2.0, (0.03, 0.12), 0.01,
                        key=f"{key}_rs",
                        help="The single most sensitive input. A good shale is well below 0.1 µm.")
     r_res = c5.slider("Reservoir pore-throat radius (µm)", 0.1, 10.0, (0.8, 3.0), 0.1,
@@ -300,6 +300,73 @@ def render_empirical_computed(key: str, n_trials: int, seed: int):
 def render_seal_computed(key: str, n_trials: int, seed: int):
     """The seal-capacity calculator, for use as a `limit_block` ``computed`` hook."""
     return _as_triple(render_seal(key, n_trials, seed))
+
+
+#: The key prefix `limiters_tab` gives the top seal's block. The base seal reads its widgets from
+#: here rather than owning a second copy, which is the whole point of the *same as top* source.
+TOP_SEAL_KEY = "lim_Top seal (capillary)"
+
+
+def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
+    """The top seal's calculator, run again for the base seal, on the top seal's own inputs.
+
+    One shale unit often wraps the reservoir, and where it does, typing the same six ranges twice
+    is not a second opinion — it is two copies that will drift apart the first time one is edited.
+    This reads the top seal's widgets directly, so there is exactly one place to change them.
+
+    It needs the top seal to actually be on its calculator. If it is typed, there are no inputs to
+    borrow and saying so is better than silently falling back to a default nobody chose.
+    """
+    have = all(f"{TOP_SEAL_KEY}_{suffix}" in st.session_state
+               for suffix in ("fluid", "t", "theta", "rs", "rr", "rw", "rh", "net"))
+    if not have:
+        st.info(
+            "**The top seal is not on its calculator, so there are no inputs to copy.** Open "
+            "*Top seal (capillary)* above and set it to *From seal capacity* first — or compute "
+            "this one on its own with *From seal capacity* here."
+        )
+        return None
+
+    read = lambda suffix: st.session_state[f"{TOP_SEAL_KEY}_{suffix}"]  # noqa: E731
+    try:
+        inputs = seals.SealInputs(
+            temperature_c=read("t"), contact_angle_deg=read("theta"),
+            seal_radius_um=read("rs"), reservoir_radius_um=read("rr"),
+            water_density_g_cm3=read("rw"), hc_density_g_cm3=read("rh"),
+            fluid=read("fluid"), subtract_reservoir=read("net"))
+        capacity = seals.sample_max_column_m(inputs, n_trials, seed + 313)
+    except ValueError as exc:
+        st.error(str(exc))
+        return None
+
+    st.markdown(
+        "**Taken from the top seal, unchanged.** Same shale, same fluids, same physics — edit it "
+        "above and this follows.\n\n"
+        f"- pore-throat radius **{read('rs')[0]:g} – {read('rs')[1]:g} µm**\n"
+        f"- temperature **{read('t')[0]:,.0f} – {read('t')[1]:,.0f} °C**, "
+        f"contact angle **{read('theta')[0]:,.0f} – {read('theta')[1]:,.0f}°**\n"
+        f"- {read('fluid').lower()} at **{read('rh')[0]:g} – {read('rh')[1]:g} g/cm³** against "
+        f"water at **{read('rw')[0]:g} – {read('rw')[1]:g} g/cm³**"
+    )
+    m1, m2, m3 = st.columns(3)
+    m1.metric("P90 capacity", f"{np.percentile(capacity, 10):,.0f} m")
+    m2.metric("P50 capacity", f"{np.percentile(capacity, 50):,.0f} m")
+    m3.metric("P10 capacity", f"{np.percentile(capacity, 90):,.0f} m")
+    st.caption(
+        "⚠ **Identical inputs are not an identical outcome, and the difference is on the "
+        "Correlations sub-tab.** Sampled independently, top and base seal fail at different "
+        "columns in the same realisation, which is a claim that one shale can be tight above and "
+        "leaky below at the same moment. If it is one unit, correlate them — the pairing is "
+        "already listed there, waiting for a number."
+    )
+    return Handover(DepthDistribution.from_samples(capacity), 1.0,
+                    f"as top seal — {read('fluid').lower()}, "
+                    f"r {read('rs')[0]:.2f}–{read('rs')[1]:.2f} µm")
+
+
+def render_seal_as_top_computed(key: str, n_trials: int, seed: int):
+    """`render_seal_as_top`, for use as a `limit_block` ``computed`` hook."""
+    return _as_triple(render_seal_as_top(key, n_trials, seed))
 
 
 def _area_depth_panel() -> None:

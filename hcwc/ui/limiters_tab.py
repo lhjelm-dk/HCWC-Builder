@@ -26,7 +26,7 @@ from hcwc.core.limits import APEX, COLUMN, DEPTH, DepthDistribution, Group, Limi
 from hcwc.ui import limit_block, theme
 from hcwc.ui.numbering import Numbering
 from hcwc.ui.sources import (render_charge_computed, render_empirical_computed,
-                             render_seal_computed)
+                             render_seal_as_top_computed, render_seal_computed)
 
 TAB = 3
 
@@ -53,7 +53,11 @@ class LimitSpec:
     p_active: float = 1.0
     form: str = "pert"
     help: str = ""
-    computed: str | None = None
+    #: Calculators this limit may be computed from, in the order they are offered. A tuple
+    #: rather than one name because the base seal offers both its own calculator and a
+    #: *same as the top seal* shortcut, and duplicating six sliders to say "the same" is
+    #: how the two drift apart.
+    computed: tuple[str, ...] = ()
     #: Which source the block opens on. ``None`` means *Typed*; naming a calculator opens on it,
     #: which is right only where the calculator beats anything the assessor would type.
     opens_on: str | None = None
@@ -72,7 +76,7 @@ SPECS: tuple[LimitSpec, ...] = (
               "The column the available charge can fill. Charge that fills past the deepest mapped "
               "depth is **not a shallow limit — it is no limit**, and that share belongs in "
               "`P(active)` rather than as a contact at the base of the structure.",
-              computed="charge"),
+              computed=("charge",)),
     # ---- Closure ----------------------------------------------------------------------------
     LimitSpec("Closure / spill point", Group.CLOSURE, DEPTH, (300.0, 400.0), 1.0, "pert",
               "Where the closure spills. **Always active** — every prospect has a spill point, and "
@@ -92,16 +96,21 @@ SPECS: tuple[LimitSpec, ...] = (
     LimitSpec("Fault leakage 1", Group.RETENTION, COLUMN, (120.0, 300.0), 0.6, "pert",
               "The column a fault will hold before it leaks — a *capacity*, so it is stated as a "
               "height and does not move when the apex pick moves."),
-    LimitSpec("Fault leakage 2", Group.RETENTION, COLUMN, (140.0, 320.0), 0.4, "pert",
-              "A second fault, or a second segment of the same one."),
+    LimitSpec("Fault leakage 2", Group.RETENTION, COLUMN, (140.0, 320.0), 0.0, "pert",
+              "A second fault, or a second segment of the same one. **Off by default** — most "
+              "structures are bounded by one fault worth modelling, and a second one left on "
+              "quietly shortens every column. Give it a `P(active)` if this prospect has one."),
     LimitSpec("Top seal (capillary)", Group.RETENTION, COLUMN, (60.0, 250.0), 1.0, "pert",
               "The column the top seal can hold against buoyancy. Use the calculator to derive it "
               "from pore-throat radius and the density contrast rather than typing a number — "
               "`P_c` goes as `1/r`, so the spread on radius dominates everything else.",
-              computed="seal", expanded=True, opens_on="seal"),
+              computed=("seal",), expanded=True, opens_on="seal"),
     LimitSpec("Base seal (capillary)", Group.RETENTION, COLUMN, (80.0, 280.0), 0.0, "pert",
-              "The same physics below the reservoir. Usually correlated with the top seal — see "
-              "the Correlations sub-tab."),
+              "The same physics below the reservoir, and the same calculator — or take the top "
+              "seal's inputs wholesale with *Same as the top seal*, which is the honest default "
+              "when one shale unit wraps the reservoir. Usually correlated with the top seal "
+              "either way; see the Correlations sub-tab.",
+              computed=("seal", "seal_as_top")),
     LimitSpec("Top seal (continuity)", Group.RETENTION, COLUMN, (100.0, 350.0), 0.5, "pert",
               "Not capillary failure but a hole in the seal: a sand-filled channel, an erosional "
               "window, a breaching fault tip."),
@@ -132,6 +141,7 @@ SUB_TABS: tuple[tuple[str, Group], ...] = (
 #: nothing better is known about — it was reachable before the tab-③ rebuild and was lost
 #: in it, which is the kind of regression a restructure makes easy and silent.
 COMPUTED = {"charge": render_charge_computed, "seal": render_seal_computed,
+            "seal_as_top": render_seal_as_top_computed,
             "empirical": render_empirical_computed}
 
 
@@ -175,7 +185,7 @@ def _render_group(group: Group, n_trials: int, seed: int) -> list[Limit]:
 
     for spec, colour in zip(specs, shades):
         with st.expander(f"**{spec.name}**", expanded=spec.expanded or len(specs) == 1):
-            options = [spec.computed] if spec.computed else []
+            options = list(spec.computed)
             if spec.kind == COLUMN:
                 options.append("empirical")
             limit = limit_block.render(
