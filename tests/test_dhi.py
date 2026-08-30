@@ -558,3 +558,56 @@ class TestNothingIsEverRuledOut:
         result = run()
         weights = dhi.likelihood(result, DetectionFunction(ceiling=0.9), DhiObservation(seen=False))
         assert weights.min() >= 0.1 - 1e-9
+
+
+class TestAbsenceIsEvidenceAgainst:
+    """An anomaly expected and not found is bad news, and it used to read as good news.
+
+    Two separate faults produced that. The likelihood ratio compared tall columns against short
+    ones — the right question for a *seen* anomaly and the wrong one for an absent one, returning
+    `nan` exactly when the assessment minimum was low enough for everything to clear it. And the
+    strength channel went on applying the slider's ratio although there was no amplitude to grade,
+    so recording "I expected one and there is none" produced the same POS as a bright anomaly.
+    """
+
+    def test_an_absent_anomaly_gives_a_ratio_below_one(self):
+        result = run(5.0)
+        post = dhi.update(result, DetectionFunction(), DhiObservation(seen=False))
+        assert result.above_minimum.all(), "the fixture must have no failures, or this proves less"
+        assert not np.isnan(post.r_dhi)
+        assert post.r_dhi < 1.0
+
+    def test_it_is_the_chance_of_having_missed_it(self):
+        """`R = E[1 - D(h) | success]`, against a barren world taken as certain to show nothing."""
+        result, detection = run(5.0), DetectionFunction()
+        post = dhi.update(result, detection, DhiObservation(seen=False))
+        expected = float(np.mean(1.0 - detection.at(result.column_m[result.above_minimum])))
+        assert post.r_dhi == pytest.approx(expected, rel=1e-9)
+
+    def test_a_blinder_survey_makes_absence_weaker_evidence(self):
+        """If you would probably not have seen it anyway, not seeing it says little."""
+        result = run(5.0)
+        sharp = dhi.update(result, DetectionFunction(h50_m=20.0, ceiling=0.95),
+                           DhiObservation(seen=False))
+        blind = dhi.update(result, DetectionFunction(h50_m=400.0, ceiling=0.95),
+                           DhiObservation(seen=False))
+        assert sharp.r_dhi < blind.r_dhi
+        assert blind.r_dhi > 0.5
+
+    def test_a_seen_anomaly_still_uses_the_success_against_failure_form(self):
+        """The fix must not touch E-POS's `r_dfi` construction where it applies."""
+        result = run(150.0)
+        post = dhi.update(result, DetectionFunction(),
+                          DhiObservation(seen=True, contact_m=2300.0, pick_sigma_m=20.0))
+        success = result.above_minimum
+        expected = float(post.weights[success].mean() / post.weights[~success].mean())
+        assert post.r_dhi == pytest.approx(expected, rel=1e-9)
+
+    def test_absence_moves_the_chance_the_right_way(self):
+        """The whole point: it must lower the prospect POS, not raise it."""
+        result = run(5.0)
+        post = dhi.update(result, DetectionFunction(), DhiObservation(seen=False))
+        prior_pos = 0.408
+        # With nothing seen there is no amplitude to grade, so the strength channel is neutral.
+        combined = dhi.CombinedUpdate(prior_pos, float(post.r_dhi), 1.0, dependence=0.5)
+        assert combined.posterior_pos < prior_pos * 0.5

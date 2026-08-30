@@ -268,11 +268,30 @@ class DhiPosterior:
     def r_dhi(self) -> float:
         """Likelihood ratio: how much the observation favours success over failure.
 
-        The same construction as E-POS's ``r_dfi`` — ``L`` averaged over the success cases divided
-        by ``L`` averaged over the failures — so the two tools report a comparable number even
-        though they use different aspects of the same observation.
+        For a **seen** anomaly this is E-POS's ``r_dfi`` construction — ``L`` averaged over the
+        success cases divided by ``L`` averaged over the failures — so the two tools report a
+        comparable number. The comparison there is between one column height and another, which is
+        the right question when the evidence is *where* an anomaly terminates.
+
+        For an **absent** anomaly it is not. Absence is evidence against the accumulation existing
+        at all, and comparing tall columns against short ones misses that entirely: it returns
+        ``nan`` whenever the assessment minimum is low enough that every realisation clears it,
+        which is exactly when the finding matters most. So the comparison is made against the
+        barren world instead::
+
+            R = E[1 - D(h) | success] / P(no anomaly | no accumulation)
+
+        with the denominator taken as **1**: a trap with no hydrocarbon in it has nothing to show.
+        That is an assumption and a slightly generous one — a barren trap can still throw a
+        spurious bright event — but erring that way makes absence weaker evidence, not stronger,
+        which is the safe direction for a number this consequential.
         """
         success = self.result.above_minimum
+        if not self.observation.seen:
+            # Still undefined when nothing succeeds: with no success set there is no
+            # `E[1 - D(h) | success]` to take, and averaging over the failures instead would be a
+            # different quantity wearing the same name.
+            return float(self.weights[success].mean()) if success.any() else float("nan")
         if not success.any() or success.all():
             return float("nan")
         return float(self.weights[success].mean() / self.weights[~success].mean())

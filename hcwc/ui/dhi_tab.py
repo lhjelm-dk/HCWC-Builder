@@ -303,7 +303,7 @@ is where your prospect sits relative to the two populations you drew.
                  "hard-coded for that reason.")
 
     # ------------------------------------------------------------------ the update
-    theme.heading(TAB, "4 · POS against threshold")
+    theme.heading(TAB, "4 · Prospect POS against threshold")
     observation = DhiObservation(seen=seen, contact_m=contact if seen else None,
                                  pick_sigma_m=sigma, area_km2=area or None,
                                  pick_shape=shape, shallowest_m=shallowest, deepest_m=deepest,
@@ -352,6 +352,27 @@ is where your prospect sits relative to the two populations you drew.
     prior_pos = element_product * geometric_prior
     posterior_geometric = post.pos()
 
+    # The two channels are combined here rather than in §5 because the figure below cannot be
+    # drawn without the result: its posterior curve has to read the quoted POS at the assessment
+    # minimum, and that number carries the strength channel. §5 keeps the argument for why the
+    # combination is discounted, and the sweep showing what the discount costs.
+    dependence = st.slider(
+        "Dependence between the two channels", 0.0, 1.0, 0.5, 0.05,
+        help="0 multiplies the two ratios outright, which assumes they are independent evidence. "
+             "1 takes the stronger channel and ignores the other, which assumes they say the same "
+             "thing. 0.5 is the default because neither end is defensible. §5 explains why.")
+
+    # **Nothing was seen, so there is no amplitude to characterise.** The strength slider grades
+    # the character of an observed anomaly; with no anomaly it has no subject, and leaving it
+    # applied made an absent DHI as encouraging as a bright one -- the same POS, from evidence
+    # pointing the opposite way. Neutral is the only defensible value.
+    combined = dhi_core.CombinedUpdate(
+        prior_pos=prior_pos,
+        r_geometry=float(post.r_dhi),
+        r_strength=r_strength if seen else 1.0,
+        dependence=dependence)
+
+
     if not element_pos:
         st.warning(
             "**No element risk set**, so the update is anchored to the geometric chance alone. "
@@ -360,7 +381,10 @@ is where your prospect sits relative to the two populations you drew.
         )
 
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric(f"Prospect POS at h ≥ {h_min:.0f} m", f"{element_product * posterior_geometric:.1%}",
+    # `element_product * posterior_geometric` is the geometry update on its own and was reading
+    # 40.8 % under a "Prospect POS" label while the tab's answer was 49.1 %. The combined update
+    # is the number this metric is claiming to show.
+    m1.metric(f"Prospect POS at h ≥ {h_min:.0f} m", f"{combined.posterior_pos:.1%}",
               f"prior {prior_pos:.1%}")
     # R compares the likelihood over successes against the likelihood over failures, so it needs
     # both sets to exist. With the assessment minimum at zero every realisation is a success and R
@@ -385,11 +409,29 @@ is where your prospect sits relative to the two populations you drew.
         f"ratio is applied, which is E-POS's point too."
     )
 
+    # **Multiplied through by the element product.** Drawn as the bare exceedance this figure read
+    # 100 % at a 5 m assessment minimum while the prospect POS there was 40.8 %, under a heading
+    # that called it POS. `P(column >= h)` is the *conditional* column term; a POS is that times
+    # the chance the prospect works at all, and the difference is the whole terminology error this
+    # tool exists to prevent.
     hs = np.linspace(0.0, float(result.column_m.max()), 300)
     fig = go.Figure()
-    fig.add_scatter(x=hs, y=post.exceedance(hs, posterior=False), mode="lines",
-                    name="prior — geological", line=dict(color=PRIOR, width=3))
-    fig.add_scatter(x=hs, y=post.exceedance(hs), mode="lines", name="posterior — with the DHI",
+    def _anchored(curve, at_min, pos):
+        """A curve that reads its own quoted POS at the assessment minimum.
+
+        Scaling by the element product alone draws the *geometry* update and silently drops the
+        strength channel's effect on the chance, which is how this figure came to read 40.8 % at
+        the minimum beside a headline of 49.1 %.
+        """
+        return pos * np.asarray(curve) / max(float(at_min), 1e-12)
+
+    prior_at_min = float(post.exceedance(np.array([h_min]), posterior=False)[0])
+    post_at_min = float(post.exceedance(np.array([h_min]))[0])
+    fig.add_scatter(x=hs, y=_anchored(post.exceedance(hs, posterior=False), prior_at_min,
+                                      combined.prior_pos),
+                    mode="lines", name="prior — geological", line=dict(color=PRIOR, width=3))
+    fig.add_scatter(x=hs, y=_anchored(post.exceedance(hs), post_at_min, combined.posterior_pos),
+                    mode="lines", name="posterior — with the DHI",
                     line=dict(color=POSTERIOR, width=3))
     markers = [("assessment minimum", h_min, "#333")]
     if seen:
@@ -402,10 +444,14 @@ is where your prospect sits relative to the two populations you drew.
             fig.add_vline(x=h, line=dict(color=colour, dash="dash"),
                           annotation_text=label, annotation_position="top")
     fig.update_layout(xaxis_title="Threshold column height h (m below apex)",
-                      yaxis_title="P(column ≥ h)", yaxis_range=[0, 1], height=520,
+                      yaxis_title="Prospect POS  =  P(G) × P(column ≥ h)",
+                      yaxis_range=[0, min(1.0, max(combined.prior_pos, combined.posterior_pos,
+                                                    0.05) * 1.15)], height=520,
                       margin=dict(t=40), legend=dict(orientation="h", y=-0.18))
     n.plot(fig, "**The figure this tab exists for.** Every chance anyone quotes is a point on one of "
-                "these curves. A strong DHI raises POS at the assessment minimum *and* raises the "
+                "these curves — and each is a **prospect POS**, the element product times the "
+                "chance of clearing that threshold, not the conditional column term on its own. "
+                "A strong DHI raises POS at the assessment minimum *and* raises the "
                 "chance of the large case — both, from one update, because the updated POS and the "
                 "updated contact distribution are the same object. Quoting a POS read at one marker "
                 "beside a volume read at another is the error this makes visible.")
@@ -415,8 +461,10 @@ is where your prospect sits relative to the two populations you drew.
             {"Threshold": label,
              "Column (m)": f"{h:,.0f}",
              "Contact (m TVDSS)": f"{apex + h:,.0f}",
-             "Prior POS": f"{post.exceedance(h, posterior=False)[0]:.1%}",
-             "Posterior POS": f"{post.exceedance(h)[0]:.1%}"}
+             "Prior POS":
+                 f"{_anchored(post.exceedance(h, posterior=False), prior_at_min, combined.prior_pos)[0]:.1%}",
+             "Posterior POS":
+                 f"{_anchored(post.exceedance(h), post_at_min, combined.posterior_pos)[0]:.1%}"}
             for label, h, _ in markers if 0 <= h <= hs[-1]
         ]),
         "**POS and its threshold, always as a pair.** These are readings of the curve above, not "
@@ -434,26 +482,16 @@ double-count this whole architecture is arranged to avoid, arriving one level in
 So the combination is discounted rather than taken raw.
 """
     )
-    dependence = st.slider(
-        "Dependence between the two channels", 0.0, 1.0, 0.5, 0.05,
-        help="0 multiplies the two ratios outright, which assumes they are independent evidence. "
-             "1 takes the stronger channel and ignores the other, which assumes they say the same "
-             "thing. 0.5 is the default because neither end is defensible.")
-
-    combined = dhi_core.CombinedUpdate(
-        prior_pos=prior_pos,
-        r_geometry=float(post.r_dhi),
-        r_strength=r_strength,
-        dependence=dependence)
-
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("R, geometry", _fmt_r(post.r_dhi),
               "from §4" if not np.isnan(post.r_dhi) else "needs an assessment minimum",
               delta_color="off")
-    c2.metric("R, strength", _fmt_r(r_strength), "from §2", delta_color="off")
+    c2.metric("R, strength", _fmt_r(combined.r_strength),
+              "from §2" if seen else "neutral — nothing was seen", delta_color="off")
     # Moved here from §2 by the reorder: it needs the prior, and a chance is a result rather than
     # an input. It is the number to read the strength band against — see the caption in §2.
-    c2.metric("POS on strength alone", f"{dhi_core.simm_update(prior_pos, r_strength):.1%}",
+    c2.metric("POS on strength alone",
+              f"{dhi_core.simm_update(prior_pos, combined.r_strength):.1%}",
               f"prior {prior_pos:.1%}", delta_color="off")
     c3.metric("R, combined", _fmt_r(combined.r_combined),
               dhi_core.strength_bands(combined.r_combined)[0], delta_color="off")
@@ -523,6 +561,18 @@ So the combination is discounted rather than taken raw.
             "Widen the pick σ in §1, raise the assessment minimum on tab ②, or lower the detection "
             "ceiling in §3, and watch it fall. If it will not fall, the model — not the DHI — is "
             "asserting the answer."
+        )
+
+    # A flat sweep is not the same finding as a robust one, and the figure cannot tell them apart
+    # on its own: when the geometry channel is undefined the combination falls back to strength
+    # alone for every value of `dependence`, so the curve is a horizontal line that reads as
+    # "nothing rests on this assumption" when it means "one of the two channels is switched off".
+    if np.isnan(combined.r_geometry):
+        st.warning(
+            "**The curve below is flat, and that is not reassurance.** With the geometry channel "
+            "undefined there is only one channel left, so there is nothing for `dependence` to "
+            "trade off and every setting returns the same answer. Give the assessment minimum a "
+            "value that some realisations fail and this figure starts saying something."
         )
 
     span = np.linspace(0.0, 1.0, 41)

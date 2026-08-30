@@ -325,8 +325,25 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     theme.heading(tab, "2 · Which limit controls the contact?")
     edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 26)
     centres = 0.5 * (edges[:-1] + edges[1:])
-    shares = engine.controlling_share_by_depth(result, edges, weights=weights)
-    ranked = [name for name, _ in engine.limit_ranking(result, weights=weights)]
+
+    # **The DHI is in this figure and was invisible in it.** Drawn on its own the updated shares
+    # look like any other stacked bar; the only way to see what the amplitude did was to hold the
+    # geological twin on tab ④ in your head and flip between tabs. Three views of one figure fixes
+    # that, and the third is the one worth having — the difference is where the finding is.
+    GIVEN, GEOLOGICAL, DIFFERENCE = "Given the DHI", "Geological", "What the DHI changed"
+    view = GEOLOGICAL
+    if given_dhi:
+        view = st.radio("Show", (GIVEN, GEOLOGICAL, DIFFERENCE), horizontal=True,
+                        key=f"controlling_view_{tab}",
+                        help="A DHI cannot tell you which element failed. It can tell you which "
+                             "limit set the contact, because knowing roughly where the contact "
+                             "sits is evidence about which mechanism put it there.")
+    basis_weights = weights if view != GEOLOGICAL else None
+    shares = engine.controlling_share_by_depth(result, edges, weights=basis_weights)
+    if view == DIFFERENCE:
+        geological = engine.controlling_share_by_depth(result, edges, weights=None)
+        shares = {name: shares[name] - geological[name] for name in shares}
+    ranked = [name for name, _ in engine.limit_ranking(result, weights=basis_weights)]
     group_of = dict(zip(limit_set.names, limit_set.groups))
     colour_of = limit_colours(limit_set)
     # Stacked horizontal bars rather than a stacked area. Plotly's `stackgroup` accumulates along
@@ -336,24 +353,56 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     bar_height = float(np.diff(edges).mean())
     fig2 = go.Figure()
     for name in ranked:
-        if shares[name].sum() == 0:
+        if np.abs(shares[name]).sum() == 0:
             continue
         fig2.add_bar(x=shares[name], y=centres, orientation="h", name=name,
                      width=bar_height, marker_color=colour_of[name],
                      marker_line_width=0,
-                     hovertemplate=f"{name}<br>%{{y:.0f}} m TVDSS<br>%{{x:.0%}}<extra></extra>")
-    fig2.update_layout(barmode="stack", bargap=0.06,
-                       xaxis_title="Share of realisations controlled by this limit",
-                       xaxis_range=[0, 1], xaxis_tickformat=".0%",
-                       yaxis_title="Contact depth (m TVDSS)",
-                       yaxis=dict(autorange="reversed"), height=560, margin=dict(t=20),
-                       legend=dict(orientation="h", y=-0.18))
-    n.plot(fig2, "The diagnostic the argmin bookkeeping buys, and the reason for keeping it: **the "
-                 "controlling mechanism changes as you step down structure.** Hue is the risk "
-                 "element, in E-POS's colours — salmon charge, blue closure, yellow reservoir, "
-                 "green retention — and lightness separates the limits within an element. Grant "
-                 "(2020) publishes an equivalent as \"column height control statistics\"; the "
-                 "per-element curves built from it are, as far as I can find, unpublished.")
+                     hovertemplate=f"{name}<br>%{{y:.0f}} m TVDSS<br>%{{x:+.0%}}<extra></extra>"
+                     if view == DIFFERENCE else
+                     f"{name}<br>%{{y:.0f}} m TVDSS<br>%{{x:.0%}}<extra></extra>")
+    if view == DIFFERENCE:
+        # `relative` puts gains to the right of zero and losses to the left, so a bar that has
+        # crossed the line is a mechanism the amplitude promoted or demoted at that depth. The
+        # bars sum to zero in every bin, which is the point: a share taken from one limit went
+        # to another, and the figure says which.
+        span = max(float(np.abs(np.sum([np.clip(v, 0, None) for v in shares.values()], axis=0)).max()),
+                   float(np.abs(np.sum([np.clip(v, None, 0) for v in shares.values()], axis=0)).max()),
+                   0.02)
+        fig2.add_vline(x=0.0, line=dict(color=theme.INK, width=1.4))
+        fig2.update_layout(barmode="relative", bargap=0.06,
+                           xaxis_title="Change in share, given the DHI (percentage points)",
+                           xaxis_range=[-span * 1.1, span * 1.1], xaxis_tickformat="+.0%",
+                           yaxis_title="Contact depth (m TVDSS)",
+                           yaxis=dict(autorange="reversed"), height=560, margin=dict(t=20),
+                           legend=dict(orientation="h", y=-0.18))
+    else:
+        fig2.update_layout(barmode="stack", bargap=0.06,
+                           xaxis_title="Share of realisations controlled by this limit",
+                           xaxis_range=[0, 1], xaxis_tickformat=".0%",
+                           yaxis_title="Contact depth (m TVDSS)",
+                           yaxis=dict(autorange="reversed"), height=560, margin=dict(t=20),
+                           legend=dict(orientation="h", y=-0.18))
+    if view == DIFFERENCE:
+        n.plot(fig2, "**What the amplitude did to the controlling mechanism, depth by depth.** "
+                     "Right of the line is a limit the DHI promoted; left is one it demoted. Each "
+                     "depth bin sums to zero, because a share taken from one mechanism has to go "
+                     "to another.\n\n"
+                     "This is a claim about *geometry*, not about elements: the DHI says roughly "
+                     "where the contact is, and some mechanisms explain that depth better than "
+                     "others. It is not evidence about which element failed, and the element "
+                     "chances on tab ② are untouched by it.")
+    else:
+        n.plot(fig2, "The diagnostic the argmin bookkeeping buys, and the reason for keeping it: "
+                     "**the controlling mechanism changes as you step down structure.** Hue is the "
+                     "risk element, in E-POS's colours — salmon charge, blue closure, yellow "
+                     "reservoir, green retention — and lightness separates the limits within an "
+                     "element. Grant (2020) publishes an equivalent as \"column height control "
+                     "statistics\"; the per-element curves built from it are, as far as I can "
+                     "find, unpublished."
+                     + ("\n\n**Switch to *What the DHI changed* above** to see the amplitude's "
+                        "effect directly rather than by comparing this against tab ④ by eye."
+                        if given_dhi else ""))
 
     # ------------------------------------------------------------------ 3 · ranking
     theme.heading(tab, "3 · Which limit — and which elicited number — actually matters?")
