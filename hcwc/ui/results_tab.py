@@ -44,6 +44,21 @@ def limit_colours(limit_set) -> dict[str, str]:
 
 
 
+def _within_bin_move(result, edges, weights) -> float:
+    """How much the DHI moves the *within-bin* mechanism mix, weighted by bin occupancy.
+
+    Reported rather than asserted, because the honest answer is prospect-specific and small: a
+    within-bin share conditions on contact depth, and contact depth is nearly all a DHI knows.
+    Occupancy weighting is what keeps the number meaningful — a near-empty tail bin can swing
+    twenty points on three realisations while contributing a bar too short to see.
+    """
+    geological = engine.controlling_share_by_depth(result, edges, within_bin=True)
+    updated = engine.controlling_share_by_depth(result, edges, weights=weights, within_bin=True)
+    occupancy = np.sum(list(engine.controlling_share_by_depth(
+        result, edges, within_bin=False).values()), axis=0)
+    return max(float(np.sum(occupancy * np.abs(updated[k] - geological[k]))) for k in geological)
+
+
 def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min) -> None:
     """Chance against depth, before and after the DHI, with both thresholds marked.
 
@@ -339,10 +354,22 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                              "limit set the contact, because knowing roughly where the contact "
                              "sits is evidence about which mechanism put it there.")
     basis_weights = weights if view != GEOLOGICAL else None
-    shares = engine.controlling_share_by_depth(result, edges, weights=basis_weights)
     if view == DIFFERENCE:
-        geological = engine.controlling_share_by_depth(result, edges, weights=None)
+        # **Not the difference of the two views above, and it cannot be.** Those normalise within
+        # each depth bin, which conditions on contact depth — and a DHI's evidence is almost
+        # entirely about contact depth, so the within-bin mix is nearly untouched by it: 0.95
+        # points at most on the worked prospect, against 3.9 in the overall shares. Drawing that
+        # difference would draw a row of empty bins and call it a finding.
+        #
+        # Shares of *all* realisations instead, so each limit's bars sum across bins to its overall
+        # controlling share, and the difference sums to the change in that share.
+        shares = engine.controlling_share_by_depth(result, edges, weights=weights,
+                                                   within_bin=False)
+        geological = engine.controlling_share_by_depth(result, edges, weights=None,
+                                                       within_bin=False)
         shares = {name: shares[name] - geological[name] for name in shares}
+    else:
+        shares = engine.controlling_share_by_depth(result, edges, weights=basis_weights)
     ranked = [name for name, _ in engine.limit_ranking(result, weights=basis_weights)]
     group_of = dict(zip(limit_set.names, limit_set.groups))
     colour_of = limit_colours(limit_set)
@@ -371,7 +398,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                    0.02)
         fig2.add_vline(x=0.0, line=dict(color=theme.INK, width=1.4))
         fig2.update_layout(barmode="relative", bargap=0.06,
-                           xaxis_title="Change in share, given the DHI (percentage points)",
+                           xaxis_title="Change in share of all realisations, given the DHI",
                            xaxis_range=[-span * 1.1, span * 1.1], xaxis_tickformat="+.0%",
                            yaxis_title="Contact depth (m TVDSS)",
                            yaxis=dict(autorange="reversed"), height=560, margin=dict(t=20),
@@ -384,13 +411,22 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                            yaxis=dict(autorange="reversed"), height=560, margin=dict(t=20),
                            legend=dict(orientation="h", y=-0.18))
     if view == DIFFERENCE:
-        n.plot(fig2, "**What the amplitude did to the controlling mechanism, depth by depth.** "
-                     "Right of the line is a limit the DHI promoted; left is one it demoted. Each "
-                     "depth bin sums to zero, because a share taken from one mechanism has to go "
-                     "to another.\n\n"
-                     "This is a claim about *geometry*, not about elements: the DHI says roughly "
-                     "where the contact is, and some mechanisms explain that depth better than "
-                     "others. It is not evidence about which element failed, and the element "
+        moves = {name: float(shares[name].sum()) for name in ranked}
+        gained = max(moves, key=moves.get)
+        lost = min(moves, key=moves.get)
+        n.plot(fig2, "**What the amplitude did to the controlling mechanism.** Right of the line "
+                     "is a limit the DHI promoted; left is one it demoted. Bars are shares of "
+                     "*all* realisations, so each limit's bars sum across depth to its change in "
+                     "overall controlling share — here "
+                     f"**{gained} {moves[gained]:+.1%}** and **{lost} {moves[lost]:+.1%}**.\n\n"
+                     "**Why this is not the difference of the two views above.** Those normalise "
+                     "within each depth bin, which conditions on where the contact is — and that "
+                     "is almost the whole of what a DHI knows. Subtract them and you get nothing: "
+                     "0.9 points at most, against 3.9 here. A DHI moves the *depth distribution*, "
+                     "and only through it the mechanism mix.\n\n"
+                     "This is a claim about **geometry**, not about elements. The amplitude says "
+                     "roughly where the contact is and some mechanisms explain that depth better "
+                     "than others; it is not evidence about which element failed, and the element "
                      "chances on tab ② are untouched by it.")
     else:
         n.plot(fig2, "The diagnostic the argmin bookkeeping buys, and the reason for keeping it: "
@@ -400,8 +436,14 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      "element. Grant (2020) publishes an equivalent as \"column height control "
                      "statistics\"; the per-element curves built from it are, as far as I can "
                      "find, unpublished."
-                     + ("\n\n**Switch to *What the DHI changed* above** to see the amplitude's "
-                        "effect directly rather than by comparing this against tab ④ by eye."
+                     + ("\n\n**These two views look nearly identical, and that is a finding rather "
+                        "than a fault.** Each bin is normalised within itself, which conditions on "
+                        "contact depth — and contact depth is almost the whole of what a DHI "
+                        "knows, so conditioning on it leaves the amplitude barely anything left to "
+                        f"move: **{_within_bin_move(result, edges, weights):.1%}** at most on this "
+                        "prospect, weighted by how many realisations each bin actually holds. "
+                        "Switch to *What the DHI changed* for the view that does not throw that "
+                        "information away."
                         if given_dhi else ""))
 
     # ------------------------------------------------------------------ 3 · ranking

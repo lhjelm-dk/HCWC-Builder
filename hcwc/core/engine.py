@@ -240,20 +240,30 @@ def limit_ranking(result: EngineResult, *, successes_only: bool = False,
 
 
 def controlling_share_by_depth(result: EngineResult, edges: np.ndarray,
-                               weights: np.ndarray | None = None) -> dict[str, np.ndarray]:
+                               weights: np.ndarray | None = None, *,
+                               within_bin: bool = True) -> dict[str, np.ndarray]:
     """Which limit controls the contact, as a function of contact depth.
 
     Output 2 of the design, and the figure that answers *how does the controlling mechanism change
     as you step down structure* — the question a contact distribution alone cannot answer.
 
-    Returns, per limit, the fraction of realisations in each depth bin that limit controlled.
-    Columns sum to 1 in any bin that contains realisations.
-
     ``weights`` are per-realisation importance weights, so the same figure can be drawn on a DHI
-    posterior. **That version is the more interesting one**: a fluid indicator does not re-attribute
-    the geological risk, but it does change which mechanism is most likely to have stopped the
-    column *at the depth the amplitude points to* — and until this took weights, the DHI tab could
-    only say that in a table.
+    posterior.
+
+    ``within_bin`` decides what the numbers are shares *of*, and the two answer different questions:
+
+    * ``True`` (default) — the fraction **of the realisations in that bin**. Columns sum to 1 in any
+      occupied bin, which is what makes the stacked figure readable.
+    * ``False`` — the fraction **of all realisations**, so each limit's values sum across bins to
+      its overall controlling share.
+
+    The distinction matters more than it looks, and only became visible when the DHI-weighted
+    version was drawn beside the geological one: **they were nearly identical.** Normalising within
+    a bin conditions on contact depth, and a DHI's evidence is almost entirely *about* contact
+    depth, so conditioning throws it away — on the worked prospect the within-bin shares move by at
+    most 0.95 points while the overall shares move by 3.9 and the bin occupancies by 9.6. Anything
+    trying to show what a DHI did to the controlling mechanism has to use ``within_bin=False``, or
+    it will faithfully draw the one view of this diagnostic that a DHI cannot move.
     """
     edges = np.asarray(edges, dtype=float)
     if edges.size < 2:
@@ -262,9 +272,10 @@ def controlling_share_by_depth(result: EngineResult, edges: np.ndarray,
     which = np.digitize(result.contact_m, edges) - 1
     n_bins = edges.size - 1
     out = {name: np.zeros(n_bins) for name in result.limit_set.names}
+    grand = float(w.sum())
     for b in range(n_bins):
         in_bin = which == b
-        total = float(w[in_bin].sum())
+        total = float(w[in_bin].sum()) if within_bin else grand
         if total <= 0:
             continue
         summed = np.bincount(result.controller[in_bin], weights=w[in_bin],

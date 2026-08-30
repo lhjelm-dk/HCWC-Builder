@@ -578,3 +578,70 @@ class TestBeha2012PublishedExample:
         P(NE leaks) exactly, not P(NE leaks AND SW leaks)."""
         result = engine.run(self._limit_set(), 200_000, seed=13)
         assert float(np.mean(np.isclose(result.contact_m, 2050.0))) == pytest.approx(0.6, abs=0.005)
+
+
+class TestSharesAreSharesOfSomething:
+    """`within_bin` decides what the shares are shares *of*, and it is not a cosmetic choice.
+
+    Drawing the DHI-weighted controlling-mechanism figure beside the geological one produced two
+    pictures that looked identical. They very nearly were: normalising within a depth bin conditions
+    on contact depth, and contact depth is almost the whole of what a DHI knows.
+    """
+
+    def _fixture(self):
+        from hcwc.core import dhi
+        from hcwc.core.limits import LimitSet, reference_prospect
+        base = reference_prospect()
+        result = engine.run(LimitSet(apex=base.apex, limits=base.limits, name=base.name,
+                                     min_column_m=5.0), 40_000)
+        post = dhi.update(result, dhi.DetectionFunction(),
+                          dhi.DhiObservation(seen=True, contact_m=2212.0, pick_sigma_m=20.0))
+        return result, post.weights
+
+    def test_within_bin_columns_sum_to_one_where_there_are_realisations(self):
+        result, _ = self._fixture()
+        edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 26)
+        shares = engine.controlling_share_by_depth(result, edges, within_bin=True)
+        total = np.sum(list(shares.values()), axis=0)
+        occupied = total > 0
+        assert np.allclose(total[occupied], 1.0)
+
+    def test_unnormalised_sums_across_depth_to_the_overall_share(self):
+        result, weights = self._fixture()
+        edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 26)
+        shares = engine.controlling_share_by_depth(result, edges, weights=weights,
+                                                   within_bin=False)
+        overall = result.controlling_shares(weights=weights)
+        for name, values in shares.items():
+            assert float(values.sum()) == pytest.approx(overall.get(name, 0.0), abs=1e-9)
+
+    def test_a_dhi_barely_moves_the_within_bin_mix_but_does_move_the_overall_one(self):
+        """The measurement that sent the figure back for rework.
+
+        Compared the right way round: the *largest move any limit shows in any single bin* when
+        shares are normalised within the bin, against the *change in each limit's overall share*
+        when they are not. Summing absolute per-bin differences instead just accumulates noise
+        across twenty-five bins and says nothing, which is how the first version of this test
+        managed to fail while the finding it was testing was true.
+        """
+        result, weights = self._fixture()
+        edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 26)
+
+        within_geo = engine.controlling_share_by_depth(result, edges, within_bin=True)
+        within_dhi = engine.controlling_share_by_depth(result, edges, weights=weights,
+                                                       within_bin=True)
+        occupancy_geo = np.sum(list(engine.controlling_share_by_depth(
+            result, edges, within_bin=False).values()), axis=0)
+        occupancy_dhi = np.sum(list(engine.controlling_share_by_depth(
+            result, edges, weights=weights, within_bin=False).values()), axis=0)
+
+        # An overall share is occupancy x within-bin mix, so its change splits in two. The claim is
+        # that the second term does the work: a DHI moves *where the contact is*, and only through
+        # that the mechanism mix. Weighting by occupancy is what makes the comparison fair —
+        # a sparse tail bin can swing twenty points on three realisations and is invisible on the
+        # figure, which is exactly the noise the first version of this test tripped over.
+        mix = {k: float(np.sum(occupancy_geo * (within_dhi[k] - within_geo[k]))) for k in within_geo}
+        moved = {k: float(np.sum(within_geo[k] * (occupancy_dhi - occupancy_geo)))
+                 for k in within_geo}
+        loudest = max(within_geo, key=lambda k: abs(mix[k] + moved[k]))
+        assert abs(moved[loudest]) > 2.0 * abs(mix[loudest])
