@@ -192,3 +192,49 @@ def uniform_ppf(u: np.ndarray, minimum: float, maximum: float) -> np.ndarray:
     if maximum <= minimum:
         raise ValueError(f"max ({maximum}) must exceed min ({minimum})")
     return minimum + np.asarray(u) * (maximum - minimum)
+
+
+# --------------------------------------------------------------------------- densities
+# Added for the DHI pick likelihood, which needs a *density* rather than a sampler: the update
+# weights each geological realisation by how likely the observation was if that realisation were
+# true, so it asks "how much probability sits at this depth", not "give me a draw".
+
+def beta_general_pdf(x: np.ndarray, alpha1: float, alpha2: float,
+                     minimum: float, maximum: float) -> np.ndarray:
+    """Density for :func:`beta_general`. Zero outside ``[minimum, maximum]``."""
+    if alpha1 <= 0 or alpha2 <= 0:
+        raise ValueError("both shape parameters must be positive")
+    if maximum <= minimum:
+        raise ValueError(f"max ({maximum}) must exceed min ({minimum})")
+    x = np.asarray(x, dtype=float)
+    span = maximum - minimum
+    inside = (x > minimum) & (x < maximum)
+    out = np.zeros_like(x)
+    scaled = np.clip((x[inside] - minimum) / span, 1e-12, 1.0 - 1e-12)
+    out[inside] = beta.pdf(scaled, alpha1, alpha2) / span
+    return out
+
+
+def pert_pdf(x: np.ndarray, minimum: float, mode: float, maximum: float,
+             lam: float = 4.0) -> np.ndarray:
+    """Density for :func:`pert`.
+
+    Bounded, so it returns exactly zero outside the range. That is a claim of impossibility and
+    the DHI likelihood must never use it neat -- see ``dhi.likelihood``, which mixes it with a
+    flat branch precisely so that no depth is ever ruled out by one seismic pick.
+    """
+    if not minimum < maximum:
+        raise ValueError(f"max ({maximum}) must exceed min ({minimum})")
+    if not minimum <= mode <= maximum:
+        raise ValueError(f"mode ({mode}) must lie within [{minimum}, {maximum}]")
+    span = maximum - minimum
+    return beta_general_pdf(x, 1.0 + lam * (mode - minimum) / span,
+                            1.0 + lam * (maximum - mode) / span, minimum, maximum)
+
+
+def uniform_pdf(x: np.ndarray, minimum: float, maximum: float) -> np.ndarray:
+    """Density for a uniform -- a bracket with no preferred value inside it."""
+    if maximum <= minimum:
+        raise ValueError(f"max ({maximum}) must exceed min ({minimum})")
+    x = np.asarray(x, dtype=float)
+    return np.where((x >= minimum) & (x <= maximum), 1.0 / (maximum - minimum), 0.0)

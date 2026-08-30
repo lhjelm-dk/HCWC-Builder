@@ -428,3 +428,133 @@ class TestTheUpdateIsAnchoredToTheGeologicalPos:
         prospect_pos = self.geological_pos * result.pos
         assert 0.0 < prospect_pos < self.geological_pos
         assert prospect_pos == pytest.approx(self.geological_pos * result.pos)
+
+
+class TestThePickHasAShape:
+    """Three controls doing three separate things, which is the point of shaping the pick."""
+
+    def test_the_normal_shape_reproduces_the_old_behaviour_exactly(self):
+        """The default must be a no-op, or every prospect ever saved changes meaning."""
+        result = run()
+        obs = DhiObservation(seen=True, contact_m=2300.0, pick_sigma_m=20.0)
+        from scipy.stats import norm as _n
+        expected = (DetectionFunction().at(result.column_m)
+                    * _n.pdf((2300.0 - result.contact_m) / 20.0) / 20.0)
+        assert np.allclose(dhi.likelihood(result, DetectionFunction(), obs), expected)
+
+    def test_a_bounded_shape_is_zero_outside_its_range(self):
+        result = run()
+        obs = DhiObservation(seen=True, contact_m=2300.0, pick_shape=dhi.PERT,
+                             shallowest_m=2280.0, deepest_m=2320.0)
+        outside = (result.contact_m < 2280.0) | (result.contact_m > 2320.0)
+        assert outside.any(), "the fixture must straddle the bound for this to test anything"
+        assert np.all(obs.pick_pdf(result.contact_m)[outside] == 0.0)
+
+    def test_skewing_deep_raises_the_reading_at_the_pick(self):
+        """The lever for 'why is it only half the POS at the contact I picked'.
+
+        A symmetric pick puts the posterior median on the pick. Asserting instead that the
+        termination under-calls — mode near the shallow end, a long tail below — moves the median
+        below the pick, so more of the posterior lies at or beyond it.
+        """
+        result, detection = run(), DetectionFunction()
+        at_pick = []
+        for obs in (DhiObservation(seen=True, contact_m=2300.0, pick_shape=dhi.PERT,
+                                   shallowest_m=2280.0, deepest_m=2320.0),
+                    DhiObservation(seen=True, contact_m=2300.0, pick_shape=dhi.PERT,
+                                   shallowest_m=2294.0, deepest_m=2360.0)):
+            post = dhi.update(result, detection, obs)
+            at_pick.append(float(post.exceedance(np.array([2300.0 - np.median(result.apex_m)]))[0]))
+        symmetric, skewed_deep = at_pick
+        assert skewed_deep > symmetric + 0.10
+
+    def test_widening_acts_mostly_on_the_tail(self):
+        """Width and skew are different dials, but only *mostly* — worth being exact about.
+
+        A wider pick always fattens the deep tail. It can also move the reading at the picked
+        contact, and the amount depends on the prior: a wide likelihood lets an asymmetric prior
+        pull the posterior median off the pick, where a tight one pins it there. On the worked
+        prospect that shift is a third of a point; on this fixture it is eight. So the claim to
+        pin is the *relative* one — width is a tail control that has a side effect near the pick,
+        not a tail control with no effect there.
+        """
+        result, detection = run(), DetectionFunction()
+        apex = float(np.median(result.apex_m))
+        reads = []
+        for sigma in (20.0, 40.0):
+            post = dhi.update(result, detection,
+                              DhiObservation(seen=True, contact_m=2300.0, pick_sigma_m=sigma))
+            reads.append((float(post.exceedance(np.array([2300.0 - apex]))[0]),
+                          float(post.exceedance(np.array([2360.0 - apex]))[0])))
+        (pick_tight, tail_tight), (pick_wide, tail_wide) = reads
+        assert tail_wide > tail_tight * 1.5
+        assert (abs(tail_wide - tail_tight) / tail_tight
+                > 3.0 * abs(pick_wide - pick_tight) / pick_tight)
+
+    @pytest.mark.parametrize("kwargs", [
+        {"pick_shape": "banana"},
+        {"pick_shape": dhi.PERT, "shallowest_m": 2280.0},
+        {"pick_shape": dhi.PERT, "shallowest_m": 2320.0, "deepest_m": 2280.0},
+        {"pick_shape": dhi.PERT, "shallowest_m": 2310.0, "deepest_m": 2360.0},
+        {"p_valid": 0.0},
+        {"p_valid": 1.5},
+    ])
+    def test_incoherent_picks_refused(self, kwargs):
+        with pytest.raises(ValueError):
+            DhiObservation(seen=True, contact_m=2300.0, **kwargs)
+
+
+class TestNothingIsEverRuledOut:
+    """Cromwell's rule, enforced rather than described.
+
+    A zero likelihood is not weak evidence, it is infinitely strong evidence: in odds form
+    `posterior = R x prior`, so `R = 0` annihilates whatever prior you started with. One seismic
+    pick is not allowed to do that, and the mixture in `dhi.likelihood` is what stops it.
+    """
+
+    SHAPES = [
+        {"pick_shape": dhi.NORMAL, "pick_sigma_m": 20.0},
+        {"pick_shape": dhi.NORMAL, "pick_sigma_m": 3.0},
+        {"pick_shape": dhi.PERT, "shallowest_m": 2280.0, "deepest_m": 2320.0},
+        {"pick_shape": dhi.PERT, "shallowest_m": 2296.0, "deepest_m": 2380.0},
+        {"pick_shape": dhi.UNIFORM, "shallowest_m": 2280.0, "deepest_m": 2320.0},
+    ]
+
+    @pytest.mark.parametrize("shape", SHAPES)
+    @pytest.mark.parametrize("p_valid", [0.99, 0.9, 0.655, 0.5, 0.2])
+    def test_the_depth_channel_can_never_say_more_than_the_floor_allows(self, shape, p_valid):
+        """`L / c >= 1 - p_valid`, for every shape, because `Pick(.) >= 0`."""
+        result = run()
+        obs = DhiObservation(seen=True, contact_m=2300.0, p_valid=p_valid, **shape)
+        weights = dhi.likelihood(result, DetectionFunction(), obs)
+        c = dhi.spurious_density(result.contact_m)
+        assert (weights / c).min() >= (1.0 - p_valid) - 1e-9
+
+    def test_a_bounded_pick_without_the_mixture_does_assign_zero(self):
+        """The failure mode the mixture exists to prevent — pinned so it cannot creep back."""
+        result = run()
+        dogmatic = DhiObservation(seen=True, contact_m=2300.0, pick_shape=dhi.PERT,
+                                  shallowest_m=2280.0, deepest_m=2320.0, p_valid=1.0)
+        assert dhi.likelihood(result, DetectionFunction(), dogmatic).min() == 0.0
+
+    def test_and_with_the_mixture_it_does_not(self):
+        result = run()
+        robust = dataclasses.replace(
+            DhiObservation(seen=True, contact_m=2300.0, pick_shape=dhi.PERT,
+                           shallowest_m=2280.0, deepest_m=2320.0), p_valid=0.9)
+        assert dhi.likelihood(result, DetectionFunction(), robust).min() > 0.0
+
+    def test_no_contact_depth_is_left_with_zero_posterior_probability(self):
+        """The claim in the geologist's words: the DHI is incomplete information."""
+        result = run()
+        post = dhi.update(result, DetectionFunction(),
+                          DhiObservation(seen=True, contact_m=2300.0, pick_shape=dhi.PERT,
+                                         shallowest_m=2280.0, deepest_m=2320.0, p_valid=0.9))
+        deep = float(post.exceedance(np.array([2380.0 - float(np.median(result.apex_m))]))[0])
+        assert deep > 0.0
+
+    def test_an_absent_anomaly_has_its_own_floor_already(self):
+        """`1 - D(h)` cannot reach zero because the detection ceiling is below 1."""
+        result = run()
+        weights = dhi.likelihood(result, DetectionFunction(ceiling=0.9), DhiObservation(seen=False))
+        assert weights.min() >= 0.1 - 1e-9

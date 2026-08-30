@@ -28,8 +28,8 @@ from hcwc.core import trust
 from hcwc.core import decompose as dc
 from hcwc.io import geox, report
 from hcwc.io import wellvolpos as wvp
-from hcwc.ui import (depth_risk_tab, dhi_tab, empirical, limiters_tab, prospect_tab,
-                     results_tab, theme)
+from hcwc.ui import (depth_risk_tab, dhi_tab, dhi_walkthrough, empirical, limiters_tab,
+                     prospect_tab, results_tab, theme)
 from hcwc.ui import numbering
 from hcwc.ui import run as engine_run
 from hcwc.ui.numbering import Numbering
@@ -295,10 +295,25 @@ with tab4:
 # misroute it.
 with tab5:
     _n5 = Numbering(5)
-    _evidence, _contact_dhi, _depth_dhi = st.tabs(
-        ["① The evidence", "② Contact and chance | DHI", "③ Risk against depth | DHI"])
+    # The lesson comes first for the reader: someone who does not yet believe the method has
+    # nowhere to look on the other three sub-tabs, all of which assume it.
+    #
+    # It is rendered *second*, and the two facts are not in conflict. `st.tabs` returns containers,
+    # so where content is written is independent of when. The walkthrough runs on the observation
+    # `dhi_tab` has just built rather than on the previous frame's — which matters here more than
+    # anywhere else in the app, because a first-time visitor lands on this page before touching a
+    # widget, and a one-frame lag would greet them by asking for something they had already done.
+    #
+    # The cost is that figure numbers on this sub-tab follow the ones on ②, since the shared
+    # sequence counts in render order. A lesson whose figures are numbered after the analysis they
+    # explain is a smaller wart than a lesson that will not draw itself.
+    _how, _evidence, _contact_dhi, _depth_dhi = st.tabs(
+        ["① How a DHI moves a chance", "② What you saw", "③ Contact and chance | DHI",
+         "④ Risk against depth | DHI"])
     with _evidence:
         dhi_tab.render(_n5)
+    with _how:
+        dhi_walkthrough.render(_n5)
     with _contact_dhi:
         _post = st.session_state.get("dhi_posterior") if st.session_state.get("dhi_on") else None
         if _post is None:

@@ -82,8 +82,11 @@ def render(n: Numbering | None = None) -> None:
             "**What a DHI may and may not do.** E-POS sets the ceiling: a fluid indicator can sense "
             "whether a reservoir exists and what fluid fills it, but *not which of charge, closure "
             "or retention failed*. So it may move POS and it may assert a contact depth. It may "
-            "**not** re-weight the competing limits, and the controlling-limit diagnostic on tab ④ "
-            "stays a statement about the geological model."
+            "**not** tell you *which element failed*, which is why the element chances on tab ② "
+            "are never touched here. It *may* tell you which limit set the contact, because "
+            "knowing roughly where the contact sits is genuine evidence about which mechanism put "
+            "it there — so tab ④'s controlling-limit diagnostic stays purely geological and its "
+            "twin on this tab is the same diagnostic re-read through the amplitude."
         )
         # Otherwise a curve computed before the toggle was turned off would go on being drawn on
         # tab ④, which is the worst kind of stale: plausible, labelled, and wrong.
@@ -99,18 +102,57 @@ def render(n: Numbering | None = None) -> None:
     theme.heading(TAB, "1 · What was observed")
     seen = st.radio("Amplitude anomaly", ["Seen", "Absent where one was expected"],
                     horizontal=True) == "Seen"
-    o1, o2, o3 = st.columns(3)
-    contact = o1.number_input(
-        "Picked contact (m TVDSS)", 0.0, 10000.0,
-        float(np.percentile(result.contact_m, 50)), 5.0, disabled=not seen,
-        help="The down-dip amplitude termination or flat spot.")
-    sigma = o2.number_input(
-        "Pick σ (m)", 1.0, 500.0, 20.0, 1.0,
-        help="Flat-spot pick uncertainty **plus depth-conversion error**. The second is usually "
-             "the larger, and it is the same uncertainty that moves the well's entry depth — the "
-             "one place this tool and WellVolPOS genuinely couple.")
-    area = o3.number_input("Anomaly area (km²), optional", 0.0, 1000.0, 0.0, 0.5,
-                           help="Used for the cross-check in §8. Leave at zero to skip.")
+    default_contact = float(np.percentile(result.contact_m, 50))
+    shape = st.radio(
+        "How is the pick shaped?", dhi_core.PICK_SHAPES, horizontal=True, disabled=not seen,
+        format_func=lambda k: {dhi_core.NORMAL: "Normal — an unbiased estimate",
+                               dhi_core.PERT: "Three-point — shallowest / likeliest / deepest",
+                               dhi_core.UNIFORM: "Bracket — no preferred depth inside"}[k],
+        help="Two of these are bounded, and a bound is a strong claim. It is safe here only "
+             "because §2 keeps a floor under everything — see the note there.")
+
+    shallowest = deepest = None
+    if shape == dhi_core.NORMAL:
+        o1, o2, o3 = st.columns(3)
+        contact = o1.number_input(
+            "Picked contact (m TVDSS)", 0.0, 10000.0, default_contact, 5.0, disabled=not seen,
+            help="The down-dip amplitude termination or flat spot.")
+        sigma = o2.number_input(
+            "Pick σ (m)", 1.0, 500.0, 20.0, 1.0,
+            help="Flat-spot pick uncertainty **plus depth-conversion error**. The second is "
+                 "usually the larger, and it is the same uncertainty that moves the well's entry "
+                 "depth — the one place this tool and WellVolPOS genuinely couple.")
+    else:
+        sigma = 20.0
+        o1, o2, o3, o4 = st.columns(4)
+        shallowest = o1.number_input(
+            "Shallowest possible (m TVDSS)", 0.0, 10000.0, default_contact - 20.0, 5.0,
+            disabled=not seen, help="Above this the contact cannot be — if the pick is right.")
+        if shape == dhi_core.PERT:
+            contact = o2.number_input(
+                "Most likely (m TVDSS)", 0.0, 10000.0, default_contact, 5.0, disabled=not seen,
+                help="The mode. Put it **above centre** to say the termination under-calls the "
+                     "contact, which tuning and resolution loss at the base of a column both "
+                     "argue for. That is the control that moves the reading at the pick.")
+            deepest = o3.number_input(
+                "Deepest possible (m TVDSS)", 0.0, 10000.0, default_contact + 20.0, 5.0,
+                disabled=not seen)
+        else:
+            deepest = o2.number_input(
+                "Deepest possible (m TVDSS)", 0.0, 10000.0, default_contact + 20.0, 5.0,
+                disabled=not seen)
+            contact = 0.5 * (shallowest + deepest)
+            o3.metric("Bracket centre", f"{contact:,.0f} m")
+    area = (o4 if shape != dhi_core.NORMAL else o3).number_input(
+        "Anomaly area (km²), optional", 0.0, 1000.0, 0.0, 0.5,
+        help="Used for the cross-check in §8. Leave at zero to skip.")
+
+    if seen and shape != dhi_core.NORMAL and not shallowest < deepest:
+        st.error("**The deepest possible contact must lie below the shallowest.**")
+        return
+    if seen and shape == dhi_core.PERT and not shallowest <= contact <= deepest:
+        st.error("**The most likely contact must lie between the two bounds.**")
+        return
 
     # ------------------------------------------------------------------ strength channel
     theme.heading(TAB, "2 · DHI strength — the amplitude channel")
@@ -193,6 +235,41 @@ is where your prospect sits relative to the two populations you drew.
         f"the error the name invites, and it is a common one."
     )
 
+    # ------------------------------------------------------------------ p_valid
+    # The volume weight has a second job. Read as a probability it is exactly the question the
+    # depth channel needs answered -- is the thing I picked really the contact -- and using it
+    # there makes the floor `1/(R+1)`, which the capped R can never drive to zero.
+    # Published for the walkthrough sub-tab, which explains this number rather than
+    # producing it. Same one-frame lag as everything else that crosses a sub-tab boundary.
+    st.session_state["dhi_r_strength"] = float(r_strength)
+    derived_p_valid = dhi_core.volume_weight(r_strength)
+    with st.expander(f"**Is the picked event really the contact?** "
+                     f"p_valid = {derived_p_valid:.3f}, from the strength above"):
+        st.markdown(
+            "A flat event can be lithology, a diagenetic front, fizz gas read as pay, or a "
+            "processing artefact. **`p_valid` is the chance it is none of those**, and it decides "
+            "how much of the contact depth the pick is allowed to settle.\n\n"
+            "The rest of the probability goes to a branch where the pick says nothing about depth "
+            "and *the geological model on tab ④ stands untouched*. That branch is what keeps the "
+            "chance from ever reaching zero, however sharply the pick is drawn:\n\n"
+            f"- the depth channel can say at most **{derived_p_valid / (1 - derived_p_valid):.1f} : 1** "
+            f"against any contact depth\n"
+            f"- and never more than **{dhi_core.R_CAP:.0f} : 1**, because R is capped — so a "
+            "bounded pick shape is safe to use\n\n"
+            "**Where this mapping can be wrong.** The strength axis measures how *hydrocarbon-like "
+            "the amplitude looks*, not how reliably the event locates a contact. A dim but "
+            "geometrically perfect flat spot is an excellent contact indicator and gets an "
+            "unfairly low `p_valid` here; a bright non-conformable blob gets an unfairly high one. "
+            "Override it when that is the case — and if you are overriding often, the mapping "
+            "is wrong and worth telling me about."
+        )
+        if st.checkbox("Set p_valid myself", value=False):
+            p_valid = st.slider("p_valid", 0.05, 0.99, float(round(derived_p_valid, 2)), 0.01,
+                                help="1.0 is deliberately unreachable: it would say the pick is "
+                                     "certainly the contact, and certainty cannot be argued with.")
+        else:
+            p_valid = derived_p_valid
+
     # ------------------------------------------------------------------ combining
     theme.heading(TAB, "3 · Detection function D(h)")
     st.markdown(
@@ -228,7 +305,9 @@ is where your prospect sits relative to the two populations you drew.
     # ------------------------------------------------------------------ the update
     theme.heading(TAB, "4 · POS against threshold")
     observation = DhiObservation(seen=seen, contact_m=contact if seen else None,
-                                 pick_sigma_m=sigma, area_km2=area or None)
+                                 pick_sigma_m=sigma, area_km2=area or None,
+                                 pick_shape=shape, shallowest_m=shallowest, deepest_m=deepest,
+                                 p_valid=p_valid)
     try:
         post = dhi_core.update(result, detection, observation)
     except ValueError as exc:
@@ -468,6 +547,15 @@ So the combination is discounted rather than taken raw.
 
     # ------------------------------------------------------------------ cross-checks
     # ------------------------------------------------------------- success attribution
+    st.divider()
+    st.markdown(
+        "### Diagnostics\n\n"
+        "Everything above is the answer. Everything below is how much to trust it — what "
+        "the answer rests on, which mechanism the amplitude promoted, whether the anomaly "
+        "area agrees with the column, and what the older scenario-switch formulation would "
+        "have said instead. Good to read, and not what a first pass needs."
+    )
+
     theme.heading(TAB, "6 · What is this answer most sensitive to?")
     st.markdown(
         "**Two kinds of input, and the figure keeps them apart because they are argued about "

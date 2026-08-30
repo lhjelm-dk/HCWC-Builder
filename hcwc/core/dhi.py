@@ -28,8 +28,12 @@ Two formulations are offered, as decided in that note.
 **What the DHI may not do.** E-POS's ``logic/dfi_pillar_update.py`` sets the ceiling: a fluid
 indicator can sense whether a reservoir exists and what fluid fills it, but *not which of charge,
 closure or retention failed*. So a DHI may move POS and may assert a contact depth. It may **not**
-re-weight the competing limits, and the controlling-limit diagnostic stays a statement about the
-geological model.
+tell you which element failed.
+
+It *may* tell you which limit set the contact, because knowing roughly where the contact sits is
+evidence about which mechanism put it there. Those are two different claims and the older wording
+here forbade both: the controlling-limit diagnostic therefore has a geological reading and a
+DHI-updated one, and they are two figures rather than one figure with two meanings.
 """
 from __future__ import annotations
 
@@ -38,6 +42,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.stats import norm
 
+from hcwc.core import dists
 from hcwc.core.engine import EngineResult
 
 
@@ -75,6 +80,12 @@ class DetectionFunction:
         return self.ceiling / (1.0 + np.exp(-(h - self.h50_m) / self.steepness_m))
 
 
+#: How the pick is shaped. All three are elicited in **m TVDSS** rather than as an error term,
+#: because an interpreter can argue about a depth and cannot argue about a sigma.
+NORMAL, PERT, UNIFORM = "normal", "pert", "uniform"
+PICK_SHAPES = (NORMAL, PERT, UNIFORM)
+
+
 @dataclass(frozen=True)
 class DhiObservation:
     """What was actually observed on the seismic.
@@ -82,11 +93,30 @@ class DhiObservation:
     ``seen = False`` is a real observation and not a missing one: an amplitude absent where one was
     expected is evidence, and with a detection function it needs no special handling — the
     likelihood becomes ``1 - D(h)``, which is largest at small ``h``.
+
+    **The pick has a shape, not just a width.** Three controls do three separate things, and they
+    were tangled together for as long as the only one was ``pick_sigma_m``:
+
+    * *skew* decides the reading **at** the picked contact. A symmetric pick puts the posterior
+      median on the pick, so the exceedance there is about half the POS. Skewing it deep — the
+      claim that an amplitude termination under-calls, which tuning and resolution loss at the base
+      of a column both argue for — moves that reading up.
+    * *width* decides how fast the chance falls **below** the pick.
+    * ``p_valid`` decides the floor under all of it, and is the subject of :func:`likelihood`.
+
+    ``p_valid`` defaults to 1.0 so that constructing an observation the old way reproduces the old
+    numbers exactly. **The app never passes 1.0** — it derives the value from the DHI strength — and
+    the reason is Cromwell's rule: at ``p_valid = 1`` a bounded pick shape assigns probability zero
+    below its deepest bound, and no later evidence can ever revive a zero.
     """
     seen: bool
     contact_m: float | None = None
     pick_sigma_m: float = 15.0
     area_km2: float | None = None
+    pick_shape: str = NORMAL
+    shallowest_m: float | None = None
+    deepest_m: float | None = None
+    p_valid: float = 1.0
 
     def __post_init__(self) -> None:
         if self.seen and self.contact_m is None:
@@ -96,19 +126,92 @@ class DhiObservation:
                 "the pick sigma must be positive; it is the flat-spot pick uncertainty **plus** "
                 "the depth-conversion error, which is the larger of the two on most prospects"
             )
+        if self.pick_shape not in PICK_SHAPES:
+            raise ValueError(f"pick_shape must be one of {PICK_SHAPES}, got {self.pick_shape!r}")
+        if not 0.0 < self.p_valid <= 1.0:
+            raise ValueError(
+                "p_valid is the chance the picked event really is the contact, so it must lie in "
+                "(0, 1]. Zero would say the observation is meaningless; it is never exactly zero "
+                "or the DHI would not have been picked at all"
+            )
+        if self.seen and self.pick_shape != NORMAL:
+            if self.shallowest_m is None or self.deepest_m is None:
+                raise ValueError(f"a {self.pick_shape} pick needs both a shallowest and a "
+                                 "deepest depth, in m TVDSS")
+            if not self.shallowest_m < self.deepest_m:
+                raise ValueError("the deepest possible contact must be below the shallowest")
+            if self.pick_shape == PERT and not (
+                    self.shallowest_m <= self.contact_m <= self.deepest_m):
+                raise ValueError("the picked contact is the PERT's mode and must lie in range")
+
+    def pick_pdf(self, contact_m: np.ndarray) -> np.ndarray:
+        """Density over where the contact is, **given the picked event really is the contact**.
+
+        This is only half of the likelihood. The other half — the world where the picked event is
+        lithology, diagenesis, fizz gas or an artefact — is flat in depth and lives in
+        :func:`likelihood`, which is what keeps a bounded shape here from becoming a claim of
+        impossibility.
+        """
+        z = np.asarray(contact_m, dtype=float)
+        if self.pick_shape == NORMAL:
+            return norm.pdf((self.contact_m - z) / self.pick_sigma_m) / self.pick_sigma_m
+        if self.pick_shape == UNIFORM:
+            return dists.uniform_pdf(z, self.shallowest_m, self.deepest_m)
+        return dists.pert_pdf(z, self.shallowest_m, self.contact_m, self.deepest_m)
+
+
+def spurious_density(contact_m: np.ndarray) -> float:
+    """``c`` — the density of a flat event that is *not* the contact, at any one depth.
+
+    Taken as uniform over the trap's own depth range: an event that has nothing to do with the
+    hydrocarbon column is equally likely to turn up anywhere in the closure. It is the same value
+    in the success and the failure world, and that equality is load-bearing — *is hydrocarbon
+    present* is the strength channel's question and it answers it once. Letting ``c`` differ
+    between the two worlds would answer it twice.
+
+    Only the ratio to the pick density matters, so the overall rate of spurious events cancels and
+    never has to be elicited.
+    """
+    z = np.asarray(contact_m, dtype=float)
+    span = float(z.max() - z.min())
+    return 1.0 / span if span > 0 else 1.0
 
 
 def likelihood(result: EngineResult, detection: DetectionFunction,
                observation: DhiObservation) -> np.ndarray:
     """``L(seismic | h)`` for every realisation.
 
-    Seen: ``D(h) x Pick(z_DHI | apex + h)``. Not seen: ``1 - D(h)``.
+    **Not seen:** ``1 - D(h)``. Its own floor is already built in — ``DetectionFunction.ceiling``
+    is below 1 on purpose, so an absent anomaly is never infinitely strong evidence either.
+
+    **Seen**, with ``V`` for *the event I picked really is the hydrocarbon–water contact*::
+
+        L = p_valid · D(h) · Pick(z_DHI | apex + h)   +   (1 - p_valid) · c
+
+    The detection function gates **only** the first branch. "Would a column this tall have produced
+    a visible anomaly" is a question that means something only when the anomaly is the column's; in
+    the second branch, seeing the event had nothing to do with the column.
+
+    In the second branch the likelihood is flat in ``h``, so the geological prior passes through
+    untouched. That is what gives the whole update its floor: since ``Pick(·) >= 0``,
+
+        L / c  >=  1 - p_valid
+
+    so the depth channel can never say more than ``p_valid / (1 - p_valid)`` against any hypothesis,
+    whatever shape the pick has. Nothing is ever ruled out by one seismic interpretation — which is
+    Cromwell's rule, and the reason a bounded pick shape is safe to offer at all.
+
+    There is no ``V`` branch in the failure world: with no accumulation there is no contact to
+    indicate, so ``p_valid`` is properly ``P(V | G)`` and appears only here.
     """
     d = detection.at(result.column_m)
     if not observation.seen:
         return 1.0 - d
-    residual = (observation.contact_m - result.contact_m) / observation.pick_sigma_m
-    return d * norm.pdf(residual) / observation.pick_sigma_m
+    valid = d * observation.pick_pdf(result.contact_m)
+    if observation.p_valid >= 1.0:
+        return valid
+    return (observation.p_valid * valid
+            + (1.0 - observation.p_valid) * spurious_density(result.contact_m))
 
 
 @dataclass(frozen=True)
