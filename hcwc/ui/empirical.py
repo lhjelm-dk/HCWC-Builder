@@ -92,7 +92,12 @@ def _render_import() -> None:
         name = c1.text_input("Name it", key="import_name", placeholder="e.g. internal fields, 2026")
         source = c2.text_input("Source", key="import_source",
                                placeholder="citation, internal reference, or 'unknown'")
-        upload = st.file_uploader("Dataset (.csv)", type=["csv"], key="import_upload")
+        upload = st.file_uploader(
+            "Dataset (.csv)", type=["csv"], key="import_upload",
+            help="One row per discovery, with a closure height and a hydrocarbon column height "
+                 "under any of the spellings the reader accepts. Comma-separated, up to 10 000 "
+                 "rows. Nothing you import is written to disk or sent anywhere — it lives in this "
+                 "browser session only.")
 
         if upload is not None:
             try:

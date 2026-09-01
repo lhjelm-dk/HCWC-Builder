@@ -103,6 +103,30 @@ provenance attached.
 """
     )
 
+    # Eight tabs is a lot to land on, and nothing on this page said which of them to open first.
+    # The essay above says what the tool is for; a first-time reader also needs the path through it.
+    st.markdown(
+        """
+---
+
+**New here? The working path runs through four tabs, in this order.**
+
+- **② Prospect** — apex, spill point, element risk, and the **assessment minimum**: the smallest
+  column that would make the well a discovery. Everything downstream is measured against it.
+- **③ HCWC limiters** — one block per mechanism that could stop the column. Switch off what does
+  not apply; each one you keep needs a probability of being active and a depth or capacity.
+- **④ Results** — the contact distribution, which limit controls it, and the chance at every
+  depth. **⑤** is the same reading with a seismic amplitude anomaly folded in.
+- **⑦ Export** — percentiles for a volumetrics package, with the basis stated on the file.
+
+**⑥ Empirical** and **⑧ Theory** are reference rather than steps: the published record behind the
+defaults, and the reasoning the tool rests on.
+
+*In a hurry?* **Load the worked example on tab ②** and read tab ④ first — every number on this
+page is already filled in for a real prospect.
+"""
+    )
+
     theme.heading(1, "1 · What can set a hydrocarbon–water contact")
     concept_png = ROOT / "reference" / "concept.png"
     if concept_png.exists():
@@ -310,7 +334,7 @@ with tab4:
     with _depth:
         depth_risk_tab.render(n=Numbering(4, sub=2))
 
-# --------------------------------------------------------------------------- ⑤ Results | DHI
+# --------------------------------------------------------------------------- ⑤ Results + DHI
 #
 # **Three sub-tabs, because the first one was doing two jobs.** It elicited the DHI evidence AND
 # presented the result, so the result half never grew the structure tab ④ has -- six of tab ④'s
@@ -338,7 +362,7 @@ with tab5:
     # `Figure 5.2.1` is the first exhibit on *What you saw*, and it stays that whatever else moves.
     _how, _evidence, _contact_dhi, _depth_dhi = st.tabs(
         ["5.1 · How a DHI moves a chance", "5.2 · What you saw",
-         "5.3 · Contact and chance | DHI", "5.4 · Risk against depth | DHI"])
+         "5.3 · Contact and chance + DHI", "5.4 · Risk against depth + DHI"])
     for _panel in (_how, _evidence, _contact_dhi, _depth_dhi):
         with _panel:
             st.markdown(theme.subtab_marker(5), unsafe_allow_html=True)

@@ -110,7 +110,11 @@ def render(n: Numbering | None = None) -> None:
     # read out by name, so `prospect.document` could not see them and a saved prospect carried
     # `dhi_toggle` and nothing else. It reopened claiming a DHI and quietly using the default one.
     seen = st.radio("Amplitude anomaly", ["Seen", "Absent where one was expected"],
-                    horizontal=True, key="dhi_in_seen") == "Seen"
+                    horizontal=True, key="dhi_in_seen",
+                    help="**Absent** is evidence too, and this tool uses it: no anomaly where the "
+                         "column would have been thick enough to show one argues against a long "
+                         "column. It is only usable if you would genuinely have seen it — say so "
+                         "with the detection function in §3.") == "Seen"
     # Lars's defaults for the worked prospect. Falling back to the model's own median keeps a
     # differently-sited prospect from opening on a pick its geology considers impossible, which
     # `dhi.update` would refuse outright rather than merely warn about.
@@ -155,13 +159,17 @@ def render(n: Numbering | None = None) -> None:
                      "argue for. That is the control that moves the reading at the pick.")
             deepest = o3.number_input(
                 "Deepest possible (m TVDSS)", 0.0, 10000.0, default_contact + 20.0, 5.0,
-                disabled=not seen, key="dhi_in_deepest")
+                disabled=not seen, key="dhi_in_deepest",
+                help="Below this the contact cannot be, if the pick is right. This is the bound "
+                     "that does the work: it is what stops the column short.")
         else:
             # The same key as the PERT branch above. Only one of the two is ever built in a
             # given run, and sharing the key carries the depth across a change of pick shape.
             deepest = o2.number_input(
                 "Deepest possible (m TVDSS)", 0.0, 10000.0, default_contact + 20.0, 5.0,
-                disabled=not seen, key="dhi_in_deepest")
+                disabled=not seen, key="dhi_in_deepest",
+                help="Below this the contact cannot be, if the pick is right. Inside the bracket "
+                     "no depth is preferred over another.")
             contact = 0.5 * (shallowest + deepest)
             o3.metric("Bracket centre", f"{contact:,.0f} m")
     area = (o4 if shape != dhi_core.NORMAL else o3).number_input(
@@ -327,7 +335,10 @@ is where your prospect sits relative to the two populations you drew.
             "Override it when that is the case — and if you are overriding often, the mapping "
             "is wrong and worth telling me about."
         )
-        if st.checkbox("Set p_valid myself", value=False, key="dhi_in_pvalid_manual"):
+        if st.checkbox("Set p_valid myself", value=False, key="dhi_in_pvalid_manual",
+                       help="Overrides the value derived from DHI strength above. Use it when the "
+                            "anomaly's *geometry* argues differently from its amplitude — a "
+                            "conformable flat spot, or a bright blob that follows no structure."):
             p_valid = st.slider("p_valid", 0.05, 0.99, float(round(derived_p_valid, 2)), 0.01,
                                 key="dhi_in_pvalid",
                                 help="1.0 is deliberately unreachable: it would say the pick is "
@@ -346,7 +357,11 @@ is where your prospect sits relative to the two populations you drew.
     d1, d2, d3 = st.columns(3)
     h50 = d1.number_input("50 % detection column (m)", 1.0, 500.0, 25.0, 1.0,
                           help="Roughly the tuning thickness for this reservoir and frequency.")
-    steep = d2.number_input("Transition width (m)", 1.0, 200.0, 8.0, 1.0)
+    steep = d2.number_input(
+        "Transition width (m)", 1.0, 200.0, 8.0, 1.0,
+        help="How sharply detection turns on. Small means a clean threshold at the column above; "
+             "large means a gradual rise, which is the safer assumption when the reservoir "
+             "properties vary across the closure.")
     ceiling = d3.number_input("Ceiling", 0.05, 1.0, 0.90, 0.01,
                               help="Below 1 on purpose. A thick column can still fail to show, and "
                                    "a function reaching certainty would make an absent anomaly "
@@ -783,6 +798,9 @@ So the combination is discounted rather than taken raw.
         )
         dhi_space = st.radio(
             "Swing measured on", ["Column below apex", "Contact depth"], horizontal=True,
+            help="Which quantity the bars measure. The ranking can differ between the two: a "
+                 "limit that moves the column a long way may move the *depth* less, because the "
+                 "apex moves in the same realisation.",
             key="dhi_tornado_space")
         _space = "column" if dhi_space.startswith("Column") else "depth"
         _effects = sensitivity.dhi_tornado(post, space=_space)

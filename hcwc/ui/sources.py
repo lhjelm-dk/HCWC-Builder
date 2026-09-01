@@ -155,18 +155,29 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
                      help=(f"Defaulted from the {burial:,.0f} m burial depth on tab ②, at "
                            f"25–40 °C/km. Override if you have a measured gradient."
                            if burial else "Set a burial depth on tab ② to default this."))
-    theta = c3.slider("Contact angle θ (°)", 0.0, 60.0, (0.0, 30.0), key=f"{key}_theta")
+    theta = c3.slider(
+        "Contact angle θ (°)", 0.0, 60.0, (0.0, 30.0), key=f"{key}_theta",
+        help="How strongly the rock prefers water to hydrocarbon. 0° is fully water-wet, which "
+             "gives the strongest seal; the range says you do not know it exactly. Rarely "
+             "measured, so a range from 0 is the usual honest answer.")
 
     c4, c5 = st.columns(2)
     r_seal = c4.slider("Seal pore-throat radius (µm)", 0.01, 2.0, (0.03, 0.12), 0.01,
                        key=f"{key}_rs",
                        help="The single most sensitive input. A good shale is well below 0.1 µm.")
     r_res = c5.slider("Reservoir pore-throat radius (µm)", 0.1, 10.0, (0.8, 3.0), 0.1,
+                      help="The reservoir's own throats, which set the pressure already in the "
+                           "column. They must be **wider** than the seal's — that difference is "
+                           "what holds hydrocarbons back.",
                       key=f"{key}_rr")
 
     c6, c7 = st.columns(2)
-    rho_w = c6.slider("Water density (g/cm³)", 0.95, 1.20, (1.00, 1.10), 0.01, key=f"{key}_rw")
-    rho_hc = c7.slider("HC density (g/cm³)", 0.10, 1.00, (0.70, 0.85), 0.01, key=f"{key}_rh")
+    rho_w = c6.slider("Water density (g/cm³)", 0.95, 1.20, (1.00, 1.10), 0.01, key=f"{key}_rw",
+                      help="Formation water, so above 1.00 where it is saline.")
+    rho_hc = c7.slider("HC density (g/cm³)", 0.10, 1.00, (0.70, 0.85), 0.01, key=f"{key}_rh",
+                       help="Only the **difference** between the two densities matters: capacity "
+                            "is the entry pressure divided by it, so a light gas buoys harder and "
+                            "the same seal holds a much shorter column of it.")
     net = st.toggle("Subtract the reservoir's own entry pressure", value=True, key=f"{key}_net",
                     help="The physically complete form — hydrocarbon already occupies the "
                          "reservoir pores, so only the *difference* must be overcome.")

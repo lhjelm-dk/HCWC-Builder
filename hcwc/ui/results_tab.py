@@ -490,9 +490,13 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         format_func=lambda s_: "m TVDSS" if s_ == limits_mod.DEPTH else "m column below apex",
         help="Display only. The model always competes in column height, because that is the space "
              "where comparing a seal capacity with a spill point means anything.")
-    mode = c2.selectbox("Draw as", limit_stack.MODES, key=f"stack_mode_{tab}")
-    every = c3.number_input("Every n-th point", 1, 500, 10, 1, key=f"stack_every_{tab}",
-                            disabled=mode != "Points")
+    mode = c2.selectbox(
+        "Draw as", limit_stack.MODES, key=f"stack_mode_{tab}",
+        help="Exceedance curves read as probabilities; the violins and the histogram show where each limit actually lands; points show the individual realisations behind them.")
+    every = c3.number_input(
+        "Every n-th point", 1, 500, 10, 1, key=f"stack_every_{tab}",
+        disabled=mode != "Points",
+        help="Thinning, so the cloud stays readable: 10 draws every tenth realisation. Only applies to **Points**, which is why it is greyed out otherwise.")
 
     apex_med = float(np.median(result.apex_m))
     lo_def, hi_def = limit_stack.default_window(result, space, apex_med,

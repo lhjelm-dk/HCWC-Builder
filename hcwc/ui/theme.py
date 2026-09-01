@@ -47,7 +47,10 @@ TAB_COLOURS: dict[int, tuple[str, str]] = {
     2: ("#DD8452", "Prospect"),
     3: ("#E8A87C", "HCWC limiters"),
     4: ("#64B5CD", "Results"),
-    5: ("#3E8FA3", "Results | DHI"),
+    # "Results + DHI", not "Results | DHI". The pipe read as the separator between tabs, so the
+    # strip said "④ Results | ⑤ Results | DHI" and a first-time reader saw three tabs where
+    # there are two. The plus pairs it with ④ instead of splitting it.
+    5: ("#3E8FA3", "Results + DHI"),
     6: ("#55A868", "Empirical"),
     7: ("#8172B2", "Export"),
     8: ("#937860", "Theory"),

@@ -94,7 +94,7 @@ def render() -> None:
         st.success("Prospect loaded. Every input below, and every limit and calculator on tab ③, "
                    "is as it was saved.")
 
-    with st.expander("Save or load this prospect"):
+    with st.expander("Save or load this prospect — or load the worked example"):
         st.markdown(
             "**Everything lives in the browser session until you save it** — close the tab and an "
             "hour of eliciting twelve limits is gone. A saved file carries every input you touched, "
@@ -165,7 +165,9 @@ def render() -> None:
         "Apex, P1 (m TVDSS)", 0.0, 10000.0, step=10.0, key="apex_p1",
         help="The 1 % point of the apex depth — the shallow end. Narrow unless the depth "
              "conversion is genuinely poor.")
-    apex_hi = a2.number_input("Apex, P99 (m TVDSS)", 0.0, 10000.0, step=10.0, key="apex_p99")
+    apex_hi = a2.number_input(
+        "Apex, P99 (m TVDSS)", 0.0, 10000.0, step=10.0, key="apex_p99",
+        help="The 99 % point — the deep end. The gap between this and P1 is the depth-conversion uncertainty on the crest, and it is carried through every realisation rather than fixed.")
     spill = a3.number_input(
         "Spill point, as mapped (m TVDSS)", 0.0, 10000.0, step=10.0, key="spill_input",
         help="The mapped synclinal spill. Its **uncertainty** is a limit on tab ③ → Closure, and "
@@ -220,7 +222,11 @@ def render() -> None:
     # ------------------------------------------------------------------ element risk
     theme.heading(TAB, "2 · Element risk")
     st.markdown(
-        "Play × conditional per element, as **E-POS** produces them. These do not move the contact "
+        "**Play** is the chance the element works anywhere in this play; **conditional** is the "
+        "chance it works *here*, given the play does. Their product is that element's chance, and "
+        "the four products multiply to P(G). It is the split **E-POS** produces — if your number "
+        "is already one chance per element, put it in Play and leave Conditional at 1.00.\n\n"
+        "These do not move the contact "
         "— they scale the chance of success *at* each depth on tab ④, and they are what makes the "
         "derived per-element curves a risk statement rather than a geometry statement."
     )
@@ -334,7 +340,7 @@ def render() -> None:
              "says so and nothing else changes, because a DHI never edits the geological model.")
     st.session_state["dhi_on"] = bool(dhi_on)
     st.caption(
-        "With this on, two further tabs become live: **Results | DHI** and **Depth risk | DHI**, "
+        "With this on, two further tabs become live: **Results + DHI** and **Depth risk + DHI**, "
         "carrying the evidence inputs and the Bayesian update. Tab ④ stays **purely "
         "geological** either way — a DHI never edits the geological model, and E-POS's resolution "
         "ceiling is why: a fluid indicator senses whether a reservoir exists and what fills it, "

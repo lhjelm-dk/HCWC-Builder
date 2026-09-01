@@ -85,17 +85,24 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         "success *at* a depth. Conflating them breaks the consistency identity below, so R1 lives "
         "here and the identity is checked over the contact-controlling elements only."
     )
-    use_r1 = st.toggle("Apply a reservoir-effectiveness decline", value=False,
-                       key=f"r1_on_{tab}")
+    use_r1 = st.toggle(
+        "Apply a reservoir-effectiveness decline", value=False, key=f"r1_on_{tab}",
+        help="For a reservoir that degrades with depth rather than stopping at a surface. Between "
+             "the two depths it asks for, the chance of an effective reservoir falls off linearly, "
+             "so a deeper contact is worth less than its height alone suggests.")
     reservoir = ReservoirEffectiveness()
     if use_r1:
         r1, r2 = st.columns(2)
         full_to = r1.number_input("Fully effective to (m TVDSS)", 0.0, 8000.0,
                                   float(np.percentile(result.contact_m, 25)), 25.0,
-                                  key=f"r1_full_{tab}")
+                                  key=f"r1_full_{tab}",
+                                  help="Above this depth the reservoir is as good as it gets — "
+                                       "the decline has not started.")
         none_below = r2.number_input("Not a reservoir below (m TVDSS)", 0.0, 8000.0,
                                      float(np.percentile(result.contact_m, 95)), 25.0,
-                                     key=f"r1_none_{tab}")
+                                     key=f"r1_none_{tab}",
+                                     help="Below this there is effectively no reservoir left, so "
+                                          "a contact down there adds nothing.")
         if none_below < full_to:
             st.error("The reservoir cannot stop being effective above the depth it is fully "
                      "effective to.")
@@ -232,7 +239,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
 
     if show_dhi and overlay is None:
         st.caption(
-            "**The DHI update has not been computed yet.** Open tab ⑤ (*Results | DHI*) once so "
+            "**The DHI update has not been computed yet.** Open tab ⑤ (*Results + DHI*) once so "
             "the evidence is entered; the curve appears here on the next interaction, because that "
             "tab computes it after this one has already drawn."
         )
