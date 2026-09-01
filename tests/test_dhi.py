@@ -611,3 +611,140 @@ class TestAbsenceIsEvidenceAgainst:
         # With nothing seen there is no amplitude to grade, so the strength channel is neutral.
         combined = dhi.CombinedUpdate(prior_pos, float(post.r_dhi), 1.0, dependence=0.5)
         assert combined.posterior_pos < prior_pos * 0.5
+
+
+class TestPartialConformance:
+    """Bright over the crest, reliably absent below a depth — the third observation.
+
+    It was missing, and an observation with no home gets entered as whichever neighbour is closer:
+    as a pick it does not support, which asserts a contact depth nobody picked, or as *absent*,
+    which throws away that something is convincingly there. Neither is what was seen.
+    """
+
+    @staticmethod
+    def _result(n=8000):
+        return engine.run(reference_prospect(), n, 4242)
+
+    def _at(self, cutoff, **kw):
+        result = self._result()
+        obs = DhiObservation(seen=True, absent_below_m=cutoff, **kw)
+        return result, dhi.update(result, DetectionFunction(), obs)
+
+    def test_it_is_a_seen_anomaly(self):
+        """The strength channel applies in full: something is there to characterise."""
+        obs = DhiObservation(seen=True, absent_below_m=2250.0)
+        assert obs.seen and obs.is_partial
+
+    def test_a_pick_and_a_bound_are_mutually_exclusive(self):
+        with pytest.raises(ValueError, match="no picked contact"):
+            DhiObservation(seen=True, contact_m=2250.0, absent_below_m=2300.0)
+
+    def test_an_unseen_anomaly_cannot_be_partial(self):
+        with pytest.raises(ValueError, match="is a .seen. anomaly"):
+            DhiObservation(seen=False, absent_below_m=2250.0)
+
+    def test_a_cutoff_above_the_apex_describes_no_prospect(self):
+        result = self._result()
+        shallow = float(result.apex_m.min()) - 50.0
+        with pytest.raises(ValueError, match="at or above the apex"):
+            dhi.likelihood(result, DetectionFunction(),
+                           DhiObservation(seen=True, absent_below_m=shallow))
+
+    def test_everything_above_the_cutoff_is_equally_consistent(self):
+        """The claim is a bound, not a depth. Above the cutoff no contact is preferred, which is
+        what separates this from a pick — a pick peaks somewhere and this must not."""
+        result, post = self._at(2250.0, p_valid=1.0)
+        h_off = 2250.0 - result.apex_m
+        above = result.column_m <= h_off
+        assert above.sum() > 50, "the fixture needs realisations on both sides of the cutoff"
+        # Above the cutoff the only variation left is D(h) itself, so the bound contributes a
+        # constant. Divide it out and what remains must be flat.
+        detection = DetectionFunction()
+        bound_factor = post.weights[above] / detection.at(result.column_m[above])
+        assert np.allclose(bound_factor, bound_factor[0])
+
+    def test_it_argues_against_columns_below_the_cutoff(self):
+        result, post = self._at(2250.0, p_valid=1.0)
+        h_off = 2250.0 - result.apex_m
+        above, well_below = result.column_m <= h_off, result.column_m > h_off + 100.0
+        assert well_below.sum() > 20, "the fixture needs realisations well below the cutoff"
+        assert post.weights[well_below].mean() < 0.5 * post.weights[above].mean()
+
+    def test_the_likelihood_falls_away_rather_than_stopping_dead(self):
+        """A bound that switched off at the cutoff would be a claim of impossibility. A slice of
+        column just under it could plausibly have been missed; a hundred metres of it could not."""
+        result = self._result()
+        detection = DetectionFunction()
+        weights = dhi.likelihood(result, detection,
+                                 DhiObservation(seen=True, absent_below_m=2250.0, p_valid=1.0))
+        h_off = 2250.0 - result.apex_m
+        excess = result.column_m - h_off
+        just_below = (excess > 0.0) & (excess < 10.0)
+        far_below = excess > 120.0
+        assert just_below.any() and far_below.any()
+        assert weights[just_below].mean() > 3.0 * weights[far_below].mean()
+
+    @pytest.mark.parametrize("p_valid", [0.2, 0.5, 0.9, 0.99])
+    def test_cromwell_holds(self, p_valid):
+        """`L >= 1 - p_valid`, so no seismic interpretation ever rules a column out."""
+        result = self._result()
+        weights = dhi.likelihood(result, DetectionFunction(),
+                                 DhiObservation(seen=True, absent_below_m=2250.0, p_valid=p_valid))
+        assert weights.min() >= (1.0 - p_valid) - 1e-12
+
+    def test_the_cutoff_is_converted_against_each_realisations_own_apex(self):
+        """A depth means nothing until it is converted against the apex drawn with it. Moving the
+        apex must move the bound, or the two are being compared in different spaces."""
+        result = self._result()
+        detection, obs = DetectionFunction(), DhiObservation(seen=True, absent_below_m=2250.0)
+        weights = dhi.likelihood(result, detection, obs)
+        deeper = dataclasses.replace(result, apex_m=result.apex_m + 100.0)
+        assert not np.allclose(weights, dhi.likelihood(deeper, detection, obs))
+
+    def test_it_is_weaker_than_a_pick_at_the_same_depth(self):
+        """The whole point. A pick asserts a contact; a bound only says *not below here*, and the
+        arithmetic must not let the weaker observation speak as loudly as the stronger one."""
+        result = self._result()
+        detection = DetectionFunction()
+        pick = dhi.update(result, detection, DhiObservation(
+            seen=True, contact_m=2250.0, pick_sigma_m=15.0, p_valid=0.6))
+        bound = dhi.update(result, detection, DhiObservation(
+            seen=True, absent_below_m=2250.0, p_valid=0.6))
+        prior_p50 = float(np.median(result.contact_m[result.above_minimum]))
+        moved_by_pick = abs(pick.percentiles(50.0)[0] - prior_p50)
+        moved_by_bound = abs(bound.percentiles(50.0)[0] - prior_p50)
+        assert moved_by_bound < moved_by_pick
+
+    def test_a_cutoff_below_everything_contributes_nothing_of_its_own(self):
+        """An observation consistent with the whole prior must add no argument of its own.
+
+        Not that the weights go flat: a *seen* anomaly always argues for a column tall enough to
+        have been visible, and that ``D(h)`` term is present here as it is for a pick. What has to
+        vanish is the bound's own contribution, so that the case degrades to "I saw something".
+        """
+        result = self._result()
+        detection = DetectionFunction()
+        deep = float(result.contact_m.max()) + 200.0
+        weights = dhi.likelihood(result, detection,
+                                 DhiObservation(seen=True, absent_below_m=deep, p_valid=1.0))
+        bound_factor = weights / detection.at(result.column_m)
+        assert np.allclose(bound_factor, bound_factor[0])
+
+    def test_r_dhi_is_defined_and_sits_between_the_two_it_replaces(self):
+        """Entered as a pick the evidence reads far too strongly for it; entered as absent it reads
+        far too weakly. The point of the case is that it belongs between them.
+
+        Run at a real assessment minimum, because ``r_dhi`` for a seen anomaly is a success-versus-
+        failure ratio and there are no failures to divide by when every realisation clears zero.
+        That is a property of the ratio, not of this observation.
+        """
+        result = engine.run(dataclasses.replace(reference_prospect(), min_column_m=180.0),
+                            8000, 4242)
+        detection = DetectionFunction()
+        r_pick = dhi.update(result, detection, DhiObservation(
+            seen=True, contact_m=2250.0, pick_sigma_m=15.0, p_valid=0.6)).r_dhi
+        r_bound = dhi.update(result, detection, DhiObservation(
+            seen=True, absent_below_m=2250.0, p_valid=0.6)).r_dhi
+        r_absent = dhi.update(result, detection, DhiObservation(seen=False)).r_dhi
+        assert np.isfinite(r_bound)
+        assert r_absent < r_bound < r_pick

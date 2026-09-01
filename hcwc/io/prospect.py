@@ -184,7 +184,8 @@ ENUM_EXACT: dict[str, frozenset[str]] = {
     "stack_space_5": frozenset({COLUMN, DEPTH}),
     "stack_mode_4": frozenset(STACK_MODES),
     "stack_mode_5": frozenset(STACK_MODES),
-    "dhi_in_seen": frozenset({"Seen", "Absent where one was expected"}),
+    "dhi_in_seen": frozenset({"Seen", "Seen over the crest only",
+                              "Absent where one was expected"}),
     "dhi_in_shape": frozenset({"normal", "pert", "uniform"}),
 }
 

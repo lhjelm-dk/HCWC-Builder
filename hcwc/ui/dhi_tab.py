@@ -23,6 +23,14 @@ TAB = 5
 PRIOR = "#8CB7FC"
 POSTERIOR = "#C44E52"
 
+#: The three things an interpreter can actually have. The middle one was missing, and an
+#: observation that has no home gets entered as whichever neighbour is closer -- as a pick it does
+#: not support, which overstates it, or as *absent*, which throws away that something is there.
+CONFORMING = "Seen"
+PARTIAL = "Seen over the crest only"
+ABSENT = "Absent where one was expected"
+OBSERVATIONS = (CONFORMING, PARTIAL, ABSENT)
+
 
 def _fmt_r(r: float) -> str:
     """A likelihood ratio, formatted so an implausible one cannot masquerade as a precise one.
@@ -109,12 +117,16 @@ def render(n: Numbering | None = None) -> None:
     # Streamlit's own widget store, under generated ids: they survive a rerun, and they cannot be
     # read out by name, so `prospect.document` could not see them and a saved prospect carried
     # `dhi_toggle` and nothing else. It reopened claiming a DHI and quietly using the default one.
-    seen = st.radio("Amplitude anomaly", ["Seen", "Absent where one was expected"],
-                    horizontal=True, key="dhi_in_seen",
-                    help="**Absent** is evidence too, and this tool uses it: no anomaly where the "
-                         "column would have been thick enough to show one argues against a long "
-                         "column. It is only usable if you would genuinely have seen it — say so "
-                         "with the detection function in §3.") == "Seen"
+    anomaly = st.radio(
+        "Amplitude anomaly", OBSERVATIONS, horizontal=True, key="dhi_in_seen",
+        help="**Absent** is evidence too, and this tool uses it: no anomaly where the column "
+             "would have been thick enough to show one argues against a long column. It is only "
+             "usable if you would genuinely have seen it — say so with the detection function in "
+             "§3.\n\n**Seen over the crest only** is the middle case: something is convincingly "
+             "there and convincingly stops, but with no down-dip termination clean enough to pick "
+             "a contact on. It carries a bound, not a depth.")
+    seen = anomaly != ABSENT
+    partial = anomaly == PARTIAL
     # Lars's defaults for the worked prospect. Falling back to the model's own median keeps a
     # differently-sited prospect from opening on a pick its geology considers impossible, which
     # `dhi.update` would refuse outright rather than merely warn about.
@@ -124,7 +136,8 @@ def render(n: Numbering | None = None) -> None:
                        <= float(result.contact_m.max())
                        else float(np.percentile(result.contact_m, 50)))
     shape = st.radio(
-        "How is the pick shaped?", dhi_core.PICK_SHAPES, horizontal=True, disabled=not seen,
+        "How is the pick shaped?", dhi_core.PICK_SHAPES, horizontal=True,
+        disabled=not seen or partial,
         key="dhi_in_shape",
         format_func=lambda k: {dhi_core.NORMAL: "Normal — an unbiased estimate",
                                dhi_core.PERT: "Three-point — shallowest / likeliest / deepest",
@@ -133,7 +146,22 @@ def render(n: Numbering | None = None) -> None:
              "because §2 keeps a floor under everything — see the note there.")
 
     shallowest = deepest = None
-    if shape == dhi_core.NORMAL:
+    absent_below = None
+    if partial:
+        # No pick, by definition: the bound is the whole observation. `contact` is still assigned
+        # because the area cross-check in §8 reads it, and for this case the cutoff is the only
+        # depth the anomaly gives.
+        o1, o2, o3 = st.columns(3)
+        absent_below = o1.number_input(
+            "Reliably absent below (m TVDSS)", 0.0, 10000.0, default_contact, 5.0,
+            key="dhi_in_absent_below",
+            help="The depth below which you are confident there is no anomaly — not where you "
+                 "think the contact is. It is a bound: everything above it is equally consistent "
+                 "with what you saw, and the likelihood falls away below it at a rate the "
+                 "detection function in §3 sets.")
+        o2.metric("Bound, as a column", f"{max(absent_below - apex, 0.0):,.0f} m")
+        sigma, contact = DEFAULT_SIGMA_M, absent_below
+    elif shape == dhi_core.NORMAL:
         o1, o2, o3 = st.columns(3)
         contact = o1.number_input(
             "Picked contact (m TVDSS)", 0.0, 10000.0, default_contact, 5.0, disabled=not seen,
@@ -172,14 +200,21 @@ def render(n: Numbering | None = None) -> None:
                      "no depth is preferred over another.")
             contact = 0.5 * (shallowest + deepest)
             o3.metric("Bracket centre", f"{contact:,.0f} m")
-    area = (o4 if shape != dhi_core.NORMAL else o3).number_input(
+    area = (o3 if partial else o4 if shape != dhi_core.NORMAL else o3).number_input(
         "Anomaly area (km²), optional", 0.0, 1000.0, 0.0, 0.5, key="dhi_in_area",
         help="Used for the cross-check in §8. Leave at zero to skip.")
 
-    if seen and shape != dhi_core.NORMAL and not shallowest < deepest:
+    if partial and absent_below <= apex:
+        st.error(
+            f"**The anomaly cannot be absent below {absent_below:,.0f} m and seen over the crest** "
+            f"— the apex is at {apex:,.0f} m, so that depth is at or above the top of the closure. "
+            f"There would be no trap above it for the anomaly to have been seen in."
+        )
+        return
+    if seen and not partial and shape != dhi_core.NORMAL and not shallowest < deepest:
         st.error("**The deepest possible contact must lie below the shallowest.**")
         return
-    if seen and shape == dhi_core.PERT and not shallowest <= contact <= deepest:
+    if seen and not partial and shape == dhi_core.PERT and not shallowest <= contact <= deepest:
         st.error("**The most likely contact must lie between the two bounds.**")
         return
 
@@ -188,7 +223,56 @@ def render(n: Numbering | None = None) -> None:
     # sounds modest until you see it against a prior three hundred metres wide -- and it is the
     # input that most quietly decides the answer. So it is drawn where it is typed, on the same
     # axis as the distribution it is about to reweight.
-    if seen:
+    if partial:
+        # The bound drawn where it is typed, for the same reason the pick is: what an interpreter
+        # can check by eye is whether the cutoff sits anywhere near the distribution it is about to
+        # act on. A cutoff below the whole prior says nothing and should look like it says nothing.
+        figb = go.Figure()
+        figb.add_histogram(x=result.contact_m, nbinsx=70, histnorm="probability density",
+                           marker_color=PRIOR, opacity=0.75,
+                           name="geological HCWC — the competing limits, tab ④")
+        figb.add_vline(x=absent_below, line=dict(color=POSTERIOR, width=3),
+                       annotation_text=f"absent below {absent_below:,.0f} m",
+                       annotation_position="top right")
+        figb.add_vrect(x0=absent_below, x1=float(result.contact_m.max()) + 10.0,
+                       fillcolor="rgba(196,78,82,0.10)", line_width=0)
+        figb.update_layout(xaxis_title="Contact depth (m TVDSS)", yaxis_title="Density",
+                           height=300, margin=dict(t=30), legend=dict(orientation="h", y=-0.28))
+        below = float((result.contact_m > absent_below).mean())
+        n.plot(figb,
+               "**Blue is the hydrocarbon–water contact your geology produced** — the "
+               "competing-limits model from tab ③. The red line is the only depth this "
+               "observation gives, and it is a **bound rather than a pick**: everything shallower "
+               "than it is equally consistent with what you saw, and the shaded side is what the "
+               "evidence argues against.\n\n"
+               f"**{below:.0%} of the geological realisations fall in the shaded side**, and those "
+               "are the ones the update acts on. If that share is near zero the observation is "
+               "telling you nothing you did not already believe — which is a real answer, not a "
+               "failure. The likelihood does not stop dead at the line: it falls away below it at "
+               "the rate §3's detection function sets, because a slice of column just under the "
+               "cutoff could plausibly have been missed and a hundred metres of it could not.")
+
+        # The one way this observation misleads, and it does it quietly. Once the cutoff is above
+        # essentially the whole prior, every realisation is penalised by the same saturated amount
+        # -- `1 - D` has bottomed out at `1 - ceiling` for all of them -- so the likelihood is flat,
+        # the posterior equals the prior, and the page reports that the DHI changed nothing. It did
+        # not change nothing: it contradicted the model outright. A flat penalty and no evidence
+        # produce the same picture, and only this check tells them apart.
+        if below >= 0.95:
+            st.warning(
+                f"**Your seismic and your geology disagree outright, and the update cannot show "
+                f"it.** The anomaly is said to stop above {absent_below:,.0f} m, and "
+                f"{below:.0%} of the geological realisations put the contact deeper than that — "
+                f"so every one of them is inconsistent with the observation by roughly the same "
+                f"saturated amount.\n\n"
+                f"A likelihood that is uniformly small carries no *relative* information, so the "
+                f"posterior below will come out close to the prior and the DHI will appear to have "
+                f"changed nothing. **Read that as the disagreement it is, not as a null result.** "
+                f"Either the cutoff is picked shallower than the amplitude really supports, or the "
+                f"limits on tab ③ are letting the column go deeper than this prospect can."
+            )
+
+    if seen and not partial:
         preview = DhiObservation(seen=True, contact_m=contact, pick_sigma_m=sigma,
                                  pick_shape=shape, shallowest_m=shallowest, deepest_m=deepest)
         lo = min(float(result.contact_m.min()), float(preview.pick_ppf(np.array([0.001]))[0]))
@@ -384,10 +468,12 @@ is where your prospect sits relative to the two populations you drew.
 
     # ------------------------------------------------------------------ the update
     theme.heading(TAB, sub=n.sub, text="4 · Prospect POS against threshold")
-    observation = DhiObservation(seen=seen, contact_m=contact if seen else None,
-                                 pick_sigma_m=sigma, area_km2=area or None,
-                                 pick_shape=shape, shallowest_m=shallowest, deepest_m=deepest,
-                                 p_valid=p_valid)
+    observation = DhiObservation(
+        seen=seen, contact_m=None if partial or not seen else contact,
+        pick_sigma_m=sigma, area_km2=area or None,
+        pick_shape=shape, shallowest_m=None if partial else shallowest,
+        deepest_m=None if partial else deepest,
+        p_valid=p_valid, absent_below_m=absent_below)
     try:
         post = dhi_core.update(result, detection, observation)
     except ValueError as exc:

@@ -138,3 +138,32 @@ def test_realisations_reaches_the_dhi_posterior():
         _no_exception(at, f"{trials} realisations")
         drawn = np.asarray(at.session_state["dhi_overlay"]["contact_samples"], dtype=float)
         assert drawn.size == trials, f"asked for {trials}, the posterior drew {drawn.size}"
+
+
+@pytest.mark.parametrize("anomaly", ["Seen", "Seen over the crest only",
+                                     "Absent where one was expected"])
+def test_every_dhi_observation_type_renders(anomaly):
+    """Partial conformance — bright over the crest, reliably absent below — is the third case, and
+    the walkthrough on sub-tab ⑤.1 reads the observation too. It called `pick_pdf` on an
+    observation that has no pick and took the page down."""
+    _no_exception(_run(dhi_in_seen=anomaly), f"DHI observation {anomaly!r}")
+
+
+def test_a_cutoff_above_the_apex_is_refused_in_place():
+    at = _run(dhi_in_seen="Seen over the crest only", dhi_in_absent_below=1900.0)
+    _no_exception(at, "a cutoff above the apex")
+    assert any("absent below" in e.value for e in at.error), "nothing explained the refusal"
+
+
+def test_the_partial_conformance_bound_survives_a_reload():
+    import json
+
+    from hcwc.io import prospect
+
+    at = _run(dhi_in_seen="Seen over the crest only", dhi_in_absent_below=2200.0)
+    _no_exception(at, "partial conformance")
+    saved = prospect.document(at.session_state.filtered_state)
+    assert saved["inputs"]["dhi_in_absent_below"] == 2200.0
+    reloaded = _run(**prospect.read(json.dumps(saved)))
+    assert (reloaded.session_state["dhi_overlay"]["posterior_pos"]
+            == at.session_state["dhi_overlay"]["posterior_pos"])

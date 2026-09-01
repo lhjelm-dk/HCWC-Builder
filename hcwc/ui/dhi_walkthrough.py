@@ -115,7 +115,19 @@ def render(n: Numbering | None = None) -> None:
     figl = go.Figure()
     figl.add_scatter(x=grid, y=d_curve, mode="lines", name="D(h) — would I have seen it at all?",
                      line=dict(color=PRIOR, width=2.6))
-    if observation.seen:
+    if observation.is_partial:
+        # Same two questions, but the second one is asked about the slice below the cutoff rather
+        # than about a termination depth: having shown up, would the part under the cutoff have
+        # been missed? Plotted on the same axes so the shapes can be compared directly.
+        h_off = observation.absent_below_m - apex
+        bound_curve = 1.0 - detection.at(np.clip(grid - h_off, 0.0, None))
+        figl.add_scatter(x=grid, y=bound_curve, mode="lines",
+                         name="1 − D(h − h_off) — would the part below have been missed?",
+                         line=dict(color=POSTERIOR, width=2.6))
+        product = d_curve * bound_curve
+        figl.add_scatter(x=grid, y=product / (float(product.max()) or 1.0), mode="lines",
+                         name="their product", line=dict(color=theme.INK, width=3.2, dash="dot"))
+    elif observation.seen:
         pick_curve = observation.pick_pdf(apex + grid)
         scale = float(pick_curve.max()) or 1.0
         figl.add_scatter(x=grid, y=pick_curve / scale, mode="lines",
@@ -180,13 +192,25 @@ def render(n: Numbering | None = None) -> None:
     if observation.seen:
         depths = apex + grid
         d_at = detection.at(result.column_m)
-        pick_at = observation.pick_pdf(result.contact_m)
-        c = dhi_core.spurious_density(result.contact_m)
+        if observation.is_partial:
+            # The same three branches, for the bound. The spurious one is a bare 1 rather than a
+            # density: with the bright event unrelated to the column, its down-dip edge is wherever
+            # that thing ends, so this observation is what you would have recorded either way.
+            valid_at = d_at * (1.0 - detection.at(
+                np.clip(result.column_m - (observation.absent_below_m - result.apex_m), 0.0, None)))
+            c = 1.0
+            labels = ("V alone — the anomaly really stops at the cutoff",
+                      "¬V alone — the bright event is not the column")
+        else:
+            valid_at = d_at * observation.pick_pdf(result.contact_m)
+            c = dhi_core.spurious_density(result.contact_m)
+            labels = ("V alone — the pick is the contact",
+                      "¬V alone — the pick is spurious")
         branches = {
-            "V alone — the pick is the contact": d_at * pick_at,
-            "¬V alone — the pick is spurious": np.full(result.n, c),
+            labels[0]: valid_at,
+            labels[1]: np.full(result.n, c),
             f"the mixture, p_valid = {observation.p_valid:.2f}": (
-                observation.p_valid * d_at * pick_at + (1 - observation.p_valid) * c),
+                observation.p_valid * valid_at + (1 - observation.p_valid) * c),
         }
         figb = go.Figure()
         for (label, w), colour, dash in zip(branches.items(), (POSTERIOR, FLAT, theme.INK),

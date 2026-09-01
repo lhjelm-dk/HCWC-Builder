@@ -127,9 +127,34 @@ class DhiObservation:
     shallowest_m: float | None = None
     deepest_m: float | None = None
     p_valid: float = 1.0
+    absent_below_m: float | None = None
+
+    @property
+    def is_partial(self) -> bool:
+        """Partial conformance: bright over the crest, reliably absent below a depth.
+
+        The third observation, and the one the tab could not take. An interpreter often has an
+        anomaly that is convincingly there and convincingly *stops*, without a down-dip termination
+        clean enough to pick a contact on. Forced into the two cases that existed, it had to be
+        entered either as a pick it does not support -- overstating what was seen -- or as *absent*,
+        which throws away the fact that something is there. Neither is the observation.
+        """
+        return self.absent_below_m is not None
 
     def __post_init__(self) -> None:
-        if self.seen and self.contact_m is None:
+        if self.is_partial:
+            if not self.seen:
+                raise ValueError(
+                    "partial conformance is a *seen* anomaly -- bright over the crest and absent "
+                    "below a depth. An anomaly that was never seen at all is the `seen=False` case"
+                )
+            if self.contact_m is not None:
+                raise ValueError(
+                    "partial conformance has no picked contact, and that is the point of it: the "
+                    "anomaly stops without a down-dip termination clean enough to pick. Give "
+                    "`absent_below_m` or `contact_m`, not both"
+                )
+        elif self.seen and self.contact_m is None:
             raise ValueError("an observed anomaly needs a picked contact depth")
         if self.pick_sigma_m <= 0:
             raise ValueError(
@@ -144,7 +169,7 @@ class DhiObservation:
                 "(0, 1]. Zero would say the observation is meaningless; it is never exactly zero "
                 "or the DHI would not have been picked at all"
             )
-        if self.seen and self.pick_shape != NORMAL:
+        if self.seen and not self.is_partial and self.pick_shape != NORMAL:
             if self.shallowest_m is None or self.deepest_m is None:
                 raise ValueError(f"a {self.pick_shape} pick needs both a shallowest and a "
                                  "deepest depth, in m TVDSS")
@@ -225,12 +250,61 @@ def likelihood(result: EngineResult, detection: DetectionFunction,
     whatever shape the pick has. Nothing is ever ruled out by one seismic interpretation — which is
     Cromwell's rule, and the reason a bounded pick shape is safe to offer at all.
 
+    **Partial conformance** -- bright over the crest, reliably absent below ``z_off``. Neither of
+    the other two: something is there, so the strength channel applies in full, but there is no
+    down-dip termination to pick. What the observation carries is a *bound*, and the arithmetic
+    says so::
+
+        L = p_valid · D(h) · [1 - D((h - h_off)+)]   +   (1 - p_valid)
+
+    with ``h_off = z_off - apex`` **per realisation**, because the apex is drawn in every one and a
+    depth means nothing until it is converted against the apex it belongs to.
+
+    Read it left to right. ``D(h)`` is the same first factor as a picked anomaly: a column this
+    tall had to be visible at all, or there would have been nothing to see. The bracket is the new
+    part. If the contact is above ``z_off`` the clamp makes the excess zero and the bracket is a
+    constant -- the observation is simply consistent, and no depth above the cutoff is preferred
+    over any other, which is exactly the claim an interpreter is making. If the contact is *below*
+    ``z_off`` then a slice of column of height ``h - h_off`` sits under the cutoff and should have
+    shown; ``1 - D`` of that height is the chance it did not. The likelihood therefore falls away
+    below the cutoff instead of stopping dead at it, and how fast it falls is set by the same
+    detection function the rest of the tab is elicited on.
+
+    ⚠ **Applying ``D`` to a slice is the modelling choice here**, the counterpart of the shape
+    warning on :class:`DetectionFunction`. It treats the sub-cutoff interval as a thickness that
+    must clear tuning on its own terms, which is the reason a thin one hides; it does not model the
+    slice's contrast against the column above it. Worth a geophysicist's opinion, like the shape.
+
+    The spurious branch is a bare ``1``, not a density, because this likelihood is a probability
+    rather than a density in depth -- and the value is right, not merely convenient. In the world
+    where the bright event is lithology or fizz, its down-dip edge is wherever that thing happens
+    to end, so *this observation is what you would have recorded whatever the column did*. The
+    branch explains the data perfectly, which is what makes it a floor: ``L >= 1 - p_valid``, and
+    partial conformance can never rule a column out. That the floor is high -- a much larger share
+    of the likelihood than the pick's ``c`` -- is the honest reading. "Bright above, absent below"
+    is weaker evidence than a contact you can pick, and the arithmetic should not pretend otherwise.
+
     There is no ``V`` branch in the failure world: with no accumulation there is no contact to
     indicate, so ``p_valid`` is properly ``P(V | G)`` and appears only here.
     """
     d = detection.at(result.column_m)
     if not observation.seen:
         return 1.0 - d
+    if observation.is_partial:
+        h_off = observation.absent_below_m - result.apex_m
+        if not np.any(h_off > 0.0):
+            raise ValueError(
+                f"the anomaly is said to be absent below {observation.absent_below_m:,.0f} m, "
+                f"which is at or above the apex in every realisation (the apex reaches "
+                f"{float(result.apex_m.min()):,.0f} m). There is no closure above that depth for "
+                f"the anomaly to have been seen in, so the observation describes no prospect. It "
+                f"has to be a depth inside the closure."
+            )
+        excess = np.clip(result.column_m - h_off, 0.0, None)
+        valid = d * (1.0 - detection.at(excess))
+        if observation.p_valid >= 1.0:
+            return valid
+        return observation.p_valid * valid + (1.0 - observation.p_valid)
     valid = d * observation.pick_pdf(result.contact_m)
     if observation.p_valid >= 1.0:
         return valid
