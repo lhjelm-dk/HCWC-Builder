@@ -53,21 +53,57 @@ def render_charge(key: str, n_trials: int, seed: int) -> Handover | None:
         return None
 
     rng = np.random.default_rng(seed + 991)
+    # These three are only ever used as a product, and saying so is worth more than three separate
+    # definitions: an assessor who agonises over porosity while leaving net-to-gross at a default
+    # is tightening one factor of a number whose other factors are still loose.
+    st.caption(
+        "The three below multiply to one number — the fraction of gross rock volume that is "
+        "hydrocarbon. Only the **product** enters the calculation, so a range that is honest "
+        "about all three beats a precise value for one of them."
+    )
     c1, c2, c3 = st.columns(3)
-    ntg = c1.slider("Net-to-gross", 0.05, 1.0, (0.50, 0.80), key=f"{key}_ntg")
-    por = c2.slider("Porosity", 0.02, 0.45, (0.20, 0.30), key=f"{key}_por")
-    sat = c3.slider("HC saturation", 0.20, 1.0, (0.50, 0.80), key=f"{key}_sat")
+    ntg = c1.slider(
+        "Net-to-gross", 0.05, 1.0, (0.50, 0.80), key=f"{key}_ntg",
+        help="Fraction of the gross interval that is reservoir at all. The range is the "
+             "uncertainty, and it is sampled independently in every realisation.")
+    por = c2.slider(
+        "Porosity", 0.02, 0.45, (0.20, 0.30), key=f"{key}_por",
+        help="Of the net rock, the fraction that is pore space. Use the range you would defend "
+             "from analogues at this burial depth, not a log average from one well.")
+    sat = c3.slider(
+        "HC saturation", 0.20, 1.0, (0.50, 0.80), key=f"{key}_sat",
+        help="Of the pore space, the fraction filled with hydrocarbon rather than water. The rest "
+             "is irreducible water, which is why the top of this range is below 1.")
 
-    case = st.selectbox("Phase case", ["Pure oil", "Pure gas"], key=f"{key}_case")
+    case = st.selectbox(
+        "Phase case", ["Pure oil", "Pure gas"], key=f"{key}_case",
+        help="Which fluid the basin model delivered. It sets the conversion below and the default "
+             "volumes, which differ by more than two orders of magnitude — a gas charge in oil "
+             "units would fill any closure. It should agree with the seal calculator's fluid: the "
+             "same seal holds a much shorter column of gas.")
     st.session_state["charge_phase"] = case
     f1, f2, f3 = st.columns(3)
-    mean = f1.number_input("Charge mean (10⁶ Sm³)", 0.0, 500_000.0,
-                           120.0 if case == "Pure oil" else 39600.0, 1.0, key=f"{key}_mean")
-    sd = f2.number_input("Charge sd (10⁶ Sm³)", 0.0, 200_000.0,
-                         25.0 if case == "Pure oil" else 5500.0, 1.0, key=f"{key}_sd")
-    factor = f3.number_input("Bo (m³/Sm³)" if case == "Pure oil" else "1/Bg (Sm³/m³)",
-                             0.01, 500.0, 1.35 if case == "Pure oil" else 235.0, 0.01,
-                             key=f"{key}_factor")
+    mean = f1.number_input(
+        "Charge mean (10⁶ Sm³)", 0.0, 500_000.0,
+        120.0 if case == "Pure oil" else 39600.0, 1.0, key=f"{key}_mean",
+        help="What the basin model says arrived in this closure, at **surface** conditions. This "
+             "is the volume charged, not the volume trapped — how much of it the structure can "
+             "hold is what the calculation below works out.")
+    sd = f2.number_input(
+        "Charge sd (10⁶ Sm³)", 0.0, 200_000.0,
+        25.0 if case == "Pure oil" else 5500.0, 1.0, key=f"{key}_sd",
+        help="One standard deviation on that volume, sampled as a normal and clipped at zero. "
+             "Charge volumes are poorly known, so a wide spread here is usually the honest input — "
+             "it is what decides how often charge limits the column at all.")
+    factor = f3.number_input(
+        "Bo (m³/Sm³)" if case == "Pure oil" else "1/Bg (Sm³/m³)",
+        0.01, 500.0, 1.35 if case == "Pure oil" else 235.0, 0.01, key=f"{key}_factor",
+        help=("Oil formation volume factor: how many reservoir m³ one surface Sm³ occupies down "
+              "there. Above 1 because dissolved gas expands the oil in the reservoir."
+              if case == "Pure oil" else
+              "Inverse gas formation volume factor: how many surface Sm³ fit into one reservoir "
+              "m³. Large because gas is compressed at reservoir pressure — which is why a gas "
+              "charge quoted in surface units fills so much less rock than it looks like."))
 
     def tri(pair):
         lo, hi = pair
