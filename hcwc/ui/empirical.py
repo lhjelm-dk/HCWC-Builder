@@ -1079,7 +1079,104 @@ What follows is a disagreement about **one estimator**, not about the data.
             "which it is."
         )
 
-    theme.heading(TAB, "9 · What we are and are not claiming")
+    theme.heading(TAB, "9 · The base rate for a prospect like yours")
+    st.markdown(
+        "Edmundson's §5.2 recommends including **base-rate figures** and integrating them with the "
+        "geological assessment, citing Milkov (2017) on base-rate neglect — and gives no method "
+        "for the combination. This section is the part of that recommendation that carries no "
+        "risk: their matrix for a prospect of your dimensions, beside what your limits produced, "
+        "with the sample size in view.\n\n"
+        "**Nothing here changes a number.** The two are not merged, because merging them needs a "
+        "weight nobody can yet defend — see the note under the table."
+    )
+
+    matrix_limits = st.session_state.get("limit_set")
+    if matrix_limits is None or not own_relief or own_relief <= 0:
+        st.info("Build the limits on tab ③ and set a spill point on tab ② to find the matching "
+                "cell.")
+    else:
+        from hcwc.ui import run as engine_run
+
+        matrix = benchmarks.load_edmundson_matrix()
+        height_bin = ("0-150m" if own_relief <= 150 else
+                      "151-300m" if own_relief <= 300 else "300+m")
+        depth_bin = ("0-1500m" if burial <= 1500 else
+                     "1501-3000m" if burial <= 3000 else "3000+m")
+        cell = matrix[(matrix.trap_height_bin == height_bin)
+                      & (matrix.burial_depth_bin == depth_bin)]
+
+        if cell.empty:
+            st.info("No cell in the published matrix matches this relief and burial depth.")
+        else:
+            cell = cell.iloc[0]
+            # Restricted to the success cases, because every one of the 242 is a discovery. The
+            # comparison is only like-for-like against realisations that would have been drilled
+            # and found something.
+            built = engine_run.current(matrix_limits)
+            fill = np.clip(built.column_m[built.above_minimum] / float(own_relief), 0.0, 1.0)
+            bands = ((0.0, 0.5), (0.5, 0.75), (0.75, 0.99))
+            mine = [float(((fill > lo) & (fill <= hi)).mean()) for lo, hi in bands]
+            mine_spill = float((fill > 0.99).mean())
+            theirs = [float(cell.p_fill_0_50), float(cell.p_fill_51_75),
+                      float(cell.p_fill_76_99)]
+
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Matching cell", f"{height_bin} · {depth_bin}")
+            c2.metric("Discoveries in it", f"{int(cell.n)}",
+                      "the whole basis for this row", delta_color="off")
+            c3.metric("Of those, filled to spill", f"{float(cell.p_fill_100):.0%}",
+                      "censored — capacity never observed", delta_color="off")
+
+            comparison = pd.DataFrame([
+                {"Trap fill": label, "Your model": f"{a:.1%}", "This cell": f"{b:.1%}",
+                 "Difference": f"{a - b:+.1%}"}
+                for label, a, b in zip(("0–50%", "51–75%", "76–99%"), mine, theirs)
+            ] + [{"Trap fill": "100% — censored", "Your model": f"{mine_spill:.1%}",
+                  "This cell": f"{float(cell.p_fill_100):.1%}",
+                  "Difference": f"{mine_spill - float(cell.p_fill_100):+.1%}"}])
+
+            fig_base = go.Figure()
+            fig_base.add_bar(x=mine + [mine_spill],
+                             y=["0–50%", "51–75%", "76–99%", "100%"], orientation="h",
+                             name="your model",
+                             marker_color=theme.BASIS_COLOUR[theme.GEOLOGICAL])
+            fig_base.add_bar(y=["0–50%", "51–75%", "76–99%", "100%"],
+                             x=theirs + [float(cell.p_fill_100)], orientation="h",
+                             name=f"NCS base rate (n = {int(cell.n)})", marker_color="#8172B2")
+            fig_base.update_layout(barmode="group", height=330, margin=dict(t=20),
+                                   xaxis_title="Share of cases", xaxis_tickformat=".0%",
+                                   yaxis_title="Trap fill", yaxis=dict(autorange="reversed"),
+                                   legend=dict(orientation="h", y=-0.28))
+            n.plot(fig_base,
+                   f"**Your competing limits against the {int(cell.n)} NCS discoveries in the same "
+                   f"trap-height and burial-depth cell.** Restricted to your success cases, because "
+                   "every one of theirs is a discovery.\n\n"
+                   "**Read the bottom pair apart from the other three.** The 100 % bar is not a "
+                   "fill outcome — it is the share of traps whose seal capacity was never "
+                   "observed, because geometry stopped the column first. It is a right-censoring "
+                   "rate, and comparing your model's filled-to-spill share against it compares "
+                   "two different kinds of number.")
+            n.table(comparison,
+                    "**A disagreement here is a finding, not an error.** The base rate describes "
+                    "what was drilled and found on the NCS; your model describes what your "
+                    "mechanisms allow. They are built from different information and are allowed "
+                    "to differ — the question a difference raises is *which of my elicited limits "
+                    "would have to move to close it*, and §8 above answers the direction.")
+
+            st.warning(
+                f"**This informs the contact distribution and never the chance.** The matrix is "
+                f"`P(trap fill | discovery)` — all {int(cell.n)} of those traps had hydrocarbons "
+                "in them. Used against POS it would silently condition on success, which is "
+                "precisely the error the rest of this tool is arranged to prevent. Moving a "
+                "chance would need a dataset containing dry holes, and this one has none.\n\n"
+                f"**And {int(cell.n)} discoveries is a thin basis.** Letting a cell this size "
+                "reshape a ten-thousand-realisation mechanistic model would be a strong move on "
+                "weak evidence, which is why the two are shown side by side and not combined. "
+                "The honest use is to notice a disagreement and go back to the limit that causes "
+                "it."
+            )
+
+    theme.heading(TAB, "10 · What we are and are not claiming")
     left, right = st.columns(2)
     left.success(
         "**Stands**\n\n"

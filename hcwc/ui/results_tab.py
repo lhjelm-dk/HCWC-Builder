@@ -172,10 +172,28 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
 
     # ------------------------------------------------------------------ 1 · exceedance
     theme.heading(tab, sub=n.sub, text="1 · Where is the contact?")
+    # A cumulative curve hides where the mass is: two quite different contact distributions can
+    # trace nearly the same exceedance. The histogram is the same object read the other way, so it
+    # is on by default and switchable off rather than the reverse.
+    show_hist = st.checkbox("Show the contacts themselves", value=True,
+                            key=f"contact_hist_{tab}",
+                            help="The distribution the curve beside it is the cumulative form of, "
+                                 "binned by depth on its own axis.")
     grid = np.linspace(0.0, float(result.column_m.max()) * 1.02, 400)
     f = exceed(grid)
     apex_med = float(np.median(result.apex_m))
     fig = go.Figure()
+
+    if show_hist:
+        basis = theme.GIVEN_DHI if given_dhi else theme.GEOLOGICAL
+        edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 61)
+        counts, _ = np.histogram(result.contact_m, bins=edges, weights=weights)
+        total = float(counts.sum())
+        fig.add_bar(y=0.5 * (edges[:-1] + edges[1:]), x=counts / total if total else counts,
+                    orientation="h", xaxis="x2", name=f"contacts — {basis}", opacity=0.45,
+                    marker_color=theme.BASIS_COLOUR[basis], marker_line_width=0,
+                    hovertemplate="%{y:.0f} m TVDSS<br>%{x:.1%} of realisations<extra></extra>")
+
     fig.add_scatter(x=f, y=apex_med + grid, mode="lines", name="P(contact deeper than this)",
                     line=dict(color="#4C72B0", width=3))
     if h_min > 0:
@@ -187,7 +205,16 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                       annotation_text=f"P{p}", annotation_position="top left")
     fig.update_layout(xaxis_title="Probability the contact is deeper", xaxis_range=[0, 1],
                       yaxis_title="Depth (m TVDSS)", yaxis=dict(autorange="reversed"),
-                      height=560, margin=dict(t=20), legend=dict(orientation="h", y=-0.15))
+                      height=560, margin=dict(t=20 if not show_hist else 58),
+                      legend=dict(orientation="h", y=-0.15))
+    if show_hist:
+        # Its own axis, so "probability the contact is deeper" keeps meaning exactly one thing, and
+        # scaled to a third of the width so the bars read as the ground the curve stands on.
+        peak = float(np.max(counts / total)) if total else 1.0
+        fig.update_layout(bargap=0.04, xaxis2=dict(
+            overlaying="x", side="top", range=[0, max(peak, 1e-6) * 3.0], showgrid=False,
+            tickformat=".0%", title="share of realisations per depth bin",
+            title_font_size=11, tickfont_size=10))
     n.plot(fig, "The exceedance curve `F(h) = P(column ≥ h)`, on the depth axis. Depth on y, "
                 "inverted, m TVDSS — the convention throughout this tool and WellVolPOS. **This "
                 "curve is the risk output**; POS at any threshold is a reading of it.")
