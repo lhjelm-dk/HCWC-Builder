@@ -102,10 +102,15 @@ class DatasetError(ValueError):
 #: There is no statistical reason for a ceiling -- more discoveries is strictly better -- so this is
 #: a memory limit, and it is here because this is the one path that accepts a file of any size from
 #: whoever is using the app. On a shared server a long-lived process holds every dataset anyone
-#: imports. 50 000 discoveries is roughly two orders of magnitude past the largest public
-#: column-height compilation, so a file over it is a mistake rather than an unusually good dataset.
-MAX_ROWS = 50_000
-MAX_CHARS = 25_000_000
+#: imports. 10 000 is Lars's number: comfortably past any published column-height compilation and
+#: past the NCS record this tool ships with, so a file over it is a different kind of table rather
+#: than an unusually good discovery list.
+#:
+#: The character limit is the same ceiling read before the parse, so a very large file is refused
+#: without pandas building a frame for it first. Sized to match: 10 000 discoveries with generous
+#: rows is a couple of megabytes.
+MAX_ROWS = 10_000
+MAX_CHARS = 5_000_000
 
 
 def read_csv(text: str | bytes, *, name: str, source: str = "") -> Dataset:
@@ -130,9 +135,9 @@ def read_csv(text: str | bytes, *, name: str, source: str = "") -> Dataset:
         raise DatasetError("the file has no rows.")
     if len(raw) > MAX_ROWS:
         raise DatasetError(
-            f"the file has {len(raw):,} rows, over the {MAX_ROWS:,} this reader accepts. That is "
-            f"far more than any published column-height compilation, so it is more likely a "
-            f"different kind of table. Filter it to one row per discovery first."
+            f"the file has {len(raw):,} rows, over the {MAX_ROWS:,} this reader accepts. A "
+            f"column-height dataset is one row per discovery, and past this it is more likely a "
+            f"well list or a production table. Filter it to the discoveries first."
         )
     if raw.shape[1] == 1 and any(sep in str(raw.columns[0]) for sep in (";", "	")):
         # Named before the missing-columns message below gets a chance to blame the columns. Excel
