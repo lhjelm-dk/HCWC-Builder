@@ -23,6 +23,7 @@ inspectable.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -135,3 +136,56 @@ def _banded_family(rng: np.random.Generator, trap_height: float, n: int,
     return out
 
 
+
+
+@lru_cache(maxsize=8)
+def _capacity_fit(tol_m: float = 1.0):
+    """The NCS seal capacity against **burial depth alone**, right-censored.
+
+    Burial depth alone, and the omission is deliberate. The multi-predictor fit also carries a
+    trap-height term, and it is a real feature of the data -- but a *seal capacity* that depends on
+    how big the closure is would smuggle geometry into a capillary property, and the engine then
+    takes ``min(capacity, spill)`` on top of it. That is the same double count this whole tool
+    argues against, arriving through the back door of a prior.
+
+    Capillary entry pressure has a physical reason to track burial: compaction closes pore throats,
+    and ``P_c`` goes as ``1/r``. That is the relationship worth borrowing.
+    """
+    from hcwc.core import censoring
+    data = load_edmundson().rows
+    return censoring.censored_slope(
+        data.burial_depth_m.to_numpy(float), data.hc_column_m.to_numpy(float),
+        trap_height=data.trap_height_m.to_numpy(float), tol_m=tol_m)
+
+
+def ncs_seal_capacity(burial_depth_m: float, n: int, seed: int) -> np.ndarray:
+    """Seal capacities the NCS record implies at this burial depth, in metres of column.
+
+    **Capacity, not observed column** -- deliberately not clipped at any spill point. The observed
+    columns in the dataset are ``min(capacity, trap height)``; what a *limit* on tab ③ needs is the
+    capacity itself, because the engine does the competing-limits minimum for you. Clipping here
+    would apply it twice.
+    """
+    fit = _capacity_fit()
+    rng = np.random.default_rng(seed)
+    mu = fit.intercept + fit.slope * np.log(max(float(burial_depth_m), 1.0))
+    return np.exp(rng.normal(mu, fit.sigma, int(n)))
+
+
+def shrink_toward(sample: np.ndarray, toward: np.ndarray, weight: float) -> np.ndarray:
+    """Pull one distribution toward another by ``weight``, quantile by quantile.
+
+    Vincentization -- averaging the two quantile functions -- rather than mixing the densities.
+    Mixing produces a two-humped distribution whenever the two disagree, which is a statement that
+    the truth is one *or* the other; averaging quantiles says the truth is *between* them, which is
+    what shrinking toward a population actually means.
+
+    ``weight = 0`` returns the sample unchanged, so the control is a no-op at its default.
+    """
+    if not 0.0 <= weight <= 1.0:
+        raise ValueError(f"the shrinkage weight must be in [0, 1], got {weight}")
+    values = np.sort(np.asarray(sample, dtype=float))
+    if weight == 0.0 or values.size == 0:
+        return values
+    probabilities = (np.arange(values.size) + 0.5) / values.size
+    return (1.0 - weight) * values + weight * np.quantile(np.asarray(toward, float), probabilities)

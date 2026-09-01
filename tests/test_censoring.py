@@ -372,3 +372,61 @@ class TestTheBenchmarkFamily:
         assert corrected == pytest.approx(observed, abs=0.03)
         assert published == pytest.approx(0.323, abs=0.02)
         assert observed - published > 0.10
+
+
+class TestTheShrinkagePrior:
+    """Pulling an elicited seal capacity toward the NCS record, and what it must not do.
+
+    Edmundson's §5.2 asks for base rates to be integrated with the geological assessment and does
+    not say how. This is the version that survives scrutiny: the censoring-corrected fit predicts
+    the *same quantity* the seal calculator computes, so the two can be averaged without either
+    standing in for the other.
+    """
+
+    def test_zero_weight_is_a_true_no_op(self):
+        """The control's default must not move a number, or every saved prospect changes meaning."""
+        from hcwc.io import benchmarks
+        own = np.exp(np.random.default_rng(0).normal(np.log(350.0), 0.45, 5_000))
+        assert np.array_equal(benchmarks.shrink_toward(own, own * 0.1, 0.0), np.sort(own))
+
+    def test_full_weight_lands_on_the_record(self):
+        from hcwc.io import benchmarks
+        own = np.exp(np.random.default_rng(1).normal(np.log(350.0), 0.45, 5_000))
+        ncs = benchmarks.ncs_seal_capacity(2050.0, 5_000, 7)
+        got = benchmarks.shrink_toward(own, ncs, 1.0)
+        for p in (10, 50, 90):
+            assert np.percentile(got, p) == pytest.approx(np.percentile(ncs, p), rel=0.02)
+
+    def test_it_interpolates_monotonically_between_the_two(self):
+        """Quantile averaging, so every percentile moves steadily — no second hump appearing."""
+        from hcwc.io import benchmarks
+        own = np.exp(np.random.default_rng(2).normal(np.log(350.0), 0.45, 5_000))
+        ncs = benchmarks.ncs_seal_capacity(2050.0, 5_000, 7)
+        medians = [float(np.percentile(benchmarks.shrink_toward(own, ncs, w), 50))
+                   for w in (0.0, 0.25, 0.5, 0.75, 1.0)]
+        assert np.all(np.diff(medians) < 0), "the NCS median is lower, so shrinking must lower it"
+
+    def test_the_capacity_prior_deepens_with_burial(self):
+        """Compaction closes pore throats, `P_c` goes as 1/r, so deeper should hold more."""
+        from hcwc.io import benchmarks
+        shallow = benchmarks.ncs_seal_capacity(1200.0, 20_000, 3)
+        deep = benchmarks.ncs_seal_capacity(4000.0, 20_000, 3)
+        assert np.percentile(deep, 50) > np.percentile(shallow, 50)
+
+    def test_the_prior_is_a_capacity_and_is_never_clipped_at_a_spill_point(self):
+        """The engine takes `min(capacity, spill)` itself; clipping here would apply it twice."""
+        from hcwc.io import benchmarks
+        drawn = benchmarks.ncs_seal_capacity(2050.0, 20_000, 5)
+        assert drawn.max() > 1_000.0, (
+            "an unclipped lognormal capacity should reach far beyond any one closure")
+
+    def test_it_is_fitted_against_burial_alone(self):
+        """Including trap height would put geometry inside a capillary property."""
+        from hcwc.io import benchmarks
+        fit = benchmarks._capacity_fit()
+        rows = benchmarks.load_edmundson().rows
+        assert 0.3 < fit.slope < 0.7
+        assert fit.slope > censoring.naive_slope(
+            rows.burial_depth_m.to_numpy(float),
+            rows.hc_column_m.to_numpy(float)), (
+            "censoring hides the deep well-sealed traps, so the corrected term must be larger")

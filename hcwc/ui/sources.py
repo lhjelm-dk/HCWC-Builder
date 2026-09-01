@@ -179,10 +179,60 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         st.error(str(exc))
         return None
 
+    elicited = capacity
+    with st.expander("**Pull this toward the NCS record** — a shrinkage prior on seal capacity"):
+        st.markdown(
+            "Edmundson's §5.2 asks for base rates to be *integrated* with the geological "
+            "assessment and does not say how. This is the safest place in the tool to do it: the "
+            "censoring-corrected NCS fit predicts **the same quantity this calculator computes** "
+            "— a seal capacity in metres of column — so the two can be averaged without either "
+            "having to stand in for the other.\n\n"
+            "**Against burial depth alone, and the omission is on purpose.** The fit also carries "
+            "a trap-height term, which is real in the data, but a *capacity* that knew how big "
+            "your closure was would smuggle geometry into a capillary property — and the engine "
+            "already takes `min(capacity, spill)` on top of it. Compaction closing pore throats is "
+            "the part with a physical reason to track burial, and it is the part borrowed."
+        )
+        weight = 0.0
+        if not burial:
+            st.info("Set a burial depth on tab ② to draw the NCS capacity for this prospect.")
+        else:
+            weight = st.slider(
+                "Weight on the NCS record", 0.0, 1.0, 0.0, 0.05, key=f"{key}_shrink",
+                help="0 leaves your calculator untouched; 1 replaces it with the record. In "
+                     "between, the two quantile functions are averaged, so the answer sits "
+                     "*between* them rather than becoming two humps — which is what shrinking "
+                     "toward a population means.")
+            reference = benchmarks.ncs_seal_capacity(float(burial), n_trials, seed + 977)
+            if weight > 0:
+                capacity = benchmarks.shrink_toward(elicited, reference, weight)
+            r1, r2, r3 = st.columns(3)
+            for col, p, label in ((r1, 10, "P90"), (r2, 50, "P50"), (r3, 90, "P10")):
+                col.metric(f"NCS {label}", f"{np.percentile(reference, p):,.0f} m",
+                           f"yours {np.percentile(elicited, p):,.0f} m", delta_color="off")
+            fit = benchmarks._capacity_fit()
+            st.caption(
+                f"The capacities the NCS record implies at **{burial:,.0f} m** burial, from the "
+                f"censoring-corrected fit `log S = {fit.intercept:.2f} + "
+                f"{fit.slope:.2f}·log(burial)`. Fitted naively the burial term is about half that, "
+                "because censoring hides exactly the deep, well-sealed traps that carry the "
+                "relationship.\n\n"
+                "⚠ **The record is discoveries only.** All 242 of those traps held hydrocarbons, "
+                "so this is a prior on *how much a seal holds where it holds something*. It says "
+                "nothing about whether yours does, and it must never touch the chance."
+            )
+
     m1, m2, m3 = st.columns(3)
-    m1.metric("P90 capacity", f"{np.percentile(capacity, 10):,.0f} m")
-    m2.metric("P50 capacity", f"{np.percentile(capacity, 50):,.0f} m")
-    m3.metric("P10 capacity", f"{np.percentile(capacity, 90):,.0f} m")
+    shrunk = capacity is not elicited
+    m1.metric("P90 capacity", f"{np.percentile(capacity, 10):,.0f} m",
+              f"before shrinking {np.percentile(elicited, 10):,.0f} m" if shrunk else None,
+              delta_color="off")
+    m2.metric("P50 capacity", f"{np.percentile(capacity, 50):,.0f} m",
+              f"before shrinking {np.percentile(elicited, 50):,.0f} m" if shrunk else None,
+              delta_color="off")
+    m3.metric("P10 capacity", f"{np.percentile(capacity, 90):,.0f} m",
+              f"before shrinking {np.percentile(elicited, 90):,.0f} m" if shrunk else None,
+              delta_color="off")
 
     from plotly.subplots import make_subplots
     fig = make_subplots(specs=[[{"secondary_y": True}]])

@@ -1176,6 +1176,46 @@ What follows is a disagreement about **one estimator**, not about the data.
                 "it."
             )
 
+            with st.expander("**A note on combining a base rate with a prospect estimate** — "
+                             "and one arithmetic to avoid"):
+                st.markdown(
+                    "Milkov (2017) is right about the problem, and the paper is worth reading: "
+                    "explorers do under-use population frequencies, and a portfolio that ignores "
+                    "them drifts. Nothing below disputes that.\n\n"
+                    "**The difficulty is in the arithmetic usually attached to it.** The "
+                    "combination rule takes the base rate `b` and the prospect's own PoS `q` and "
+                    "multiplies their odds:"
+                )
+                st.latex(r"P_{\mathrm{updated}} = \frac{b\,q}{b\,q + (1-b)(1-q)}")
+                st.markdown(
+                    "**That rule is symmetric.** Feed it a base rate of 0.2 and a prospect PoS of "
+                    "0.9 and it returns 69.2 %; feed it 0.9 and 0.2 and it returns 69.2 % again. "
+                    "It cannot tell which input is the population and which is the prospect — and "
+                    "**a Bayesian update is never symmetric between a prior and its evidence.** "
+                    "That symmetry is the diagnostic: what the formula performs is a *fusion of "
+                    "two opinions*, not an update of one by the other.\n\n"
+                    "Two consequences follow, and both cut against the paper's own purpose:\n\n"
+                    "- **A confident assessor erases the base rate entirely.** At `q = 1` the "
+                    "result is 1 whatever `b` is; at `q = 0` it is 0. The base rate has no "
+                    "influence exactly where over-confidence needs restraining.\n"
+                    "- **It double-counts whenever the assessor already used base-rate "
+                    "knowledge** — which is the behaviour the paper is asking for.\n\n"
+                    "The underlying assumption is that both numbers are likelihood ratios against "
+                    "an even prior. A geologist who says *20 %* is not saying that; they are "
+                    "stating a probability that already contains a prior of their own.\n\n"
+                    "**Why this section stops where it does.** Combining a base rate with a "
+                    "prospect estimate needs a stated weight and a defence of it, and no rule that "
+                    "hides the weight inside an identity can supply one. So the two are shown side "
+                    "by side above and not merged.\n\n"
+                    "*The formula quoted here reproduces a spreadsheet implementation exactly "
+                    "(99 of 99 rows, to machine precision) against the paper's own 25-well "
+                    "dataset. The paper itself is paywalled and has not been read directly, so it "
+                    "is quoted as the rule commonly applied rather than verbatim from the text. "
+                    "Schofield (GEOAdvisors) raises a separate and independent objection about the "
+                    "choice of reference class — pooling the mature North Sea with the emerging "
+                    "Barents.*"
+                )
+
     theme.heading(TAB, "10 · What we are and are not claiming")
     left, right = st.columns(2)
     left.success(
