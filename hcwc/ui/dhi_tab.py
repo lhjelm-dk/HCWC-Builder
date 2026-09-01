@@ -484,8 +484,8 @@ is where your prospect sits relative to the two populations you drew.
         # them on their own axis, the histograms say what the curves only imply — and put the
         # reshaping the DHI performs next to the chance it produces.
         overlays = st.multiselect(
-            "Overlay the contact distribution", [theme.GEOLOGICAL, theme.GIVEN_DHI], default=[],
-            key="hcwc_hist_5",
+            "Overlay the contact distribution", [theme.GEOLOGICAL, theme.GIVEN_DHI],
+            default=[theme.GEOLOGICAL, theme.GIVEN_DHI], key="hcwc_hist_5",
             help="Where the contacts themselves fall, binned by depth. The curves above are the "
                  "cumulative form of exactly these.")
 

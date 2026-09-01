@@ -122,30 +122,35 @@ def _tab_css() -> str:
 #: Correlations sub-tab, which belongs to no single element and stays neutral.
 SUBTAB_ELEMENTS: tuple[str | None, ...] = ("Charge", "Closure", "Retention", None)
 
+#: How many sub-tabs each tab has, for the tabs whose sub-strips take their parent's accent rather
+#: than element colours. Their sub-tabs are *views of one thing* — the contact and its
+#: decomposition, the four steps of the DHI — so they share a hue and differ only in lightness.
+ACCENT_SUBTABS: dict[int, int] = {4: 2, 5: 4}
 
-def _subtab_css() -> str:
-    """Colour tab ③'s sub-tabs by risk element, so the strip matches the sections beneath it.
 
-    Identified by strip *length* rather than by nesting: any ``[role="tablist"]`` that does not
-    reach the top-level tab count is a nested one. That is a loose test and deliberately so — the
-    failure mode is a sub-strip rendering in Streamlit's default grey, which is harmless, whereas a
-    selector tied to DOM structure breaks silently on an upgrade and paints the *wrong* colours,
-    which is not.
+def subtab_marker(tab: int) -> str:
+    """A hidden span naming which tab a sub-strip belongs to.
 
-    **Narrowed to four-long sub-strips** when Results and Results | DHI gained two sub-tabs each.
-    Length was the only handle, and by position alone those pairs would have taken Charge salmon
-    and Closure blue — element colours on strips that have nothing to do with elements, which is
-    the precise wrong signal this selector was written to avoid on the main strip. Two-long
-    sub-strips are left in the default grey: their parent tab's chip already carries the accent,
-    and a colour that claims nothing is better than one that claims something false.
+    Rendered inside each sub-tab's body, where `:has()` can reach it: the tablist and the panels
+    are siblings under one container, so ``div:has(> [role=tabpanel] .hcwc-sub-5) > [role=tablist]``
+    selects exactly that strip. Streamlit mounts only the *active* panel, which is why every
+    sub-tab needs one rather than just the first.
     """
-    sub = (f'[role="tablist"]'
-           f':not(:has([data-testid="stTab"][data-key="{len(TAB_COLOURS) - 1}"]))'
-           f':has([data-testid="stTab"][data-key="{len(SUBTAB_ELEMENTS) - 1}"])')
+    # A zero-width space rather than nothing: the markdown renderer drops an element with no
+    # content, and hiding it inline would need the same attribute the sanitiser is most likely to
+    # strip. So it carries a character and the stylesheet hides it.
+    return f"<span class='hcwc-sub-{tab}'>​</span>"
+
+
+def _strip(tab: int) -> str:
+    """The selector for one tab's sub-strip, via the marker its bodies carry."""
+    return (f'div:has(> [role="tabpanel"] .hcwc-sub-{tab}) > [role="tablist"]')
+
+
+def _subtab_rules(selector: str, colours: list[str]) -> list[str]:
     rules = []
-    for index, element in enumerate(SUBTAB_ELEMENTS):
-        colour = PILLAR_COLOURS[element] if element else "#B9B2A6"
-        target = f'{sub} [data-testid="stTab"][data-key="{index}"]'
+    for index, colour in enumerate(colours):
+        target = f'{selector} [data-testid="stTab"][data-key="{index}"]'
         rules.append(
             f"""
       {target} {{
@@ -159,6 +164,23 @@ def _subtab_css() -> str:
           border-bottom: 3px solid {shade_hex(colour, -0.35)} !important;
       }}"""
         )
+    return rules
+
+
+def _subtab_css() -> str:
+    """Sub-strip colours, one tab at a time, each claimed by its own marker."""
+    claimed = [3, *ACCENT_SUBTABS]
+    hide = ", ".join(f".hcwc-sub-{tab}" for tab in claimed)
+    rules: list[str] = [f"\n      {hide} {{display: none !important;}}"]
+    rules += _subtab_rules(
+        _strip(3),
+        [PILLAR_COLOURS[element] if element else "#B9B2A6" for element in SUBTAB_ELEMENTS])
+    for tab, count in ACCENT_SUBTABS.items():
+        base = TAB_COLOURS[tab][0]
+        # Lightest first, so the strip reads left-to-right as the reading order does. All one hue:
+        # these sub-tabs are views of one thing and should not look like four different subjects.
+        steps = [0.42] if count == 1 else [0.42 - 0.52 * i / (count - 1) for i in range(count)]
+        rules += _subtab_rules(_strip(tab), [shade_hex(base, step) for step in steps])
     return "\n".join(rules)
 
 

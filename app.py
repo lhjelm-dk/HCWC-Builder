@@ -282,6 +282,9 @@ with tab4:
     # on, and the tab-⑤ twin of the very same figure now says `5.3.6`. Matching them means a reader
     # comparing the two bases is reading one numbering scheme, not two.
     _contact, _depth = st.tabs(["4.1 · Contact and chance", "4.2 · Risk against depth"])
+    for _panel in (_contact, _depth):
+        with _panel:
+            st.markdown(theme.subtab_marker(4), unsafe_allow_html=True)
     with _contact:
         results_tab.render(Numbering(4, sub=1))
     with _depth:
@@ -316,6 +319,9 @@ with tab5:
     _how, _evidence, _contact_dhi, _depth_dhi = st.tabs(
         ["5.1 · How a DHI moves a chance", "5.2 · What you saw",
          "5.3 · Contact and chance | DHI", "5.4 · Risk against depth | DHI"])
+    for _panel in (_how, _evidence, _contact_dhi, _depth_dhi):
+        with _panel:
+            st.markdown(theme.subtab_marker(5), unsafe_allow_html=True)
     with _evidence:
         dhi_tab.render(Numbering(5, sub=2))
     with _how:

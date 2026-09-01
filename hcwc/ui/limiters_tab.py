@@ -354,6 +354,12 @@ def render() -> None:
 
     charge_tab, closure_tab, retention_tab, corr_tab = st.tabs(
         ["① Charge", "② Closure", "③ Retention", "④ Correlations"])
+    # Names this strip so the stylesheet can colour it by risk element. It used to be picked out by
+    # being four sub-tabs long, which was true until tab ⑤ grew a fourth and started wearing these
+    # element colours by accident.
+    for _panel in (charge_tab, closure_tab, retention_tab, corr_tab):
+        with _panel:
+            st.markdown(theme.subtab_marker(TAB), unsafe_allow_html=True)
     limits: list[Limit] = []
     with charge_tab:
         limits += _render_group(Group.CHARGE, n_trials, seed)
