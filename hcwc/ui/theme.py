@@ -51,7 +51,10 @@ TAB_COLOURS: dict[int, tuple[str, str]] = {
     # strip said "④ Results | ⑤ Results | DHI" and a first-time reader saw three tabs where
     # there are two. The plus pairs it with ④ instead of splitting it.
     5: ("#3E8FA3", "Results + DHI"),
-    6: ("#55A868", "Empirical"),
+    # "Benchmarks", not "Empirical". The tab holds the published column-height record this tool
+    # compares against; "Empirical" named the *kind* of thing it is rather than what a reader would
+    # go there to do, and a first-time reader could not tell it from the theory tab.
+    6: ("#55A868", "Benchmarks"),
     7: ("#8172B2", "Export"),
     8: ("#937860", "Theory"),
 }

@@ -119,7 +119,7 @@ provenance attached.
   depth. **⑤** is the same reading with a seismic amplitude anomaly folded in.
 - **⑦ Export** — percentiles for a volumetrics package, with the basis stated on the file.
 
-**⑥ Empirical** and **⑧ Theory** are reference rather than steps: the published record behind the
+**⑥ Benchmarks** and **⑧ Theory** are reference rather than steps: the published record behind the
 defaults, and the reasoning the tool rests on.
 
 *In a hurry?* **Load the worked example on tab ②** and read tab ④ first — every number on this
