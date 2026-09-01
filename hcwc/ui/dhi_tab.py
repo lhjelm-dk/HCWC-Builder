@@ -14,7 +14,6 @@ import streamlit as st
 
 from hcwc.core import charge as ch
 from hcwc.core import dhi as dhi_core
-from hcwc.core import engine
 from hcwc.core import sensitivity
 from hcwc.core.dhi import DetectionFunction, DhiObservation
 from hcwc.ui import run, theme

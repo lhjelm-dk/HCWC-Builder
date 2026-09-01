@@ -363,8 +363,11 @@ def render() -> None:
              "Defaults to 5 m as a physical floor, not as a commercial threshold: set it to the "
              "smallest column that would make YOUR well a discovery.")
     n_trials = r1.number_input(
-        "Realisations", 1_000, 1_000_000, 10_000, 1_000, key="n_trials_input", help="At 10 000, P99.5 sits on 50 realisations, which is enough to be stable; at 1 000 it "
-             "is five, which is not.")
+        "Realisations", 1_000, 100_000, 10_000, 1_000, key="n_trials_input",
+        help="At 10 000, P99.5 sits on 50 realisations, which is enough to be stable; at 1 000 it "
+             "is five, which is not. **The ceiling is 100 000**, which puts 500 there — past the "
+             "point where more trials tell you anything, and short of where one cached run costs "
+             "180 MB on a shared server.")
     seed = r2.number_input(
         "Random seed", 0, 2**31 - 1, 20260825, 1, key="seed_input", help="Fixed by default so figures regenerate identically. An unfixed seed makes every "
              "number on every tab move between runs, which is indefensible in a document "

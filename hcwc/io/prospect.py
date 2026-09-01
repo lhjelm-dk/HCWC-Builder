@@ -19,6 +19,7 @@ from different numbers and nobody would notice. The keys *are* the schema, and
 from __future__ import annotations
 
 import json
+import math
 from typing import Any
 
 #: Bumped when the meaning of a key changes, not when one is added. Readers refuse a newer major.
@@ -113,7 +114,70 @@ def read(text: str) -> dict:
             + ", ".join(sorted(unknown)[:6])
             + ("…" if len(unknown) > 6 else "")
         )
+    _check_values(inputs)
     return {k: _restore(v) for k, v in inputs.items()}
+
+
+#: Widget keys whose value must be a number, and the range the widget that owns it will accept.
+#: Anything outside makes Streamlit raise **while building the widget** — which happens after these
+#: values are already in session state, at module scope in ``app.py``, where there is nothing to
+#: catch it. The result is a full-page traceback with no way back but clearing the session.
+#:
+#: So the check has to happen here, before anything is written. Only the keys with fixed bounds are
+#: listed; the rest are checked for type alone, which is enough to stop a string reaching a numeric
+#: widget.
+NUMERIC_BOUNDS: dict[str, tuple[float, float]] = {
+    "n_trials_input": (1_000, 100_000),
+    "seed_input": (0, 2**31 - 1),
+    "min_column_input": (0.0, 10_000.0),
+    "apex_p1": (0.0, 10_000.0),
+    "apex_p99": (0.0, 10_000.0),
+    "spill_input": (0.0, 10_000.0),
+    "burial_input": (0.0, 10_000.0),
+}
+
+#: What a restored value is allowed to be. Widget state is scalars and sequences of scalars; a
+#: mapping is never one, and a value carrying a mapping is a file that was hand-edited or produced
+#: by something else.
+_SCALARS = (bool, int, float, str)
+
+
+def _check_values(inputs: dict) -> None:
+    """Refuse a file whose values would crash a widget, rather than half-applying it.
+
+    The key check above is an allow-list and it is good. This is the other half: a **recognised**
+    key carrying ``"banana"`` or ``-5`` used to pass straight through, land in session state, and
+    take the page down on the next render. Refusing here keeps the promise the docstring already
+    makes — that a partially restored prospect is worse than a refused one.
+    """
+    for key, raw in sorted(inputs.items()):
+        # A range slider is stored as `{"__tuple__": [...]}` by `_plain`, so an object is a legal
+        # encoding here and only its *contents* can be wrong. Decode first, then judge — the first
+        # version of this check rejected every seal calculator in every saved prospect.
+        if isinstance(raw, dict) and set(raw) != {"__tuple__"}:
+            raise ValueError(f"`{key}` holds an object where a value was expected")
+        value = _restore(raw)
+
+        if isinstance(value, (list, tuple)):
+            if not all(isinstance(v, _SCALARS) or v is None for v in value):
+                raise ValueError(f"`{key}` holds a list with something other than numbers in it")
+            continue
+        if not (value is None or isinstance(value, _SCALARS)):
+            raise ValueError(f"`{key}` holds a {type(value).__name__}, which is not a widget value")
+
+        low_high = NUMERIC_BOUNDS.get(key)
+        if low_high is None:
+            continue
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"`{key}` must be a number, and this file has {value!r}")
+        if not math.isfinite(value):
+            raise ValueError(f"`{key}` is {value!r}, which is not a finite number")
+        low, high = low_high
+        if not low <= value <= high:
+            raise ValueError(
+                f"`{key}` is {value:g}, outside the {low:g} to {high:g} this version accepts. "
+                "The file was probably written by a different build."
+            )
 
 
 def _saveable(value: Any) -> bool:

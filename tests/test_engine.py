@@ -645,3 +645,60 @@ class TestSharesAreSharesOfSomething:
                  for k in within_geo}
         loudest = max(within_geo, key=lambda k: abs(mix[k] + moved[k]))
         assert abs(moved[loudest]) > 2.0 * abs(mix[loudest])
+
+
+class TestTheSharedExceedance:
+    """One function where there were six, and it no longer builds the matrix.
+
+    The broadcast it replaces — `(samples[None, :] >= grid[:, None]).mean(axis=1)` — materialises a
+    `len(grid) x len(samples)` boolean array. At the 400-point grids the tabs use that is 4 MB
+    against 10 000 realisations and 400 MB against 100 000: one temporary, inside one expression,
+    with nothing in the UI to say why the tab had died.
+    """
+
+    def _sample(self, n=20_000):
+        rng = np.random.default_rng(4)
+        return rng.lognormal(5.0, 0.6, n), rng.random(n)
+
+    def test_it_matches_the_broadcast_it_replaces(self):
+        s, _ = self._sample()
+        grid = np.linspace(0.0, float(s.max()), 400)
+        assert np.allclose(engine.exceedance(s, grid),
+                           (s[None, :] >= grid[:, None]).mean(axis=1))
+
+    def test_the_weighted_form_matches_too(self):
+        s, w = self._sample()
+        grid = np.linspace(0.0, float(s.max()), 400)
+        assert np.allclose(engine.exceedance(s, grid, w),
+                           ((s[None, :] >= grid[:, None]) * w[None, :]).sum(axis=1) / w.sum())
+
+    def test_a_scalar_threshold_returns_one_value(self):
+        s, _ = self._sample()
+        got = engine.exceedance(s, float(np.median(s)))
+        assert got.shape == (1,)
+        assert got[0] == pytest.approx(0.5, abs=0.01)
+
+    def test_it_is_inclusive_at_the_threshold(self):
+        """`P(column >= h)`, so a realisation exactly at h counts as reaching it."""
+        assert engine.exceedance(np.array([10.0, 20.0, 30.0]), 20.0)[0] == pytest.approx(2 / 3)
+
+    def test_an_empty_sample_is_nan_rather_than_a_crash(self):
+        assert np.isnan(engine.exceedance(np.array([]), np.array([1.0, 2.0]))).all()
+
+    def test_zero_total_weight_is_nan_rather_than_a_division(self):
+        s, _ = self._sample(100)
+        assert np.isnan(engine.exceedance(s, np.array([1.0]), np.zeros(100))).all()
+
+    def test_it_does_not_allocate_the_matrix(self):
+        """The point of the change: memory must not scale with grid x samples."""
+        import tracemalloc
+        s, _ = self._sample(200_000)
+        grid = np.linspace(0.0, float(s.max()), 400)
+        tracemalloc.start()
+        engine.exceedance(s, grid)
+        peak = tracemalloc.get_traced_memory()[1]
+        tracemalloc.stop()
+        matrix_bytes = grid.size * s.size          # one byte per bool
+        assert peak < matrix_bytes / 4, (
+            f"peaked at {peak/1e6:.1f} MB; the broadcast would have needed "
+            f"{matrix_bytes/1e6:.1f} MB")

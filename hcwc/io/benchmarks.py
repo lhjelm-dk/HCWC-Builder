@@ -30,7 +30,6 @@ import numpy as np
 import pandas as pd
 
 REFERENCE = Path(__file__).resolve().parents[2] / "reference"
-PRIVATE = REFERENCE / "private"
 
 
 @dataclass(frozen=True)
@@ -138,6 +137,14 @@ def _banded_family(rng: np.random.Generator, trap_height: float, n: int,
 
 
 
+# `functools.lru_cache`, not `st.cache_data`, and the rule is worth stating because this is the
+# only one: **`hcwc/io` and `hcwc/core` must not import Streamlit.** They are the parts that run in
+# tests and could run in a notebook. `lru_cache` is safe here for one specific reason — the fit is
+# deterministic on data shipped with the repo, so a single process-wide result is correct and
+# sharing it between sessions leaks nothing.
+#
+# It would NOT be safe on anything derived from a user's imported dataset. That is per-session data
+# and belongs in `st.session_state`, uncached, which is where `datasets.fit` keeps it.
 @lru_cache(maxsize=8)
 def _capacity_fit(tol_m: float = 1.0):
     """The NCS seal capacity against **burial depth alone**, right-censored.
@@ -185,7 +192,16 @@ def shrink_toward(sample: np.ndarray, toward: np.ndarray, weight: float) -> np.n
     if not 0.0 <= weight <= 1.0:
         raise ValueError(f"the shrinkage weight must be in [0, 1], got {weight}")
     values = np.sort(np.asarray(sample, dtype=float))
+    target = np.asarray(toward, dtype=float)
     if weight == 0.0 or values.size == 0:
         return values
+    if target.size == 0:
+        # `np.quantile` of an empty array raises in numpy's voice; everything else in this codebase
+        # fails with a sentence naming what went wrong, and a benchmark that produced no samples is
+        # a finding rather than an accident.
+        raise ValueError(
+            "there is nothing to shrink toward: the reference distribution has no samples, which "
+            "means the benchmark could not be evaluated at this relief and burial depth"
+        )
     probabilities = (np.arange(values.size) + 0.5) / values.size
-    return (1.0 - weight) * values + weight * np.quantile(np.asarray(toward, float), probabilities)
+    return (1.0 - weight) * values + weight * np.quantile(target, probabilities)

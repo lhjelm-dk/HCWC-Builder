@@ -20,7 +20,7 @@ network. An imported dataset lives in the browser session and leaves when the ta
 from __future__ import annotations
 
 import io
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd

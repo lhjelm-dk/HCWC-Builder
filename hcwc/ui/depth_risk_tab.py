@@ -12,7 +12,6 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from hcwc.core import decompose as dc
-from hcwc.core import engine
 from hcwc.core.decompose import ELEMENTS, ReservoirEffectiveness
 from hcwc.core.limits import Group
 from hcwc.ui import results_tab, run, theme

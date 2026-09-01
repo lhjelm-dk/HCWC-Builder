@@ -227,6 +227,19 @@ def accent(tab: int) -> str:
 _SECTION = re.compile(r"^(\d+)\s*·\s*(.*)$", re.DOTALL)
 
 
+def section_label(tab: int, text: str, sub: int | None = None) -> str:
+    """``"4 · How it is arranged"`` on tab ① becomes ``"1.4 How it is arranged"``.
+
+    Split out of :func:`heading` because tab ① carries three of its sections in *expanders*, whose
+    labels never went through the heading path — so they rendered as a bare "4 ·" under headings
+    numbered 1.1, 1.2, 1.3, and a reader met the numbering scheme broken on the first page of the
+    app. One function now, used by both.
+    """
+    stem = f"{tab}" if sub is None else f"{tab}.{sub}"
+    match = _SECTION.match(text)
+    return f"{stem}.{match.group(1)} {match.group(2)}" if match else text
+
+
 def heading(tab: int, text: str, sub: int | None = None) -> None:
     """A section heading in the tab's own colour, tying the content to the tab strip.
 
@@ -243,9 +256,7 @@ def heading(tab: int, text: str, sub: int | None = None) -> None:
     moves renumbers its own sections — which is exactly what the ten-to-eight merge did to the
     depth-risk sections.
     """
-    stem = f"{tab}" if sub is None else f"{tab}.{sub}"
-    match = _SECTION.match(text)
-    label = f"{stem}.{match.group(1)} {match.group(2)}" if match else text
+    label = section_label(tab, text, sub)
     st.markdown(
         f"<h3 style='color:{accent(tab)};margin-top:1.2rem'>{label}</h3>",
         unsafe_allow_html=True,

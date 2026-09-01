@@ -52,7 +52,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.stats import norm
 
-from hcwc.core import dists
+from hcwc.core import dists, engine
 from hcwc.core.engine import EngineResult
 
 
@@ -259,14 +259,8 @@ class DhiPosterior:
 
     def exceedance(self, column_m: np.ndarray | float, *, posterior: bool = True) -> np.ndarray:
         """``F(h)``, prior or posterior."""
-        h = np.atleast_1d(np.asarray(column_m, dtype=float))
-        above = self.result.column_m[None, :] >= h[:, None]
-        if not posterior:
-            return above.mean(axis=1)
-        total = self.weights.sum()
-        if total <= 0:
-            return np.full(h.shape, np.nan)
-        return (above * self.weights[None, :]).sum(axis=1) / total
+        return engine.exceedance(self.result.column_m, column_m,
+                                 None if not posterior else self.weights)
 
     def pos(self, *, posterior: bool = True) -> float:
         """``F(h_min)`` — the min-volume POS, read off the same curve as everything else."""

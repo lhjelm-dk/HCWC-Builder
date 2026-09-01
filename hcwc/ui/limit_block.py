@@ -30,6 +30,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
+from hcwc.core import engine
 from hcwc.core.limits import COLUMN, DEPTH, DepthDistribution, Group, Limit
 from hcwc.ui import theme
 
@@ -107,7 +108,7 @@ def _figure(samples: np.ndarray, colour: str, unit: str) -> go.Figure:
     fig.add_histogram(x=samples, nbinsx=50, name="Frequency", marker_color=colour, opacity=0.75)
 
     grid = np.linspace(float(np.min(samples)), float(np.max(samples)), 200)
-    exceedance = (samples[None, :] >= grid[:, None]).mean(axis=1)
+    exceedance = engine.exceedance(samples, grid)
     fig.add_scatter(x=grid, y=exceedance, name="Probability of exceedance", mode="lines",
                     line=dict(color=theme.shade_hex(colour, -0.35), width=2.5), secondary_y=True)
 

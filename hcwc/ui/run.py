@@ -26,7 +26,23 @@ DEFAULT_TRIALS = 10_000
 DEFAULT_SEED = 20260825
 
 
-@st.cache_data(show_spinner="Running the competing-limits model…")
+#: How many engine runs to keep. **`st.cache_data` is global to the server process, not per
+#: session**, and nothing evicted from it until this was set: on Streamlit Cloud every visitor's
+#: prospects accumulated in one cache that never released. One result is 1.8 MB at 10 000 trials
+#: and 18 MB at 100 000, so an unbounded cache and a long-lived process is an out-of-memory kill
+#: that cannot happen on a laptop, where the process is restarted all day.
+#:
+#: Four is enough for the only pattern that benefits: the current prospect, plus a couple of recent
+#: edits a user is flipping between. A fifth entry buys nothing and costs 18 MB.
+MAX_CACHED_RUNS = 4
+
+#: An hour. A cache entry older than that belongs to a session that has moved on, and on a shared
+#: process it is holding memory for somebody who left.
+CACHE_TTL_S = 3600
+
+
+@st.cache_data(show_spinner="Running the competing-limits model…",
+               max_entries=MAX_CACHED_RUNS, ttl=CACHE_TTL_S)
 def run(payload: dict, n: int, seed: int) -> engine.EngineResult:
     """The engine, cached on the limit set, the trial count and the seed.
 

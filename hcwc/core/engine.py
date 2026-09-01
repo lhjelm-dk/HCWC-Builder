@@ -90,8 +90,7 @@ class EngineResult:
         Every "POS" in the workflow is this function evaluated somewhere — at the assessment
         minimum, at the well's reservoir entry depth, at a DHI-indicated contact.
         """
-        h = np.atleast_1d(np.asarray(column_m, dtype=float))
-        return (self.column_m[None, :] >= h[:, None]).mean(axis=1)
+        return exceedance(self.column_m, column_m)
 
     def group_minimum(self, group: Group) -> np.ndarray:
         """Shallowest active limit within one group, per realisation; ``inf`` if none active.
@@ -283,3 +282,42 @@ def controlling_share_by_depth(result: EngineResult, edges: np.ndarray,
         for i, name in enumerate(result.limit_set.names):
             out[name][b] = summed[i] / total
     return out
+
+
+def exceedance(samples: np.ndarray, at: np.ndarray | float,
+               weights: np.ndarray | None = None) -> np.ndarray:
+    """``P(sample >= at)``, for one grid of thresholds.
+
+    **One function, because there were six.** The same broadcast --
+    ``(samples[None, :] >= grid[:, None]).mean(axis=1)`` -- was written out in `engine`, twice in
+    `dhi`, twice in `empirical` and once in `limit_block`. Identical every time, and it is the
+    app's single largest allocation, so a fix had to be applied in six places and would have been
+    applied in four.
+
+    **And it no longer builds the matrix.** That broadcast materialises a ``len(at) x len(samples)``
+    boolean array: 4 MB at the 400-point grids in use against 10 000 realisations, and 400 MB at
+    100 000 -- one temporary, inside one expression, with nothing in the UI to suggest why the tab
+    had died. Sorting once and using ``searchsorted`` gives the identical answer in O(n log n) with
+    no temporary at all.
+
+    ``weights`` carries the DHI posterior, where the sample is the prior's realisations and the
+    evidence lives in how much each one counts.
+    """
+    grid = np.atleast_1d(np.asarray(at, dtype=float))
+    values = np.asarray(samples, dtype=float)
+    if values.size == 0:
+        return np.full(grid.shape, np.nan)
+
+    order = np.argsort(values)
+    ordered = values[order]
+    if weights is None:
+        # Count strictly below each threshold; everything else is at or above it.
+        below = np.searchsorted(ordered, grid, side="left")
+        return 1.0 - below / values.size
+
+    w = np.asarray(weights, dtype=float)[order]
+    total = float(w.sum())
+    if not np.isfinite(total) or total <= 0:
+        return np.full(grid.shape, np.nan)
+    cumulative = np.concatenate(([0.0], np.cumsum(w)))
+    return 1.0 - cumulative[np.searchsorted(ordered, grid, side="left")] / total

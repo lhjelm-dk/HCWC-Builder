@@ -48,9 +48,25 @@ theme.apply()
 # and reruns; this block, at the top, is the only place they can safely land.
 _pending = st.session_state.pop("_pending_load", None)
 if _pending is not None:
-    for _key, _value in _pending.items():
-        st.session_state[_key] = _value
-    st.session_state["_loaded_name"] = _pending.get("prospect_name", "prospect")
+    # `prospect.read` has already refused anything whose values would crash a widget. This guard is
+    # for the case it cannot see: a file that is valid against *its* build meeting widgets that
+    # have since moved. Failing here is a dead page — module scope, before any tab renders — so the
+    # applied keys are rolled back and the reason is shown instead.
+    _applied: list[str] = []
+    try:
+        for _key, _value in _pending.items():
+            st.session_state[_key] = _value
+            _applied.append(_key)
+    except Exception as _load_exc:                      # noqa: BLE001 — reported, not raised
+        for _key in _applied:
+            st.session_state.pop(_key, None)
+        st.error(
+            f"**That prospect could not be applied, so nothing was changed.** {_load_exc}\n\n"
+            "The file is readable but does not fit this version of the app. Rebuild it from the "
+            "current tool rather than editing it."
+        )
+    else:
+        st.session_state["_loaded_name"] = _pending.get("prospect_name", "prospect")
 
 st.title("HCWC Distribution Builder")
 st.caption(
@@ -148,21 +164,22 @@ move on.
 ③ says which of the twelve is actually setting the contact, and it updates as you edit. **That
 ranking is the point of the whole tool.** Most limits turn out not to move the answer, and the ones
 that do are usually not the ones you would have spent the afternoon on — so spend it on the top two
-or three and leave the rest rough. Tab ④ §3 has the fuller version: the same ranking restricted to
+or three and leave the rest rough. Tab ④ §4.1.3 has the fuller version: the same ranking restricted to
 realisations worth drilling, and why the two differ.
 
 **4 · Read the answer, and check it — tabs ④ and ⑥.** The exceedance curve is the output; the
 chance is a *reading* of it at your minimum. Tab ⑥ §8 then says whether your distribution is
 optimistic or pessimistic against 242 NCS discoveries at your own structural relief.
 
-*If this is a DHI prospect, tab ⑤ carries the update, in the same two sub-tabs. Tab ④ stays purely
-geological.*
+*If this is a DHI prospect, tab ⑤ carries the update across four sub-tabs — the walkthrough first,
+then what you saw, then the same two readings tab ④ gives. Tab ④ stays purely geological.*
 
 **Not sure where to begin?** Tab ② → *Save or load this prospect* → **Load the worked example**.
 """
     )
 
-    with st.expander("**4 · How it is arranged**", expanded=False):
+    with st.expander(f"**{theme.section_label(1, '4 · How it is arranged')}**",
+                     expanded=False):
         st.markdown(
             "**Tab ② is the prospect** — apex, spill point, burial depth, the element risk from E-POS, "
             "and whether this is a DHI prospect. **Tab ③ is every mechanism that could limit the "
@@ -177,7 +194,8 @@ geological.*
             "between elements, so the geological model has to stay readable on its own."
         )
 
-    with st.expander("**5 · Where this sits**", expanded=False):
+    with st.expander(f"**{theme.section_label(1, '5 · Where this sits')}**",
+                     expanded=False):
         st.markdown(
             "Four free tools, each doing one job. Every one is open source and runs in the browser — "
             "**app** to use it, **code** to check what it does."
@@ -207,7 +225,8 @@ geological.*
             "the trial table and the per-element curves from tab ⑦."
         )
 
-    with st.expander("**6 · Known limitations**", expanded=False):
+    with st.expander(f"**{theme.section_label(1, '6 · Known limitations')}**",
+                     expanded=False):
         st.markdown(
             """
     Stated here rather than discovered later. None of these is a bug; each is a thing the model does
