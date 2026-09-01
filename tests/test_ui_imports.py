@@ -14,6 +14,7 @@ from __future__ import annotations
 import ast
 import importlib
 import pathlib
+import re
 
 import pytest
 
@@ -62,20 +63,32 @@ def test_no_two_tabs_claim_the_same_number_by_accident():
         numbers[module.TAB] = name
 
 
-def test_every_shared_tab_is_drawn_from_one_numbering():
-    """Two sub-tabs of one tab must share a `Numbering`, or both start at `Figure 4.1`.
+def test_no_two_sub_tabs_can_produce_the_same_figure_number():
+    """Sub-tabs of one tab must not both start at `Figure 4.1`.
 
-    The renderers take one as an argument for exactly this. A future edit that drops the argument
-    would produce two `Figure 4.1`s on one tab — broken cross-references, and a Streamlit duplicate
-    element key, which is a red page rather than a wrong caption. Checked in the source of `app.py`
-    because that is where the wiring lives.
+    Two `Figure 4.1`s on one tab means broken cross-references and a Streamlit duplicate element
+    key — a red page rather than a wrong caption. **There are two valid ways to avoid it**, and the
+    app now uses both:
+
+    * tab ④'s two sub-tabs **share** one `Numbering`, so the sequence runs across them;
+    * tab ⑤'s four sub-tabs each take **their own**, distinguished by ``sub=``, so a label carries
+      the page it is on — `Figure 5.2.1` is the first exhibit on *What you saw*.
+
+    The second is what a tab with four sub-tabs needs: a flat sequence gave the reader `Figure 5.9`
+    with no way to know which of four pages to turn to. So the assertion here is the invariant —
+    every sub-tab reachable from one number, and no two able to collide — rather than one wiring.
     """
     root = pathlib.Path(__file__).resolve().parent.parent
     source = (root / "app.py").read_text(encoding="utf-8")
-    for call in ("results_tab.render(_n4)", "depth_risk_tab.render(n=_n4)",
-                 "dhi_tab.render(_n5)"):
-        assert call in source, f"{call} missing — sub-tabs would number their figures separately"
-    assert "depth_risk_tab.render(depth_risk_tab.TAB_DHI, with_dhi=True, n=_n5)" in source
+
+    # Tab ④: one sequence, shared.
+    for call in ("results_tab.render(_n4)", "depth_risk_tab.render(n=_n4)"):
+        assert call in source, f"{call} missing — tab ④'s sub-tabs would number separately"
+
+    # Tab ⑤: four sequences, each stamped with its own sub-tab, so none can collide.
+    subs = re.findall(r"Numbering\(5,\s*sub=(\d)\)", source)
+    assert sorted(subs) == ["1", "2", "3", "4"], (
+        f"tab ⑤ should hand each of its four sub-tabs its own Numbering, got sub={subs}")
 
 
 def test_app_py_opens_one_tab_per_theme_entry():

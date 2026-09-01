@@ -77,7 +77,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     )
 
     # ------------------------------------------------------------------ reservoir effectiveness
-    theme.heading(tab, "1 · Reservoir effectiveness — the effect that is not a limit")
+    theme.heading(tab, sub=n.sub, text="1 · Reservoir effectiveness — the effect that is not a limit")
     st.markdown(
         "Two things get called *reservoir versus depth* and only one moves the contact. "
         "**R2, the base or pinchout**, ends the reservoir so the column cannot continue — that is a "
@@ -116,7 +116,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     d_geo = dc.decompose(result, reservoir=reservoir) if weights is not None else d
 
     # ------------------------------------------------------------------ element curves
-    theme.heading(tab, "2 · Per-element chance against depth")
+    theme.heading(tab, sub=n.sub, text="2 · Per-element chance against depth")
 
     # The four chances are set on tab 2 with the rest of the prospect's inputs. They used to be
     # typed here, after the results they feed, which put an input in the middle of an output.
@@ -256,7 +256,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         )
 
     # ------------------------------------------------------------------ consistency
-    theme.heading(tab, "3 · The consistency test")
+    theme.heading(tab, sub=n.sub, text="3 · The consistency test")
     st.markdown(
         "Under independent limits, `∏ₑ Pₑ(z) = P(contact > z)` — the product of the element curves "
         "must reproduce the contact distribution. **Where it does not, the elements are not "
@@ -299,7 +299,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     )
 
     # ------------------------------------------------------------------ allocation comparison
-    theme.heading(tab, "4 · Derived against allocated, at a well")
+    theme.heading(tab, sub=n.sub, text="4 · Derived against allocated, at a well")
     z_entry = st.slider("Well reservoir entry depth (m TVDSS)",
                         float(d.depths_m[0]), float(d.depths_m[-1]),
                         float(np.percentile(result.contact_m, 40)), 5.0,

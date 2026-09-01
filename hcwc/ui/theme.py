@@ -205,8 +205,12 @@ def accent(tab: int) -> str:
 _SECTION = re.compile(r"^(\d+)\s*·\s*(.*)$", re.DOTALL)
 
 
-def heading(tab: int, text: str) -> None:
+def heading(tab: int, text: str, sub: int | None = None) -> None:
     """A section heading in the tab's own colour, tying the content to the tab strip.
+
+    **The section number carries its tab, and its sub-tab where there is one.** With ``sub``, a
+    heading written as ``"1 · What was observed"`` renders as **5.2.1** on tab ⑤'s second sub-tab,
+    matching ``Figure 5.2.1`` beneath it — so a number says which page as well as which item.
 
     **The section number carries its tab.** A heading written as ``"1 · Geometry"`` renders as
     **2.1 Geometry** on tab ②, matching ``Figure 2.1`` and ``Table 2.3`` below it. Before this, a
@@ -217,8 +221,9 @@ def heading(tab: int, text: str) -> None:
     moves renumbers its own sections — which is exactly what the ten-to-eight merge did to the
     depth-risk sections.
     """
+    stem = f"{tab}" if sub is None else f"{tab}.{sub}"
     match = _SECTION.match(text)
-    label = f"{tab}.{match.group(1)} {match.group(2)}" if match else text
+    label = f"{stem}.{match.group(1)} {match.group(2)}" if match else text
     st.markdown(
         f"<h3 style='color:{accent(tab)};margin-top:1.2rem'>{label}</h3>",
         unsafe_allow_html=True,

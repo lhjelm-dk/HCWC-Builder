@@ -59,157 +59,6 @@ def _within_bin_move(result, edges, weights) -> float:
     return max(float(np.sum(occupancy * np.abs(updated[k] - geological[k]))) for k in geological)
 
 
-def _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min) -> None:
-    """Chance against depth, before and after the DHI, with both thresholds marked.
-
-    The one figure that resolves the confusion between *the chance at my risk criterion* and *the
-    chance of the DHI-sized case*. They are two readings of one curve, the second is always smaller
-    because the curve is decreasing, and neither is wrong -- what is wrong is quoting one beside a
-    volume computed at the other.
-    """
-    from hcwc.core import dhi as dhi_core
-
-    observation, detection = posterior.observation, posterior.detection
-    apex = float(np.median(result.apex_m))
-
-    theme.heading(tab, "0 · What the DHI did to the chance, and at which depth")
-    st.markdown(
-        "**The chance is a curve, not a number.** Every point on it is `P(G) × P(column ≥ h)` at "
-        "one threshold, so a chance only means something once you say *at least how much column*. "
-        "The two dashed lines are the two thresholds anyone quotes: your **assessment minimum**, "
-        "and the **contact the amplitude points at**.\n\n"
-        "Read along a line to see what the DHI did. Read between the lines to see what the "
-        "*threshold* did — and that second gap is the one that causes trouble, because it is "
-        "there before any DHI and has nothing to do with one."
-    )
-
-    # **Not a choice of model.** This used to read "show all three ways of combining", which
-    # presented a dogmatic construction and a robust one as equals. Since `p_valid` moved inside
-    # the likelihood — which was the scenario switch's one real contribution — the other two are
-    # not rival formulations but the same arithmetic with a term dropped. Kept, because seeing
-    # what a dropped term costs is the only way to make that concrete; relabelled, because
-    # offering them as options invited someone to pick one.
-    show_all = st.toggle("Show what dropping a term would give", value=False,
-                         key=f"combo_all_{tab}",
-                         help="Two comparisons, not two alternatives: the pooled curve is this "
-                              "update with the detection function left out, and the scenario "
-                              "switch is a mixture, which can widen the answer but never sharpen "
-                              "it and cannot move the chance at all.")
-
-    grid = np.linspace(0.0, float(np.percentile(result.column_m, 99.5)), 300)
-    depths = apex + grid
-    fig = go.Figure()
-
-    # Each curve is anchored at the assessment minimum, where it must read its own quoted POS.
-    # `combination_exceedance` returns a normalised contact distribution, so scaling it by the
-    # element product alone would draw the DHI's *reshaping* while silently dropping its uplift to
-    # the chance -- a curve starting at the prior POS beside a headline quoting the posterior one.
-    overlay = st.session_state.get("dhi_overlay") or {}
-    prior_pos = float(overlay.get("prior_pos", p_geological * float(result.exceedance(h_min)[0])))
-    posterior_pos = float(overlay.get("posterior_pos", prior_pos))
-
-    def _anchored(curve: np.ndarray, at_min: float, pos: float) -> np.ndarray:
-        return pos * curve / max(at_min, 1e-12)
-
-    geological = _anchored(result.exceedance(grid), float(result.exceedance(h_min)[0]), prior_pos)
-    fig.add_scatter(x=geological, y=depths, mode="lines",
-                    name="geological", line=dict(color=theme.BASIS_COLOUR[theme.GEOLOGICAL],
-                                                 width=3.5))
-
-    styles = {dhi_core.BAYES: ("solid", 3.5), dhi_core.POOLED: ("dash", 2.0),
-              dhi_core.SCENARIO: ("dot", 2.0)}
-    methods = dhi_core.COMBINATIONS if show_all else (dhi_core.BAYES,)
-    for method in methods:
-        dash, width = styles[method]
-        curve = _anchored(
-            dhi_core.combination_exceedance(result, detection, observation, grid, method=method),
-            float(dhi_core.combination_exceedance(
-                result, detection, observation, np.array([h_min]), method=method)[0]),
-            posterior_pos)
-        labels = {dhi_core.BAYES: "given the DHI",
-                  dhi_core.POOLED: "…with the detection function dropped",
-                  dhi_core.SCENARIO: "…as a scenario switch (a mixture)"}
-        fig.add_scatter(x=curve, y=depths, mode="lines", name=labels[method],
-                        line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], width=width,
-                                  dash=dash), opacity=1.0 if method == dhi_core.BAYES else 0.65)
-
-    marks = [("your assessment minimum", apex + h_min)]
-    if observation.seen and observation.contact_m is not None:
-        marks.append(("the DHI's picked contact", float(observation.contact_m)))
-
-    rows = []
-    for label, depth in marks:
-        h = depth - apex
-        geo = float(_anchored(result.exceedance(h), float(result.exceedance(h_min)[0]),
-                              prior_pos)[0])
-        upd = float(_anchored(
-            dhi_core.combination_exceedance(result, detection, observation, np.array([h])),
-            float(dhi_core.combination_exceedance(
-                result, detection, observation, np.array([h_min]))[0]), posterior_pos)[0])
-        rows.append({"Read at": label, "Depth": f"{depth:,.0f} m",
-                     "Column": f"{h:,.0f} m", "Geological": f"{geo:.1%}",
-                     "Given the DHI": f"{upd:.1%}", "Move": f"{upd - geo:+.1%}"})
-        fig.add_hline(y=depth, line=dict(color="#555", dash="dash", width=1.4),
-                      annotation_text=label, annotation_position="top left")
-        # **The readings, printed where they are taken.** The chance at the picked contact is
-        # roughly half the chance at the assessment minimum, and reading the first while quoting
-        # the second is the mistake this whole section exists to prevent. Both numbers now sit on
-        # the curve they come from, so neither has to be inferred from the other.
-        fig.add_scatter(x=[upd], y=[depth], mode="markers+text",
-                        marker=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], size=11,
-                                    symbol="diamond", line=dict(color="white", width=1.5)),
-                        text=[f"  {upd:.1%}"], textposition="middle right",
-                        textfont=dict(size=12, color=theme.BASIS_COLOUR[theme.GIVEN_DHI]),
-                        showlegend=False, hoverinfo="skip")
-        fig.add_scatter(x=[geo], y=[depth], mode="markers+text",
-                        marker=dict(color=theme.BASIS_COLOUR[theme.GEOLOGICAL], size=11,
-                                    symbol="diamond", line=dict(color="white", width=1.5)),
-                        text=[f"{geo:.1%}  "], textposition="middle left",
-                        textfont=dict(size=12, color=theme.BASIS_COLOUR[theme.GEOLOGICAL]),
-                        showlegend=False, hoverinfo="skip")
-
-    # **Where the posterior's median contact sits.** The DHI is an estimate of the contact, not a
-    # floor under it, so the update leaves about half the remaining probability *deeper* than the
-    # pick and half shallower. That is why the curve passes through roughly half the headline POS
-    # at the pick depth rather than through the headline itself — a reading that looks like an
-    # error until the median is on the page beside it.
-    _bayes = dhi_core.combination_exceedance(result, detection, observation, grid,
-                                             method=dhi_core.BAYES)
-    _at_min = float(dhi_core.combination_exceedance(
-        result, detection, observation, np.array([h_min]), method=dhi_core.BAYES)[0])
-    _scaled = _bayes / max(_at_min, 1e-12)
-    _median = float(np.interp(0.5, _scaled[::-1], depths[::-1]))
-    fig.add_scatter(x=[posterior_pos * 0.5], y=[_median], mode="markers",
-                    marker=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], size=13,
-                                symbol="circle-open", line=dict(width=3)),
-                    name=f"posterior median contact, {_median:,.0f} m", hoverinfo="skip")
-
-    fig.update_layout(xaxis_title="Chance of a column at least this tall  —  P(G) × P(column ≥ h)",
-                      xaxis_range=[0, min(1.0, max(prior_pos, posterior_pos) * 1.15)],
-                      yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
-                      height=560, margin=dict(t=20), legend=dict(orientation="h", y=-0.16))
-
-    n.plot(fig,
-           "**Both curves, both thresholds, four readings.** The chance falls as the threshold "
-           "deepens because more column is a stronger requirement — that is true before any DHI "
-           "and is not something the DHI causes.\n\n"
-           "**A DHI is not a lift; it is a reshaping.** It raises the chance at thresholds near "
-           "and above the picked contact and *lowers* it below — a flat spot at 200 m is bad news "
-           "if you were hoping for 400 m, and the curves cross where that changes.\n\n"
-           "**The open circle is the posterior median contact,** and it lands on the pick. That is "
-           "the whole reason the lower reading is about half the upper one: the amplitude is being "
-           "read as an *estimate* of the contact, so half the remaining probability lies deeper "
-           "than it. Reading the full prospect chance at the picked depth would require treating "
-           "the pick as a floor — a claim no flat spot supports.")
-    n.table(pd.DataFrame(rows),
-            "**The answer to \"which chance do I quote?\" is: whichever threshold your volume was "
-            "computed at.** The prospect chance is the row at your assessment minimum. The chance "
-            "of the DHI-sized case is the other row, and it is smaller — not because the DHI is "
-            "bad news, but because it is a bigger prize. Quote a chance from one row beside a "
-            "volume from the other and the statement is incoherent; that pairing is the single "
-            "error this tool is arranged to prevent.")
-
-
 def render(n: Numbering | None = None, *, posterior=None) -> None:
     """The contact distribution and what produced it, geological or DHI-updated.
 
@@ -321,11 +170,8 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             "term as though it were the prospect chance is the same error one level up."
         )
 
-    if given_dhi:
-        _render_chance_against_depth(n, tab, result, posterior, p_geological, h_min)
-
     # ------------------------------------------------------------------ 1 · exceedance
-    theme.heading(tab, "1 · Where is the contact?")
+    theme.heading(tab, sub=n.sub, text="1 · Where is the contact?")
     grid = np.linspace(0.0, float(result.column_m.max()) * 1.02, 400)
     f = exceed(grid)
     apex_med = float(np.median(result.apex_m))
@@ -347,7 +193,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                 "curve is the risk output**; POS at any threshold is a reading of it.")
 
     # ------------------------------------------------------------------ 2 · which limit controls
-    theme.heading(tab, "2 · Which limit controls the contact?")
+    theme.heading(tab, sub=n.sub, text="2 · Which limit controls the contact?")
     edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 26)
     centres = 0.5 * (edges[:-1] + edges[1:])
 
@@ -488,7 +334,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                         if given_dhi else ""))
 
     # ------------------------------------------------------------------ 3 · ranking
-    theme.heading(tab, "3 · Which limit — and which elicited number — actually matters?")
+    theme.heading(tab, sub=n.sub, text="3 · Which limit — and which elicited number — actually matters?")
     successes_only = st.toggle(
         "Restrict to realisations above the assessment minimum", value=False,
         key=f"restrict_successes_{tab}",
@@ -582,7 +428,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                 "severe.** Both columns are wanted; neither alone is the answer.")
 
     # ------------------------------------------------------------------ group minima
-    theme.heading(tab, "4 · By risk element")
+    theme.heading(tab, sub=n.sub, text="4 · By risk element")
     rows = []
     for group in Group:
         gm = result.group_minimum(group)
@@ -603,7 +449,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             "chance-versus-depth curves on the *Risk against depth* sub-tab are derived from.")
 
     # ------------------------------------------------------------------ 5 · one axis
-    theme.heading(tab, "5 · Every limit, and the answer, on one axis")
+    theme.heading(tab, sub=n.sub, text="5 · Every limit, and the answer, on one axis")
     st.markdown(
         "The competition, drawn. **A limit that is only sometimes present flattens at its "
         "`P(active)`** — read that number off the right-hand end of its curve — and **the result is "

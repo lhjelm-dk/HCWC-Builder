@@ -1,4 +1,4 @@
-"""Figure and table numbers: ``2.1``, ``2.2``, ``3.1`` — one sequence per tab.
+"""Figure and table numbers: ``2.1``, ``2.2``, ``3.1`` — one sequence per tab, or per sub-tab.
 
 Lars, 25 Aug 2026: *"plot 2.2 is the second plot in tab 2, and table 4.3 is the 3rd table in tab 4.
 It's either a plot or a table so no 2.3 plot **and** 2.3 table!"*
@@ -92,6 +92,11 @@ class Numbering:
     being drawn.
     """
     tab: int
+    #: Which sub-tab this sequence belongs to, when the tab has them. With it, labels carry three
+    #: parts -- ``Figure 5.2.1`` is the first exhibit on tab ⑤'s second sub-tab -- so a number
+    #: locates the page as well as the position on it. Tab ⑤ needs this and tab ④ will when its
+    #: two sub-tabs grow; a tab that passes nothing keeps two-part numbers and is untouched.
+    sub: int | None = None
     _count: int = field(default=0, init=False)
 
     def __post_init__(self) -> None:
@@ -103,10 +108,15 @@ class Numbering:
 
     _optional: int = field(default=0, init=False)
 
+    @property
+    def stem(self) -> str:
+        """``5`` without sub-tabs, ``5.2`` with them — the part every label on this page shares."""
+        return f"{self.tab}" if self.sub is None else f"{self.tab}.{self.sub}"
+
     def _label(self, kind: Kind) -> str:
         self._count += 1
         self._optional = 0
-        return f"{kind} {self.tab}.{self._count}"
+        return f"{kind} {self.stem}.{self._count}"
 
     def optional(self, kind: Kind) -> str:
         """A number for a figure that only appears sometimes: ``4.5.1``, ``4.5.2``, …
@@ -122,7 +132,7 @@ class Numbering:
         moves when it disappears. The main sequence only ever counts figures that are always there.
         """
         self._optional += 1
-        return f"{kind} {self.tab}.{self._count}.{self._optional}"
+        return f"{kind} {self.stem}.{self._count}.{self._optional}"
 
     def ref(self, kind: Kind) -> str:
         """Take the next number without rendering anything.

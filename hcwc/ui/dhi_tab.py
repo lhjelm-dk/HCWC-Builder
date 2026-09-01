@@ -99,7 +99,7 @@ def render(n: Numbering | None = None) -> None:
         "model is on tab ④ and is unchanged by anything here.")
 
     # ------------------------------------------------------------------ observation
-    theme.heading(TAB, "1 · What was observed")
+    theme.heading(TAB, sub=n.sub, text="1 · What was observed")
     seen = st.radio("Amplitude anomaly", ["Seen", "Absent where one was expected"],
                     horizontal=True) == "Seen"
     # Lars's defaults for the worked prospect. Falling back to the model's own median keeps a
@@ -192,25 +192,20 @@ def render(n: Numbering | None = None) -> None:
         sharper = prior_span / max(pick_span, 1e-9)
         sits_at = float((result.contact_m <= contact).mean())
         n.plot(figv,
-               "**Blue is the hydrocarbon–water contact your geology produced** — every "
-               "realisation of the competing-limits model from tab ③, which is the distribution "
-               "tab ④ draws. Red is what the amplitude says. Everything the DHI does downstream is "
-               "these two meeting.\n\n"
-               f"**Your pick is {sharper:,.0f}× sharper than the geological HCWC**, and its centre "
-               f"sits where {sits_at:.0%} of that distribution lies shallower. Both numbers are "
-               "worth a second look before anything downstream is read.\n\n"
-               "**Sharpness is a claim about the depth conversion, not about the seismic.** The "
-               "pick uncertainty that belongs here is the flat-spot pick *plus* the time-to-depth "
-               "error, and on most prospects the second is the larger. A pick far narrower than "
-               "the geology will dominate the answer; a pick centred out in its tail will produce "
-               "a posterior resting on very few realisations, which §4 reports as the effective "
-               "sample size.\n\n"
-               "*(Where the rest of this tab says **prior**, it means this blue distribution. It "
-               "is the Bayesian word for what you already believed before the seismic spoke — not "
-               "a different object.)*")
+               "**Blue is the hydrocarbon–water contact your geology produced** — the "
+               "competing-limits model from tab ③, which is what tab ④ draws. Red is what the "
+               "amplitude says. Everything downstream is these two meeting. *(Where this tab says "
+               "**prior**, it means the blue one.)*\n\n"
+               f"**Your pick is {sharper:,.0f}× sharper than the geology**, centred where "
+               f"{sits_at:.0%} of it lies shallower. Sharpness is a claim about the depth "
+               "conversion, not about the seismic — the uncertainty that belongs here is the "
+               "flat-spot pick *plus* the time-to-depth error, and the second is usually the "
+               "larger. Far narrower than the geology and the pick dominates the answer; centred "
+               "out in its tail and the posterior rests on very few realisations, which §4 "
+               "reports as the effective sample size.")
 
     # ------------------------------------------------------------------ strength channel
-    theme.heading(TAB, "2 · DHI strength — the amplitude channel")
+    theme.heading(TAB, sub=n.sub, text="2 · DHI strength — the amplitude channel")
     st.markdown(
         """
 **A DHI carries two independent kinds of evidence, and this is the second one.** §1 recorded
@@ -326,7 +321,7 @@ is where your prospect sits relative to the two populations you drew.
             p_valid = derived_p_valid
 
     # ------------------------------------------------------------------ combining
-    theme.heading(TAB, "3 · Detection function D(h)")
+    theme.heading(TAB, sub=n.sub, text="3 · Detection function D(h)")
     st.markdown(
         "The chance a column of height *h* produces a **detectable** anomaly. Near zero below "
         "tuning thickness, rising through the resolution limit, then flat. It is what makes an "
@@ -358,7 +353,7 @@ is where your prospect sits relative to the two populations you drew.
                  "hard-coded for that reason.")
 
     # ------------------------------------------------------------------ the update
-    theme.heading(TAB, "4 · Prospect POS against threshold")
+    theme.heading(TAB, sub=n.sub, text="4 · Prospect POS against threshold")
     observation = DhiObservation(seen=seen, contact_m=contact if seen else None,
                                  pick_sigma_m=sigma, area_km2=area or None,
                                  pick_shape=shape, shallowest_m=shallowest, deepest_m=deepest,
@@ -469,8 +464,22 @@ is where your prospect sits relative to the two populations you drew.
     # that called it POS. `P(column >= h)` is the *conditional* column term; a POS is that times
     # the chance the prospect works at all, and the difference is the whole terminology error this
     # tool exists to prevent.
+    st.markdown(
+        "**The chance is a curve, not a number.** Every point on it is `P(G) × P(column ≥ h)` at "
+        "one threshold, so a chance only means something once you say *at least how much column*. "
+        "Read along a dashed line to see what the DHI did; read between the lines to see what the "
+        "**threshold** did — and that second gap is the one that causes trouble, because it is "
+        "there before any DHI and has nothing to do with one."
+    )
+    show_all = st.toggle(
+        "Show what dropping a term would give", value=False, key="combo_all_5",
+        help="Two comparisons, not two alternatives: the pooled curve is this update with the "
+             "detection function left out, and the scenario switch is a mixture, which can widen "
+             "the answer but never sharpen it and cannot move the chance at all.")
+
     hs = np.linspace(0.0, float(result.column_m.max()), 300)
-    fig = go.Figure()
+    depths = apex + hs
+
     def _anchored(curve, at_min, pos):
         """A curve that reads its own quoted POS at the assessment minimum.
 
@@ -482,51 +491,92 @@ is where your prospect sits relative to the two populations you drew.
 
     prior_at_min = float(post.exceedance(np.array([h_min]), posterior=False)[0])
     post_at_min = float(post.exceedance(np.array([h_min]))[0])
-    fig.add_scatter(x=hs, y=_anchored(post.exceedance(hs, posterior=False), prior_at_min,
-                                      combined.prior_pos),
-                    mode="lines", name="geological — before the DHI", line=dict(color=PRIOR, width=3))
-    fig.add_scatter(x=hs, y=_anchored(post.exceedance(hs), post_at_min, combined.posterior_pos),
-                    mode="lines", name="given the DHI",
-                    line=dict(color=POSTERIOR, width=3))
+    geological = _anchored(post.exceedance(hs, posterior=False), prior_at_min, combined.prior_pos)
+    updated = _anchored(post.exceedance(hs), post_at_min, combined.posterior_pos)
+
+    # Depth on y, inverted. This figure used to be the one exception to the tool's own convention,
+    # which every other caption states out loud -- and being the exception made it read as a
+    # different object from the identical curve two sub-tabs away.
+    fig = go.Figure()
+    fig.add_scatter(x=geological, y=depths, mode="lines", name="geological — before the DHI",
+                    line=dict(color=PRIOR, width=3))
+    fig.add_scatter(x=updated, y=depths, mode="lines", name="given the DHI",
+                    line=dict(color=POSTERIOR, width=3.4))
+
+    if show_all and seen:
+        for method, dash in ((dhi_core.POOLED, "dash"), (dhi_core.SCENARIO, "dot")):
+            curve = _anchored(
+                dhi_core.combination_exceedance(result, detection, observation, hs, method=method),
+                float(dhi_core.combination_exceedance(
+                    result, detection, observation, np.array([h_min]), method=method)[0]),
+                combined.posterior_pos)
+            fig.add_scatter(x=curve, y=depths, mode="lines", opacity=0.65,
+                            name={dhi_core.POOLED: "…with the detection function dropped",
+                                  dhi_core.SCENARIO: "…as a scenario switch (a mixture)"}[method],
+                            line=dict(color=POSTERIOR, width=2.0, dash=dash))
+
     markers = [("assessment minimum", h_min, "#333")]
     if seen:
         markers.append(("DHI contact", contact - apex, POSTERIOR))
     spill = [i for i, nm in enumerate(limit_set.names) if "spill" in nm.lower()]
     if spill:
         markers.append(("median spill", float(np.median(result.sampled_m[:, spill[0]])), "#8172B2"))
+
+    rows = []
     for label, h, colour in markers:
-        if 0 <= h <= hs[-1]:
-            fig.add_vline(x=h, line=dict(color=colour, dash="dash"),
-                          annotation_text=label, annotation_position="top")
-    fig.update_layout(xaxis_title="Threshold column height h (m below apex)",
-                      yaxis_title="Prospect POS  =  P(G) × P(column ≥ h)",
-                      yaxis_range=[0, min(1.0, max(combined.prior_pos, combined.posterior_pos,
-                                                    0.05) * 1.15)], height=520,
-                      margin=dict(t=40), legend=dict(orientation="h", y=-0.18))
-    n.plot(fig, "**The figure this tab exists for.** Every chance anyone quotes is a point on one of "
-                "these curves — and each is a **prospect POS**, the element product times the "
-                "chance of clearing that threshold, not the conditional column term on its own. "
-                "A strong DHI raises POS at the assessment minimum *and* raises the "
-                "chance of the large case — both, from one update, because the updated POS and the "
-                "updated contact distribution are the same object. Quoting a POS read at one marker "
-                "beside a volume read at another is the error this makes visible.")
+        if not 0 <= h <= hs[-1]:
+            continue
+        geo = float(_anchored(post.exceedance(h, posterior=False), prior_at_min,
+                              combined.prior_pos)[0])
+        upd = float(_anchored(post.exceedance(h), post_at_min, combined.posterior_pos)[0])
+        rows.append({"Threshold": label, "Column (m)": f"{h:,.0f}",
+                     "Contact (m TVDSS)": f"{apex + h:,.0f}",
+                     "POS, geological": f"{geo:.1%}", "POS, given the DHI": f"{upd:.1%}",
+                     "Move": f"{upd - geo:+.1%}"})
+        fig.add_hline(y=apex + h, line=dict(color=colour, dash="dash", width=1.4),
+                      annotation_text=label, annotation_position="top left")
+        # Both readings printed where they are taken, so neither has to be inferred from the other.
+        for value, tint, side in ((upd, POSTERIOR, "right"), (geo, PRIOR, "left")):
+            fig.add_scatter(x=[value], y=[apex + h], mode="markers+text",
+                            marker=dict(color=tint, size=10, symbol="diamond",
+                                        line=dict(color="white", width=1.5)),
+                            text=[f"  {value:.1%}" if side == "right" else f"{value:.1%}  "],
+                            textposition=f"middle {side}", textfont=dict(size=11, color=tint),
+                            showlegend=False, hoverinfo="skip")
+
+    # The posterior median contact. The pick is an estimate, not a floor, so the median lands on
+    # it -- which is the whole reason the reading at the picked contact is about half the one at
+    # the assessment minimum, and the question this figure is asked most often.
+    median_contact = float(np.interp(0.5, updated[::-1] / max(updated.max(), 1e-12),
+                                     depths[::-1]))
+    fig.add_scatter(x=[combined.posterior_pos * 0.5], y=[median_contact], mode="markers",
+                    marker=dict(color=POSTERIOR, size=13, symbol="circle-open",
+                                line=dict(width=3)),
+                    name=f"posterior median contact, {median_contact:,.0f} m", hoverinfo="skip")
+
+    fig.update_layout(xaxis_title="Prospect POS  =  P(G) × P(column ≥ h)",
+                      xaxis_range=[0, min(1.0, max(combined.prior_pos, combined.posterior_pos,
+                                                   0.05) * 1.15)],
+                      yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
+                      height=560, margin=dict(t=40), legend=dict(orientation="h", y=-0.18))
+    n.plot(fig, "**The figure this tab exists for.** Every chance anyone quotes is a point on one "
+                "of these curves, and each is a **prospect POS** — the element product times the "
+                "chance of clearing that threshold, not the conditional column term on its own.\n\n"
+                "**A DHI is not a lift; it is a reshaping.** It raises the chance at thresholds "
+                "near and above the picked contact and *lowers* it below, and the curves cross "
+                "where that changes. The open circle is the posterior median: it lands on the "
+                "pick, because an amplitude termination is an estimate of the contact and not a "
+                "floor under it — which is why the reading there is about half the one at your "
+                "assessment minimum.")
 
     n.table(
-        pd.DataFrame([
-            {"Threshold": label,
-             "Column (m)": f"{h:,.0f}",
-             "Contact (m TVDSS)": f"{apex + h:,.0f}",
-             "POS, geological":
-                 f"{_anchored(post.exceedance(h, posterior=False), prior_at_min, combined.prior_pos)[0]:.1%}",
-             "POS, given the DHI":
-                 f"{_anchored(post.exceedance(h), post_at_min, combined.posterior_pos)[0]:.1%}"}
-            for label, h, _ in markers if 0 <= h <= hs[-1]
-        ]),
+        pd.DataFrame(rows),
         "**POS and its threshold, always as a pair.** These are readings of the curve above, not "
         "separate numbers — which is why a volume must be taken at the same row as the chance "
-        "beside it.")
+        "beside it. The answer to *which chance do I quote* is: whichever row your volume was "
+        "computed at.")
 
-    theme.heading(TAB, "5 · Combining the two channels")
+    theme.heading(TAB, sub=n.sub, text="5 · Combining the two channels")
     st.markdown(
         """
 Geometry and character are **two aspects of one observation, not two observations.** A bright
@@ -652,160 +702,161 @@ So the combination is discounted rather than taken raw.
 
     # ------------------------------------------------------------------ cross-checks
     # ------------------------------------------------------------- success attribution
-    st.divider()
-    st.markdown(
-        "### Diagnostics\n\n"
-        "Everything above is the answer. Everything below is how much to trust it — what "
-        "the answer rests on, which mechanism the amplitude promoted, whether the anomaly "
-        "area agrees with the column, and what the older scenario-switch formulation would "
-        "have said instead. Good to read, and not what a first pass needs."
-    )
+    with st.expander(
+            "**Diagnostics** — what the answer rests on, and what the older formulation would "
+            "have said", expanded=False):
+        st.caption(
+            "Everything above is the answer. Everything here is how much to trust it: what it "
+            "rests on, which mechanism the amplitude promoted, whether the anomaly area agrees "
+            "with the column, and what the scenario switch would have given instead. Good to "
+            "read, and not what a first pass needs."
+        )
 
-    theme.heading(TAB, "6 · What is this answer most sensitive to?")
-    st.markdown(
-        "**Two kinds of input, and the figure keeps them apart because they are argued about "
-        "differently.** The geology varies realisation by realisation and is sliced the same way "
-        "as on tab \u2463 \u2014 except the means are now *weighted*, because after the update a "
-        "realisation is worth its likelihood. The DHI's own numbers do not vary at all: a picked "
-        "contact and a pick \u03c3 are single typed values, so their influence is found by moving "
-        "them and recomputing.\n\n"
-        "**Moving them is cheap and that is the point of importance weighting.** Each variation is "
-        "a new set of weights on the *same* realisations \u2014 no second Monte Carlo \u2014 so a "
-        "one-at-a-time sensitivity over the DHI inputs costs nothing."
-    )
-    dhi_space = st.radio(
-        "Swing measured on", ["Column below apex", "Contact depth"], horizontal=True,
-        key="dhi_tornado_space")
-    _space = "column" if dhi_space.startswith("Column") else "depth"
-    _effects = sensitivity.dhi_tornado(post, space=_space)
-    _centre = sensitivity.dhi_baseline(post, space=_space)
+        theme.heading(TAB, sub=n.sub, text="6 · What is this answer most sensitive to?")
+        st.markdown(
+            "**Two kinds of input, and the figure keeps them apart because they are argued about "
+            "differently.** The geology varies realisation by realisation and is sliced the same way "
+            "as on tab \u2463 \u2014 except the means are now *weighted*, because after the update a "
+            "realisation is worth its likelihood. The DHI's own numbers do not vary at all: a picked "
+            "contact and a pick \u03c3 are single typed values, so their influence is found by moving "
+            "them and recomputing.\n\n"
+            "**Moving them is cheap and that is the point of importance weighting.** Each variation is "
+            "a new set of weights on the *same* realisations \u2014 no second Monte Carlo \u2014 so a "
+            "one-at-a-time sensitivity over the DHI inputs costs nothing."
+        )
+        dhi_space = st.radio(
+            "Swing measured on", ["Column below apex", "Contact depth"], horizontal=True,
+            key="dhi_tornado_space")
+        _space = "column" if dhi_space.startswith("Column") else "depth"
+        _effects = sensitivity.dhi_tornado(post, space=_space)
+        _centre = sensitivity.dhi_baseline(post, space=_space)
 
-    if _effects:
-        _shown = _effects[:12]
-        figt = go.Figure()
-        for _kind, _colour in ((sensitivity.DEPTH_EFFECT, PRIOR),
-                               (sensitivity.DHI_INPUT, POSTERIOR)):
-            _rows = [e for e in _shown if e.kind == _kind]
-            if not _rows:
-                continue
-            figt.add_bar(y=[f"{e.name} \u2014 {e.kind}" for e in _rows][::-1],
-                         x=[e.high - e.low for e in _rows][::-1],
-                         base=[e.low - _centre for e in _rows][::-1],
-                         orientation="h", name=_kind, marker_color=_colour,
-                         hovertemplate="%{y}<br>%{x:,.0f} m of swing<extra></extra>")
-        figt.add_vline(x=0.0, line=dict(color="#555", width=1.5))
-        figt.update_layout(xaxis_title=f"Metres from the posterior mean of {_centre:,.0f} m",
-                           height=max(300, 34 * len(_shown)), margin=dict(t=20),
-                           barmode="overlay", legend=dict(orientation="h", y=-0.22))
-        n.plot(figt,
-               f"**What the DHI-updated mean actually rests on.** Blue bars are geological inputs, "
-               f"sliced by decile and weighted by the likelihood; red bars are the DHI's own typed "
-               f"numbers, each moved one at a time \u2014 the pick \u03c3 halved and doubled, the picked "
-               f"contact by half a \u03c3, the detection parameters across the span an assessor "
-               f"genuinely cannot pin down.\n\n"
-               f"**Read the red bars against the blue ones.** If a typed DHI number moves the "
-               f"answer further than the geology does, the posterior is a statement about your "
-               f"seismic assumptions rather than about the prospect \u2014 and the pick \u03c3 and the "
-               f"detection ceiling are usually the least defensible numbers on this tab. That is "
-               f"worth saying out loud rather than quoting.\n\n"
-               f"**The geological ranking can differ from tab \u2463's.** Reweighting changes which "
-               f"limits the answer is sensitive to, which is a real consequence of the update and "
-               f"not visible anywhere else.")
-    else:
-        st.info("Not enough weight spread to slice a sensitivity from this posterior.")
-
-    theme.heading(TAB, "7 · Which mechanism set the contact, given the DHI")
-    st.markdown(
-        "**This is not the risk re-attributed — it is the *shallowest active limit* re-attributed, "
-        "and the two are different questions.**\n\n"
-        "*Given the prospect failed, which element failed?* A fluid indicator cannot say. The "
-        "element chances on tab ② are untouched by anything here, and the *Risk against depth* "
-        "sub-tab draws them "
-        "unchanged.\n\n"
-        "*Given it worked, and the contact is where the amplitude says, which mechanism stopped it "
-        "there?* **That the DHI can answer**, because the contact depth is observed and the "
-        "controlling limit is coupled to it. Ordinary inference on a latent variable, and the "
-        "reason the argmin was worth keeping."
-    )
-    weights = post.weights
-    total_w = float(weights.sum())
-    rows = []
-    for j, limit in enumerate(limit_set.limits):
-        won = result.controller == j
-        geo = float(won.mean())
-        upd = float((won * weights).sum() / total_w) if total_w > 0 else geo
-        if max(geo, upd) < 0.005:
-            continue
-        rows.append({"Limit": limit.name, "Element": limit.group.value,
-                     "Geological": f"{geo:.1%}", "Given the DHI": f"{upd:.1%}",
-                     "Shift": f"{upd - geo:+.1%}", "_sort": -upd})
-    table = pd.DataFrame(sorted(rows, key=lambda r: r["_sort"])).drop(columns="_sort")
-    n.table(table,
-            f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; Share of **successful** realisations in "
-            f"which each mechanism was the shallowest active limit, before and after the update. "
-            f"A mechanism that cannot produce a contact where the amplitude was picked loses share; "
-            f"one that naturally produces exactly that contact gains it. **Read it as *what "
-            f"stopped the column*, never as *where the risk is*.**")
-
-    theme.heading(TAB, "8 · Cross-checks")
-    if not (seen and area):
-        st.caption("Enter an anomaly area in §1 to enable the area cross-check.")
-    else:
-        try:
-            table = ch.AreaDepthTable.reference()
-            cross = dhi_core.area_cross_check(table.depths_m, table.top_area_km2, area, contact)
-            ok, msg = dhi_core.containment_ok(table.depths_m, table.top_area_km2,
-                                              table.apex_m, h_min, area)
-        except (FileNotFoundError, ValueError) as exc:
-            st.info(f"Area cross-check unavailable: {exc}")
+        if _effects:
+            _shown = _effects[:12]
+            figt = go.Figure()
+            for _kind, _colour in ((sensitivity.DEPTH_EFFECT, PRIOR),
+                                   (sensitivity.DHI_INPUT, POSTERIOR)):
+                _rows = [e for e in _shown if e.kind == _kind]
+                if not _rows:
+                    continue
+                figt.add_bar(y=[f"{e.name} \u2014 {e.kind}" for e in _rows][::-1],
+                             x=[e.high - e.low for e in _rows][::-1],
+                             base=[e.low - _centre for e in _rows][::-1],
+                             orientation="h", name=_kind, marker_color=_colour,
+                             hovertemplate="%{y}<br>%{x:,.0f} m of swing<extra></extra>")
+            figt.add_vline(x=0.0, line=dict(color="#555", width=1.5))
+            figt.update_layout(xaxis_title=f"Metres from the posterior mean of {_centre:,.0f} m",
+                               height=max(300, 34 * len(_shown)), margin=dict(t=20),
+                               barmode="overlay", legend=dict(orientation="h", y=-0.22))
+            n.plot(figt,
+                   f"**What the DHI-updated mean actually rests on.** Blue bars are geological inputs, "
+                   f"sliced by decile and weighted by the likelihood; red bars are the DHI's own typed "
+                   f"numbers, each moved one at a time \u2014 the pick \u03c3 halved and doubled, the picked "
+                   f"contact by half a \u03c3, the detection parameters across the span an assessor "
+                   f"genuinely cannot pin down.\n\n"
+                   f"**Read the red bars against the blue ones.** If a typed DHI number moves the "
+                   f"answer further than the geology does, the posterior is a statement about your "
+                   f"seismic assumptions rather than about the prospect \u2014 and the pick \u03c3 and the "
+                   f"detection ceiling are usually the least defensible numbers on this tab. That is "
+                   f"worth saying out loud rather than quoting.\n\n"
+                   f"**The geological ranking can differ from tab \u2463's.** Reweighting changes which "
+                   f"limits the answer is sensitive to, which is a real consequence of the update and "
+                   f"not visible anywhere else.")
         else:
-            c1, c2 = st.columns(2)
-            c1.metric("Contact from the anomaly's area", f"{cross['from_area_m']:,.0f} m")
-            c2.metric("Disagreement", f"{cross['disagreement_m']:+,.0f} m",
-                      "area minus termination", delta_color="off")
-            if abs(cross["disagreement_m"]) < 25:
-                st.success("The two readings agree. Treat them as one observation with a tighter σ.")
-            elif cross["disagreement_m"] < 0:
-                st.warning(
-                    "**The anomaly is narrower than its down-dip limit implies.** It may not be "
-                    "filling the closure — a stratigraphic or diagenetic component, or a smaller "
-                    "effective trap than the one mapped.")
-            else:
-                st.warning(
-                    "**The anomaly extends beyond the mapped conformance.** Suspect a non-fluid "
-                    "cause: lithology, or tuning.")
-            if not ok:
-                st.error(f"**Containment fails.** {msg}")
-        st.caption(
-            "A DHI gives **two** readings of the contact — the down-dip termination and the areal "
-            "extent through the area–depth table. They should agree, and nothing forces them to — "
-            "which is why the check is here."
-        )
+            st.info("Not enough weight spread to slice a sensitivity from this posterior.")
 
-    # ------------------------------------------------------------------ formulation A
-    theme.heading(TAB, "9 · What the scenario switch would have said")
-    st.markdown(
-        "`IF(DHI valid, DHI contact, geological contact)` — the older and simpler way to use a "
-        "fluid indicator, and Hood's rule: merge late, never blend into the input distribution. "
-        "It moves the contact but **not** the chance.\n\n"
-        "**This is a comparison, not an alternative model.** Its one real contribution was the "
-        f"parameter — *is the picked event actually the contact* — and that now lives inside the "
-        f"likelihood in §2, at **p_valid = {p_valid:.3f}**, where it does more than switch between "
-        "two stories: it puts a floor under the whole update, so no contact depth is ever ruled "
-        "out. There is no second slider here because there is no second number; running the "
-        "comparison on a different one would be comparing against something else."
-    )
-    if seen:
-        switched = dhi_core.scenario_switch(result, p_valid, contact, sigma)
-        s1, s2, s3 = st.columns(3)
-        for col, p in ((s1, 90), (s2, 50), (s3, 10)):
-            col.metric(f"Contact P{p}, scenario switch",
-                       f"{np.percentile(switched, 100 - p):,.0f} m",
-                       f"likelihood form {post.percentiles(p)[0]:,.0f} m", delta_color="off")
-        st.caption(
-            "**B-10 is downgraded, not fixed.** `E26 = 0.655` is not a bug — it is an unlabelled "
-            "parameter of a model that was never written down. The likelihood formulation writes "
-            "it down, and needs two numbers a geophysicist can state instead of one nobody can."
+        theme.heading(TAB, sub=n.sub, text="7 · Which mechanism set the contact, given the DHI")
+        st.markdown(
+            "**This is not the risk re-attributed — it is the *shallowest active limit* re-attributed, "
+            "and the two are different questions.**\n\n"
+            "*Given the prospect failed, which element failed?* A fluid indicator cannot say. The "
+            "element chances on tab ② are untouched by anything here, and the *Risk against depth* "
+            "sub-tab draws them "
+            "unchanged.\n\n"
+            "*Given it worked, and the contact is where the amplitude says, which mechanism stopped it "
+            "there?* **That the DHI can answer**, because the contact depth is observed and the "
+            "controlling limit is coupled to it. Ordinary inference on a latent variable, and the "
+            "reason the argmin was worth keeping."
         )
-    else:
-        st.caption("The scenario switch has nothing to switch to when no anomaly was seen.")
+        weights = post.weights
+        total_w = float(weights.sum())
+        rows = []
+        for j, limit in enumerate(limit_set.limits):
+            won = result.controller == j
+            geo = float(won.mean())
+            upd = float((won * weights).sum() / total_w) if total_w > 0 else geo
+            if max(geo, upd) < 0.005:
+                continue
+            rows.append({"Limit": limit.name, "Element": limit.group.value,
+                         "Geological": f"{geo:.1%}", "Given the DHI": f"{upd:.1%}",
+                         "Shift": f"{upd - geo:+.1%}", "_sort": -upd})
+        table = pd.DataFrame(sorted(rows, key=lambda r: r["_sort"])).drop(columns="_sort")
+        n.table(table,
+                f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; Share of **successful** realisations in "
+                f"which each mechanism was the shallowest active limit, before and after the update. "
+                f"A mechanism that cannot produce a contact where the amplitude was picked loses share; "
+                f"one that naturally produces exactly that contact gains it. **Read it as *what "
+                f"stopped the column*, never as *where the risk is*.**")
+
+        theme.heading(TAB, sub=n.sub, text="8 · Cross-checks")
+        if not (seen and area):
+            st.caption("Enter an anomaly area in §1 to enable the area cross-check.")
+        else:
+            try:
+                table = ch.AreaDepthTable.reference()
+                cross = dhi_core.area_cross_check(table.depths_m, table.top_area_km2, area, contact)
+                ok, msg = dhi_core.containment_ok(table.depths_m, table.top_area_km2,
+                                                  table.apex_m, h_min, area)
+            except (FileNotFoundError, ValueError) as exc:
+                st.info(f"Area cross-check unavailable: {exc}")
+            else:
+                c1, c2 = st.columns(2)
+                c1.metric("Contact from the anomaly's area", f"{cross['from_area_m']:,.0f} m")
+                c2.metric("Disagreement", f"{cross['disagreement_m']:+,.0f} m",
+                          "area minus termination", delta_color="off")
+                if abs(cross["disagreement_m"]) < 25:
+                    st.success("The two readings agree. Treat them as one observation with a tighter σ.")
+                elif cross["disagreement_m"] < 0:
+                    st.warning(
+                        "**The anomaly is narrower than its down-dip limit implies.** It may not be "
+                        "filling the closure — a stratigraphic or diagenetic component, or a smaller "
+                        "effective trap than the one mapped.")
+                else:
+                    st.warning(
+                        "**The anomaly extends beyond the mapped conformance.** Suspect a non-fluid "
+                        "cause: lithology, or tuning.")
+                if not ok:
+                    st.error(f"**Containment fails.** {msg}")
+            st.caption(
+                "A DHI gives **two** readings of the contact — the down-dip termination and the areal "
+                "extent through the area–depth table. They should agree, and nothing forces them to — "
+                "which is why the check is here."
+            )
+
+        # ------------------------------------------------------------------ formulation A
+        theme.heading(TAB, sub=n.sub, text="9 · What the scenario switch would have said")
+        st.markdown(
+            "`IF(DHI valid, DHI contact, geological contact)` — the older and simpler way to use a "
+            "fluid indicator, and Hood's rule: merge late, never blend into the input distribution. "
+            "It moves the contact but **not** the chance.\n\n"
+            "**This is a comparison, not an alternative model.** Its one real contribution was the "
+            f"parameter — *is the picked event actually the contact* — and that now lives inside the "
+            f"likelihood in §2, at **p_valid = {p_valid:.3f}**, where it does more than switch between "
+            "two stories: it puts a floor under the whole update, so no contact depth is ever ruled "
+            "out. There is no second slider here because there is no second number; running the "
+            "comparison on a different one would be comparing against something else."
+        )
+        if seen:
+            switched = dhi_core.scenario_switch(result, p_valid, contact, sigma)
+            s1, s2, s3 = st.columns(3)
+            for col, p in ((s1, 90), (s2, 50), (s3, 10)):
+                col.metric(f"Contact P{p}, scenario switch",
+                           f"{np.percentile(switched, 100 - p):,.0f} m",
+                           f"likelihood form {post.percentiles(p)[0]:,.0f} m", delta_color="off")
+            st.caption(
+                "**B-10 is downgraded, not fixed.** `E26 = 0.655` is not a bug — it is an unlabelled "
+                "parameter of a model that was never written down. The likelihood formulation writes "
+                "it down, and needs two numbers a geophysicist can state instead of one nobody can."
+            )
+        else:
+            st.caption("The scenario switch has nothing to switch to when no anomaly was seen.")

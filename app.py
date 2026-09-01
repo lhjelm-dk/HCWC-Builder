@@ -1,8 +1,9 @@
 """HCWC Distribution Builder — Streamlit shell.
 
-Eight numbered, colour-coded tabs, no sidebar. Figures and tables are numbered by tab in one
-shared sequence, so `Figure 4.2` locates itself; the trial count and seed are exposed rather than
-buried.
+Eight numbered, colour-coded tabs, no sidebar. Figures and tables are numbered by tab, so
+`Figure 4.2` locates itself — and by sub-tab where a tab has enough of them for that to matter,
+so `Figure 5.2.1` names the page as well as the position on it. The trial count and seed are
+exposed rather than buried.
 
 **Organised by risk element, not by pipeline.** Tab ② is the prospect, tab ③ is every mechanism
 that could limit the column grouped as Charge / Closure / Retention, and the rest are outputs. The
@@ -294,7 +295,6 @@ with tab4:
 # on the reweighted sample. The basis is a parameter rather than a control, so no widget can
 # misroute it.
 with tab5:
-    _n5 = Numbering(5)
     # The lesson comes first for the reader: someone who does not yet believe the method has
     # nowhere to look on the other three sub-tabs, all of which assume it.
     #
@@ -303,29 +303,33 @@ with tab5:
     # `dhi_tab` has just built rather than on the previous frame's — which matters here more than
     # anywhere else in the app, because a first-time visitor lands on this page before touching a
     # widget, and a one-frame lag would greet them by asking for something they had already done.
+    # Numbering by sub-tab is what makes that free: each owns its own sequence, so rendering out
+    # of order no longer costs the reader anything.
     #
-    # The cost is that figure numbers on this sub-tab follow the ones on ②, since the shared
-    # sequence counts in render order. A lesson whose figures are numbered after the analysis they
-    # explain is a smaller wart than a lesson that will not draw itself.
+    # **One sequence per sub-tab, not per tab.** Four sub-tabs sharing a flat sequence gave a
+    # reader `Figure 5.9` with no way to know which of the four pages to turn to — and the
+    # sequence counts in render order, which here is not reading order. Numbered by sub-tab,
+    # `Figure 5.2.1` is the first exhibit on *What you saw*, and it stays that whatever else moves.
     _how, _evidence, _contact_dhi, _depth_dhi = st.tabs(
-        ["① How a DHI moves a chance", "② What you saw", "③ Contact and chance | DHI",
-         "④ Risk against depth | DHI"])
+        ["5.1 · How a DHI moves a chance", "5.2 · What you saw",
+         "5.3 · Contact and chance | DHI", "5.4 · Risk against depth | DHI"])
     with _evidence:
-        dhi_tab.render(_n5)
+        dhi_tab.render(Numbering(5, sub=2))
     with _how:
-        dhi_walkthrough.render(_n5)
+        dhi_walkthrough.render(Numbering(5, sub=1))
     with _contact_dhi:
         _post = st.session_state.get("dhi_posterior") if st.session_state.get("dhi_on") else None
         if _post is None:
             st.info(
                 "**Nothing to show until the evidence is described.** Turn on *This is a DHI "
-                "prospect* on tab ② and fill in sub-tab ① — the figures here are tab ④'s, drawn "
+                "prospect* on tab ② and fill in sub-tab 5.2 — the figures here are tab ④'s, drawn "
                 "on the updated distribution, so they need an update to draw."
             )
         else:
-            results_tab.render(_n5, posterior=_post)
+            results_tab.render(Numbering(5, sub=3), posterior=_post)
     with _depth_dhi:
-        depth_risk_tab.render(depth_risk_tab.TAB_DHI, with_dhi=True, n=_n5)
+        depth_risk_tab.render(depth_risk_tab.TAB_DHI, with_dhi=True,
+                              n=Numbering(5, sub=4))
 
 # --------------------------------------------------------------------------- ⑤ Empirical basis
 with tab6:
