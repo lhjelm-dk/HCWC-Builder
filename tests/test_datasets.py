@@ -188,3 +188,43 @@ def test_nothing_here_touches_the_disk_or_the_network():
     source = pathlib.Path(datasets.__file__).read_text(encoding="utf-8")
     for forbidden in ("open(", "to_csv(", "write_text(", "requests", "urlopen", "st.cache"):
         assert forbidden not in source, f"{forbidden!r} in datasets.py — imported data must not leave the session"
+
+
+class TestTheReaderRefusesForTheRightReason:
+    """The content checks were already strong. These are the two cases where the *diagnosis* was
+    wrong, and the one where there was no check at all."""
+
+    @staticmethod
+    def _rows(n):
+        return "hc_column_m,trap_height_m\n" + "100,200\n" * n
+
+    def test_a_dataset_of_any_size_is_no_longer_accepted(self):
+        """The one path that takes a file of any size from whoever is using the app. On a shared
+        server a long-lived process holds every dataset anyone imports."""
+        assert datasets.read_csv(self._rows(50), name="ok").rows.shape[0] == 50
+        with pytest.raises(datasets.DatasetError, match="rows, over the"):
+            datasets.read_csv(self._rows(datasets.MAX_ROWS + 1), name="huge")
+
+    def test_a_file_of_any_length_is_refused_before_it_is_parsed(self):
+        with pytest.raises(datasets.DatasetError, match="MB, over the"):
+            datasets.read_csv("x" * (datasets.MAX_CHARS + 1), name="huge")
+
+    def test_a_semicolon_file_is_told_about_its_separator(self):
+        """Excel on a European locale writes semicolons. The file then parses as one column whose
+        *name* is the whole header line — so the reader reported the two required columns missing
+        while looking straight at both of them."""
+        with pytest.raises(datasets.DatasetError, match="semicolon- or tab-separated"):
+            datasets.read_csv("hc_column_m;trap_height_m\n100;200\n150;300\n", name="eu")
+
+    def test_comma_decimals_are_named_rather_than_counted(self):
+        """Same trap one step further in: the columns are found, every value is a string like
+        `"100,5"`, and the reader said "0 usable rows" — which sends the reader to look at their
+        data rather than at the decimal mark."""
+        with pytest.raises(datasets.DatasetError, match="decimal mark"):
+            datasets.read_csv(
+                'hc_column_m,trap_height_m\n"100,5","200,5"\n"150,5","300,5"\n', name="eu")
+
+    def test_genuinely_unusable_values_still_report_as_unusable(self):
+        """The two messages above must not swallow the ordinary case."""
+        with pytest.raises(datasets.DatasetError, match="usable rows"):
+            datasets.read_csv("hc_column_m,trap_height_m\nabc,def\nghi,jkl\n", name="e")

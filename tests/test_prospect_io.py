@@ -9,6 +9,7 @@ rather than as a wrong number.
 from __future__ import annotations
 
 import json
+import pathlib
 
 import pytest
 
@@ -22,11 +23,18 @@ def _state() -> dict:
         "apex_p1": 2049.0, "apex_p99": 2051.0,
         "spill_input": 2400.0, "burial_input": 2050.0,
         "dhi_toggle": True, "min_column_input": 40.0,
+        # The DHI observation itself, which used to live in unkeyed widgets and be lost on reload.
+        "dhi_in_seen": "Seen", "dhi_in_shape": "normal", "dhi_in_contact": 2205.0,
+        "dhi_in_sigma": 30.0, "dhi_in_strength": 25.0, "dhi_in_pvalid_manual": False,
         "n_trials_input": 20000, "seed_input": 7,
         "play_Charge": 1.0, "cond_Charge": 0.9,
         "lim_Charge_on": True, "lim_Charge_pa": 1.0, "lim_Charge_kind": "column",
         "lim_Charge_form": "pert", "lim_Charge_pert_minimum": 100.0,
-        "lim_Charge_src": "From charge volume",
+        # The token the radio stores, not the label it shows. This fixture said
+        # "From charge volume" -- a value the widget never writes, because its options are the
+        # tokens and `format_func` supplies the labels. The enumeration check now refuses it,
+        # which is the point: that is exactly the shape of file that crashed the app.
+        "lim_Charge_src": "charge",
         # A range slider inside the seal calculator — a tuple, and it has to stay one.
         "lim_Top seal (capillary)_t": (56.0, 87.0),
         "lim_Top seal (capillary)_rs": (0.03, 0.20),
@@ -157,3 +165,93 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
               if k not in prospect.EXACT and not k.startswith(prospect.PREFIXES)
               and k not in transient and not k.startswith(("r1_", "sub_el_", "z_entry_"))}
     assert not missed, f"widget keys nothing saves and nothing excuses: {sorted(missed)}"
+
+
+class TestTheValueCheckCoversEveryKindOfWidget:
+    """The numeric half of this was written carefully; the enumerated half had no check at all.
+
+    Streamlit does not complain about a stored value that is not among a selector's options — it
+    silently falls back to the first one. So an unchecked enumeration is worse than a crash: the
+    prospect loads, looks right, and is not the one that was saved.
+    """
+
+    @staticmethod
+    def _read(key, value):
+        return prospect.read(json.dumps({"format": 1, "inputs": {key: value}}))
+
+    @pytest.mark.parametrize("value", ["garbage", "From the NCS data", "EMPIRICAL", ""])
+    def test_a_source_that_is_not_one_of_the_options_is_refused(self, value):
+        """`From the NCS data` is the *label*; the radio stores the token behind it. A file
+        carrying labels reached a dict lookup and crashed with a bare `KeyError`."""
+        with pytest.raises(ValueError, match="not one of"):
+            self._read("lim_Charge_src", value)
+
+    def test_the_tokens_the_radio_actually_stores_are_accepted(self):
+        for token in ("Typed", "charge", "seal", "seal_as_top", "empirical"):
+            assert self._read("lim_Charge_src", token)["lim_Charge_src"] == token
+
+    @pytest.mark.parametrize("key,value", [("lim_Charge_form", "nonsense"),
+                                           ("lim_Charge_kind", "sideways"),
+                                           ("stack_mode_4", "Hologram"),
+                                           ("stack_space_5", "sideways"),
+                                           ("dhi_in_shape", "triangular")])
+    def test_every_other_enumeration_is_checked_too(self, key, value):
+        with pytest.raises(ValueError, match="not one of"):
+            self._read(key, value)
+
+    @pytest.mark.parametrize("key", ["lim_Charge_on", "lim_Top seal (capillary)_net",
+                                     "dhi_toggle"])
+    def test_a_switch_must_be_a_switch(self, key):
+        """A toggle handed `"yes please"` is not an error Streamlit reports; it is simply truthy."""
+        with pytest.raises(ValueError, match="must be true or false"):
+            self._read(key, "yes please")
+
+    def test_the_declared_bounds_are_the_bounds_the_widget_will_take(self):
+        """`min_column_input` declared 0–10 000 while its widget accepts 0–2 000. A file at 5 000
+        passed the check and then landed on **0.0** — not clamped, not the default — which makes
+        the minimum-column test vacuous and changes the question being answered."""
+        import re
+
+        source = (pathlib.Path(__file__).resolve().parent.parent
+                  / "hcwc" / "ui" / "prospect_tab.py").read_text(encoding="utf-8")
+        for key, (low, high) in prospect.NUMERIC_BOUNDS.items():
+            found = re.search(
+                r'number_input\(\s*\n?\s*"[^"]*",\s*([0-9_.*\- ]+?),\s*([0-9_.*\- ]+?),'
+                r'[^)]*key="%s"' % re.escape(key), source, re.S)
+            assert found, f"no widget found for {key}"
+            assert (eval(found.group(1)), eval(found.group(2))) == (low, high), \
+                f"{key}: the file may carry {low}–{high} but the widget takes another range"
+
+
+class TestTheDhiObservationIsPartOfTheDocument:
+    def test_the_dhi_inputs_round_trip(self):
+        """Every DHI widget was unkeyed, so `document` could not see any of them and a saved
+        prospect carried `dhi_toggle` alone."""
+        restored = prospect.read(prospect.to_json(_state()))
+        for key in ("dhi_in_seen", "dhi_in_shape", "dhi_in_contact", "dhi_in_strength"):
+            assert key in restored, key
+        assert restored["dhi_in_strength"] == 25.0
+
+    def test_the_derived_dhi_state_is_not_saved(self):
+        """`dhi_in_` rather than a bare `dhi_` prefix, so the tab's *outputs* stay out. Saving one
+        would let a stale posterior be restored over a fresh computation."""
+        saved = prospect.document({"dhi_in_strength": 7.0, "dhi_r_strength": 1.4,
+                                   "dhi_on": True, "dhi_posterior": 0.5})["inputs"]
+        assert "dhi_in_strength" in saved
+        assert not [k for k in saved if k.startswith("dhi_") and not k.startswith("dhi_in_")]
+
+
+class TestTheAllowListMatchesTheApp:
+    def test_no_exact_entry_is_dead(self):
+        """`stack_space` and `stack_mode` sat here without the tab number the real keys carry, so
+        they matched nothing: the settings were never saved and the entries were decoration."""
+        from hcwc.ui import limit_stack
+        assert set(prospect.STACK_MODES) == set(limit_stack.MODES)
+
+    def test_the_version_field_refuses_with_the_right_reason(self):
+        """A string version used to be reported as "format 1, this reads 1" — a refusal whose
+        reason reads as a contradiction, sending the reader to update a current app."""
+        with pytest.raises(ValueError, match="not a version number"):
+            prospect.read('{"format": "1", "inputs": {}}')
+        with pytest.raises(ValueError, match="newer version"):
+            prospect.read('{"format": 99, "inputs": {}}')

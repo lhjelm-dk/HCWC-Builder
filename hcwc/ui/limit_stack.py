@@ -132,7 +132,11 @@ def _density_mode(fig, result, space, apex, ranked, colour_of, lo, hi, mode, eve
             continue
         density = _density(values, grid)
         half = mode == "Half violin"
-        left = centre if half else centre - LANE_FILL / 2 * density
+        # A half violin's left edge is the lane centre — but as an *array* along the grid, because
+        # the polygon below reverses it. A bare float made `left[::-1]` a TypeError, so one of the
+        # five options in the dropdown took the page down every time it was chosen.
+        left = (np.full_like(density, centre) if half
+                else centre - LANE_FILL / 2 * density)
         right = centre + (LANE_FILL if half else LANE_FILL / 2) * density
         fig.add_scatter(x=np.concatenate([right, left[::-1]]),
                         y=np.concatenate([grid, grid[::-1]]), fill="toself", mode="lines",

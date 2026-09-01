@@ -102,3 +102,17 @@ class TestQuantilePairs:
         bench = rng.normal(200.0, 40.0, 40_000)
         a, b = calibration.quantile_pairs(bench + 50.0, bench)
         assert np.allclose(a - b, 50.0, atol=2.0)
+
+
+class TestAnEmptyBuiltDistribution:
+    def test_it_explains_itself_rather_than_raising_out_of_numpy(self):
+        """An assessment minimum above every achievable column leaves nothing to place inside a
+        benchmark. `np.percentile` of an empty array is an `IndexError` from deep inside numpy,
+        which is what a reader saw — for a question ("is this commercial at 350 m?") whose honest
+        answer is simply *no*."""
+        with pytest.raises(ValueError, match="no realisation reached the assessment minimum"):
+            calibration.compare(np.array([]), np.array([10.0, 20.0, 30.0]), "a benchmark")
+
+    def test_an_empty_benchmark_is_named_separately(self):
+        with pytest.raises(ValueError, match="benchmark drew no samples"):
+            calibration.compare(np.array([10.0, 20.0]), np.array([]), "a benchmark")

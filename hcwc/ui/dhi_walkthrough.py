@@ -136,7 +136,12 @@ def render(n: Numbering | None = None) -> None:
 
     # ------------------------------------------------------------------ 3 · the rival
     st.markdown("#### Step 3 · P(DHI | no HC) — and if it doesn't work, how likely was I anyway?")
-    r_strength = st.session_state.get("dhi_r_strength")
+    # Guarded on `dhi_on` like every other reader of a `dhi_` output. Switching the DHI off clears
+    # `dhi_overlay` but leaves this and `dhi_posterior` behind, so an unguarded read is a stale
+    # strength waiting for the day this function is called from somewhere that does not return
+    # early when there is no DHI.
+    r_strength = (st.session_state.get("dhi_r_strength")
+                  if st.session_state.get("dhi_on") else None)
     st.markdown(
         "**This is the term geoscientists skip, and it is why bright amplitudes over-persuade.** "
         "An observation is only evidence to the extent that it is *more* likely under success "

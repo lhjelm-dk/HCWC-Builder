@@ -134,6 +134,12 @@ class DepthDistribution:
 #: How a limit's distribution is stated. See :class:`Limit`.
 COLUMN, DEPTH = "column", "depth"
 
+#: The distributions an assessor can *choose*. Every key of :data:`_KINDS` except ``empirical``,
+#: which is a computed quantile table rather than an elicited shape and is never offered as an
+#: option. Public so that a reader validating a saved file can check a stored choice against the
+#: same list the UI builds its menu from, without importing the UI.
+ELICITED_KINDS: tuple[str, ...] = tuple(k for k in _KINDS if k != "empirical")
+
 #: The name the apex answers to in a correlation pair. It is not a limit -- it is the datum every
 #: limit is measured from -- but it *is* a sampled depth, and a depth-stated limit shares its
 #: depth-conversion error with it. Reserved, so no limit may take the name.

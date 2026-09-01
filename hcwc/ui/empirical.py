@@ -714,15 +714,29 @@ What follows is a disagreement about **one estimator**, not about the data.
     # -------- Are we optimistic or pessimistic? ------------------------------------------
     theme.heading(TAB, "8 · Am I optimistic or pessimistic?")
     limit_set_cal = st.session_state.get("limit_set")
-    if limit_set_cal is None or not own_relief or own_relief <= 0:
+    _calibratable = limit_set_cal is not None and bool(own_relief) and own_relief > 0
+    built_column = np.asarray([], dtype=float)
+    if _calibratable:
+        from hcwc.ui import run as engine_run
+        _built_result = engine_run.current(limit_set_cal)
+        built_column = _built_result.column_m[_built_result.above_minimum]
+
+    if not _calibratable:
         st.info("Build the limits on tab ③ and set a spill point on tab ② to calibrate against "
                 "the benchmarks.")
+    elif built_column.size == 0:
+        # Drawn before anything is compared. A minimum above every achievable column leaves nothing
+        # to place inside a benchmark, and `np.percentile` of an empty array is an IndexError out of
+        # numpy -- which is what a reader got. The honest answer is that the prospect does not reach
+        # the threshold. It is a real setting, not a silly one: on the worked prospect 300 m still
+        # reports POS 0.4 %, and from about 330 m there are no success cases left at all.
+        st.info(
+            "**No realisation reaches the assessment minimum**, so there is no column distribution "
+            "to place inside a benchmark. Lower the minimum on tab ② — the prospect still has a "
+            "contact distribution, it simply has no success cases at this threshold."
+        )
     else:
         from hcwc.core import calibration
-        from hcwc.ui import run as engine_run
-
-        built_result = engine_run.current(limit_set_cal)
-        built_column = built_result.column_m[built_result.above_minimum]
 
         st.markdown(
             f"Every benchmark below is evaluated at **this prospect's own structural relief of "
@@ -1039,14 +1053,23 @@ What follows is a disagreement about **one estimator**, not about the data.
         cell = matrix[(matrix.trap_height_bin == height_bin)
                       & (matrix.burial_depth_bin == depth_bin)]
 
+        _built_fill = engine_run.current(matrix_limits)
         if cell.empty:
             st.info("No cell in the published matrix matches this relief and burial depth.")
+        elif not _built_fill.above_minimum.any():
+            # The third place an assessment minimum above every achievable column shows up. Here it
+            # was not a crash but a "Mean of empty slice" warning and a row of NaN percentages
+            # presented beside real published ones -- which is worse, because it looks like data.
+            st.info(
+                "**No realisation reaches the assessment minimum**, so there is no fill fraction "
+                "to compare against the published matrix. Lower the minimum on tab ②."
+            )
         else:
             cell = cell.iloc[0]
             # Restricted to the success cases, because every one of the 242 is a discovery. The
             # comparison is only like-for-like against realisations that would have been drilled
             # and found something.
-            built = engine_run.current(matrix_limits)
+            built = _built_fill
             fill = np.clip(built.column_m[built.above_minimum] / float(own_relief), 0.0, 1.0)
             bands = ((0.0, 0.5), (0.5, 0.75), (0.75, 0.99))
             mine = [float(((fill > lo) & (fill <= hi)).mean()) for lo, hi in bands]

@@ -97,6 +97,17 @@ class DatasetError(ValueError):
     """The file cannot be read as a column-height dataset. The message says what is missing."""
 
 
+#: The largest dataset the reader will take, in rows and in characters.
+#:
+#: There is no statistical reason for a ceiling -- more discoveries is strictly better -- so this is
+#: a memory limit, and it is here because this is the one path that accepts a file of any size from
+#: whoever is using the app. On a shared server a long-lived process holds every dataset anyone
+#: imports. 50 000 discoveries is roughly two orders of magnitude past the largest public
+#: column-height compilation, so a file over it is a mistake rather than an unusually good dataset.
+MAX_ROWS = 50_000
+MAX_CHARS = 25_000_000
+
+
 def read_csv(text: str | bytes, *, name: str, source: str = "") -> Dataset:
     """Read a CSV of discoveries into a :class:`Dataset`, recording every inference.
 
@@ -105,12 +116,34 @@ def read_csv(text: str | bytes, *, name: str, source: str = "") -> Dataset:
     """
     if isinstance(text, bytes):
         text = text.decode("utf-8-sig", errors="replace")
+    if len(text) > MAX_CHARS:
+        raise DatasetError(
+            f"the file is {len(text) / 1e6:,.0f} MB, over the {MAX_CHARS / 1e6:,.0f} MB this "
+            f"reader accepts. A column-height dataset is one row per discovery; a file this size "
+            f"is usually a well log or a full production database rather than a discovery list."
+        )
     try:
         raw = pd.read_csv(io.StringIO(text), comment="#")
     except Exception as exc:                                    # noqa: BLE001 - reported, not raised
         raise DatasetError(f"the file could not be parsed as CSV: {exc}") from exc
     if raw.empty:
         raise DatasetError("the file has no rows.")
+    if len(raw) > MAX_ROWS:
+        raise DatasetError(
+            f"the file has {len(raw):,} rows, over the {MAX_ROWS:,} this reader accepts. That is "
+            f"far more than any published column-height compilation, so it is more likely a "
+            f"different kind of table. Filter it to one row per discovery first."
+        )
+    if raw.shape[1] == 1 and any(sep in str(raw.columns[0]) for sep in (";", "	")):
+        # Named before the missing-columns message below gets a chance to blame the columns. Excel
+        # on a European locale writes semicolons, and the file then parses as a single column whose
+        # *name* is the whole header line -- so the reader would report the two required columns
+        # missing while the reader is looking at both of them.
+        raise DatasetError(
+            "the file looks semicolon- or tab-separated: the whole header line came through as one "
+            f"column, `{str(raw.columns[0])[:80]}`. Excel on a European locale exports this way. "
+            "Save it as a comma-separated CSV, or replace the separators."
+        )
 
     found: dict[str, str] = {}
     seen = {_canonical(c): c for c in raw.columns}
@@ -132,6 +165,19 @@ def read_csv(text: str | bytes, *, name: str, source: str = "") -> Dataset:
     notes: list[str] = []
     trap = pd.to_numeric(raw[found["trap_height_m"]], errors="coerce").to_numpy(float)
     column = pd.to_numeric(raw[found["hc_column_m"]], errors="coerce").to_numpy(float)
+
+    if not np.isfinite(trap).any() and not np.isfinite(column).any():
+        sample = [str(v) for v in raw[found["hc_column_m"]].head(3).tolist()]
+        if any("," in v for v in sample):
+            # Same trap as the separator above, one step further in: the columns were found, but
+            # every value is a string like "100,5". Reporting "0 usable rows" sends the reader to
+            # look at their data, which is fine, rather than at the decimal mark, which is the
+            # actual problem.
+            raise DatasetError(
+                f"the numbers use a comma as the decimal mark — the first values read "
+                f"{', '.join(sample)}. Export with a point as the decimal separator, or replace "
+                f"the commas."
+            )
 
     finite = np.isfinite(trap) & np.isfinite(column) & (trap > 0) & (column > 0)
     if finite.sum() < len(trap):

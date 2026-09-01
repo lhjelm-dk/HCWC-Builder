@@ -656,10 +656,26 @@ already used?**
     _t8_limits = st.session_state.get("limit_set")
     _t8_spill = ([i for i, nm in enumerate(_t8_limits.names) if "spill" in nm.lower()]
                  if _t8_limits is not None else [])
+    # `_t8_mine` is the success cases, and an assessment minimum above every achievable column
+    # leaves it empty -- the same emptiness tab ⑥ guards, reached by a different route. Checked
+    # here rather than at each `np.percentile` below, because none of the four rows means anything
+    # without it.
+    _t8_have_successes = True
     if _t8_limits is not None and _t8_spill:
+        _t8_probe = engine_run.current(_t8_limits)
+        _t8_have_successes = bool(_t8_probe.above_minimum.any())
+        if not _t8_have_successes:
+            st.info(
+                "**No realisation reaches the assessment minimum**, so there is no column "
+                "distribution to fuse with the benchmark. Lower the minimum on tab ②."
+            )
+    if _t8_limits is not None and _t8_spill and _t8_have_successes:
         _t8_result = engine_run.current(_t8_limits)
         _t8_relief = float(np.median(_t8_result.sampled_m[:, _t8_spill[0]]))
-        _t8_burial = float(st.session_state.get("burial_depth") or 2500.0)
+        # `or` would take the fallback for a burial of zero, because zero is falsy -- a typed 0
+        # silently became 2500 m. Only a genuinely absent value should fall back.
+        _t8_stored = st.session_state.get("burial_depth")
+        _t8_burial = float(_t8_stored if _t8_stored is not None else 2500.0)
         _t8_mine = _t8_result.column_m[_t8_result.above_minimum]
 
         _t8_fit = benchmarks._capacity_fit()

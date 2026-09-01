@@ -405,6 +405,25 @@ def render() -> None:
                     + "\n".join(f"- {a} / {b}: **{req:+.2f}** → **{got:+.2f}**"
                                 for a, b, req, got in moved))
 
+    # The engine checks the geometry while it samples -- a depth-stated limit that lands above the
+    # apex is the usual one -- and it *raises*, because there is no honest column to return. That
+    # left the failure wherever the engine happened to run first, as an uncaught exception, and
+    # Streamlit replaced the whole page with a traceback. One selectbox was enough to trigger it:
+    # Charge is elicited in metres of column, and switching *Stated as* to m TVDSS makes 100/220/400
+    # depths far above the apex.
+    #
+    # Checking here keeps the failure on the tab that owns the mistake, and shows the sentence the
+    # engine already writes -- it names the limit, gives its P1 against the apex, and says why the
+    # column is not clipped to zero. The set is published only once it is known to run, so every
+    # downstream tab falls back to its existing "define the limits first" path instead of crashing.
+    from hcwc.ui import run as engine_run
+    try:
+        engine_run.run(limit_set.to_dict(), n_trials, seed)
+    except ValueError as exc:
+        st.error(f"**This limit set cannot be sampled.**\n\n{exc}")
+        st.session_state.pop("limit_set", None)
+        return
+
     st.session_state["limit_set"] = limit_set
 
     # ---- the summary, written into the slot reserved at the top --------------------------

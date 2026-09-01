@@ -142,8 +142,11 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     # deeper is a weaker seal, and previously the two numbers were typed independently.
     from hcwc.ui.prospect_tab import temperature_range
     burial = st.session_state.get("burial_depth")
+    # `if burial` rather than `is not None` treated a burial of zero as no burial at all. Zero is
+    # a strange depth but it is one the widget accepts, and the temperature it implies is the one
+    # to use.
     default_t = _slider_default(
-        temperature_range(float(burial)) if burial else (70.0, 90.0), 10.0, 160.0)
+        temperature_range(float(burial)) if burial is not None else (70.0, 90.0), 10.0, 160.0)
 
     c1, c2, c3 = st.columns(3)
     fluid = c1.selectbox("Fluid", ["Gas", "Oil"], key=f"{key}_fluid")

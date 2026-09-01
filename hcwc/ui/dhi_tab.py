@@ -40,12 +40,18 @@ def _fmt_r(r: float) -> str:
     return f"{r:.2f}"
 
 
-def _resample(values: np.ndarray, weights: np.ndarray, n: int = 20_000) -> np.ndarray:
+def _resample(values: np.ndarray, weights: np.ndarray, n: int) -> np.ndarray:
     """Draw from ``values`` in proportion to ``weights`` -- the posterior as a sample.
 
     The DHI update is an importance weighting, so the posterior lives as *weights on the prior's
     realisations*. Anything that wants a distribution rather than a curve needs those weights
     collapsed into a sample, and resampling with replacement is the standard way.
+
+    ``n`` is the trial count the user set, not a constant. It defaulted to 20 000 and was never
+    passed, so the posterior was drawn at 20 000 whatever *Realisations* said -- better resolved
+    than its own prior at 1 000, and silently ignoring the precision asked for at 100 000. The
+    export on tab ⑦ takes this sample when the basis is "given the DHI", so the setting has to
+    reach it.
 
     Its cost is honest and already reported: the effective sample size, in §5. A posterior
     resting on 300 distinct realisations resampled to 20 000 is still a posterior resting on
@@ -99,8 +105,12 @@ def render(n: Numbering | None = None) -> None:
 
     # ------------------------------------------------------------------ observation
     theme.heading(TAB, sub=n.sub, text="1 · What was observed")
+    # Keyed -- as is every widget in this section. Without keys these values exist only inside
+    # Streamlit's own widget store, under generated ids: they survive a rerun, and they cannot be
+    # read out by name, so `prospect.document` could not see them and a saved prospect carried
+    # `dhi_toggle` and nothing else. It reopened claiming a DHI and quietly using the default one.
     seen = st.radio("Amplitude anomaly", ["Seen", "Absent where one was expected"],
-                    horizontal=True) == "Seen"
+                    horizontal=True, key="dhi_in_seen") == "Seen"
     # Lars's defaults for the worked prospect. Falling back to the model's own median keeps a
     # differently-sited prospect from opening on a pick its geology considers impossible, which
     # `dhi.update` would refuse outright rather than merely warn about.
@@ -111,6 +121,7 @@ def render(n: Numbering | None = None) -> None:
                        else float(np.percentile(result.contact_m, 50)))
     shape = st.radio(
         "How is the pick shaped?", dhi_core.PICK_SHAPES, horizontal=True, disabled=not seen,
+        key="dhi_in_shape",
         format_func=lambda k: {dhi_core.NORMAL: "Normal — an unbiased estimate",
                                dhi_core.PERT: "Three-point — shallowest / likeliest / deepest",
                                dhi_core.UNIFORM: "Bracket — no preferred depth inside"}[k],
@@ -122,9 +133,9 @@ def render(n: Numbering | None = None) -> None:
         o1, o2, o3 = st.columns(3)
         contact = o1.number_input(
             "Picked contact (m TVDSS)", 0.0, 10000.0, default_contact, 5.0, disabled=not seen,
-            help="The down-dip amplitude termination or flat spot.")
+            key="dhi_in_contact", help="The down-dip amplitude termination or flat spot.")
         sigma = o2.number_input(
-            "Pick σ (m)", 1.0, 500.0, DEFAULT_SIGMA_M, 1.0,
+            "Pick σ (m)", 1.0, 500.0, DEFAULT_SIGMA_M, 1.0, key="dhi_in_sigma",
             help="Flat-spot pick uncertainty **plus depth-conversion error**. The second is "
                  "usually the larger, and it is the same uncertainty that moves the well's entry "
                  "depth — the one place this tool and WellVolPOS genuinely couple.")
@@ -133,24 +144,28 @@ def render(n: Numbering | None = None) -> None:
         o1, o2, o3, o4 = st.columns(4)
         shallowest = o1.number_input(
             "Shallowest possible (m TVDSS)", 0.0, 10000.0, default_contact - 20.0, 5.0,
-            disabled=not seen, help="Above this the contact cannot be — if the pick is right.")
+            disabled=not seen, key="dhi_in_shallowest",
+            help="Above this the contact cannot be — if the pick is right.")
         if shape == dhi_core.PERT:
             contact = o2.number_input(
                 "Most likely (m TVDSS)", 0.0, 10000.0, default_contact, 5.0, disabled=not seen,
+                key="dhi_in_mode",
                 help="The mode. Put it **above centre** to say the termination under-calls the "
                      "contact, which tuning and resolution loss at the base of a column both "
                      "argue for. That is the control that moves the reading at the pick.")
             deepest = o3.number_input(
                 "Deepest possible (m TVDSS)", 0.0, 10000.0, default_contact + 20.0, 5.0,
-                disabled=not seen)
+                disabled=not seen, key="dhi_in_deepest")
         else:
+            # The same key as the PERT branch above. Only one of the two is ever built in a
+            # given run, and sharing the key carries the depth across a change of pick shape.
             deepest = o2.number_input(
                 "Deepest possible (m TVDSS)", 0.0, 10000.0, default_contact + 20.0, 5.0,
-                disabled=not seen)
+                disabled=not seen, key="dhi_in_deepest")
             contact = 0.5 * (shallowest + deepest)
             o3.metric("Bracket centre", f"{contact:,.0f} m")
     area = (o4 if shape != dhi_core.NORMAL else o3).number_input(
-        "Anomaly area (km²), optional", 0.0, 1000.0, 0.0, 0.5,
+        "Anomaly area (km²), optional", 0.0, 1000.0, 0.0, 0.5, key="dhi_in_area",
         help="Used for the cross-check in §8. Leave at zero to skip.")
 
     if seen and shape != dhi_core.NORMAL and not shallowest < deepest:
@@ -224,7 +239,7 @@ is where your prospect sits relative to the two populations you drew.
     )
 
     strength = st.slider(
-        "DHI strength", -100.0, 100.0, dhi_core.DEFAULT_STRENGTH, 1.0,
+        "DHI strength", -100.0, 100.0, dhi_core.DEFAULT_STRENGTH, 1.0, key="dhi_in_strength",
         help="E-POS's default is 7 — just above the crossing point, so an assessor who moves "
              "nothing states a barely-supportive DHI rather than a neutral one.")
 
@@ -312,8 +327,9 @@ is where your prospect sits relative to the two populations you drew.
             "Override it when that is the case — and if you are overriding often, the mapping "
             "is wrong and worth telling me about."
         )
-        if st.checkbox("Set p_valid myself", value=False):
+        if st.checkbox("Set p_valid myself", value=False, key="dhi_in_pvalid_manual"):
             p_valid = st.slider("p_valid", 0.05, 0.99, float(round(derived_p_valid, 2)), 0.01,
+                                key="dhi_in_pvalid",
                                 help="1.0 is deliberately unreachable: it would say the pick is "
                                      "certainly the contact, and certainty cannot be argued with.")
         else:
@@ -406,7 +422,7 @@ is where your prospect sits relative to the two populations you drew.
     # minimum, and that number carries the strength channel. §5 keeps the argument for why the
     # combination is discounted, and the sweep showing what the discount costs.
     dependence = st.slider(
-        "Dependence between the two channels", 0.0, 1.0, 0.5, 0.05,
+        "Dependence between the two channels", 0.0, 1.0, 0.5, 0.05, key="dhi_in_dependence",
         help="0 multiplies the two ratios outright, which assumes they are independent evidence. "
              "1 takes the stronger channel and ignores the other, which assumes they say the same "
              "thing. 0.5 is the default because neither end is defensible. §5 explains why.")
@@ -672,7 +688,8 @@ So the combination is discounted rather than taken raw.
         # rather than reconstructing it from percentiles. Importance resampling with replacement,
         # which is exact in the limit and honest about the effective sample size above.
         "contact_samples": _resample(result.contact_m[result.above_minimum],
-                                     post.weights[result.above_minimum]),
+                                     post.weights[result.above_minimum],
+                                     int(st.session_state.get("n_trials", 10_000))),
         # The raw per-realisation weights, so the sibling sub-tab can rebuild the decomposition as its
         # posterior twin rather than being handed one pre-computed curve.
         "weights": post.weights,

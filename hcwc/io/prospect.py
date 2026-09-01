@@ -22,6 +22,8 @@ import json
 import math
 from typing import Any
 
+from hcwc.core.limits import COLUMN, DEPTH, ELICITED_KINDS
+
 #: Bumped when the meaning of a key changes, not when one is added. Readers refuse a newer major.
 FORMAT_VERSION = 1
 
@@ -33,7 +35,12 @@ FORMAT_VERSION = 1
 EXACT: frozenset[str] = frozenset({
     "prospect_name", "apex_p1", "apex_p99", "spill_input", "burial_input",
     "dhi_toggle", "min_column_input", "n_trials_input", "seed_input", "gradient_range",
-    "stack_space", "stack_mode",
+    # The stack views are per-tab, so the keys carry the tab number. `stack_space`/`stack_mode`
+    # stood here without it and matched nothing at all -- the settings were never saved and the
+    # two entries were dead. The window and entry-depth sliders are deliberately NOT saved: their
+    # bounds are computed from the run, so a stored value means nothing to a different prospect.
+    "stack_space_4", "stack_space_5", "stack_mode_4", "stack_mode_5",
+    "stack_every_4", "stack_every_5",
 })
 
 #: Any key starting with one of these is part of the document.
@@ -41,7 +48,11 @@ EXACT: frozenset[str] = frozenset({
 #: ``lim_`` and ``extra_`` carry every limit block — the include toggle, ``P(active)``, the space,
 #: the distribution and its parameters, the source radio, **and each calculator's own inputs**, so
 #: a computed limit recomputes from the numbers it was computed from rather than from defaults.
-PREFIXES: tuple[str, ...] = ("lim_", "extra_", "src_", "play_", "cond_")
+#: ``dhi_in_`` is the DHI *observation* -- what was seen, how the pick is shaped, how strong the
+#: anomaly is. Deliberately its own prefix rather than a bare ``dhi_``: the tab also keeps derived
+#: state under ``dhi_overlay``, ``dhi_posterior`` and ``dhi_r_strength``, and those are outputs.
+#: Saving an output would let a stale one be restored over a fresh computation.
+PREFIXES: tuple[str, ...] = ("lim_", "extra_", "src_", "play_", "cond_", "dhi_in_")
 
 
 def _items(state) -> list[tuple[str, Any]]:
@@ -99,7 +110,15 @@ def read(text: str) -> dict:
     if not isinstance(doc, dict) or "inputs" not in doc:
         raise ValueError("this does not look like a saved prospect — no `inputs` section")
     version = doc.get("format", 0)
-    if not isinstance(version, int) or version > FORMAT_VERSION:
+    if isinstance(version, bool) or not isinstance(version, int):
+        # Separated from the too-new case below because the two need opposite advice, and running
+        # them together produced "format 1, this reads 1" -- a refusal whose reason reads as a
+        # contradiction, sending the reader off to update an app that is already current.
+        raise ValueError(
+            f"the `format` field is {version!r}, which is not a version number. Expected a whole "
+            f"number; this build writes {FORMAT_VERSION}."
+        )
+    if version > FORMAT_VERSION:
         raise ValueError(
             f"saved by a newer version of the tool (format {version}, this reads {FORMAT_VERSION}). "
             "Update the app rather than editing the file."
@@ -129,12 +148,51 @@ def read(text: str) -> dict:
 NUMERIC_BOUNDS: dict[str, tuple[float, float]] = {
     "n_trials_input": (1_000, 100_000),
     "seed_input": (0, 2**31 - 1),
-    "min_column_input": (0.0, 10_000.0),
+    "min_column_input": (0.0, 2_000.0),
     "apex_p1": (0.0, 10_000.0),
     "apex_p99": (0.0, 10_000.0),
     "spill_input": (0.0, 10_000.0),
     "burial_input": (0.0, 10_000.0),
 }
+
+#: How the realisation stack can be drawn. Duplicated from ``hcwc.ui.limit_stack`` rather than
+#: imported, for the same reason as the calculator names below: ``hcwc.io`` must not import
+#: Streamlit. A test asserts the two lists agree.
+STACK_MODES: tuple[str, ...] = (
+    "Exceedance curves", "Violin", "Half violin", "Histogram", "Points")
+
+#: Widget keys whose value must be one of a fixed set, keyed by the suffix that identifies them.
+#:
+#: Streamlit does not complain about a stored value that is not among a selector's options -- it
+#: silently falls back to the first one. So an unchecked enumeration is worse than a crash: the
+#: prospect loads, looks right, and is not the one that was saved. The one exception crashes
+#: instead, with a bare ``KeyError`` naming the offending string, because a label reaches a lookup
+#: keyed by token.
+#:
+#: The allowed values come from :mod:`hcwc.core.limits` where they are canonical, so this cannot
+#: drift from what a limit will actually accept. The calculator names are duplicated rather than
+#: imported: they live in ``hcwc.ui.limit_block``, and ``hcwc.io`` must not import Streamlit.
+ENUM_SUFFIXES: dict[str, frozenset[str]] = {
+    "_kind": frozenset({COLUMN, DEPTH}),
+    "_form": frozenset(ELICITED_KINDS),
+    "_src": frozenset({"Typed", "charge", "seal", "seal_as_top", "empirical"}),
+}
+
+#: Exact keys whose value must be one of a fixed set.
+ENUM_EXACT: dict[str, frozenset[str]] = {
+    "stack_space_4": frozenset({COLUMN, DEPTH}),
+    "stack_space_5": frozenset({COLUMN, DEPTH}),
+    "stack_mode_4": frozenset(STACK_MODES),
+    "stack_mode_5": frozenset(STACK_MODES),
+    "dhi_in_seen": frozenset({"Seen", "Absent where one was expected"}),
+    "dhi_in_shape": frozenset({"normal", "pert", "uniform"}),
+}
+
+#: Widget keys whose value must be a genuine boolean. A toggle handed the string ``"yes please"``
+#: is not an error Streamlit reports; it is simply truthy.
+BOOL_SUFFIXES: tuple[str, ...] = ("_on", "_net")
+BOOL_EXACT: frozenset[str] = frozenset({"dhi_toggle", "dhi_in_pvalid_manual"})
+
 
 #: What a restored value is allowed to be. Widget state is scalars and sequences of scalars; a
 #: mapping is never one, and a value carrying a mapping is a file that was hand-edited or produced
@@ -164,6 +222,27 @@ def _check_values(inputs: dict) -> None:
             continue
         if not (value is None or isinstance(value, _SCALARS)):
             raise ValueError(f"`{key}` holds a {type(value).__name__}, which is not a widget value")
+
+        if key in BOOL_EXACT or key.endswith(BOOL_SUFFIXES):
+            if not isinstance(value, bool):
+                raise ValueError(
+                    f"`{key}` is a switch and must be true or false, and this file has {value!r}")
+            continue
+
+        allowed = ENUM_EXACT.get(key)
+        if allowed is None:
+            for suffix, options in ENUM_SUFFIXES.items():
+                if key.endswith(suffix):
+                    allowed = options
+                    break
+        if allowed is not None:
+            if value not in allowed:
+                raise ValueError(
+                    f"`{key}` is {value!r}, which is not one of {', '.join(sorted(allowed))}. "
+                    "A file written by a different build may store the label shown on screen "
+                    "rather than the value behind it."
+                )
+            continue
 
         low_high = NUMERIC_BOUNDS.get(key)
         if low_high is None:

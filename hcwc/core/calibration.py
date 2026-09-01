@@ -90,6 +90,18 @@ def compare(built: np.ndarray, benchmark: np.ndarray, name: str) -> Comparison:
     """Place the built column distribution inside one benchmark's."""
     built = np.asarray(built, dtype=float)
     benchmark = np.asarray(benchmark, dtype=float)
+    if built.size == 0:
+        # `np.percentile` of an empty array is an IndexError from deep inside numpy, which is what
+        # a reader saw when the assessment minimum was set above any achievable column. That is a
+        # legitimate question -- "is this prospect commercial at 350 m?" -- with a legitimate
+        # answer, and the answer is not a traceback.
+        raise ValueError(
+            "there is nothing to compare: no realisation reached the assessment minimum, so the "
+            "built column distribution is empty. Lower the minimum on tab ② to see where this "
+            "prospect does sit against the benchmarks."
+        )
+    if benchmark.size == 0:
+        raise ValueError("the benchmark drew no samples at this relief.")
     b90, b50, b10 = (float(np.percentile(built, p)) for p in (10, 50, 90))
     k90, k50, k10 = (float(np.percentile(benchmark, p)) for p in (10, 50, 90))
     return Comparison(name=name, built_p90=b90, built_p50=b50, built_p10=b10,
