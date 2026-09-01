@@ -585,6 +585,15 @@ with tab7:
 
 # --------------------------------------------------------------------------- ⑥ Theory & Guide
 with tab8:
+    st.markdown(
+        "**The reasoning this tool rests on, and the record of what was checked.** Everything "
+        "here is meant to be argued with — the sections are the arguments, the documents are the "
+        "working, and both name what they assume rather than hiding it.\n\n"
+        "The first section is one worked example of the question the rest of the app has to keep "
+        "answering correctly: **what may be treated as evidence, and what may not.** Get that "
+        "wrong and every number downstream is confident and misleading."
+    )
+
     theme.heading(8, "1 · Can a base rate be a likelihood?")
     st.markdown(
         """
@@ -727,6 +736,9 @@ The third row is the one that catches published work. Multiplying a base rate's 
 PoS gives a rule that is **symmetric** — it returns the same answer if you swap them — and a
 Bayesian update is never symmetric between a prior and its evidence. Tab ⑥ §9 works that one
 through.
+
+**That is one argument.** The documents below are the rest of them, and the record of what was
+checked to arrive at them.
 """
     )
 
@@ -735,10 +747,26 @@ through.
     # what is not, what was decided and why -- and a user reading it learns which parts the
     # author is unsure about, which is not the same as learning what the tool does. It stays in
     # the repo for whoever works on this next.
-    doc = st.radio("Document", ["The article", "Benchmark sources", "Beha et al. (2012)",
-                                "Seal capacity", "Lowry et al. (2005)", "DHI alignment",
-                                "References"],
-                   horizontal=True, label_visibility="collapsed")
+    st.markdown(
+        "Four different kinds of thing, and it is worth knowing which one you have opened. **The "
+        "article** is the argument written for people who do not use the tool. **Benchmark "
+        "sources** is a negative result — what was searched for and not found. **Three reviews** "
+        "ask whether the published methods this app leans on actually say what it claims they "
+        "say, and two of them conclude *not entirely*. **DHI alignment** is a working note on a "
+        "design decision. **References** is the bibliography, with every DOI checked."
+    )
+    doc = st.radio(
+        "Document",
+        ["The article", "Benchmark sources", "Beha et al. (2012)",
+         "Seal capacity", "Lowry et al. (2005)", "DHI alignment", "References"],
+        captions=["the argument, for a general reader",
+                  "is there a second public dataset? — no",
+                  "review · the paper behind the tab ① rule",
+                  "review · is the capillary maths right?",
+                  "review · what it settles and what it does not",
+                  "working note · POS and the DHI update",
+                  "bibliography, DOIs validated"],
+        horizontal=True, label_visibility="collapsed")
     path = {"The article": "ARTICLE.md",
             "Benchmark sources": "BENCHMARK_SOURCES.md",
             "Beha et al. (2012)": "BEHA_2012_REVIEW.md",
