@@ -1068,6 +1068,86 @@ What follows is a disagreement about **one estimator**, not about the data.
                            f"correction fixes: it means your distribution and the record disagree "
                            f"about how quickly column height runs out as you go down the structure.")
 
+        st.markdown("#### Your distribution, the record, and the two combined")
+        st.markdown(
+            "The comparison above is a number and a shape. This is the three distributions "
+            "themselves, on one axis: **what your limits produced**, **what the record says for a "
+            "closure of your relief**, and **the two pulled together**."
+        )
+
+        fuse_weight = st.slider(
+            "Weight on the benchmark", 0.0, 1.0, 0.0, 0.05, key="fuse_benchmark",
+            help="0 is your model untouched; 1 is the benchmark. In between, the two quantile "
+                 "functions are averaged — the same operation the seal limit offers on tab ③.")
+
+        bench_source = st.selectbox(
+            "Benchmark to combine with", sources, key="fuse_source",
+            help="The censoring-corrected NCS fit is the default because the naive one carries the "
+                 "filled-to-spill bias §3 is about.")
+        bench_draw = _samples_for(bench_source, (round(own_relief, 1),), float(burial))
+
+        if not bench_draw:
+            st.info("That benchmark cannot be evaluated at this relief.")
+        else:
+            bench = next(iter(bench_draw.values()))
+            fused = benchmarks.shrink_toward(built_column, bench, fuse_weight)
+
+            def exceedance(sample, grid):
+                sample = np.asarray(sample, float)
+                return (sample[None, :] >= grid[:, None]).mean(axis=1)
+
+            top = float(max(np.percentile(built_column, 99.5), np.percentile(bench, 99.5)))
+            grid = np.linspace(0.0, top, 320)
+
+            curves = [("your model — geological", built_column,
+                       theme.BASIS_COLOUR[theme.GEOLOGICAL], "solid", 3.2)]
+
+            # The DHI-updated columns, when the prospect has one. Resampled from the posterior
+            # weights, because the benchmark comparison needs a *sample* rather than a curve.
+            overlay = st.session_state.get("dhi_overlay")
+            posterior = st.session_state.get("dhi_posterior")
+            if overlay is not None and posterior is not None:
+                apex_here = float(np.median(posterior.result.apex_m))
+                dhi_columns = np.asarray(overlay["contact_samples"], float) - apex_here
+                curves.append(("your model — given the DHI", dhi_columns,
+                               theme.BASIS_COLOUR[theme.GIVEN_DHI], "solid", 3.2))
+
+            curves.append((f"{bench_source}, at {own_relief:,.0f} m relief", bench,
+                           "#8172B2", "dash", 2.4))
+            if fuse_weight > 0:
+                curves.append((f"combined, weight {fuse_weight:.2f}", fused, "#937860", "dot", 3.0))
+
+            fig_fuse = go.Figure()
+            for label, sample, colour, dash, width in curves:
+                fig_fuse.add_scatter(x=grid, y=exceedance(sample, grid), mode="lines", name=label,
+                                     line=dict(color=colour, width=width, dash=dash))
+            fig_fuse.update_layout(
+                xaxis_title="Hydrocarbon column (m)", yaxis_title="P(column ≥ this)",
+                yaxis_range=[0, 1.02], height=460, margin=dict(t=20),
+                legend=dict(orientation="h", y=-0.2))
+            n.plot(fig_fuse,
+                   "**Every curve is conditional on the prospect working** — these are column "
+                   "distributions, not chances. The benchmark is discoveries only, so it could not "
+                   "carry a chance even if you wanted it to.\n\n"
+                   "**The combined curve is a fusion, not a Bayesian update, and the distinction "
+                   "is not pedantry.** Bayes needs a likelihood — data whose probability depends on "
+                   "the unknown. A flat spot at 2,250 m qualifies: it really is more likely if the "
+                   "contact is near 2,250 m. The Norwegian record does not; those discoveries were "
+                   "what they were before this prospect was mapped, so `P(record | your contact)` "
+                   "is not a quantity. What you have here are **two priors on one unknown**, and "
+                   "two priors combine by weighting, which is why there is a slider and why it "
+                   "starts at zero.\n\n"
+                   "Quantile averaging rather than a mixture of densities: mixing two disagreeing "
+                   "distributions produces two humps — a claim that the truth is one *or* the "
+                   "other — where averaging quantiles says it lies *between* them.")
+
+            f1, f2, f3 = st.columns(3)
+            for col, pct_ in ((f1, 90), (f2, 50), (f3, 10)):
+                mine_v = float(np.percentile(built_column, 100 - pct_))
+                fused_v = float(np.percentile(fused, 100 - pct_))
+                col.metric(f"Combined P{pct_}", f"{fused_v:,.0f} m",
+                           f"yours {mine_v:,.0f} m", delta_color="off")
+
         st.warning(
             "**This is a sanity check, not a score, and the reason is structural.** Every benchmark "
             "is conditioned on **discovery** — your prospect is not one yet and every closure in "

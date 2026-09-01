@@ -135,6 +135,11 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
                  # Which contact distributions to draw behind the chance curves. A way of
                  # looking at the answer, not a part of it.
                  "hcwc_hist_5", "contact_hist_4", "contact_hist_5",
+                 # The benchmark fusion on tab ⑥ is drawn and never consumed: no limit, no
+                 # engine run and no export reads it, so the weight is a way of looking at
+                 # the answer rather than part of it. The seal shrinkage on tab ③ is the
+                 # opposite — it moves a limit, so it is saved with that limit block.
+                 "fuse_benchmark", "fuse_source",
                  # A one-shot action, not state: saving "the user pressed a button once" would
                  # reload the example every time the file was opened.
                  "load_example",
