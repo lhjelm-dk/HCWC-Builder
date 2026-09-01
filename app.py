@@ -277,12 +277,15 @@ with tab3:
 # both rather than restarting — two `Figure 4.1`s on one tab would break every cross-reference and
 # would collide as Streamlit element keys.
 with tab4:
-    _n4 = Numbering(4)
-    _contact, _depth = st.tabs(["① Contact and chance", "② Risk against depth"])
+    # Numbered by sub-tab, as tab ⑤ is. Two sub-tabs is fewer than four, but the reason is the same
+    # and so is the reader's problem: `Figure 4.6` said nothing about which of the two pages it was
+    # on, and the tab-⑤ twin of the very same figure now says `5.3.6`. Matching them means a reader
+    # comparing the two bases is reading one numbering scheme, not two.
+    _contact, _depth = st.tabs(["4.1 · Contact and chance", "4.2 · Risk against depth"])
     with _contact:
-        results_tab.render(_n4)
+        results_tab.render(Numbering(4, sub=1))
     with _depth:
-        depth_risk_tab.render(n=_n4)
+        depth_risk_tab.render(n=Numbering(4, sub=2))
 
 # --------------------------------------------------------------------------- ⑤ Results | DHI
 #

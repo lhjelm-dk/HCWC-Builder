@@ -471,11 +471,23 @@ is where your prospect sits relative to the two populations you drew.
         "**threshold** did — and that second gap is the one that causes trouble, because it is "
         "there before any DHI and has nothing to do with one."
     )
-    show_all = st.toggle(
-        "Show what dropping a term would give", value=False, key="combo_all_5",
-        help="Two comparisons, not two alternatives: the pooled curve is this update with the "
-             "detection function left out, and the scenario switch is a mixture, which can widen "
-             "the answer but never sharpen it and cannot move the chance at all.")
+    t1, t2 = st.columns([1, 1])
+    with t1:
+        show_all = st.toggle(
+            "Show what dropping a term would give", value=False, key="combo_all_5",
+            help="Two comparisons, not two alternatives: the pooled curve is this update with the "
+                 "detection function left out, and the scenario switch is a mixture, which can "
+                 "widen the answer but never sharpen it and cannot move the chance at all.")
+    with t2:
+        # The curves are cumulative, and a cumulative curve hides where the mass actually is: two
+        # very different contact distributions can trace nearly the same exceedance. Drawn behind
+        # them on their own axis, the histograms say what the curves only imply — and put the
+        # reshaping the DHI performs next to the chance it produces.
+        overlays = st.multiselect(
+            "Overlay the contact distribution", [theme.GEOLOGICAL, theme.GIVEN_DHI], default=[],
+            key="hcwc_hist_5",
+            help="Where the contacts themselves fall, binned by depth. The curves above are the "
+                 "cumulative form of exactly these.")
 
     hs = np.linspace(0.0, float(result.column_m.max()), 300)
     depths = apex + hs
@@ -498,6 +510,25 @@ is where your prospect sits relative to the two populations you drew.
     # which every other caption states out loud -- and being the exception made it read as a
     # different object from the identical curve two sub-tabs away.
     fig = go.Figure()
+
+    # Added before the curves so the curves draw over them, and on a second x-axis so the POS axis
+    # keeps meaning exactly one thing. Both bases share that axis, which is the point: a histogram
+    # scaled to its own peak would make every distribution look equally concentrated.
+    hist_edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 61)
+    hist_centres = 0.5 * (hist_edges[:-1] + hist_edges[1:])
+    shares = {}
+    for basis, w in ((theme.GEOLOGICAL, None), (theme.GIVEN_DHI, post.weights)):
+        if basis not in overlays:
+            continue
+        counts, _ = np.histogram(result.contact_m, bins=hist_edges, weights=w)
+        total = float(counts.sum())
+        shares[basis] = counts / total if total > 0 else counts
+    for basis, values in shares.items():
+        fig.add_bar(y=hist_centres, x=values, orientation="h", xaxis="x2",
+                    name=f"contacts — {basis}", opacity=0.45,
+                    marker_color=theme.BASIS_COLOUR[basis], marker_line_width=0,
+                    hovertemplate="%{y:.0f} m TVDSS<br>%{x:.1%} of realisations<extra></extra>")
+
     fig.add_scatter(x=geological, y=depths, mode="lines", name="geological — before the DHI",
                     line=dict(color=PRIOR, width=3))
     fig.add_scatter(x=updated, y=depths, mode="lines", name="given the DHI",
@@ -558,7 +589,17 @@ is where your prospect sits relative to the two populations you drew.
                       xaxis_range=[0, min(1.0, max(combined.prior_pos, combined.posterior_pos,
                                                    0.05) * 1.15)],
                       yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
-                      height=560, margin=dict(t=40), legend=dict(orientation="h", y=-0.18))
+                      height=560, margin=dict(t=40 if not shares else 60),
+                      legend=dict(orientation="h", y=-0.18))
+    if shares:
+        # Scaled so the tallest bar fills a third of the width: enough to read the shape against,
+        # not enough to compete with the curves the figure is actually about.
+        peak = max(float(np.max(v)) for v in shares.values()) or 1.0
+        fig.update_layout(
+            barmode="overlay", bargap=0.04,
+            xaxis2=dict(overlaying="x", side="top", range=[0, peak * 3.0], showgrid=False,
+                        tickformat=".0%", title="share of realisations per depth bin",
+                        title_font_size=11, tickfont_size=10))
     n.plot(fig, "**The figure this tab exists for.** Every chance anyone quotes is a point on one "
                 "of these curves, and each is a **prospect POS** — the element product times the "
                 "chance of clearing that threshold, not the conditional column term on its own.\n\n"

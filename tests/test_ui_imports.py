@@ -70,25 +70,25 @@ def test_no_two_sub_tabs_can_produce_the_same_figure_number():
     key — a red page rather than a wrong caption. **There are two valid ways to avoid it**, and the
     app now uses both:
 
-    * tab ④'s two sub-tabs **share** one `Numbering`, so the sequence runs across them;
-    * tab ⑤'s four sub-tabs each take **their own**, distinguished by ``sub=``, so a label carries
-      the page it is on — `Figure 5.2.1` is the first exhibit on *What you saw*.
+    Both tabs with sub-tabs stamp each one with its own ``sub=``, so a label carries the page it is
+    on: `Figure 5.2.1` is the first exhibit on *What you saw*, and `Figure 4.1.6` and `Figure 5.3.6`
+    are the same figure on the two bases. A flat sequence gave the reader `Figure 5.9` with no way
+    to know which of four pages to turn to, and matching tab ④ to it means someone comparing the two
+    bases reads one numbering scheme rather than two.
 
-    The second is what a tab with four sub-tabs needs: a flat sequence gave the reader `Figure 5.9`
-    with no way to know which of four pages to turn to. So the assertion here is the invariant —
-    every sub-tab reachable from one number, and no two able to collide — rather than one wiring.
+    The assertion is the invariant — every sub-tab stamped, none able to collide — rather than any
+    particular wiring, because sharing one sequence across sub-tabs would also be valid and was what
+    both tabs used to do.
     """
     root = pathlib.Path(__file__).resolve().parent.parent
     source = (root / "app.py").read_text(encoding="utf-8")
 
-    # Tab ④: one sequence, shared.
-    for call in ("results_tab.render(_n4)", "depth_risk_tab.render(n=_n4)"):
-        assert call in source, f"{call} missing — tab ④'s sub-tabs would number separately"
-
-    # Tab ⑤: four sequences, each stamped with its own sub-tab, so none can collide.
-    subs = re.findall(r"Numbering\(5,\s*sub=(\d)\)", source)
-    assert sorted(subs) == ["1", "2", "3", "4"], (
-        f"tab ⑤ should hand each of its four sub-tabs its own Numbering, got sub={subs}")
+    for tab, count in ((4, 2), (5, 4)):
+        subs = re.findall(rf"Numbering\({tab},\s*sub=(\d)\)", source)
+        assert sorted(subs) == [str(i) for i in range(1, count + 1)], (
+            f"tab {tab} should hand each of its {count} sub-tabs its own Numbering, got sub={subs}")
+    assert "Numbering(4)\n" not in source and "Numbering(5)\n" not in source, (
+        "a bare Numbering on a tab with sub-tabs means two of them start at Figure n.1")
 
 
 def test_app_py_opens_one_tab_per_theme_entry():
