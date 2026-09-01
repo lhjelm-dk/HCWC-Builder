@@ -22,12 +22,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import streamlit as st
 
 from hcwc.core import charge as ch
 from hcwc.core import trust
 from hcwc.core import decompose as dc
-from hcwc.io import geox, report
+from hcwc.io import benchmarks, geox, report
 from hcwc.io import wellvolpos as wvp
 from hcwc.ui import (depth_risk_tab, dhi_tab, dhi_walkthrough, empirical, limiters_tab,
                      prospect_tab, results_tab, theme)
@@ -584,7 +585,152 @@ with tab7:
 
 # --------------------------------------------------------------------------- ⑥ Theory & Guide
 with tab8:
-    theme.heading(8, "Documents")
+    theme.heading(8, "1 · Can a base rate be a likelihood?")
+    st.markdown(
+        """
+The benchmark on tab ⑥ gives a probability distribution over column height. So does the model on
+tab ④. Bayes' rule multiplies a prior by a likelihood — so why can the DHI be a likelihood and the
+statistics not?
+
+**Because a prior and a likelihood are the same kind of object.** Both are functions of the unknown;
+`p(h)` and `L(h)` have the same type signature. A likelihood is not a *kind of distribution*, it is
+a **kind of use** — and the question is never *is this a probability?* but **probability of what,
+given what?**
+
+To act as a likelihood, something must be `P(data | h)` where the data is a thing **you observed on
+this prospect**.
+
+##### You can get a real likelihood out of the benchmark
+
+Here it is, honestly built. The dataset carries the joint behaviour of column, relief and burial
+across the discoveries. You measured your prospect's relief and burial depth. So
+
+```
+L(h) = P(your relief, your burial | column = h)
+```
+
+is a genuine likelihood, and there is nothing wrong with it. Multiply it by a prior on `h` and a
+proper posterior comes out.
+
+##### The problem is what you multiply it by
+
+With a *neutral* prior you recover the benchmark's own conditional prediction — correct, and simply
+the benchmark reached by a longer road. With **your model** as the prior you have conditioned on
+relief and burial **twice**, because your model was built out of them: your spill point *is* the
+relief, and the seal calculator takes its temperature from the burial depth. There is no fact in the
+benchmark's conditioning set that your model has not already used.
+
+**So the test is not "is this a probability?" It is: does this data carry something my model has not
+already used?**
+"""
+    )
+
+    _t8_limits = st.session_state.get("limit_set")
+    _t8_spill = ([i for i, nm in enumerate(_t8_limits.names) if "spill" in nm.lower()]
+                 if _t8_limits is not None else [])
+    if _t8_limits is not None and _t8_spill:
+        _t8_result = engine_run.current(_t8_limits)
+        _t8_relief = float(np.median(_t8_result.sampled_m[:, _t8_spill[0]]))
+        _t8_burial = float(st.session_state.get("burial_depth") or 2500.0)
+        _t8_mine = _t8_result.column_m[_t8_result.above_minimum]
+
+        _t8_fit = benchmarks._capacity_fit()
+        _t8_bench = np.minimum(
+            np.exp(np.random.default_rng(11).normal(
+                _t8_fit.intercept + _t8_fit.slope * np.log(_t8_burial), _t8_fit.sigma, 60_000)),
+            _t8_relief)
+        _t8_fused = benchmarks.shrink_toward(_t8_mine, _t8_bench, 0.5)
+
+        # Histogram densities rather than a KDE: the point is the *width* of the product, which a
+        # coarse density carries perfectly well, and it costs nothing on every rerun of this tab.
+        _t8_edges = np.linspace(0.0, _t8_relief * 1.02, 220)
+        _t8_mid = 0.5 * (_t8_edges[:-1] + _t8_edges[1:])
+
+        def _t8_density(sample):
+            counts, _ = np.histogram(sample, bins=_t8_edges, density=True)
+            return counts
+
+        def _t8_pct(density, p):
+            cumulative = np.cumsum(density)
+            if cumulative[-1] <= 0:
+                return float("nan")
+            return float(np.interp(p / 100.0, cumulative / cumulative[-1], _t8_mid))
+
+        _t8_dm, _t8_db = _t8_density(_t8_mine), _t8_density(_t8_bench)
+        _t8_product = _t8_dm * _t8_db
+        _t8_rows = [
+            ("your model", _t8_pct(_t8_dm, 10), _t8_pct(_t8_dm, 50), _t8_pct(_t8_dm, 90)),
+            ("the benchmark at your relief", _t8_pct(_t8_db, 10), _t8_pct(_t8_db, 50),
+             _t8_pct(_t8_db, 90)),
+            ("the two fused, weight 0.5 — what tab ⑥ draws",
+             float(np.percentile(_t8_fused, 10)), float(np.percentile(_t8_fused, 50)),
+             float(np.percentile(_t8_fused, 90))),
+            ("multiplied as if the benchmark were a likelihood",
+             _t8_pct(_t8_product, 10), _t8_pct(_t8_product, 50), _t8_pct(_t8_product, 90)),
+        ]
+        st.dataframe(
+            pd.DataFrame([
+                {"": name, "P10": f"{p10:,.0f} m", "P50": f"{p50:,.0f} m",
+                 "P90": f"{p90:,.0f} m", "P10–P90 spread": f"{p90 - p10:,.0f} m"}
+                for name, p10, p50, p90 in _t8_rows]),
+            hide_index=True, use_container_width=True, key="t8_likelihood_table")
+        st.caption(
+            f"**Computed from the prospect in front of you** — relief {_t8_relief:,.0f} m, burial "
+            f"{_t8_burial:,.0f} m — so it can be checked rather than believed.\n\n"
+            f"**Read the last row against the first two.** Multiplying two densities always "
+            f"sharpens, and that is *correct* when two independent instruments measure the same "
+            f"thing. Here it produces a spread of "
+            f"**{_t8_rows[3][3] - _t8_rows[3][1]:,.0f} m** — tighter than your own model's "
+            f"{_t8_rows[0][3] - _t8_rows[0][1]:,.0f} m, after consulting a source whose own spread "
+            f"is {_t8_rows[1][3] - _t8_rows[1][1]:,.0f} m. **Adding a vaguer opinion made you more "
+            f"certain.** The arithmetic is telling you the two are not independent evidence."
+        )
+
+    st.markdown(
+        """
+##### Where a genuine likelihood *does* live in that dataset
+
+The **outcomes**. Two hundred and forty-two drilled results are real observations and they are new —
+your model has never seen them. But they are observations of *other prospects*, so they cannot be a
+likelihood for your column.
+
+They can be a likelihood for something you and those 242 share: **the parameters of the
+seal-capacity relationship**. Compaction closes pore throats the same way on your prospect as on
+theirs. So the honest chain has two steps, and only the first is Bayes:
+
+```
+242 outcomes  ──►  the shared parameters      genuine Bayesian updating
+shared parameters  ──►  your prospect         shrinkage, with a stated weight
+```
+
+That is empirical Bayes, and it is what the seal limit on tab ③ offers under *Pull this toward the
+NCS record*. **The reason that one is defensible and a direct update is not** is not a matter of
+taste: it updates something your prospect and the population genuinely share, rather than trying to
+update your prospect with somebody else's answers.
+
+##### And the case where the benchmark *is* a prior
+
+After you drill. Then `p(h | relief, burial)` from the record is a perfectly good prior, your
+measured column is the data, and Bayes applies with nothing awkward about it. The asymmetry only
+exists before the well, because before the well there is no observation of *this* prospect's column
+at all — which is the reason you are building a distribution for it.
+
+##### The same test, applied three times in this tool
+
+| | is it a likelihood? | why |
+|---|---|---|
+| **a DHI pick** | **yes** | a flat spot at 2,250 m really is more likely if the contact is near 2,250 m |
+| **a base rate** | no | those discoveries were what they were before your prospect was mapped |
+| **a prospect's own POS** | no | it is already a posterior — someone's probability, formed with their own prior |
+
+The third row is the one that catches published work. Multiplying a base rate's odds by a prospect
+PoS gives a rule that is **symmetric** — it returns the same answer if you swap them — and a
+Bayesian update is never symmetric between a prior and its evidence. Tab ⑥ §9 works that one
+through.
+"""
+    )
+
+    theme.heading(8, "2 · Documents")
     # `NEXT_PLAN.md` is deliberately NOT listed. It is a development document -- what is built,
     # what is not, what was decided and why -- and a user reading it learns which parts the
     # author is unsure about, which is not the same as learning what the tool does. It stays in
