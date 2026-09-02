@@ -336,3 +336,12 @@ def test_changing_the_dhi_strength_updates_tab_four_in_the_same_interaction():
         once = page(at)
         at.run()
         assert once == page(at), f"tab ④ was stale after changing the DHI strength to {strength}"
+
+
+def test_a_neutral_dhi_strength_does_not_move_the_headline_chance():
+    """End to end, on the shipped prospect: strength 0 is a likelihood ratio of exactly 1, and an
+    observation that says nothing must leave the answer where it found it."""
+    at = _run(dhi_in_strength=0.0)
+    _no_exception(at, "a neutral DHI strength")
+    overlay = at.session_state["dhi_overlay"]
+    assert overlay["posterior_pos"] == pytest.approx(overlay["prior_pos"], abs=1e-9)

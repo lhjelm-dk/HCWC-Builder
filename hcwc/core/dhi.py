@@ -90,6 +90,15 @@ class DetectionFunction:
         return self.ceiling / (1.0 + np.exp(-(h - self.h50_m) / self.steepness_m))
 
 
+#: The smallest number of below-minimum realisations that can support ``r_dhi``'s denominator.
+#:
+#: It is a ratio of two sample means, so its relative error goes as ``1/sqrt(n)`` in the smaller
+#: group: a hundred gives roughly ten per cent, which is coarse but reportable. Seven, which is what
+#: the shipped prospect produced at a 5 m minimum, gives a number that is entirely noise and was
+#: moving the headline chance by twelve points.
+MIN_FAILURES_FOR_R = 100
+
+
 #: How the pick is shaped. All three are elicited in **m TVDSS** rather than as an error term,
 #: because an interpreter can argue about a depth and cannot argue about a sigma.
 NORMAL, PERT, UNIFORM = "normal", "pert", "uniform"
@@ -377,6 +386,21 @@ class DhiPosterior:
         That is an assumption and a slightly generous one — a barren trap can still throw a
         spurious bright event — but erring that way makes absence weaker evidence, not stronger,
         which is the safe direction for a number this consequential.
+
+        **The denominator has to be a real sample.** The guard below used to catch only the case
+        where *every* realisation clears the minimum. Seven out of ten thousand slipped through it,
+        and seven is not a sample: on the shipped prospect at a 5 m minimum the ratio came out at
+        1.66 from those seven, which lifted a **neutral** amplitude -- strength 0, ``r_strength``
+        exactly 1 -- from 40.8 % to 53.3 %. An observation that says nothing must do nothing, and
+        E-POS agrees. Below :data:`MIN_FAILURES_FOR_R` the ratio is undefined rather than noisy,
+        and :class:`CombinedUpdate` then falls back to the strength channel alone.
+
+        There is a deeper reason to be strict here. These "failures" are not failed *prospects* --
+        every realisation the engine draws is already conditional on the four elements working, and
+        that chance lives in ``P(G)`` on tab ②. They are short columns. Comparing tall columns with
+        short ones is the right question when the minimum is a real commercial threshold and a
+        useful share of realisations miss it; it is meaningless when the minimum is a 5 m physical
+        floor that only a rounding error fails to clear.
         """
         success = self.result.above_minimum
         if not self.observation.seen:
@@ -384,7 +408,7 @@ class DhiPosterior:
             # `E[1 - D(h) | success]` to take, and averaging over the failures instead would be a
             # different quantity wearing the same name.
             return float(self.weights[success].mean()) if success.any() else float("nan")
-        if not success.any() or success.all():
+        if not success.any() or int((~success).sum()) < MIN_FAILURES_FOR_R:
             return float("nan")
         return float(self.weights[success].mean() / self.weights[~success].mean())
 

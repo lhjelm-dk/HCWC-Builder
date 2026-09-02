@@ -748,3 +748,51 @@ class TestPartialConformance:
         r_absent = dhi.update(result, detection, DhiObservation(seen=False)).r_dhi
         assert np.isfinite(r_bound)
         assert r_absent < r_bound < r_pick
+
+
+class TestANeutralAmplitudeDoesNothing:
+    """Lars, 2 Sep 2026, checking against E-POS: a DHI strength of 0 must not lift POS.
+
+    It did. ``r_strength`` was exactly 1, but the geometry channel contributed a ratio of 1.66
+    estimated from **seven** below-minimum realisations out of ten thousand, and that carried the
+    headline chance from 40.8 % to 53.3 %. An observation that says nothing has to do nothing.
+    """
+
+    @staticmethod
+    def _posterior(min_column_m, strength_ratio=1.0):
+        limits = dataclasses.replace(reference_prospect(), min_column_m=min_column_m)
+        result = engine.run(limits, 10000, 4242)
+        return dhi.update(result, DetectionFunction(),
+                          DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=18.0,
+                                         p_valid=0.6))
+
+    def test_a_denominator_of_seven_is_not_a_sample(self):
+        """The old guard caught only *every* realisation clearing the minimum."""
+        post = self._posterior(1.0)
+        below = int((~post.result.above_minimum).sum())
+        assert below < dhi.MIN_FAILURES_FOR_R
+        assert np.isnan(post.r_dhi), f"{below} failures should not support a ratio"
+
+    def test_it_is_defined_where_the_minimum_is_a_real_threshold(self):
+        post = self._posterior(180.0)
+        assert int((~post.result.above_minimum).sum()) >= dhi.MIN_FAILURES_FOR_R
+        assert np.isfinite(post.r_dhi) and post.r_dhi > 1.0
+
+    def test_a_neutral_strength_leaves_pos_exactly_alone(self):
+        """The whole point. With the geometry channel undefined, the combination falls back to
+        strength alone — and a strength of 0 is a likelihood ratio of exactly 1."""
+        combined = dhi.CombinedUpdate(prior_pos=0.408, r_geometry=float("nan"),
+                                      r_strength=1.0, dependence=0.5)
+        assert combined.posterior_pos == pytest.approx(0.408, abs=1e-12)
+
+    @pytest.mark.parametrize("dependence", [0.0, 0.5, 1.0])
+    def test_neutral_stays_neutral_at_every_dependence(self, dependence):
+        combined = dhi.CombinedUpdate(prior_pos=0.408, r_geometry=float("nan"),
+                                      r_strength=1.0, dependence=dependence)
+        assert combined.posterior_pos == pytest.approx(0.408, abs=1e-12)
+
+    def test_a_defined_geometry_channel_still_moves_it(self):
+        """The guard must not have switched the channel off everywhere."""
+        combined = dhi.CombinedUpdate(prior_pos=0.408, r_geometry=2.34, r_strength=1.0,
+                                      dependence=0.5)
+        assert combined.posterior_pos > 0.408
