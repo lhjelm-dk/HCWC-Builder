@@ -153,14 +153,19 @@ def render(n: Numbering | None = None) -> None:
              "a contact on. It carries a bound, not a depth.")
     seen = anomaly != ABSENT
     partial = anomaly == PARTIAL
-    # Lars's defaults for the worked prospect. Falling back to the model's own median keeps a
-    # differently-sited prospect from opening on a pick its geology considers impossible, which
-    # `dhi.update` would refuse outright rather than merely warn about.
-    DEFAULT_PICK_M, DEFAULT_SIGMA_M = 2250.0, 10.0
-    default_contact = (DEFAULT_PICK_M
-                       if float(result.contact_m.min()) <= DEFAULT_PICK_M
-                       <= float(result.contact_m.max())
-                       else float(np.percentile(result.contact_m, 50)))
+    # **The model's own median, always.** This was a fixed 2 250 m, used whenever that depth fell
+    # anywhere inside the contact range -- which it does for almost any prospect, since the test was
+    # against the *extremes* rather than against the bulk. On the shipped prospect it opened at the
+    # **P94** of the geological contact, so the tab greeted every new reader with an amplitude
+    # arguing hard against the geology, an effective sample size of 2 801 of 10 000, and a POS the
+    # DHI had dragged most of the way up on its own.
+    #
+    # The median is the one defensible opening position: it is the depth the geology already
+    # considers most likely, so the update starts neutral in the geometry channel and moves only
+    # when the reader states an amplitude that actually disagrees. It also cannot land outside the
+    # prior, which is what the old fallback was guarding against.
+    DEFAULT_SIGMA_M = 10.0
+    default_contact = float(np.percentile(result.contact_m, 50))
     shape = st.radio(
         "How is the pick shaped?", dhi_core.PICK_SHAPES, horizontal=True,
         disabled=not seen or partial,

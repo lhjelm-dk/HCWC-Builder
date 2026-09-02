@@ -93,7 +93,7 @@ SPECS: tuple[LimitSpec, ...] = (
               "in Closure rather than Reservoir; **Reservoir** in this tool is effectiveness only "
               "and never moves the contact."),
     # ---- Retention --------------------------------------------------------------------------
-    LimitSpec("Fault leakage 1", Group.RETENTION, COLUMN, (120.0, 300.0), 0.6, "pert",
+    LimitSpec("Fault leakage 1", Group.RETENTION, COLUMN, (130.0, 170.0), 0.25, "pert",
               "The column a fault will hold before it leaks — a *capacity*, so it is stated as a "
               "height and does not move when the apex pick moves."),
     LimitSpec("Fault leakage 2", Group.RETENTION, COLUMN, (140.0, 320.0), 0.0, "pert",

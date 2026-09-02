@@ -15,6 +15,7 @@ the first render is a cold start and the second is the steady state the user act
 """
 from __future__ import annotations
 
+import functools
 import pathlib
 
 import pytest
@@ -174,8 +175,27 @@ def test_the_partial_conformance_bound_survives_a_reload():
             == at.session_state["dhi_overlay"]["posterior_pos"])
 
 
-def _well(**extra):
-    base = dict(well_toggle=True, well_in_water_on=True, well_in_water=2250.0)
+@functools.lru_cache(maxsize=1)
+def _contact_quantiles() -> tuple[float, ...]:
+    """P90/P50/P10 of the shipped prospect's contact, for tests that need a depth *in* the answer.
+
+    Cached because it costs a full render. Derived rather than typed because typed depths have now
+    been stranded three times by changes to the defaults — the charge and seal fluids moved the
+    contact 76 m, and the DHI pick default moved it again. A test that hard-codes 2,250 m is
+    really asserting where the default prospect happens to sit, which is not what any of these
+    tests are about.
+    """
+    import numpy as np
+
+    contacts = np.asarray(_run().session_state["dhi_overlay"]["contact_samples"], float)
+    return tuple(float(np.percentile(contacts, p)) for p in (10.0, 50.0, 90.0))
+
+
+def _well(water_at=None, **extra):
+    """A prospect with a water leg, placed at the contact median unless told otherwise."""
+    _, p50, _ = _contact_quantiles()
+    base = dict(well_toggle=True, well_in_water_on=True,
+                well_in_water=p50 if water_at is None else water_at)
     return _run(**(base | extra))
 
 
@@ -201,14 +221,16 @@ def test_a_bracketing_penetration_is_the_sharpest_evidence_the_tool_takes():
         c = np.asarray(at.session_state["dhi_overlay"]["contact_samples"], float)
         return float(np.percentile(c, 90) - np.percentile(c, 10))
 
-    bracket = _well(well_in_hc_on=True, well_in_hc=2230.0)
+    p90, p50, _ = _contact_quantiles()
+    bracket = _well(well_in_hc_on=True, well_in_hc=p90)
     _no_exception(bracket, "a bracketing penetration")
     assert spread(bracket) < spread(_well())
     assert spread(bracket) < spread(_run())
 
 
 def test_hydrocarbons_below_the_water_leg_is_refused_where_it_is_typed():
-    at = _well(well_in_hc_on=True, well_in_hc=2300.0, well_in_water=2250.0)
+    _, p50, _ = _contact_quantiles()
+    at = _well(water_at=p50, well_in_hc_on=True, well_in_hc=p50 + 50.0)
     _no_exception(at, "a contradictory penetration")
     assert any("must be above the water" in e.value for e in at.error)
 
@@ -216,7 +238,8 @@ def test_hydrocarbons_below_the_water_leg_is_refused_where_it_is_typed():
 def test_a_penetration_the_model_finds_impossible_says_so():
     """Same saturation as partial conformance: a flat penalty and no evidence look identical, and
     only the warning tells them apart."""
-    at = _well(well_in_water=2100.0)
+    p90, _, _ = _contact_quantiles()
+    at = _well(water_at=p90 - 120.0)
     _no_exception(at, "a contradicting penetration")
     assert any("disagree almost completely" in w.value for w in at.warning)
 
@@ -226,9 +249,10 @@ def test_well_control_survives_a_reload():
 
     from hcwc.io import prospect
 
-    at = _well(well_in_water=2210.0, well_in_connected=0.8)
+    _, p50, _ = _contact_quantiles()
+    at = _well(water_at=p50, well_in_connected=0.8)
     saved = prospect.document(at.session_state.filtered_state)
-    assert saved["inputs"]["well_in_water"] == 2210.0
+    assert saved["inputs"]["well_in_water"] == pytest.approx(p50)
     reloaded = _run(**prospect.read(json.dumps(saved)))
     assert (reloaded.session_state["dhi_overlay"]["posterior_pos"]
             == at.session_state["dhi_overlay"]["posterior_pos"])
