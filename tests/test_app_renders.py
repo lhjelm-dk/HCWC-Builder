@@ -284,3 +284,55 @@ def test_the_reservoir_thickness_defaults_to_fifty_metres():
     at = _run(**{f"{key}_src": "seal_as_top", f"{key}_pa": 1.0})
     got = [w.value for w in at.number_input if w.key == f"{key}_thickness"]
     assert got == [50.0]
+
+
+@pytest.mark.parametrize("source", ["seal", "seal_as_top"])
+def test_both_routes_to_the_base_seal_put_it_in_the_same_place(source):
+    """*Same as the top seal* and *From seal capacity* are two entry points to one limit. If only
+    one carried the reservoir-thickness offset they would disagree about where that limit sits."""
+    import numpy as np
+
+    from hcwc.ui import run as engine_run
+
+    key = "lim_Base seal (capillary)"
+    at = _run(**{f"{key}_src": source, f"{key}_pa": 1.0, f"{key}_thickness": 50.0})
+    _no_exception(at, f"the base seal via {source}")
+    limits = at.session_state["limit_set"]
+    result = engine_run.current(limits)
+    where = {name: i for i, name in enumerate(limits.names)}
+    top = float(np.median(result.sampled_m[:, where["Top seal (capillary)"]]))
+    base = float(np.median(result.sampled_m[:, where["Base seal (capillary)"]]))
+    assert abs((base - top) - 50.0) < 8.0
+
+
+def test_the_top_seal_is_the_datum_and_is_not_offset():
+    """It defines the surface everything else is measured from, so asking it for a thickness would
+    be asking how far it sits below itself."""
+    at = _run()
+    assert not [w for w in at.number_input if w.key == "lim_Top seal (capillary)_thickness"]
+
+
+def test_changing_the_dhi_strength_updates_tab_four_in_the_same_interaction():
+    """The trust panel on tab ④ reports the effective sample size behind the DHI update, and that
+    posterior is built on tab ⑤ — which renders *after* tab ④. Reading it there showed the previous
+    frame: 28 % where the answer was 10 %, then 10 % where it was 24 %, with nothing saying so.
+
+    The panel is now written into a container tab ④ reserves and app.py fills after tab ⑤. This
+    asserts the fix the only way that means anything: a second rerun with nothing touched must not
+    change a single rendered line.
+    """
+    import re
+
+    from streamlit.testing.v1 import AppTest
+
+    def page(at):
+        return [re.sub(r"\s+", " ", m.value) for m in at.markdown]
+
+    at = AppTest.from_file(str(APP), default_timeout=900)
+    at.run()
+    for strength in (50.0, 12.0):
+        at.session_state["dhi_in_strength"] = strength
+        at.run()
+        once = page(at)
+        at.run()
+        assert once == page(at), f"tab ④ was stale after changing the DHI strength to {strength}"

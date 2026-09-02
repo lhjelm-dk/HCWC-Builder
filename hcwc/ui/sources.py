@@ -244,6 +244,20 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         st.error(str(exc))
         return None
 
+    # The base seal's crest sits one reservoir thickness below the structural apex everything in
+    # this tool is measured from, so its capacity bites that much deeper. The *Same as the top seal*
+    # shortcut already carries the offset; a base seal computed from its own parameters is the same
+    # geometry and needs it too, or the two routes to one limit would disagree about where it is.
+    thickness = 0.0
+    if is_base_seal(key):
+        thickness = st.number_input(
+            "Reservoir thickness (m)", 0.0, 2000.0, DEFAULT_RESERVOIR_THICKNESS_M, 5.0,
+            key=f"{key}_thickness",
+            help="Gross thickness between the top reservoir and its base. The base seal's crest "
+                 "sits this far below the structural apex, so its capacity is measured from there "
+                 "and its limit lands that much deeper. Only asked for on the base seal — the top "
+                 "seal *is* the datum.")
+
     elicited = capacity
     with st.expander("**Pull this toward the NCS record** — a shrinkage prior on seal capacity"):
         st.markdown(
@@ -343,8 +357,17 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
             calibration_figure(float(np.mean(rho_w)), float(np.mean(rho_hc)),
                                st.session_state.get("burial_depth"), capacity),
             use_container_width=True, key=f"{key}_calib")
-    return Handover(DepthDistribution.from_samples(capacity), 1.0,
-                    f"{fluid}, r {r_seal[0]:.2f}–{r_seal[1]:.2f} µm")
+    if thickness:
+        st.caption(
+            f"**The limit is the capacity plus the reservoir thickness.** This seal holds "
+            f"{np.percentile(capacity, 50):,.0f} m at P50, and it holds it starting "
+            f"{thickness:,.0f} m below the structural apex — so it bites at "
+            f"{np.percentile(capacity + thickness, 50):,.0f} m of column, which is the number the "
+            f"engine competes on."
+        )
+    return Handover(DepthDistribution.from_samples(capacity + thickness), 1.0,
+                    f"{fluid}, r {r_seal[0]:.2f}–{r_seal[1]:.2f} µm"
+                    + (f" +{thickness:,.0f} m" if thickness else ""))
 
 
 # --------------------------------------------------------------------------- empirical
@@ -420,6 +443,15 @@ def render_seal_computed(key: str, n_trials: int, seed: int):
 #: The key prefix `limiters_tab` gives the top seal's block. The base seal reads its widgets from
 #: here rather than owning a second copy, which is the whole point of the *same as top* source.
 TOP_SEAL_KEY = "lim_Top seal (capillary)"
+
+
+def is_base_seal(key: str) -> bool:
+    """Whether a seal block is the base seal, and so sits a reservoir thickness deeper.
+
+    By name rather than by an extra argument through two call sites, because the limit's name is
+    already the thing that decides it and `limit_block` passes the key everywhere.
+    """
+    return "Base seal" in key
 
 
 def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:

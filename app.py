@@ -384,7 +384,11 @@ with tab5:
         depth_risk_tab.render(depth_risk_tab.TAB_DHI, with_dhi=True,
                               n=Numbering(5, sub=4))
 
-# --------------------------------------------------------------------------- ⑤ Empirical basis
+# Tab ④'s trust panel, now that tab ⑤ has published the posterior one of its checks reports on.
+# It is written into a container tab ④ reserved, so it still appears at the foot of tab ④.
+results_tab.render_trust_panel()
+
+# --------------------------------------------------------------------------- ⑥ Benchmarks
 with tab6:
     empirical.render()
 

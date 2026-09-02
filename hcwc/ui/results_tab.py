@@ -25,6 +25,9 @@ from hcwc.ui.numbering import Numbering
 
 TAB = 4
 
+#: Where tab ④ parks the container its trust panel is drawn into. See :func:`render`.
+TRUST_SLOT_KEY = "_trust_slot"
+
 
 def limit_colours(limit_set) -> dict[str, str]:
     """One colour per limit: a **variation of its risk element's hue**.
@@ -524,6 +527,29 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # repeatability, the correlation projection -- and those are properties of the sample, not of
     # the reweighting. Its DHI check already reports the effective sample size behind the update.
     if not given_dhi:
+        # **Reserved now, filled after tab ⑤ has run.** One of these checks reports the effective
+        # sample size behind the DHI update, and that posterior is built on tab ⑤ -- which renders
+        # *after* this one. Rendering here read the previous frame's posterior, so changing the DHI
+        # strength left this panel one interaction behind: it showed 28 % where the answer was
+        # 10 %, then 10 % where it was 24 %, silently and with nothing on the page to say so.
+        #
+        # `st.tabs` returns containers, so where content is written is independent of when. This is
+        # the last section of the tab, so deferring it changes nothing about the order a reader
+        # sees, and `n` carries the figure numbering regardless of when it is called.
+        st.session_state[TRUST_SLOT_KEY] = (st.container(), n, result, tab)
+
+
+def render_trust_panel() -> None:
+    """Fill the slot tab ④ reserved, once tab ⑤ has published its posterior.
+
+    Called from ``app.py`` after tab ⑤, and a no-op when tab ④ did not run or is showing the
+    DHI-updated view, which has its own reporting.
+    """
+    slot = st.session_state.pop(TRUST_SLOT_KEY, None)
+    if slot is None:
+        return
+    container, n, result, tab = slot
+    with container:
         trust_panel.render(n, result, tab=tab,
                            posterior=(st.session_state.get("dhi_posterior")
                                       if st.session_state.get("dhi_on") else None))
