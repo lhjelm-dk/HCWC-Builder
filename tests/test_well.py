@@ -143,6 +143,29 @@ class TestCombiningChannels:
         with pytest.raises(ValueError, match="nothing to combine"):
             well.combine()
 
+    def test_evidence_that_disagrees_widens_the_answer(self, result):
+        """Agreement narrows, disagreement widens — and a reader will check this by eye.
+
+        This lived as an app-level test against the shipped defaults until those defaults moved the
+        contact 76 m and stranded its hard-coded depths. The property is about the combination, not
+        about any prospect, so it belongs here where both sides can be placed deliberately.
+        """
+        def spread(w):
+            post = dhi.DhiPosterior(result=result, weights=w, detection=dhi.DetectionFunction(),
+                                    observation=dhi.DhiObservation(seen=False))
+            lo, hi = post.percentiles([90.0, 10.0])
+            return hi - lo
+
+        pick_at = float(np.percentile(result.contact_m, 50))
+        d = dhi.likelihood(result, dhi.DetectionFunction(),
+                           dhi.DhiObservation(seen=True, contact_m=pick_at, pick_sigma_m=15.0,
+                                              p_valid=0.8))
+        agrees = well.likelihood(result, WellControl(hc_down_to_m=pick_at - 20.0,
+                                                     water_at_m=pick_at + 20.0))
+        disagrees = well.likelihood(result, WellControl(water_at_m=pick_at - 60.0))
+        assert spread(well.combine(d, agrees)) < spread(d)
+        assert spread(well.combine(d, disagrees)) > spread(d)
+
     def test_two_channels_land_between_what_each_says_alone(self, result):
         """Not a law of probability, but the sanity check a reader will apply: a well arguing
         shallow and a pick arguing deep should meet somewhere between them."""

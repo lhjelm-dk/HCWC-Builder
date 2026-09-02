@@ -85,7 +85,7 @@ def render_charge(key: str, n_trials: int, seed: int) -> Handover | None:
     f1, f2, f3 = st.columns(3)
     mean = f1.number_input(
         "Charge mean (10⁶ Sm³)", 0.0, 500_000.0,
-        120.0 if case == "Pure oil" else 39600.0, 1.0, key=f"{key}_mean",
+        110.0 if case == "Pure oil" else 39600.0, 1.0, key=f"{key}_mean",
         help="What the basin model says arrived in this closure, at **surface** conditions. This "
              "is the volume charged, not the volume trapped — how much of it the structure can "
              "hold is what the calculation below works out.")
@@ -185,7 +185,16 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         temperature_range(float(burial)) if burial is not None else (70.0, 90.0), 10.0, 160.0)
 
     c1, c2, c3 = st.columns(3)
-    fluid = c1.selectbox("Fluid", ["Gas", "Oil"], key=f"{key}_fluid")
+    # Oil first, so it is the default. The charge calculator opens on *Pure oil* and the tab
+    # refuses to run a prospect whose charge and seal disagree about the fluid -- correctly, since
+    # capacity is `P_c / (delta-rho . g)` and the same seal holds a much shorter gas column. Leaving
+    # this on gas while charge opened on oil would have greeted every new user with that refusal.
+    fluid = c1.selectbox(
+        "Fluid", ["Oil", "Gas"], key=f"{key}_fluid",
+        help="Must agree with the charge calculator's phase. Capacity depends on the density "
+             "contrast with formation water, so the same seal holds a much shorter column of gas "
+             "than of oil — running one phase through charge and the other through the seal "
+             "produces a contact that belongs to no prospect, and tab ③ refuses it.")
     st.session_state["seal_fluid"] = fluid
     temp = c2.slider("Temperature (°C)", 10.0, 160.0, default_t, key=f"{key}_t",
                      help=(f"Defaulted from the {burial:,.0f} m burial depth on tab ②, at "

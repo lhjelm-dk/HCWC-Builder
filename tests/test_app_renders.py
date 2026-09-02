@@ -87,11 +87,16 @@ def test_an_unreachable_assessment_minimum_is_answered_not_raised(minimum):
     _no_exception(_run(min_column_input=minimum), f"assessment minimum {minimum:g} m")
 
 
-@pytest.mark.parametrize("key", ["lim_Charge_kind", "lim_Fault leakage 1_kind"])
+@pytest.mark.parametrize("key", ["lim_Fault leakage 1_kind", "lim_Top seal (continuity)_kind"])
 def test_a_column_limit_restated_as_a_depth_reports_instead_of_crashing(key):
-    """One selectbox. Charge is elicited in metres of column, so *Stated as → m TVDSS* makes
-    100/220/400 depths hundreds of metres above the apex — and the engine raises, correctly. The
-    message it raises is written for a reader; it just has to be shown rather than thrown."""
+    """One selectbox. These limits are elicited in metres of column, so *Stated as → m TVDSS*
+    makes a capacity of a hundred-odd metres into a depth hundreds of metres above the apex — and
+    the engine raises, correctly. The message it raises is written for a reader; it just has to be
+    shown rather than thrown.
+
+    Charge used to be the first case here and is not any more: it opens on its own calculator now,
+    so its *Stated as* control no longer decides what the limit set contains.
+    """
     at = _run(**{key: "depth"})
     _no_exception(at, f"{key} switched to m TVDSS")
     assert any("cannot be sampled" in e.value for e in at.error), \
@@ -200,25 +205,6 @@ def test_a_bracketing_penetration_is_the_sharpest_evidence_the_tool_takes():
     _no_exception(bracket, "a bracketing penetration")
     assert spread(bracket) < spread(_well())
     assert spread(bracket) < spread(_run())
-
-
-def test_evidence_that_disagrees_widens_the_answer():
-    """Not a defect, and the first version of the test above assumed otherwise.
-
-    The example prospect's DHI picks the contact *at* 2,250 m; a water leg at 2,250 m says the
-    contact is *above* it. Two sources pulling opposite ways should leave the reader less certain,
-    not more, and the combination widens accordingly. Agreement is what narrows.
-    """
-    import numpy as np
-
-    def spread(at):
-        c = np.asarray(at.session_state["dhi_overlay"]["contact_samples"], float)
-        return float(np.percentile(c, 90) - np.percentile(c, 10))
-
-    dhi_only = spread(_run())
-    assert spread(_well(well_in_water=2250.0)) > dhi_only, "a well contradicting the pick"
-    assert spread(_well(well_in_hc_on=True, well_in_hc=2245.0,
-                        well_in_water_on=False)) < dhi_only, "a well agreeing with the pick"
 
 
 def test_hydrocarbons_below_the_water_leg_is_refused_where_it_is_typed():

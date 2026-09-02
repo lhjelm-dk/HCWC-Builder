@@ -76,7 +76,7 @@ SPECS: tuple[LimitSpec, ...] = (
               "The column the available charge can fill. Charge that fills past the deepest mapped "
               "depth is **not a shallow limit — it is no limit**, and that share belongs in "
               "`P(active)` rather than as a contact at the base of the structure.",
-              computed=("charge",)),
+              computed=("charge",), opens_on="charge"),
     # ---- Closure ----------------------------------------------------------------------------
     LimitSpec("Closure / spill point", Group.CLOSURE, DEPTH, (300.0, 400.0), 1.0, "pert",
               "Where the closure spills. **Always active** — every prospect has a spill point, and "
