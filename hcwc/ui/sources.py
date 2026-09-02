@@ -29,6 +29,11 @@ from hcwc.io import benchmarks
 from hcwc.ui import theme
 
 
+#: Gross reservoir thickness, and so the offset between the top seal's crest and the base seal's.
+#: Lars's number, 2 Sep 2026.
+DEFAULT_RESERVOIR_THICKNESS_M = 50.0
+
+
 @dataclass(frozen=True)
 class Handover:
     """What a helper gives back to the row that opened it."""
@@ -437,6 +442,20 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
         )
         return None
 
+    # The one thing that is *not* the same as the top seal: where it sits.
+    #
+    # Every capacity in this tool is measured downward from the **structural apex**, which is the
+    # crest of the top reservoir. The base seal's own crest is one reservoir thickness below that.
+    # So the same shale, with the same capacity in metres of column, bites a reservoir thickness
+    # deeper -- and without the offset a base seal identical to the top seal would be entered as
+    # though it sat at the crest, which is the one place it certainly does not.
+    thickness = st.number_input(
+        "Reservoir thickness (m)", 0.0, 2000.0, DEFAULT_RESERVOIR_THICKNESS_M, 5.0,
+        key=f"{key}_thickness",
+        help="Gross thickness between the top reservoir and its base. It is the offset between "
+             "the two seals: the base seal's crest sits this far below the structural apex, so "
+             "its capacity is measured from there and its limit lands that much deeper.")
+
     read = lambda suffix: st.session_state[f"{TOP_SEAL_KEY}_{suffix}"]  # noqa: E731
     try:
         inputs = seals.SealInputs(
@@ -458,10 +477,22 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
         f"- {read('fluid').lower()} at **{read('rh')[0]:g} – {read('rh')[1]:g} g/cm³** against "
         f"water at **{read('rw')[0]:g} – {read('rw')[1]:g} g/cm³**"
     )
+    # What the engine competes on: the capacity, carried down to where this seal actually is.
+    limit = capacity + float(thickness)
     m1, m2, m3 = st.columns(3)
-    m1.metric("P90 capacity", f"{np.percentile(capacity, 10):,.0f} m")
-    m2.metric("P50 capacity", f"{np.percentile(capacity, 50):,.0f} m")
-    m3.metric("P10 capacity", f"{np.percentile(capacity, 90):,.0f} m")
+    m1.metric("P90 limit", f"{np.percentile(limit, 10):,.0f} m",
+              f"capacity {np.percentile(capacity, 10):,.0f} m", delta_color="off")
+    m2.metric("P50 limit", f"{np.percentile(limit, 50):,.0f} m",
+              f"capacity {np.percentile(capacity, 50):,.0f} m", delta_color="off")
+    m3.metric("P10 limit", f"{np.percentile(limit, 90):,.0f} m",
+              f"capacity {np.percentile(capacity, 90):,.0f} m", delta_color="off")
+    st.caption(
+        f"**Both numbers are metres of column below the structural apex, and they differ by the "
+        f"reservoir thickness.** The *capacity* is what this shale can hold, which is the top "
+        f"seal's number unchanged. The *limit* is where it bites — {thickness:,.0f} m deeper, "
+        f"because the base seal's crest is {thickness:,.0f} m below the crest everything else in "
+        f"this tool is measured from."
+    )
     st.caption(
         "⚠ **Identical inputs are not an identical outcome, and the difference is on the "
         "Correlations sub-tab.** Sampled independently, top and base seal fail at different "
@@ -469,8 +500,8 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
         "leaky below at the same moment. If it is one unit, correlate them — the pairing is "
         "already listed there, waiting for a number."
     )
-    return Handover(DepthDistribution.from_samples(capacity), 1.0,
-                    f"as top seal — {read('fluid').lower()}, "
+    return Handover(DepthDistribution.from_samples(limit), 1.0,
+                    f"as top seal +{thickness:,.0f} m — {read('fluid').lower()}, "
                     f"r {read('rs')[0]:.2f}–{read('rs')[1]:.2f} µm")
 
 

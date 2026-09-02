@@ -252,3 +252,35 @@ def test_the_decline_default_follows_the_spill_point():
     at = _run(spill_input=2600.0, r1_on_4=True)
     got = {w.key: w.value for w in at.number_input if w.key in ("r1_full_4", "r1_none_4")}
     assert (got["r1_full_4"], got["r1_none_4"]) == (2550.0, 2600.0)
+
+
+@pytest.mark.parametrize("thickness", [0.0, 50.0, 120.0])
+def test_the_base_seal_sits_a_reservoir_thickness_below_the_top_seal(thickness):
+    """Same shale, same capacity — different place.
+
+    Every capacity here is measured downward from the structural apex, which is the crest of the
+    *top* reservoir. The base seal's crest is one reservoir thickness below that, so borrowing the
+    top seal's inputs without the offset would enter it as though it sat at the crest, which is the
+    one place it certainly does not.
+    """
+    import numpy as np
+
+    from hcwc.ui import run as engine_run
+
+    key = "lim_Base seal (capillary)"
+    at = _run(**{f"{key}_src": "seal_as_top", f"{key}_pa": 1.0, f"{key}_thickness": thickness})
+    _no_exception(at, f"the base seal at {thickness:g} m thickness")
+    limits = at.session_state["limit_set"]
+    result = engine_run.current(limits)
+    where = {name: i for i, name in enumerate(limits.names)}
+    top = float(np.median(result.sampled_m[:, where["Top seal (capillary)"]]))
+    base = float(np.median(result.sampled_m[:, where["Base seal (capillary)"]]))
+    # Sampled independently, so the medians agree only to within Monte Carlo noise.
+    assert abs((base - top) - thickness) < 8.0
+
+
+def test_the_reservoir_thickness_defaults_to_fifty_metres():
+    key = "lim_Base seal (capillary)"
+    at = _run(**{f"{key}_src": "seal_as_top", f"{key}_pa": 1.0})
+    got = [w.value for w in at.number_input if w.key == f"{key}_thickness"]
+    assert got == [50.0]
