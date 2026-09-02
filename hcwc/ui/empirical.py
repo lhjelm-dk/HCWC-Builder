@@ -232,16 +232,27 @@ What follows is a disagreement about **one estimator**, not about the data.
                  "estimates seal capacity rather than the observed column. Both `r` values are "
                  "correlations with the observed column; the MLE's is computed over the "
                  "**uncensored** discoveries only, since those are the ones it is trying to "
-                 "predict.")
+                 "predict.\n\n"
+                 "**Both lines rise above the 1:1 at the left-hand end, and no data point ever "
+                 "can.** That is not a plotting error, and it means something different for each "
+                 "line — the note directly below works through it.")
 
+    # Computed, not typed. These were hard-coded as "63 %", "35 %" and "144 m" inside an f-string
+    # whose crossing was already being calculated a line above -- so the prose could drift away from
+    # the figure without anything failing, and by the time it was checked it had: the real split is
+    # 62/36. Anything quoted here is now derived from the same fit the line is drawn from.
+    mle_cross = float(np.exp(fit.intercept + fit.coefficients["burial_depth"]
+                             * np.log(float(np.median(z))))
+                      ** (1.0 / (1.0 - fit.coefficients["trap_height"])))
+    below, above = h < mle_cross, h >= mle_cross
     st.info(
         f"**Both lines cross the 1:1, and it means opposite things.**\n\n"
         f"**The censored MLE crossing is a prediction, and it holds.** It estimates *seal "
         f"capacity*, which is allowed to exceed the closure — that is precisely what filling to "
         f"spill is. Above the 1:1 line the model is saying *this closure will fill*. It crosses at "
-        f"**{(np.exp(fit.intercept + fit.coefficients['burial_depth'] * np.log(float(np.median(z)))))**(1 / (1 - fit.coefficients['trap_height'])):.0f} m**, "
-        f"and in the data **63 % of closures below 144 m filled to spill against 35 % above** — so "
-        f"the crossing lands where the filling behaviour actually changes.\n\n"
+        f"**{mle_cross:.0f} m**, and in the data **{filled[below].mean():.0%} of closures below "
+        f"that filled to spill against {filled[above].mean():.0%} above** — so the crossing lands "
+        f"where the filling behaviour actually changes.\n\n"
         f"**The published OLS crossing is a defect.** It is fitted to the *observed column*, which "
         f"cannot exceed the closure by construction, so below **{ols_cross:.0f} m** it predicts "
         f"something the data cannot contain — and **{int((h < ols_cross).sum())} of {h.size} "
@@ -250,7 +261,25 @@ What follows is a disagreement about **one estimator**, not about the data.
         f"column.\n\n"
         f"This is a *separate* criticism from the censoring one and needs no estimator theory to "
         f"see: a straight line through data bounded by `c ≤ h` will always do this unless it is "
-        f"forced through the origin with a slope below one. It is kept here exactly as published."
+        f"forced through the origin with a slope below one. It is kept here exactly as published.\n\n"
+        f"**Would forcing it through the origin fix it? It would fix the bound, and it would still "
+        f"be the wrong model.** Least squares through (0, 0) gives `c = "
+        f"{float(np.sum(h * c) / np.sum(h * h)):.2f} h`, which can never exceed the closure. But a "
+        f"line through the origin says the fill *fraction* is constant, and it is not — in this "
+        f"data the median fill runs "
+        + ", ".join(
+            f"**{np.median(c[m] / h[m]):.2f}** at {q0:,.0f}–{q1:,.0f} m"
+            for q0, q1, m in (
+                (qq[i], qq[i + 1], (h >= qq[i]) & (h <= qq[i + 1]))
+                for qq in [np.quantile(h, [0, 0.25, 0.5, 0.75, 1.0])] for i in range(4)))
+        + ".\n\n"
+        f"**The real problem is that the observed column is not a function of closure at all.** It "
+        f"is `min(seal capacity, closure)` — a minimum of two things, one of which is the x-axis. "
+        f"No straight line, through the origin or otherwise, can represent a minimum. That is why "
+        f"the censored fit is not a tidied-up regression but a different model: it estimates the "
+        f"*capacity*, and lets the minimum produce the observation. The declining fill fraction "
+        f"above is exactly the signature of capacity growing more slowly than closure — which is "
+        f"the `h^{fit.coefficients['trap_height']:.2f}` in the green line."
     )
 
     # -------- Figure: their Fig 6B equivalent -------------------------------------------
