@@ -15,6 +15,7 @@ import streamlit as st
 from hcwc.core import charge as ch
 from hcwc.core import dhi as dhi_core
 from hcwc.core import sensitivity
+from hcwc.core import well as well_core
 from hcwc.core.dhi import DetectionFunction, DhiObservation
 from hcwc.ui import run, theme
 from hcwc.ui.numbering import Numbering
@@ -30,6 +31,31 @@ CONFORMING = "Seen"
 PARTIAL = "Seen over the crest only"
 ABSENT = "Absent where one was expected"
 OBSERVATIONS = (CONFORMING, PARTIAL, ABSENT)
+
+
+def well_control() -> well_core.WellControl | None:
+    """The penetration described on tab ②, or ``None``.
+
+    Read through a function so the tab does not have to know how the switches are stored, and so an
+    incomplete or contradictory entry becomes ``None`` here rather than an exception in the middle
+    of a render. Tab ② reports the contradiction where it is typed; this side simply declines to
+    use it.
+    """
+    if not st.session_state.get("well_on", False):
+        return None
+    hc = (float(st.session_state.get("well_in_hc", 0.0))
+          if st.session_state.get("well_in_hc_on") else None)
+    water = (float(st.session_state.get("well_in_water", 0.0))
+             if st.session_state.get("well_in_water_on") else None)
+    if hc is None and water is None:
+        return None
+    try:
+        return well_core.WellControl(
+            hc_down_to_m=hc, water_at_m=water,
+            depth_sigma_m=float(st.session_state.get("well_in_sigma", 10.0)),
+            p_connected=float(st.session_state.get("well_in_connected", 0.9)))
+    except ValueError:
+        return None
 
 
 def _fmt_r(r: float) -> str:
@@ -479,6 +505,50 @@ is where your prospect sits relative to the two populations you drew.
     except ValueError as exc:
         st.error(str(exc))
         return
+
+    # ---- the second evidence channel ---------------------------------------------------------
+    # A penetration, if there is one, described on tab ②. It multiplies in here rather than being
+    # folded into `DhiObservation`, because it is not a DHI: no strength, no detection function,
+    # and it needs no argument to be admissible. The two are close to independent evidence -- a
+    # reflection coefficient and a resistivity log -- which is what makes them worth having
+    # together and what licenses the multiplication.
+    control = well_control()
+    if control is not None:
+        try:
+            post = dhi_core.DhiPosterior(
+                result=result,
+                weights=well_core.combine(post.weights, well_core.likelihood(result, control)),
+                detection=detection, observation=observation)
+        except ValueError as exc:
+            st.error(str(exc))
+            return
+        theme.heading(TAB, sub=n.sub, text="3b · Well control")
+        lo, hi = control.bracket()
+        bits = []
+        if control.hc_down_to_m is not None:
+            bits.append(f"hydrocarbons proven to **{control.hc_down_to_m:,.0f} m**")
+        if control.water_at_m is not None:
+            bits.append(f"water at **{control.water_at_m:,.0f} m**")
+        inside = float(((result.contact_m > lo) & (result.contact_m < hi)).mean())
+        st.markdown(
+            f"The penetration described on tab ② is folded in above: {' and '.join(bits)}, tied to "
+            f"the mapped surface with σ = **{control.depth_sigma_m:,.0f} m**, and a "
+            f"**{control.p_connected:.0%}** chance it samples this accumulation.\n\n"
+            f"**{inside:.0%} of the geological realisations already sit inside what the well "
+            f"allows.** The update is the rest being pushed down toward the floor of "
+            f"`1 − {control.p_connected:.2f} = {1 - control.p_connected:.2f}`, which is what stops "
+            f"one penetration ruling a contact out altogether."
+        )
+        if inside < 0.05:
+            st.warning(
+                "**The well and the geological model disagree almost completely.** Nearly every "
+                "realisation falls outside what the penetration allows, so all of them are "
+                "penalised by roughly the same saturated amount, the likelihood goes flat, and the "
+                "posterior below will come out close to the prior. **Read that as the "
+                "disagreement it is, not as the well having said nothing** — either the depths are "
+                "tied to a different datum than the apex, or the limits on tab ③ are letting the "
+                "column go somewhere this well has already ruled out."
+            )
 
     # Published for the trust panel on tab ④, which reports the effective sample size behind this
     # update. Same one-frame lag as `dhi_overlay` below and for the same reason: tab ④ renders

@@ -350,8 +350,75 @@ def render() -> None:
         "amplitude as evidence, on two further tabs."
     )
 
+    # ------------------------------------------------------------------ well control
+    # Here rather than on tab ⑤ for the same reason the DHI switch is: whether a closure has been
+    # penetrated is a fact about the prospect. It is the strongest evidence this tool takes and the
+    # only one needing no argument -- a logged water leg is a measurement, where an amplitude is an
+    # inference -- so it sits beside the geometry it constrains rather than behind the seismic.
+    theme.heading(TAB, "4 · Well control")
+    st.markdown(
+        "**A penetration in this closure is the sharpest evidence there is about the contact.** A "
+        "water leg says the contact is above it; hydrocarbons say it is below. Either enters as "
+        "evidence on tab ⑤ — reweighting the realisations tab ③ produced, never as an extra "
+        "limit, because a well *observes* the outcome of the mechanisms already modelled rather "
+        "than adding one."
+    )
+    st.session_state.setdefault("well_toggle", False)
+    well_on = st.toggle(
+        "This closure has been penetrated", key="well_toggle",
+        help="An appraisal, a nearby well through the same closure, or an earlier failure on the "
+             "same structure. Leave it off for an untested prospect.")
+    st.session_state["well_on"] = bool(well_on)
+    if well_on:
+        w1, w2 = st.columns(2)
+        use_hc = w1.checkbox(
+            "Hydrocarbons proven down to", key="well_in_hc_on",
+            help="The deepest depth at which hydrocarbons were established. The contact is below "
+                 "it.")
+        hc_depth = w1.number_input(
+            "m TVDSS (hydrocarbons)", 0.0, 10000.0, float(apex_hi) + 100.0, 5.0,
+            key="well_in_hc", disabled=not use_hc, label_visibility="collapsed")
+        use_water = w2.checkbox(
+            "Water seen at", key="well_in_water_on", value=True,
+            help="The shallowest depth at which water was established in this reservoir. The "
+                 "contact is above it.")
+        water_depth = w2.number_input(
+            "m TVDSS (water)", 0.0, 10000.0, float(apex_hi) + 200.0, 5.0,
+            key="well_in_water", disabled=not use_water, label_visibility="collapsed")
+
+        c1, c2 = st.columns(2)
+        c1.slider(
+            "Depth-tie uncertainty σ (m)", 1.0, 100.0, 10.0, 1.0, key="well_in_sigma",
+            help="**Not the well's own depth error**, which is a metre or two. This is the error "
+                 "in tying that depth to the mapped surface the apex is measured from — the same "
+                 "depth conversion that makes the apex a range rather than a number.")
+        c2.slider(
+            "Chance the well samples this accumulation", 0.05, 1.0, 0.90, 0.05,
+            key="well_in_connected",
+            help="The fluid call is reliable; its *relevance* is what is uncertain. A different "
+                 "fault block, a different compartment, a different sand. Below 1 on purpose: it "
+                 "is the floor that stops one penetration ruling a contact out entirely.")
+
+        if use_hc and use_water and not hc_depth < water_depth:
+            st.error(
+                f"**The hydrocarbons ({hc_depth:,.0f} m) must be above the water "
+                f"({water_depth:,.0f} m).** Reversed, this describes two accumulations rather than "
+                f"one contact."
+            )
+        elif use_hc:
+            st.warning(
+                "**Hydrocarbons proven in this closure means the prospect is a discovery**, which "
+                "is a much larger statement than anything about depth. This tool uses the depth "
+                "only — it does **not** touch the element chances above, because a proven "
+                "accumulation makes those a statement about an appraisal rather than a prospect. "
+                "That is a judgement to make deliberately, not a side effect of typing a depth."
+            )
+        if not use_hc and not use_water:
+            st.info("Tick at least one. A penetration that established neither fluid is not "
+                    "evidence about the contact.")
+
     # ------------------------------------------------------------------ run settings
-    theme.heading(TAB, "4 · Assessment and run settings")
+    theme.heading(TAB, "5 · Assessment and run settings")
     r0, r1, r2 = st.columns(3)
     # **Five metres, not zero.** Lars, 28 Aug 2026: a minimum of zero says a contact exactly at
     # the apex counts as success, which is a column of nothing -- arithmetically fine and

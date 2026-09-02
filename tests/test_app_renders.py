@@ -167,3 +167,82 @@ def test_the_partial_conformance_bound_survives_a_reload():
     reloaded = _run(**prospect.read(json.dumps(saved)))
     assert (reloaded.session_state["dhi_overlay"]["posterior_pos"]
             == at.session_state["dhi_overlay"]["posterior_pos"])
+
+
+def _well(**extra):
+    base = dict(well_toggle=True, well_in_water_on=True, well_in_water=2250.0)
+    return _run(**(base | extra))
+
+
+def test_well_control_renders_and_moves_the_contact():
+    """A penetration is the sharpest evidence about a contact, and it reweights the realisations
+    rather than adding a limit — so the controlling-limit bookkeeping has to survive it."""
+    import numpy as np
+
+    plain = _run()
+    withwell = _well()
+    _no_exception(withwell, "well control")
+    before = np.asarray(plain.session_state["dhi_overlay"]["contact_samples"], float)
+    after = np.asarray(withwell.session_state["dhi_overlay"]["contact_samples"], float)
+    assert np.percentile(after, 90) < np.percentile(before, 90), \
+        "water at 2,250 m should pull the deep tail up"
+    assert len(withwell.session_state["limit_set"].limits) == len(plain.session_state["limit_set"].limits)
+
+
+def test_a_bracketing_penetration_is_the_sharpest_evidence_the_tool_takes():
+    import numpy as np
+
+    def spread(at):
+        c = np.asarray(at.session_state["dhi_overlay"]["contact_samples"], float)
+        return float(np.percentile(c, 90) - np.percentile(c, 10))
+
+    bracket = _well(well_in_hc_on=True, well_in_hc=2230.0)
+    _no_exception(bracket, "a bracketing penetration")
+    assert spread(bracket) < spread(_well())
+    assert spread(bracket) < spread(_run())
+
+
+def test_evidence_that_disagrees_widens_the_answer():
+    """Not a defect, and the first version of the test above assumed otherwise.
+
+    The example prospect's DHI picks the contact *at* 2,250 m; a water leg at 2,250 m says the
+    contact is *above* it. Two sources pulling opposite ways should leave the reader less certain,
+    not more, and the combination widens accordingly. Agreement is what narrows.
+    """
+    import numpy as np
+
+    def spread(at):
+        c = np.asarray(at.session_state["dhi_overlay"]["contact_samples"], float)
+        return float(np.percentile(c, 90) - np.percentile(c, 10))
+
+    dhi_only = spread(_run())
+    assert spread(_well(well_in_water=2250.0)) > dhi_only, "a well contradicting the pick"
+    assert spread(_well(well_in_hc_on=True, well_in_hc=2245.0,
+                        well_in_water_on=False)) < dhi_only, "a well agreeing with the pick"
+
+
+def test_hydrocarbons_below_the_water_leg_is_refused_where_it_is_typed():
+    at = _well(well_in_hc_on=True, well_in_hc=2300.0, well_in_water=2250.0)
+    _no_exception(at, "a contradictory penetration")
+    assert any("must be above the water" in e.value for e in at.error)
+
+
+def test_a_penetration_the_model_finds_impossible_says_so():
+    """Same saturation as partial conformance: a flat penalty and no evidence look identical, and
+    only the warning tells them apart."""
+    at = _well(well_in_water=2100.0)
+    _no_exception(at, "a contradicting penetration")
+    assert any("disagree almost completely" in w.value for w in at.warning)
+
+
+def test_well_control_survives_a_reload():
+    import json
+
+    from hcwc.io import prospect
+
+    at = _well(well_in_water=2210.0, well_in_connected=0.8)
+    saved = prospect.document(at.session_state.filtered_state)
+    assert saved["inputs"]["well_in_water"] == 2210.0
+    reloaded = _run(**prospect.read(json.dumps(saved)))
+    assert (reloaded.session_state["dhi_overlay"]["posterior_pos"]
+            == at.session_state["dhi_overlay"]["posterior_pos"])

@@ -41,6 +41,7 @@ EXACT: frozenset[str] = frozenset({
     # bounds are computed from the run, so a stored value means nothing to a different prospect.
     "stack_space_4", "stack_space_5", "stack_mode_4", "stack_mode_5",
     "stack_every_4", "stack_every_5",
+    "well_toggle",
 })
 
 #: Any key starting with one of these is part of the document.
@@ -52,7 +53,8 @@ EXACT: frozenset[str] = frozenset({
 #: anomaly is. Deliberately its own prefix rather than a bare ``dhi_``: the tab also keeps derived
 #: state under ``dhi_overlay``, ``dhi_posterior`` and ``dhi_r_strength``, and those are outputs.
 #: Saving an output would let a stale one be restored over a fresh computation.
-PREFIXES: tuple[str, ...] = ("lim_", "extra_", "src_", "play_", "cond_", "dhi_in_")
+PREFIXES: tuple[str, ...] = ("lim_", "extra_", "src_", "play_", "cond_", "dhi_in_",
+                             "well_in_")
 
 
 def _items(state) -> list[tuple[str, Any]]:
@@ -192,7 +194,8 @@ ENUM_EXACT: dict[str, frozenset[str]] = {
 #: Widget keys whose value must be a genuine boolean. A toggle handed the string ``"yes please"``
 #: is not an error Streamlit reports; it is simply truthy.
 BOOL_SUFFIXES: tuple[str, ...] = ("_on", "_net")
-BOOL_EXACT: frozenset[str] = frozenset({"dhi_toggle", "dhi_in_pvalid_manual"})
+BOOL_EXACT: frozenset[str] = frozenset({"dhi_toggle", "dhi_in_pvalid_manual",
+                                        "well_toggle", "well_in_hc_on", "well_in_water_on"})
 
 
 #: What a restored value is allowed to be. Widget state is scalars and sequences of scalars; a
