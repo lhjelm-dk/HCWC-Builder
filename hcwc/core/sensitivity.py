@@ -166,6 +166,25 @@ def _weighted_mean(values: np.ndarray, weights: np.ndarray) -> float:
     return float((values * weights).sum() / total) if total > 0 else float("nan")
 
 
+def effective_n(weights: np.ndarray) -> float:
+    """Kish's effective sample size — how many realisations a weighted mean really rests on.
+
+    **A count is the wrong number once weights are involved**, and this is where that bites. A
+    ten-per-cent tail holds about a thousand realisations whatever the DHI says, so a bar drawn from
+    it looks equally well supported before and after a sharp update. It is not: on the reference
+    prospect a pick with σ = 4 m and ``p_valid = 0.98`` leaves tails of 992 realisations carrying an
+    effective sample of **27**. Same bar, same width, a fortieth of the evidence.
+
+    This is the same failure that let ``dhi.r_dhi`` be estimated from seven realisations — a
+    count-based guard missing a weight-based collapse — so it is measured here rather than assumed.
+    """
+    w = np.asarray(weights, dtype=float)
+    total = float(w.sum())
+    if not np.isfinite(total) or total <= 0:
+        return 0.0
+    return float(total ** 2 / float(np.sum(w ** 2)))
+
+
 def dhi_tornado(posterior, *, space: str = "column") -> list[Effect]:
     """What the DHI-updated mean is sensitive to — the geology, and the DHI's own numbers.
 
@@ -183,11 +202,15 @@ def dhi_tornado(posterior, *, space: str = "column") -> list[Effect]:
         u = result.uniforms[:, j]
         low, high = u <= TAIL, u >= 1.0 - TAIL
         if low.any() and high.any():
+            # Support is the *effective* sample here, not the count. The count is a fixed ten per
+            # cent of the run and says nothing about how much of the posterior actually sits in the
+            # tail; after a sharp update most of these weights are near zero.
             effects.append(Effect(
                 name=limit.name, kind=DEPTH_EFFECT,
                 low=_weighted_mean(outcome[low], base_weights[low]),
                 high=_weighted_mean(outcome[high], base_weights[high]),
-                support=int(min(low.sum(), high.sum()))))
+                support=int(round(min(effective_n(base_weights[low]),
+                                      effective_n(base_weights[high]))))))
 
     # ---- the DHI's own typed numbers ----------------------------------------------------
     observation, detection = posterior.observation, posterior.detection

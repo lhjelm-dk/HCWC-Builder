@@ -28,6 +28,12 @@ TAB = 4
 #: Where tab ④ parks the container its trust panel is drawn into. See :func:`render`.
 TRUST_SLOT_KEY = "_trust_slot"
 
+#: Below this effective sample size a tornado bar is reported as thin rather than drawn as though
+#: it were as well supported as the rest. Same threshold and same reasoning as
+#: :data:`hcwc.core.dhi.MIN_FAILURES_FOR_R`: a mean of a hundred effective realisations is coarse
+#: but reportable, and twenty-seven is not.
+MIN_TORNADO_SUPPORT = 100
+
 
 def limit_colours(limit_set) -> dict[str, str]:
     """One colour per limit: a **variation of its risk element's hue**.
@@ -399,6 +405,26 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                else sensitivity.tornado(result, space=space))
     centre = (sensitivity.dhi_baseline(posterior, space=space) if given_dhi
               else sensitivity.baseline(result, space=space))
+
+    # A bar's width says how much the answer moves; nothing on it says how much evidence that
+    # rests on. Unweighted the two are the same, because every tail is a fixed tenth of the run.
+    # Weighted they are not: after a sharp DHI update a tail of a thousand realisations can carry
+    # an effective sample of twenty-odd, and the bar is drawn exactly as wide either way.
+    if given_dhi and effects:
+        _thin = [e for e in effects[:12] if e.support < MIN_TORNADO_SUPPORT]
+        if _thin:
+            st.warning(
+                f"**{len(_thin)} of these bars rest on very little.** After reweighting, the "
+                f"thinnest carries an effective sample of **{min(e.support for e in _thin):,}** "
+                f"realisations — the tail still holds about a tenth of the run, but almost all of "
+                f"that weight is now near zero. Read those bars as directions rather than "
+                f"distances: "
+                + ", ".join(f"*{e.name}* ({e.support:,})" for e in _thin[:4])
+                + ("…" if len(_thin) > 4 else "")
+                + ".\n\nMore realisations do not fix this — it is the update concentrating on "
+                "fewer of them, and §5's effective sample size is the same story for the whole "
+                "posterior."
+            )
 
     if effects:
         shown = effects[:12]

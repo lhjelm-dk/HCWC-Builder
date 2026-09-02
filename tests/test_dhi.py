@@ -796,3 +796,51 @@ class TestANeutralAmplitudeDoesNothing:
         combined = dhi.CombinedUpdate(prior_pos=0.408, r_geometry=2.34, r_strength=1.0,
                                       dependence=0.5)
         assert combined.posterior_pos > 0.408
+
+
+class TestTheOtherRatiosWereCheckedToo:
+    """After the `r_dhi` fix, every other ratio and conditional mean in the app was audited for the
+    same failure — a count-based guard missing a weight-based collapse."""
+
+    @staticmethod
+    def _posterior(sigma, p_valid):
+        result = engine.run(reference_prospect(), 10000, 4242)
+        return dhi.update(result, DetectionFunction(),
+                          DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=sigma,
+                                         p_valid=p_valid))
+
+    def test_the_tornado_reports_effective_sample_not_a_headcount(self):
+        """A ten-per-cent tail is about a thousand realisations whatever the DHI says, so the count
+        cannot distinguish a well-supported bar from a collapsed one. On this prospect a sharp pick
+        leaves tails of ~990 carrying an effective sample in the twenties."""
+        from hcwc.core import sensitivity
+
+        sharp = sensitivity.dhi_tornado(self._posterior(4.0, 0.98), space="column")
+        broad = sensitivity.dhi_tornado(self._posterior(18.0, 0.6), space="column")
+        assert min(e.support for e in sharp) < 100
+        assert min(e.support for e in broad) > 300
+        assert min(e.support for e in sharp) < min(e.support for e in broad) / 5
+
+    def test_effective_n_is_the_count_when_nothing_is_reweighted(self):
+        from hcwc.core.sensitivity import effective_n
+
+        assert effective_n(np.ones(500)) == pytest.approx(500.0)
+        assert effective_n(np.zeros(500)) == 0.0
+        spiked = np.concatenate([np.ones(1), np.full(999, 1e-12)])
+        assert effective_n(spiked) < 2.0
+
+    def test_the_absent_branch_saturates_rather_than_going_noisy(self):
+        """Checked and left alone. `r_dhi` for an absent anomaly is `E[1-D(h) | success]` with no
+        denominator, and at a high minimum every surviving column is long enough that `D` has
+        reached its ceiling — so the value is `1 - ceiling` and stays there rather than wandering
+        as the success set thins. It is stable for a reason, not by luck."""
+        detection = DetectionFunction()
+        seen_at = []
+        for minimum in (300.0, 330.0, 350.0):
+            result = engine.run(dataclasses.replace(reference_prospect(), min_column_m=minimum),
+                                10000, 4242)
+            if not result.above_minimum.any():
+                continue
+            seen_at.append(dhi.update(result, detection, DhiObservation(seen=False)).r_dhi)
+        assert len(seen_at) >= 2
+        assert all(v == pytest.approx(1.0 - detection.ceiling, abs=0.01) for v in seen_at)
