@@ -246,3 +246,23 @@ def test_well_control_survives_a_reload():
     reloaded = _run(**prospect.read(json.dumps(saved)))
     assert (reloaded.session_state["dhi_overlay"]["posterior_pos"]
             == at.session_state["dhi_overlay"]["posterior_pos"])
+
+
+@pytest.mark.parametrize("tab", [4, 5])
+def test_the_reservoir_decline_opens_on_the_deepest_part_of_the_closure(tab):
+    """It used to open at the P25 and P95 contact, which put the start of the decline in the middle
+    of the answer — switching it on immediately penalised three-quarters of the realisations."""
+    at = _run(**{f"r1_on_{tab}": True})
+    _no_exception(at, f"the reservoir decline on tab {tab}")
+    got = {w.key: w.value for w in at.number_input
+           if w.key in (f"r1_full_{tab}", f"r1_none_{tab}")}
+    assert got[f"r1_none_{tab}"] == 2400.0, "should default to the spill point from tab ②"
+    assert got[f"r1_full_{tab}"] == 2350.0, "and start one decline interval above it"
+
+
+def test_the_decline_default_follows_the_spill_point():
+    """Anchored on a property of the closure the assessor stated, not on an output of the run —
+    so it does not move when the limits move."""
+    at = _run(spill_input=2600.0, r1_on_4=True)
+    got = {w.key: w.value for w in at.number_input if w.key in ("r1_full_4", "r1_none_4")}
+    assert (got["r1_full_4"], got["r1_none_4"]) == (2550.0, 2600.0)

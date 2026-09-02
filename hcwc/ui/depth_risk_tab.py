@@ -18,6 +18,13 @@ from hcwc.ui import results_tab, run, theme
 from hcwc.ui.numbering import Numbering
 
 TAB = 4
+
+#: How far above the spill point the reservoir-effectiveness decline begins, by default.
+#:
+#: The decline is a statement about the deepest part of a closure degrading, so it is measured from
+#: the spill point rather than from anywhere in the contact distribution. 50 m is Lars's number.
+DECLINE_INTERVAL_M = 50.0
+
 #: The same tab, run against the DHI-updated model. See :func:`render`.
 TAB_DHI = 5
 
@@ -93,16 +100,35 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     reservoir = ReservoirEffectiveness()
     if use_r1:
         r1, r2 = st.columns(2)
+        # Anchored on the **spill point**, not on percentiles of the contact distribution.
+        #
+        # These opened at the P25 and P95 contact, which put the start of the decline in the middle
+        # of the answer: switching the toggle on immediately penalised three-quarters of the
+        # realisations, so the control arrived already biting hard and the first thing anyone did
+        # was drag it deeper. The spill point is also the honest datum — it is a property of the
+        # closure the assessor stated on tab ②, not an output of the run being adjusted, so the
+        # default does not move when the limits move.
+        #
+        # Lars's values, 2 Sep 2026: the decline occupies the deepest 50 m of the closure.
+        _spill = st.session_state.get("spill_point")
+        _none_default = (float(_spill) if _spill
+                         else float(np.percentile(result.contact_m, 95)))
+        _full_default = max(_none_default - DECLINE_INTERVAL_M, 0.0)
         full_to = r1.number_input("Fully effective to (m TVDSS)", 0.0, 8000.0,
-                                  float(np.percentile(result.contact_m, 25)), 25.0,
+                                  _full_default, 25.0,
                                   key=f"r1_full_{tab}",
                                   help="Above this depth the reservoir is as good as it gets — "
-                                       "the decline has not started.")
+                                       "the decline has not started. Defaults to "
+                                       f"{DECLINE_INTERVAL_M:.0f} m above the spill point, so the "
+                                       "decline occupies the deepest part of the closure and "
+                                       "nothing above it is touched until you say so.")
         none_below = r2.number_input("Not a reservoir below (m TVDSS)", 0.0, 8000.0,
-                                     float(np.percentile(result.contact_m, 95)), 25.0,
+                                     _none_default, 25.0,
                                      key=f"r1_none_{tab}",
                                      help="Below this there is effectively no reservoir left, so "
-                                          "a contact down there adds nothing.")
+                                          "a contact down there adds nothing. Defaults to the "
+                                          "spill point from tab ②, below which there is no closure "
+                                          "to fill in any case.")
         if none_below < full_to:
             st.error("The reservoir cannot stop being effective above the depth it is fully "
                      "effective to.")
