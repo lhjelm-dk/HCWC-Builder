@@ -463,3 +463,41 @@ class TestTheAreaDepthTableIsAnInput:
         _no_exception(reloaded, "the reloaded table")
         grv = lambda at: [m.value for m in at.metric if "Gross rock volume" in m.label]
         assert grv(reloaded) == grv(edited)
+
+
+class TestTheSealDensitiesAreInSitu:
+    """Lars asked what the HC density means — gas or oil, reservoir or standard conditions.
+
+    The formula settles it: `h = P_c / (Δρ·g)` with `Δρ` taken straight from the two sliders and no
+    conversion anywhere, so both are **in situ at reservoir conditions**. The interfacial tension is
+    already a function of the sampled reservoir temperature, which is the same answer from the other
+    direction. That is now said on the slider, and paired with a check that the fluid and the
+    density agree — the shipped default used to be gas tension against an oil density contrast.
+    """
+
+    KEY = "lim_Top seal (capillary)"
+
+    def test_the_help_says_which_conditions(self):
+        at = _run()
+        rho = [w for w in at.slider if w.key == f"{self.KEY}_rh"]
+        assert rho, "the HC density slider is missing"
+        assert "reservoir pressure and temperature" in (rho[0].help or "")
+        assert "stock-tank" in (rho[0].help or "")
+
+    @pytest.mark.parametrize("fluid,rho,should_warn", [
+        ("Oil", (0.70, 0.85), False),
+        ("Gas", (0.15, 0.35), False),
+        ("Gas", (0.70, 0.85), True),
+        ("Oil", (0.15, 0.35), True),
+    ])
+    def test_a_fluid_and_a_density_that_disagree_are_flagged(self, fluid, rho, should_warn):
+        at = _run(**{f"{self.KEY}_fluid": fluid, f"{self.KEY}_rh": rho})
+        _no_exception(at, f"{fluid} at {rho}")
+        fired = any("density against" in w.value for w in at.warning)
+        assert fired is should_warn
+
+    def test_the_shipped_capacity_matches_the_elicited_ranges(self):
+        """Pins the defaults to the numbers Lars actually wants: 79 / 148 / 433 m."""
+        at = _run()
+        got = [m.value for m in at.metric if m.label.endswith("capacity")]
+        assert got == ["79 m", "148 m", "433 m"], got

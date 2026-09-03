@@ -217,24 +217,55 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
              "measured, so a range from 0 is the usual honest answer.")
 
     c4, c5 = st.columns(2)
-    r_seal = c4.slider("Seal pore-throat radius (µm)", 0.01, 2.0, (0.04, 0.20), 0.01,
+    r_seal = c4.slider("Seal pore-throat radius (µm)", 0.01, 2.0, (0.01, 0.10), 0.01,
                        key=f"{key}_rs",
                        help="The single most sensitive input, because `P_c` goes as `1/r` — the "
                             "spread here dominates everything else in the calculator. A good shale "
                             "is at or below 0.1 µm, which is where the default range ends.")
-    r_res = c5.slider("Reservoir pore-throat radius (µm)", 0.1, 10.0, (1.6, 3.0), 0.1,
+    r_res = c5.slider("Reservoir pore-throat radius (µm)", 0.1, 10.0, (2.0, 3.5), 0.1,
                       help="The reservoir's own throats, which set the pressure already in the "
                            "column. They must be **wider** than the seal's — that difference is "
                            "what holds hydrocarbons back.",
                       key=f"{key}_rr")
 
     c6, c7 = st.columns(2)
-    rho_w = c6.slider("Water density (g/cm³)", 0.95, 1.20, (1.00, 1.10), 0.01, key=f"{key}_rw",
-                      help="Formation water, so above 1.00 where it is saline.")
-    rho_hc = c7.slider("HC density (g/cm³)", 0.10, 1.00, (0.70, 0.85), 0.01, key=f"{key}_rh",
-                       help="Only the **difference** between the two densities matters: capacity "
-                            "is the entry pressure divided by it, so a light gas buoys harder and "
-                            "the same seal holds a much shorter column of it.")
+    rho_w = c6.slider(
+        "Water density (g/cm³)", 0.95, 1.20, (1.00, 1.10), 0.01, key=f"{key}_rw",
+        help="**Formation water at reservoir conditions**, not a surface sample. Above 1.00 for "
+             "anything saline; temperature pushes it back down a little, so 1.00–1.10 covers most "
+             "of the NCS.")
+    rho_hc = c7.slider(
+        "HC density (g/cm³)", 0.10, 1.00, (0.70, 0.85), 0.01, key=f"{key}_rh",
+        help="**In situ, at reservoir pressure and temperature** — not stock-tank oil and not gas "
+             "at standard conditions. Only the *difference* from the water matters: capacity is "
+             "the entry pressure divided by it, so a light fluid buoys harder and the same seal "
+             "holds a much shorter column of it.\n\n"
+             "Typical in-situ values: **gas 0.15–0.35**, rising with depth; **live oil 0.60–0.85**, "
+             "lighter than the stock-tank oil you would measure at surface because the dissolved "
+             "gas is still in it. Surface-condition gas, around 0.0008, is not on this scale and "
+             "would give a column height of nonsense.")
+    # The one pairing that is quietly wrong. The fluid selector drives the interfacial-tension
+    # correlation and the density slider drives the buoyancy, and nothing tied them together: the
+    # shipped default used to be gas tension against an oil density contrast, which is the most
+    # generous combination the calculator can produce and is not a fluid. Lars asked what these
+    # densities are; this is the check that goes with the answer.
+    _mid_hc = 0.5 * (rho_hc[0] + rho_hc[1])
+    if fluid == "Gas" and _mid_hc > GAS_OIL_DENSITY_BOUNDARY:
+        st.warning(
+            f"**That is an oil density against a gas interfacial tension.** In situ gas runs about "
+            f"0.15–0.35 g/cm³ at these depths, and this is set around {_mid_hc:.2f}. The two "
+            f"inputs disagree about which fluid this is, and the combination is the most generous "
+            f"the calculator can produce — high tension with a small density contrast — so the "
+            f"capacity it returns is larger than either fluid would really give."
+        )
+    elif fluid == "Oil" and _mid_hc < GAS_OIL_DENSITY_BOUNDARY:
+        st.warning(
+            f"**That is a gas density against an oil interfacial tension.** Live oil in situ runs "
+            f"about 0.60–0.85 g/cm³, and this is set around {_mid_hc:.2f}. Oil–water tension is "
+            f"roughly a third of gas–water, so pairing it with a gas density understates the "
+            f"capacity rather than overstating it — but it is still not a fluid."
+        )
+
     net = st.toggle("Subtract the reservoir's own entry pressure", value=True, key=f"{key}_net",
                     help="The physically complete form — hydrocarbon already occupies the "
                          "reservoir pores, so only the *difference* must be overcome.")
@@ -449,6 +480,13 @@ def render_seal_computed(key: str, n_trials: int, seed: int):
 
 #: The key prefix `limiters_tab` gives the top seal's block. The base seal reads its widgets from
 #: here rather than owning a second copy, which is the whole point of the *same as top* source.
+#: Where an in-situ hydrocarbon density stops looking like gas and starts looking like oil.
+#:
+#: Not a physical constant — a screen. Gas at 2–4 km rarely exceeds 0.45 g/cm³ and live oil rarely
+#: falls below 0.55, so anything either side of the middle of that gap is almost certainly the
+#: wrong fluid rather than an unusual one.
+GAS_OIL_DENSITY_BOUNDARY = 0.50
+
 TOP_SEAL_KEY = "lim_Top seal (capillary)"
 
 

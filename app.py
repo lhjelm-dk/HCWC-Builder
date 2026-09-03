@@ -724,8 +724,16 @@ already used?**
         _t8_mid = 0.5 * (_t8_edges[:-1] + _t8_edges[1:])
 
         def _t8_density(sample):
-            counts, _ = np.histogram(sample, bins=_t8_edges, density=True)
-            return counts
+            # Normalised by hand rather than with `density=True`, which divides by the total and
+            # hands back NaNs when that total is zero. A non-empty sample can still put nothing in
+            # these bins: the axis runs to the structural relief, and at a high assessment minimum
+            # every surviving column sits at or beyond it. NaNs there would read as a distribution
+            # rather than as an empty one, and `_t8_pct` below already knows what to do with zeros.
+            counts, _ = np.histogram(sample, bins=_t8_edges)
+            total = float(counts.sum())
+            if total <= 0:
+                return np.zeros(counts.size, dtype=float)
+            return counts / np.diff(_t8_edges) / total
 
         def _t8_pct(density, p):
             cumulative = np.cumsum(density)
