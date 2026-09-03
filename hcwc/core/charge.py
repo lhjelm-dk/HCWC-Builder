@@ -29,6 +29,30 @@ import numpy as np
 
 REFERENCE = Path(__file__).resolve().parents[2] / "reference"
 
+#: Column spellings accepted in an uploaded area–depth table, canonical name first.
+AREA_DEPTH_ALIASES: dict[str, tuple[str, ...]] = {
+    "depth_m": ("depth", "depthm", "depthmtvdss", "tvdss", "tvd", "z", "mtvdss"),
+    "top_area_km2": ("toparea", "toparea km2", "areatop", "top", "area", "areakm2",
+                     "topareakm2", "toparealkm2"),
+    "base_area_km2": ("basearea", "areabase", "base", "baseareakm2"),
+}
+
+
+def _canonical(name: str) -> str:
+    return "".join(ch for ch in str(name).lower() if ch.isalnum())
+
+
+def _match_columns(columns) -> dict[str, str]:
+    """Map canonical field names onto whatever this file happens to call them."""
+    seen = {_canonical(c): c for c in columns}
+    out: dict[str, str] = {}
+    for target, spellings in AREA_DEPTH_ALIASES.items():
+        for spelling in (_canonical(target), *(_canonical(s) for s in spellings)):
+            if spelling in seen:
+                out[target] = seen[spelling]
+                break
+    return out
+
 
 @dataclass(frozen=True)
 class AreaDepthTable:
@@ -88,17 +112,85 @@ class AreaDepthTable:
         return np.where(target > grv[-1], np.inf, out)
 
     @classmethod
-    def from_csv(cls, path: str | Path) -> "AreaDepthTable":
+    def from_csv(cls, path_or_text) -> "AreaDepthTable":
+        """Read a table from a path or from CSV text.
+
+        Column spellings are matched loosely, the way the benchmark importer does it, because an
+        area–depth table is usually exported from mapping software and nobody renames the columns
+        by hand. **Base area is optional**: without it the table is top-area-only, and the caller is
+        expected to supply a thickness through :meth:`from_top_and_thickness` rather than have a
+        zero base silently assert an infinitely thick reservoir.
+        """
+        import io as _io
+
         import pandas as pd
-        d = pd.read_csv(path, comment="#")
-        return cls(depths_m=d.depth_m.to_numpy(float),
-                   top_area_km2=d.top_area_km2.to_numpy(float),
-                   base_area_km2=d.base_area_km2.to_numpy(float))
+
+        source = path_or_text
+        if isinstance(path_or_text, (str, bytes)) and not isinstance(path_or_text, Path):
+            text = (path_or_text.decode("utf-8-sig", errors="replace")
+                    if isinstance(path_or_text, bytes) else path_or_text)
+            if "\n" in text or "," in text:
+                source = _io.StringIO(text)
+        frame = pd.read_csv(source, comment="#")
+        found = _match_columns(frame.columns)
+        missing = [want for want in ("depth_m", "top_area_km2") if want not in found]
+        if missing:
+            raise ValueError(
+                f"an area–depth table needs a depth and a top area, one row per mapped depth. "
+                f"Missing: {', '.join(missing)}. The columns in this file are "
+                f"{', '.join(map(str, frame.columns))}."
+            )
+        depths = pd.to_numeric(frame[found["depth_m"]], errors="coerce").to_numpy(float)
+        top = pd.to_numeric(frame[found["top_area_km2"]], errors="coerce").to_numpy(float)
+        base = (pd.to_numeric(frame[found["base_area_km2"]], errors="coerce").to_numpy(float)
+                if "base_area_km2" in found else np.zeros_like(top))
+        keep = np.isfinite(depths) & np.isfinite(top)
+        if keep.sum() < 2:
+            raise ValueError("fewer than two usable rows: a table needs a depth and a top area "
+                             "on at least two lines.")
+        return cls(depths_m=depths[keep], top_area_km2=top[keep],
+                   base_area_km2=np.nan_to_num(base[keep]))
 
     @classmethod
     def reference(cls) -> "AreaDepthTable":
         """The reference prospect's own area–depth table, 2040–2400 m."""
         return cls.from_csv(REFERENCE / "area_depth.csv")
+
+    @classmethod
+    def from_top_and_thickness(cls, depths_m, top_area_km2,
+                              thickness_m: float) -> "AreaDepthTable":
+        """Derive the base surface by shifting the top down a constant thickness.
+
+        **The common case.** Most assessors have one mapped surface and a thickness, not two mapped
+        surfaces. Shifting the top down by ``T`` says the reservoir is a slab of constant gross
+        thickness draped on the structure, so the base area at depth ``z`` is the top area at
+        ``z - T``: above the crest plus ``T`` there is no base yet, and the rock volume between them
+        is the integral of the difference exactly as it is for two mapped surfaces.
+
+        This is the method SCOPE-HC uses in ``scopehc/geom_depth.py`` — the base is a *depth* shift
+        of the top, not an area offset — so a prospect carried between the two tools gets the same
+        gross rock volume. (SCOPE-HC also exports a second function of the same name from
+        ``scopehc/ui/common.py`` which subtracts the thickness from the *area*; it is dead code and
+        dimensionally wrong, and it is not the one being matched here.)
+
+        The derived base is clamped at the top area. That only bites where the supplied top surface
+        is not monotone with depth, and there the honest reading is a zero-thickness interval rather
+        than a negative one.
+        """
+        depths = np.asarray(depths_m, dtype=float)
+        top = np.asarray(top_area_km2, dtype=float)
+        if float(thickness_m) < 0.0:
+            raise ValueError("the reservoir thickness cannot be negative")
+        if depths.size and top.size == depths.size and float(thickness_m) == 0.0:
+            # A slab of no thickness holds no rock. Said explicitly, because the alternative is a
+            # table that validates, integrates to zero, and reports charge as never limiting.
+            raise ValueError(
+                "a reservoir thickness of zero encloses no rock, so the gross rock volume is zero "
+                "everywhere and charge can never be a limit. Give it a thickness."
+            )
+        base = np.interp(depths, depths + float(thickness_m), top, left=0.0)
+        return cls(depths_m=depths, top_area_km2=top,
+                   base_area_km2=np.minimum(base, top))
 
 
 @dataclass(frozen=True)

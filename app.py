@@ -33,6 +33,7 @@ from hcwc.io import wellvolpos as wvp
 from hcwc.ui import (depth_risk_tab, dhi_tab, dhi_walkthrough, empirical, limiters_tab,
                      prospect_tab, results_tab, theme)
 from hcwc.ui import numbering
+from hcwc.ui import sources
 from hcwc.ui import run as engine_run
 from hcwc.ui.numbering import Numbering
 
@@ -463,7 +464,11 @@ with tab7:
         )
 
         try:
-            area_table = ch.AreaDepthTable.reference()
+            # The grid on tab (3), not the shipped CSV -- an export describing a
+            # structure the assessor had replaced would be a quiet lie.
+            area_table = sources.current_area_depth()
+            if area_table is None:
+                raise FileNotFoundError
         except FileNotFoundError:
             area_table = None
 

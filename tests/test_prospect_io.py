@@ -160,7 +160,11 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
                  # confidential field list; a prospect saved by one person and sent to another
                  # must not carry it, and a name or a source string is enough to identify the
                  # dataset without embedding it. Reload it beside the prospect instead.
-                 "import_name", "import_source", "import_upload", "forget_import"}
+                 "import_name", "import_source", "import_upload", "forget_import",
+                 # The area-depth grid's own machinery. What is saved is the *table* -- three flat
+                 # lists written by `_area_depth_inputs` -- not the editor's edit-diff, the reset
+                 # button or the uploader, none of which describe the prospect.
+                 "charge_ad_editor", "charge_ad_reset", "charge_ad_upload"}
     missed = {k for k in literal
               if k not in prospect.EXACT and not k.startswith(prospect.PREFIXES)
               and k not in transient and not k.startswith(("r1_", "sub_el_", "z_entry_"))}
@@ -212,15 +216,34 @@ class TestTheValueCheckCoversEveryKindOfWidget:
         the minimum-column test vacuous and changes the question being answered."""
         import re
 
-        source = (pathlib.Path(__file__).resolve().parent.parent
-                  / "hcwc" / "ui" / "prospect_tab.py").read_text(encoding="utf-8")
+        # Both files: the run settings live on tab ②, the area–depth thickness on tab ③, and a
+        # declared bound has to match its widget wherever that widget happens to be written.
+        root = pathlib.Path(__file__).resolve().parent.parent / "hcwc" / "ui"
+        source = "\n".join((root / name).read_text(encoding="utf-8")
+                           for name in ("prospect_tab.py", "sources.py"))
         for key, (low, high) in prospect.NUMERIC_BOUNDS.items():
             found = re.search(
                 r'number_input\(\s*\n?\s*"[^"]*",\s*([0-9_.*\- ]+?),\s*([0-9_.*\- ]+?),'
                 r'[^)]*key="%s"' % re.escape(key), source, re.S)
-            assert found, f"no widget found for {key}"
+            assert found, (
+                f"no widget found for {key}. The scan reads literals, so a widget whose key is a "
+                f"named constant will not be seen -- write the string and pin the constant to it.")
             assert (eval(found.group(1)), eval(found.group(2))) == (low, high), \
                 f"{key}: the file may carry {low}–{high} but the widget takes another range"
+
+
+class TestTheAreaDepthTableTravelsWithTheProspect:
+    def test_the_thickness_constant_matches_the_literal_the_widget_uses(self):
+        """The widget writes the key as a literal so the bounds scan can find it; this is what
+        stops the constant the rest of the module reads from drifting away from it."""
+        from hcwc.ui import sources
+
+        assert sources.AREA_DEPTH_THICKNESS == "charge_ad_thickness"
+
+    def test_the_methods_agree_between_the_ui_and_the_reader(self):
+        from hcwc.ui import sources
+
+        assert set(prospect.AREA_DEPTH_METHODS) == {sources.SURFACES, sources.THICKNESS}
 
 
 class TestTheDhiObservationIsPartOfTheDocument:

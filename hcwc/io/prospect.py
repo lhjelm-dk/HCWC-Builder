@@ -42,6 +42,10 @@ EXACT: frozenset[str] = frozenset({
     "stack_space_4", "stack_space_5", "stack_mode_4", "stack_mode_5",
     "stack_every_4", "stack_every_5",
     "well_toggle",
+    # The area-depth table, flattened into three parallel lists plus how it is described. Written
+    # only when the charge calculator is the source of the Charge limit -- see `document`.
+    "charge_ad_method", "charge_ad_thickness",
+    "charge_ad_depth_m", "charge_ad_top_km2", "charge_ad_base_km2",
 })
 
 #: Any key starting with one of these is part of the document.
@@ -77,10 +81,50 @@ def _items(state) -> list[tuple[str, Any]]:
     return list(dict(state).items())
 
 
+#: How the structure is described on tab ③ → Charge. Mirrors `hcwc.ui.sources`, which cannot be
+#: imported here: `hcwc.io` must not pull in Streamlit. A test asserts the two agree.
+AREA_DEPTH_METHODS: tuple[str, ...] = ("Two mapped surfaces", "Top surface and a thickness")
+
+
+def _area_depth_inputs(items: dict) -> dict:
+    """The area–depth grid, flattened, **only when the charge calculator is actually in use**.
+
+    Lars's rule, 2 Sep 2026. A prospect whose Charge limit is typed has no use for thirty-seven rows
+    of somebody else's structure, and carrying them would make every saved file larger and invite
+    the reader to think they meant something. When the calculator *is* the source they are the
+    single most consequential input it has, and losing them on reload would be the same defect as
+    the DHI observation that used to vanish.
+
+    Flattened into three parallel lists because the save format holds scalars and flat sequences,
+    which is what makes it auditable — a nested table would need the format to grow a shape, and
+    three lists of numbers need no new machinery and read perfectly well in the file.
+    """
+    if items.get("lim_Charge_src") != "charge":
+        return {}
+    rows = items.get("charge_ad_rows")
+    if rows is None or not len(rows):
+        return {}
+    columns = {"charge_ad_depth_m": "Depth (m TVDSS)",
+               "charge_ad_top_km2": "Top area (km²)",
+               "charge_ad_base_km2": "Base area (km²)"}
+    out: dict = {}
+    for key, column in columns.items():
+        if column not in rows:
+            continue
+        values = [None if v is None or v != v else float(v) for v in rows[column]]
+        out[key] = [v for v in values]
+    for key in ("charge_ad_method", "charge_ad_thickness"):
+        if key in items:
+            out[key] = items[key]
+    return out
+
+
 def document(state, *, limit_set=None) -> dict:
     """Build the saveable document from the live session state."""
-    inputs = {k: _plain(v) for k, v in _items(state)
+    items = dict(_items(state))
+    inputs = {k: _plain(v) for k, v in items.items()
               if (k in EXACT or k.startswith(PREFIXES)) and _saveable(v)}
+    inputs |= _area_depth_inputs(items)
     doc: dict[str, Any] = {
         "format": FORMAT_VERSION,
         "tool": "HCWC Distribution Builder",
@@ -151,6 +195,7 @@ NUMERIC_BOUNDS: dict[str, tuple[float, float]] = {
     "n_trials_input": (1_000, 100_000),
     "seed_input": (0, 2**31 - 1),
     "min_column_input": (0.0, 2_000.0),
+    "charge_ad_thickness": (0.0, 2_000.0),
     "apex_p1": (0.0, 10_000.0),
     "apex_p99": (0.0, 10_000.0),
     "spill_input": (0.0, 10_000.0),
@@ -184,6 +229,7 @@ ENUM_SUFFIXES: dict[str, frozenset[str]] = {
 ENUM_EXACT: dict[str, frozenset[str]] = {
     "stack_space_4": frozenset({COLUMN, DEPTH}),
     "stack_space_5": frozenset({COLUMN, DEPTH}),
+    "charge_ad_method": frozenset(AREA_DEPTH_METHODS),
     "stack_mode_4": frozenset(STACK_MODES),
     "stack_mode_5": frozenset(STACK_MODES),
     "dhi_in_seen": frozenset({"Seen", "Seen over the crest only",

@@ -19,6 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -45,17 +46,21 @@ class Handover:
 
 
 # --------------------------------------------------------------------------- charge
-def render_charge(key: str, n_trials: int, seed: int) -> Handover | None:
+def render_charge(key: str, n_trials: int, seed: int,
+                  table: "ch.AreaDepthTable | None" = None) -> Handover | None:
     st.markdown(
         "Gross rock volume from the area–depth table, hydrocarbon pore volume from the reservoir "
         "properties, then the depth at which the accumulated pore volume equals the charge the "
         "basin model delivered."
     )
-    try:
-        table = ch.AreaDepthTable.reference()
-    except FileNotFoundError:
-        st.error("`reference/area_depth.csv` is missing from this checkout.")
-        return None
+    # Handed in by `_area_depth_panel`, which owns the table so that editing it, uploading one and
+    # the export all read the same object. The fallback keeps the function usable on its own.
+    if table is None:
+        try:
+            table = ch.AreaDepthTable.reference()
+        except FileNotFoundError:
+            st.error("`reference/area_depth.csv` is missing from this checkout.")
+            return None
 
     rng = np.random.default_rng(seed + 991)
     # These three are only ever used as a product, and saying so is worth more than three separate
@@ -426,8 +431,10 @@ def render_charge_computed(key: str, n_trials: int, seed: int):
     sit on tab 2, one tab away from the only thing that reads it, which is half of why the charge
     branch was impossible to find.
     """
-    _area_depth_panel()
-    return _as_triple(render_charge(key, n_trials, seed))
+    table = _area_depth_panel()
+    if table is None:
+        return None
+    return _as_triple(render_charge(key, n_trials, seed, table))
 
 
 def render_empirical_computed(key: str, n_trials: int, seed: int):
@@ -542,33 +549,195 @@ def render_seal_as_top_computed(key: str, n_trials: int, seed: int):
     return _as_triple(render_seal_as_top(key, n_trials, seed))
 
 
-def _area_depth_panel() -> None:
-    """Top and base reservoir area against depth, and the rock volume between them."""
-    try:
-        table = ch.AreaDepthTable.reference()
-    except FileNotFoundError:
-        st.error("`reference/area_depth.csv` is not in this checkout, so the charge "
-                 "calculator cannot run.")
-        return
+#: Session keys for the area–depth table. `AREA_DEPTH_ROWS` holds the live grid; the rest are
+#: widgets. All are saved with the prospect — but only when the charge calculator is the source of
+#: the Charge limit, since otherwise the table is decoration and a saved file should not carry it.
+AREA_DEPTH_ROWS = "charge_ad_rows"
+AREA_DEPTH_METHOD = "charge_ad_method"
+AREA_DEPTH_THICKNESS = "charge_ad_thickness"
 
+SURFACES, THICKNESS = "Two mapped surfaces", "Top surface and a thickness"
+
+
+def _seed_rows() -> "pd.DataFrame":
+    """The shipped example, as an editable frame."""
+    table = ch.AreaDepthTable.reference()
+    return pd.DataFrame({"Depth (m TVDSS)": table.depths_m,
+                         "Top area (km²)": table.top_area_km2,
+                         "Base area (km²)": table.base_area_km2})
+
+
+def _table_from_rows(frame: "pd.DataFrame", method: str,
+                     thickness_m: float) -> "ch.AreaDepthTable":
+    """Build the table the engine uses from whatever is in the grid."""
+    clean = frame.dropna(subset=["Depth (m TVDSS)", "Top area (km²)"])
+    clean = clean.sort_values("Depth (m TVDSS)")
+    depths = clean["Depth (m TVDSS)"].to_numpy(float)
+    top = clean["Top area (km²)"].to_numpy(float)
+    if method == THICKNESS:
+        return ch.AreaDepthTable.from_top_and_thickness(depths, top, thickness_m)
+    base = clean["Base area (km²)"].fillna(0.0).to_numpy(float)
+    return ch.AreaDepthTable(depths_m=depths, top_area_km2=top, base_area_km2=base)
+
+
+def current_area_depth() -> "ch.AreaDepthTable | None":
+    """The area–depth table in force, wherever it is needed outside the charge panel.
+
+    The grid on tab ③ is the single source of truth, and two other places read it: the WellVolPOS
+    export writes an area and a gross rock volume per realisation, and the DHI area cross-check on
+    tab ⑤ turns an anomaly's areal extent into a contact depth. Both used to load
+    ``reference/area_depth.csv`` directly, which was harmless while the table was fixed and would
+    have been a silent lie the moment it became editable — an export describing a structure the
+    assessor had replaced.
+
+    Falls back to the shipped example when the grid has not been built yet, which is what those two
+    call sites were doing anyway.
+    """
+    rows = st.session_state.get(AREA_DEPTH_ROWS)
+    if rows is not None and len(rows):
+        try:
+            return _table_from_rows(
+                rows, st.session_state.get(AREA_DEPTH_METHOD, SURFACES),
+                float(st.session_state.get(AREA_DEPTH_THICKNESS, 50.0)))
+        except (ValueError, KeyError):
+            return None
+    try:
+        return ch.AreaDepthTable.reference()
+    except FileNotFoundError:
+        return None
+
+
+def _area_depth_panel() -> "ch.AreaDepthTable | None":
+    """The structure the charge has to fill — shown, editable, and importable.
+
+    **The table used to be invisible and fixed.** It was read straight off
+    ``reference/area_depth.csv`` on every render and drawn as a chart, so a reader could see the
+    shape of the structure and not one of the numbers behind it, and could not describe their own
+    prospect at all. It is the input the whole charge calculation rests on.
+
+    One grid is the single source of truth: the calculator below, the gross-rock-volume curve and
+    the WellVolPOS export all read what is in it.
+    """
     st.markdown(
         "**The structure the charge has to fill.** Gross rock volume is the trapezoidal integral "
-        "of *top area minus base area* — km2 x m is 1e6 m3, so no conversion factor is needed."
+        "of *top area minus base area* — km² × m is 10⁶ m³, so no conversion factor is needed."
     )
+
+    method = st.radio(
+        "How is the structure described?", [SURFACES, THICKNESS], horizontal=True,
+        key=AREA_DEPTH_METHOD,
+        help="**Two mapped surfaces** takes a base area for every depth, which is what you have "
+             "when the base reservoir is mapped. **Top surface and a thickness** derives the base "
+             "by shifting the top down a constant gross thickness — the common case, and the same "
+             "construction SCOPE-HC uses, so a prospect carried between the two tools gets the "
+             "same volume.")
+
+    # A reloaded prospect arrives as three flat lists rather than a frame -- the save format
+    # holds scalars and sequences, not tables. Rebuilt here, once, before the grid is drawn.
+    if "charge_ad_depth_m" in st.session_state and AREA_DEPTH_ROWS not in st.session_state:
+        depths = list(st.session_state.pop("charge_ad_depth_m"))
+        top = list(st.session_state.pop("charge_ad_top_km2", []))
+        base = list(st.session_state.pop("charge_ad_base_km2", []))
+        if len(top) == len(depths):
+            st.session_state[AREA_DEPTH_ROWS] = pd.DataFrame({
+                "Depth (m TVDSS)": depths, "Top area (km²)": top,
+                "Base area (km²)": base if len(base) == len(depths) else [0.0] * len(depths)})
+
+    if AREA_DEPTH_ROWS not in st.session_state:
+        try:
+            st.session_state[AREA_DEPTH_ROWS] = _seed_rows()
+        except FileNotFoundError:
+            st.error("`reference/area_depth.csv` is missing from this checkout, so there is no "
+                     "table to start from. Upload one below.")
+            st.session_state[AREA_DEPTH_ROWS] = pd.DataFrame(
+                {"Depth (m TVDSS)": [], "Top area (km²)": [], "Base area (km²)": []})
+
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        upload = st.file_uploader(
+            "Import an area–depth table (.csv)", type=["csv"], key="charge_ad_upload",
+            help="One row per mapped depth, with a depth and a top area. A base area column is "
+                 "used if present and ignored under *top surface and a thickness*. Column "
+                 "spellings are matched loosely — `TVDSS`, `Top area (km2)` and similar all work — "
+                 "because these come out of mapping software and nobody renames them by hand.")
+    with c2:
+        thickness = st.number_input(
+            "Gross reservoir thickness (m)", 0.0, 2000.0, 50.0, 5.0,
+            key="charge_ad_thickness", disabled=method != THICKNESS,
+            help="The vertical gross thickness of the reservoir slab. The base surface is the top "
+                 "shifted down by this, so above the crest plus this depth there is no base yet.")
+        if st.button("Reset to the shipped example", use_container_width=True,
+                     key="charge_ad_reset"):
+            try:
+                st.session_state[AREA_DEPTH_ROWS] = _seed_rows()
+                st.rerun()
+            except FileNotFoundError:
+                st.error("`reference/area_depth.csv` is not in this checkout.")
+
+    if upload is not None and st.session_state.get("charge_ad_upload_name") != upload.name:
+        try:
+            imported = ch.AreaDepthTable.from_csv(upload.getvalue())
+        except (ValueError, UnicodeDecodeError) as exc:
+            st.error(f"**That file could not be read.** {exc}")
+        else:
+            st.session_state[AREA_DEPTH_ROWS] = pd.DataFrame(
+                {"Depth (m TVDSS)": imported.depths_m,
+                 "Top area (km²)": imported.top_area_km2,
+                 "Base area (km²)": imported.base_area_km2})
+            st.session_state["charge_ad_upload_name"] = upload.name
+            st.success(f"Read {imported.depths_m.size} rows from **{upload.name}**.")
+            st.rerun()
+
+    columns = ["Depth (m TVDSS)", "Top area (km²)"] + (
+        [] if method == THICKNESS else ["Base area (km²)"])
+    edited = st.data_editor(
+        st.session_state[AREA_DEPTH_ROWS], key="charge_ad_editor", num_rows="dynamic",
+        use_container_width=True, height=280,
+        column_order=columns,
+        column_config={c: st.column_config.NumberColumn(c, format="%.3f") for c in columns})
+    st.session_state[AREA_DEPTH_ROWS] = edited
+
+    try:
+        table = _table_from_rows(edited, method, float(thickness))
+    except ValueError as exc:
+        st.error(f"**This table cannot be integrated.** {exc}")
+        return None
+
     s1, s2, s3 = st.columns(3)
     s1.metric("Apex of the mapped surface", f"{table.apex_m:,.0f} m")
     s2.metric("Deepest mapped", f"{table.deepest_m:,.0f} m")
-    s3.metric("Gross rock volume", f"{table.capacity_1e6m3:,.0f} x10^6 m3")
+    s3.metric("Gross rock volume", f"{table.capacity_1e6m3:,.0f} ×10⁶ m³")
 
+    # Area and cumulative volume on one depth axis. They are read together -- *how big is the
+    # structure here* and *how much has it held by here* -- and putting them on two figures makes
+    # the reader carry a depth in their head between them.
     fig = go.Figure()
     fig.add_scatter(x=table.top_area_km2, y=table.depths_m, mode="lines", name="top reservoir",
                     line=dict(color=theme.PILLAR_COLOURS["Closure"], width=2.5))
     fig.add_scatter(x=table.base_area_km2, y=table.depths_m, mode="lines", name="base reservoir",
                     line=dict(color=theme.PILLAR_COLOURS["Reservoir"], width=2.5))
-    fig.update_layout(xaxis_title="Area (km2)", yaxis_title="Depth (m TVDSS)",
-                      yaxis=dict(autorange="reversed"), height=340, margin=dict(t=10),
-                      legend=dict(orientation="h", y=-0.25))
+    fig.add_scatter(x=table.grv_1e6m3, y=table.depths_m, mode="lines",
+                    name="cumulative gross rock volume", xaxis="x2",
+                    line=dict(color=theme.PILLAR_COLOURS["Charge"], width=3.2, dash="dash"))
+    fig.update_layout(
+        xaxis=dict(title="Area (km²)", side="bottom"),
+        xaxis2=dict(title="Cumulative GRV (×10⁶ m³)", overlaying="x", side="top",
+                    showgrid=False),
+        yaxis=dict(title="Depth (m TVDSS)", autorange="reversed"),
+        height=430, margin=dict(t=44), legend=dict(orientation="h", y=-0.22))
     st.plotly_chart(fig, use_container_width=True, key="area_depth_charge")
+    st.caption(
+        f"**Two readings on one depth axis.** Solid lines are area against depth, on the bottom "
+        f"axis; the dashed line is the rock volume accumulated from the apex down, on the top "
+        f"axis. The charge calculation below is one lookup on that dashed curve — it converts the "
+        f"charge volume into a pore volume and reads off the depth where the structure has held "
+        f"that much."
+        + (f"\n\n**The base surface is derived**, not mapped: the top shifted down "
+           f"{thickness:,.0f} m. On the shipped example that reproduces the mapped base exactly, "
+           f"which is a useful check that the two methods agree."
+           if method == THICKNESS else "")
+    )
+    return table
 
 
 #: One colour per published entry-pressure model.

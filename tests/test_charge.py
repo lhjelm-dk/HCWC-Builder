@@ -310,3 +310,57 @@ class TestTheBaseSealCanBorrowTheTopSeal:
         seed = 4242
         assert np.array_equal(seals.sample_max_column_m(inputs, 5_000, seed + 313),
                               seals.sample_max_column_m(inputs, 5_000, seed + 313))
+
+
+class TestDerivingTheBaseFromAThickness:
+    """The common case: one mapped surface and a thickness, not two mapped surfaces."""
+
+    def test_it_reproduces_the_shipped_base_surface(self):
+        """The reference prospect's base *is* its top shifted down 50 m, which makes this the one
+        check worth having — the two constructions must agree to the metre on real data."""
+        ref = AreaDepthTable.reference()
+        derived = AreaDepthTable.from_top_and_thickness(ref.depths_m, ref.top_area_km2, 50.0)
+        assert derived.capacity_1e6m3 == pytest.approx(ref.capacity_1e6m3, rel=1e-6)
+        assert np.allclose(derived.base_area_km2, ref.base_area_km2, atol=1e-6)
+
+    def test_it_is_a_depth_shift_not_an_area_offset(self):
+        """SCOPE-HC's `geom_depth` shifts the surface in depth. A second function of the same name
+        in its `ui/common.py` subtracts the thickness from the *area* — dimensionally wrong, and
+        dead code there. This pins which construction is being matched."""
+        ref = AreaDepthTable.reference()
+        derived = AreaDepthTable.from_top_and_thickness(ref.depths_m, ref.top_area_km2, 50.0)
+        at = 12
+        expected = np.interp(derived.depths_m[at] - 50.0, ref.depths_m, ref.top_area_km2)
+        assert derived.base_area_km2[at] == pytest.approx(expected, rel=1e-9)
+
+    def test_a_thicker_reservoir_holds_more_rock(self):
+        ref = AreaDepthTable.reference()
+        volumes = [AreaDepthTable.from_top_and_thickness(
+            ref.depths_m, ref.top_area_km2, t).capacity_1e6m3 for t in (20.0, 50.0, 120.0)]
+        assert volumes[0] < volumes[1] < volumes[2]
+
+    def test_zero_thickness_is_refused_rather_than_integrating_to_nothing(self):
+        ref = AreaDepthTable.reference()
+        with pytest.raises(ValueError, match="encloses no rock"):
+            AreaDepthTable.from_top_and_thickness(ref.depths_m, ref.top_area_km2, 0.0)
+
+
+class TestReadingAnAreaDepthCsv:
+    def test_loose_column_spellings_are_matched(self):
+        """These come out of mapping software and nobody renames the columns by hand."""
+        table = AreaDepthTable.from_csv(
+            "TVDSS,Top Area (km2)\n2000,0\n2100,5\n2200,9\n")
+        assert table.depths_m.size == 3
+        assert table.apex_m == 2000.0
+
+    def test_base_area_is_optional(self):
+        table = AreaDepthTable.from_csv("depth_m,top_area_km2\n2000,0\n2100,5\n")
+        assert np.all(table.base_area_km2 == 0.0)
+
+    def test_a_file_without_a_depth_or_an_area_is_refused(self):
+        with pytest.raises(ValueError, match="needs a depth and a top area"):
+            AreaDepthTable.from_csv("a,b\n1,2\n3,4\n")
+
+    def test_fewer_than_two_usable_rows_is_refused(self):
+        with pytest.raises(ValueError, match="fewer than two usable rows"):
+            AreaDepthTable.from_csv("depth_m,top_area_km2\n2000,1\n")

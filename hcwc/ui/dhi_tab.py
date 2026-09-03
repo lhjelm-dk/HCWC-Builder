@@ -17,7 +17,7 @@ from hcwc.core import dhi as dhi_core
 from hcwc.core import sensitivity
 from hcwc.core import well as well_core
 from hcwc.core.dhi import DetectionFunction, DhiObservation
-from hcwc.ui import run, theme
+from hcwc.ui import run, sources, theme
 from hcwc.ui.numbering import Numbering
 
 TAB = 5
@@ -1039,7 +1039,9 @@ So the combination is discounted rather than taken raw.
             st.caption("Enter an anomaly area in §1 to enable the area cross-check.")
         else:
             try:
-                table = ch.AreaDepthTable.reference()
+                table = sources.current_area_depth()
+                if table is None:
+                    raise FileNotFoundError
                 cross = dhi_core.area_cross_check(table.depths_m, table.top_area_km2, area, contact)
                 ok, msg = dhi_core.containment_ok(table.depths_m, table.top_area_km2,
                                                   table.apex_m, h_min, area)

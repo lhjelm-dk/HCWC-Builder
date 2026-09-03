@@ -369,3 +369,97 @@ def test_a_neutral_dhi_strength_does_not_move_the_headline_chance():
     _no_exception(at, "a neutral DHI strength")
     overlay = at.session_state["dhi_overlay"]
     assert overlay["posterior_pos"] == pytest.approx(overlay["prior_pos"], abs=1e-9)
+
+
+class TestTheAreaDepthTableIsAnInput:
+    """It used to be read off a CSV on every render and shown only as a chart — the single most
+    consequential input to the charge calculation, invisible as numbers and impossible to change."""
+
+    @staticmethod
+    def _frame(depths, top, base=None):
+        import pandas as pd
+        return pd.DataFrame({"Depth (m TVDSS)": depths, "Top area (km²)": top,
+                             "Base area (km²)": base if base is not None else [0.0] * len(depths)})
+
+    def test_the_grid_opens_on_the_shipped_example(self):
+        from hcwc.ui import sources
+
+        at = _run()
+        _no_exception(at, "the area-depth panel")
+        rows = at.session_state[sources.AREA_DEPTH_ROWS]
+        assert len(rows) == 37
+        assert list(rows.columns) == ["Depth (m TVDSS)", "Top area (km²)", "Base area (km²)"]
+
+    def test_a_thickness_reproduces_the_mapped_base_on_the_shipped_prospect(self):
+        """The best available check that the derivation is right: the shipped example's base
+        surface *is* its top shifted down 50 m, so the two methods must agree exactly."""
+        from hcwc.ui import sources
+
+        surfaces = _run()
+        derived = _run(**{sources.AREA_DEPTH_METHOD: sources.THICKNESS,
+                          sources.AREA_DEPTH_THICKNESS: 50.0})
+        _no_exception(derived, "the thickness method")
+        grv = lambda at: [m.value for m in at.metric if "Gross rock volume" in m.label]
+        assert grv(surfaces) == grv(derived) != []
+
+    def test_editing_the_grid_changes_the_answer(self):
+        from hcwc.ui import sources
+
+        at = _run()
+        doubled = at.session_state[sources.AREA_DEPTH_ROWS].copy()
+        doubled["Top area (km²)"] = doubled["Top area (km²)"] * 2.0
+        edited = _run(**{sources.AREA_DEPTH_ROWS: doubled})
+        _no_exception(edited, "an edited table")
+        grv = lambda at: [m.value for m in at.metric if "Gross rock volume" in m.label]
+        assert grv(edited) != grv(at)
+
+    @pytest.mark.parametrize("depths,top,base,why", [
+        ([2000.0, 2100.0, 2100.0], [0.0, 5.0, 6.0], None, "depths must increase"),
+        ([2000.0, 2100.0], [1.0, 2.0], [0.0, 9.0], "base area exceeds top area"),
+        ([2000.0], [1.0], None, "at least two depths"),
+    ])
+    def test_a_table_that_cannot_be_integrated_says_why(self, depths, top, base, why):
+        from hcwc.ui import sources
+
+        at = _run(**{sources.AREA_DEPTH_ROWS: self._frame(depths, top, base)})
+        _no_exception(at, "an unusable table")
+        assert any(why in e.value for e in at.error), f"nothing said {why!r}"
+
+    def test_rows_out_of_order_are_sorted_rather_than_refused(self):
+        """Mapping software exports either direction and neither is wrong."""
+        from hcwc.ui import sources
+
+        at = _run(**{sources.AREA_DEPTH_ROWS:
+                     self._frame([2200.0, 2100.0, 2000.0], [9.0, 5.0, 0.0])})
+        _no_exception(at, "a descending table")
+        assert not [e for e in at.error if "cannot be integrated" in e.value]
+
+    def test_it_travels_with_the_prospect_only_when_the_calculator_is_used(self):
+        """Lars's rule: a prospect whose Charge limit is typed has no use for 37 rows of somebody
+        else's structure, and carrying them would invite the reader to think they meant something."""
+        import json
+
+        from hcwc.io import prospect
+
+        used = prospect.document(_run(**{"lim_Charge_src": "charge"}).session_state.filtered_state)
+        typed = prospect.document(_run(**{"lim_Charge_src": "Typed"}).session_state.filtered_state)
+        assert [k for k in used["inputs"] if k.startswith("charge_ad_")]
+        assert not [k for k in typed["inputs"] if k.startswith("charge_ad_")]
+        assert len(used["inputs"]["charge_ad_depth_m"]) == 37
+        assert prospect.read(json.dumps(used))["charge_ad_depth_m"][0] == 2040.0
+
+    def test_an_edited_table_survives_save_and_reload(self):
+        import json
+
+        from hcwc.io import prospect
+        from hcwc.ui import sources
+
+        at = _run()
+        doubled = at.session_state[sources.AREA_DEPTH_ROWS].copy()
+        doubled["Top area (km²)"] = doubled["Top area (km²)"] * 2.0
+        edited = _run(**{sources.AREA_DEPTH_ROWS: doubled})
+        saved = prospect.document(edited.session_state.filtered_state)
+        reloaded = _run(**prospect.read(json.dumps(saved)))
+        _no_exception(reloaded, "the reloaded table")
+        grv = lambda at: [m.value for m in at.metric if "Gross rock volume" in m.label]
+        assert grv(reloaded) == grv(edited)
