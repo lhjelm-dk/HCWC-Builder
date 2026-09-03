@@ -217,12 +217,12 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
              "measured, so a range from 0 is the usual honest answer.")
 
     c4, c5 = st.columns(2)
-    r_seal = c4.slider("Seal pore-throat radius (µm)", 0.01, 2.0, (0.03, 0.10), 0.01,
+    r_seal = c4.slider("Seal pore-throat radius (µm)", 0.01, 2.0, (0.04, 0.20), 0.01,
                        key=f"{key}_rs",
                        help="The single most sensitive input, because `P_c` goes as `1/r` — the "
                             "spread here dominates everything else in the calculator. A good shale "
                             "is at or below 0.1 µm, which is where the default range ends.")
-    r_res = c5.slider("Reservoir pore-throat radius (µm)", 0.1, 10.0, (0.8, 3.0), 0.1,
+    r_res = c5.slider("Reservoir pore-throat radius (µm)", 0.1, 10.0, (1.6, 3.0), 0.1,
                       help="The reservoir's own throats, which set the pressure already in the "
                            "column. They must be **wider** than the seal's — that difference is "
                            "what holds hydrocarbons back.",
