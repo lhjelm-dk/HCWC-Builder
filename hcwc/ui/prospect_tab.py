@@ -1,16 +1,16 @@
-"""Tab ② — the prospect: its geometry, its element risk, and how the model is run.
+"""Tab 2.0 — the prospect: its geometry, its element risk, and how the model is run.
 
-Everything here is true of the whole prospect. Anything belonging to one mechanism lives on tab ③,
+Everything here is true of the whole prospect. Anything belonging to one mechanism lives on tab 3.0,
 inside that mechanism's block.
 
 Three things arrive here that used to be scattered. **Element risk** (play × conditional) was on
-tab ④, a long way from the other inputs and after the results it feeds. **Burial depth** is new: it
-is what the empirical benchmark on tab ⑥ conditions on, and it now also sets the seal calculator's
+tab 4.0, a long way from the other inputs and after the results it feeds. **Burial depth** is new: it
+is what the empirical benchmark on tab 6.0 conditions on, and it now also sets the seal calculator's
 default temperature, so the two cannot be left saying different things about the same rock. And the
 **DHI switch** is here rather than on the DHI tab, because whether a prospect has a fluid indicator
 is a property of the prospect, not a display option.
 
-What left: the area–depth table, which moved to tab ③ → Charge to sit beside the only calculation
+What left: the area–depth table, which moved to tab 3.0 → Charge to sit beside the only calculation
 that reads it.
 """
 from __future__ import annotations
@@ -57,7 +57,7 @@ def gradient_range() -> tuple[float, float]:
     """The geothermal gradient in force: the slider in §1 · Geometry, or the default.
 
     Read through a function rather than off the constant so every consumer sees the same value:
-    the temperature read-out here and the seal calculator's default on tab ③ are the same
+    the temperature read-out here and the seal calculator's default on tab 3.0 are the same
     quantity, and a gradient the user moved that reached only one of them would let a prospect be
     assessed at two temperatures at once.
     """
@@ -91,7 +91,7 @@ def render() -> None:
     st.text_input("Prospect name", key="prospect_name")
 
     if st.session_state.pop("_loaded_name", None):
-        st.success("Prospect loaded. Every input below, and every limit and calculator on tab ③, "
+        st.success("Prospect loaded. Every input below, and every limit and calculator on tab 3.0, "
                    "is as it was saved.")
 
     with st.expander("Save or load this prospect — or load the worked example"):
@@ -123,7 +123,7 @@ def render() -> None:
                 "cold. It is a 350 m closure at 2 050 m with a **120 m assessment minimum**, so "
                 "the risk criterion actually bites, and its top seal is **computed** rather than "
                 "typed — which is the fastest way to see what the seal calculator does. Three "
-                "limits share control of the contact, so tab ④'s ranking has something to say."
+                "limits share control of the contact, so tab 4.0's ranking has something to say."
             )
             if st.button("Load the worked example", use_container_width=True,
                          key="load_example"):
@@ -149,7 +149,7 @@ def render() -> None:
     # ------------------------------------------------------------------ geometry
     theme.heading(TAB, "1 · Geometry")
     st.markdown(
-        "The apex is the **datum**: every capacity limit on tab ③ is measured downward from it. "
+        "The apex is the **datum**: every capacity limit on tab 3.0 is measured downward from it. "
         "The spill point and the burial depth are stated here once and reused — the spill seeds "
         "the closure limit's range, the burial depth sets the benchmark comparison and the seal "
         "calculator's temperature."
@@ -170,7 +170,7 @@ def render() -> None:
         help="The 99 % point — the deep end. The gap between this and P1 is the depth-conversion uncertainty on the crest, and it is carried through every realisation rather than fixed.")
     spill = a3.number_input(
         "Spill point, as mapped (m TVDSS)", 0.0, 10000.0, step=10.0, key="spill_input",
-        help="The mapped synclinal spill. Its **uncertainty** is a limit on tab ③ → Closure, and "
+        help="The mapped synclinal spill. Its **uncertainty** is a limit on tab 3.0 → Closure, and "
              "that limit's range opens around this value, so it is entered once.")
 
     if apex_hi <= apex_lo:
@@ -204,7 +204,7 @@ def render() -> None:
         help="The uncertain part of the temperature, so it is stated as a range rather than a "
              "number. 25–40 spans normal to hot; the NCS default sits high on purpose, because "
              "70–90 °C at about 2 050 m is ordinary there. Moving it moves the seal calculator's "
-             "temperature on tab ③ with it.")
+             "temperature on tab 3.0 with it.")
     t_lo, t_hi = temperature_range(burial)
     b2.markdown(
         f"<div style='margin-top:-0.4rem;font-size:0.9rem'>"
@@ -213,7 +213,7 @@ def render() -> None:
         f"{SURFACE_C:.0f} °C surface</span></div>", unsafe_allow_html=True)
     st.caption(
         f"**Structural relief {spill - apex_mid:,.0f} m** at the mid apex. The temperature seeds "
-        f"the seal calculator on tab ③ → Retention, so a deep prospect cannot be assessed with a "
+        f"the seal calculator on tab 3.0 → Retention, so a deep prospect cannot be assessed with a "
         f"shallow prospect's seal — interfacial tension falls with temperature, so deeper is a "
         f"weaker seal. **Move the gradient and that default moves with it**; the seal tab can still "
         f"override the temperature outright if it is measured."
@@ -227,7 +227,7 @@ def render() -> None:
         "the four products multiply to P(G). It is the split **E-POS** produces — if your number "
         "is already one chance per element, put it in Play and leave Conditional at 1.00.\n\n"
         "These do not move the contact "
-        "— they scale the chance of success *at* each depth on tab ④, and they are what makes the "
+        "— they scale the chance of success *at* each depth on tab 4.0, and they are what makes the "
         "derived per-element curves a risk statement rather than a geometry statement."
     )
     st.info(
@@ -235,11 +235,11 @@ def render() -> None:
         "the chance it holds the column you are hoping for.** Beha et al. (2012) is written about "
         "this exact error: a trapping element that fails *down-dip* from the crest does not reduce "
         "the chance of finding hydrocarbons at the location, it reduces the chance of a **deeper "
-        "contact**. Folding it into the chance chain as well as into the limits on tab ③ counts it "
+        "contact**. Folding it into the chance chain as well as into the limits on tab 3.0 counts it "
         "twice, which understates POS and — their finding — **overstates volume**.\n\n"
         "So: Retention here is *does the seal hold anything at all*. **How much** it holds is the "
-        "top-seal capacity on tab ③. If your E-POS Retention number already means the full column, "
-        "it belongs on tab ③ instead of here."
+        "top-seal capacity on tab 3.0. If your E-POS Retention number already means the full column, "
+        "it belongs on tab 3.0 instead of here."
     )
 
     with st.expander("Take these from E-POS"):
@@ -316,13 +316,13 @@ def render() -> None:
         f"**The geological POS of this prospect is not this number.** In this tool success is "
         f"defined as a column of at least `h_min`, so\n\n"
         f"`Geological POS = P(G) × P(column ≥ h_min | G)`\n\n"
-        f"and tab ④ shows both terms and their product. The second comes from the competing "
+        f"and tab 4.0 shows both terms and their product. The second comes from the competing "
         f"limits; taken down structure rather than read at one threshold, it is the depth-risk "
-        f"curve on tab ④'s second sub-tab.\n\n"
+        f"curve on tab 4.0's second sub-tab.\n\n"
         f"**Why the split falls exactly there.** A trapping element that fails *below* the crest "
         f"does not reduce the chance of finding hydrocarbons — it reduces the chance of a *deeper "
         f"contact*. Elicit these four for the crest only; seal capacity, spill and fault leakage "
-        f"belong on tab ③, where they move the contact. Folding them in here would count them "
+        f"belong on tab 3.0, where they move the contact. Folding them in here would count them "
         f"twice and, because volume is conditioned on the chance, **overstate volume**."
     )
 
@@ -336,22 +336,22 @@ def render() -> None:
     st.session_state.setdefault("dhi_toggle", True)
     dhi_on = st.toggle(
         "This is a DHI prospect", key="dhi_toggle",
-        help="On by default. Turn it off for a prospect with no amplitude support: tab ⑤ then "
+        help="On by default. Turn it off for a prospect with no amplitude support: tab 5.0 then "
              "says so and nothing else changes, because a DHI never edits the geological model.")
     st.session_state["dhi_on"] = bool(dhi_on)
     st.caption(
         "With this on, two further tabs become live: **Results + DHI** and **Depth risk + DHI**, "
-        "carrying the evidence inputs and the Bayesian update. Tab ④ stays **purely "
+        "carrying the evidence inputs and the Bayesian update. Tab 4.0 stays **purely "
         "geological** either way — a DHI never edits the geological model, and E-POS's resolution "
         "ceiling is why: a fluid indicator senses whether a reservoir exists and what fills it, "
         "not *which* of charge, closure or retention failed."
         if dhi_on else
-        "The geological model on tabs ③ to ④ stands on its own. Turn this on to add a seismic "
+        "The geological model on tabs 3.0 to 4.0 stands on its own. Turn this on to add a seismic "
         "amplitude as evidence, on two further tabs."
     )
 
     # ------------------------------------------------------------------ well control
-    # Here rather than on tab ⑤ for the same reason the DHI switch is: whether a closure has been
+    # Here rather than on tab 5.0 for the same reason the DHI switch is: whether a closure has been
     # penetrated is a fact about the prospect. It is the strongest evidence this tool takes and the
     # only one needing no argument -- a logged water leg is a measurement, where an amplitude is an
     # inference -- so it sits beside the geometry it constrains rather than behind the seismic.
@@ -359,7 +359,7 @@ def render() -> None:
     st.markdown(
         "**A penetration in this closure is the sharpest evidence there is about the contact.** A "
         "water leg says the contact is above it; hydrocarbons say it is below. Either enters as "
-        "evidence on tab ⑤ — reweighting the realisations tab ③ produced, never as an extra "
+        "evidence on tab 5.0 — reweighting the realisations tab 3.0 produced, never as an extra "
         "limit, because a well *observes* the outcome of the mechanisms already modelled rather "
         "than adding one."
     )
@@ -468,7 +468,7 @@ def render() -> None:
             "**At zero every realisation counts as a success.** The column term reads 100 % by "
             "construction, so the prospect chance collapses to the element product alone, and the "
             "DHI likelihood ratio is undefined because there is no failure set to compare "
-            "against. Tab ④ will refuse to print a chance until this is above zero."
+            "against. Tab 4.0 will refuse to print a chance until this is above zero."
         )
     tail = n_trials * 0.005
     (st.success if tail >= 20 else st.warning)(

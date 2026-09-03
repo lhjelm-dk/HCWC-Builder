@@ -1,7 +1,7 @@
 """Reading element risk out of an E-POS prospect file.
 
 E-POS is upstream: it produces the four element chances this tool multiplies its derived curves by
-on tab ④. Retyping them is the obvious way to get a number wrong, so they are read from the file
+on tab 4.0. Retyping them is the obvious way to get a number wrong, so they are read from the file
 E-POS already writes.
 
 **The parsing target is E-POS's own save format**, ``data/prospect_schema.py`` — a CSV whose

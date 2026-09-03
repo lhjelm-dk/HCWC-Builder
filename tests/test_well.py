@@ -1,6 +1,6 @@
 """Well control — the one observation about a contact that needs no argument.
 
-A DHI is an inference and tab ⑤ spends four sub-tabs earning it. A logged water leg is a
+A DHI is an inference and tab 5.0 spends four sub-tabs earning it. A logged water leg is a
 measurement. These tests are about the arithmetic keeping that distinction: the fluid call is
 reliable, its *relevance* to the segment being assessed is not, and only the second is uncertain.
 """

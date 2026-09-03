@@ -212,7 +212,7 @@ def decompose(result: EngineResult, *, n_points: int = 200,
 
     **Why this is allowed, since it looks like it should not be.** E-POS's resolution ceiling says a
     fluid indicator cannot tell you *which* element failed, and that stands: the element **chances**
-    are inputs from tab ② and this function never touches them. What reweights is where each
+    are inputs from tab 2.0 and this function never touches them. What reweights is where each
     element's limits *bite*, which is a geometric statement about the success cases — and the
     contact depth is **observed**, so it is ordinary inference on a latent variable.
 

@@ -1,4 +1,4 @@
-"""The reusable limit block — the component tab ③ instantiates twelve times.
+"""The reusable limit block — the component tab 3.0 instantiates twelve times.
 
 Only the pure parts are tested here: the stats convention, the parameter tables, and the defaults.
 The Streamlit rendering itself is covered by the app-level smoke test in `test_ui_imports.py`.

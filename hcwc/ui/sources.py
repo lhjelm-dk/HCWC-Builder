@@ -204,12 +204,12 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         help="Must agree with the charge calculator's phase. Capacity depends on the density "
              "contrast with formation water, so the same seal holds a much shorter column of gas "
              "than of oil — running one phase through charge and the other through the seal "
-             "produces a contact that belongs to no prospect, and tab ③ refuses it.")
+             "produces a contact that belongs to no prospect, and tab 3.0 refuses it.")
     st.session_state["seal_fluid"] = fluid
     temp = c2.slider("Temperature (°C)", 10.0, 160.0, default_t, key=f"{key}_t",
-                     help=(f"Defaulted from the {burial:,.0f} m burial depth on tab ②, at "
+                     help=(f"Defaulted from the {burial:,.0f} m burial depth on tab 2.0, at "
                            f"25–40 °C/km. Override if you have a measured gradient."
-                           if burial else "Set a burial depth on tab ② to default this."))
+                           if burial else "Set a burial depth on tab 2.0 to default this."))
     theta = c3.slider(
         "Contact angle θ (°)", 0.0, 60.0, (0.0, 30.0), key=f"{key}_theta",
         help="How strongly the rock prefers water to hydrocarbon. 0° is fully water-wet, which "
@@ -310,7 +310,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         )
         weight = 0.0
         if not burial:
-            st.info("Set a burial depth on tab ② to draw the NCS capacity for this prospect.")
+            st.info("Set a burial depth on tab 2.0 to draw the NCS capacity for this prospect.")
         else:
             weight = st.slider(
                 "Weight on the NCS record", 0.0, 1.0, 0.0, 0.05, key=f"{key}_shrink",
@@ -437,7 +437,7 @@ def render_empirical(key: str, n_trials: int, seed: int) -> Handover | None:
               "of realisations", delta_color="off")
     st.caption(
         "⚠ Discovery-conditioned, and the spike at the closure height is the filled-to-spill point "
-        "mass. Use it as a prior only where nothing better exists — tab ⑥ sets out what it is and "
+        "mass. Use it as a prior only where nothing better exists — tab 6.0 sets out what it is and "
         "is not measuring."
     )
     return Handover(DepthDistribution.from_samples(samples), 1.0,
@@ -621,9 +621,9 @@ def _table_from_rows(frame: "pd.DataFrame", method: str,
 def current_area_depth() -> "ch.AreaDepthTable | None":
     """The area–depth table in force, wherever it is needed outside the charge panel.
 
-    The grid on tab ③ is the single source of truth, and two other places read it: the WellVolPOS
+    The grid on tab 3.0 is the single source of truth, and two other places read it: the WellVolPOS
     export writes an area and a gross rock volume per realisation, and the DHI area cross-check on
-    tab ⑤ turns an anomaly's areal extent into a contact depth. Both used to load
+    tab 5.0 turns an anomaly's areal extent into a contact depth. Both used to load
     ``reference/area_depth.csv`` directly, which was harmless while the table was fixed and would
     have been a silent lie the moment it became editable — an export describing a structure the
     assessor had replaced.

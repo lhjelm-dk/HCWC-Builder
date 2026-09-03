@@ -364,7 +364,7 @@ class TestSampledCapacity:
 
     def test_the_defaults_are_the_ones_the_ui_advertises(self):
         """Gas defaults: P90 35 m / P50 67 m / P10 ~160 m. If these move, the seal capacity shown
-        under a limit row moves with them, and the caption on tab ③ becomes wrong."""
+        under a limit row moves with them, and the caption on tab 3.0 becomes wrong."""
         p90, p50, p10 = np.percentile(
             seals.sample_max_column_m(seals.SealInputs(), 40_000), [10, 50, 90])
         assert p90 == pytest.approx(35, abs=3)

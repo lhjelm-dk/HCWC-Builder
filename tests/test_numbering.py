@@ -55,9 +55,8 @@ class TestThemeMapping:
         from hcwc.ui import theme
         labels = theme.tab_labels()
         assert len(labels) == len(theme.TAB_COLOURS)
-        circled = "①②③④⑤⑥⑦⑧⑨⑩⑪"
         for i, label in enumerate(labels):
-            assert label.startswith(circled[i]), f"tab {i + 1} is not numbered"
+            assert label.startswith(f"{i + 1}.0"), f"tab {i + 1} is not numbered"
             assert theme.TAB_COLOURS[i + 1][1] in label
 
     def test_there_is_a_numeral_for_every_tab(self):
@@ -118,3 +117,40 @@ class TestOptionalNumbering:
         n.ref("Figure")
         assert n.optional("Figure") == "Figure 3.1.1"
         assert n.optional("Table") == "Table 3.1.2"
+
+
+class TestNoCircledNumeralsSurvive:
+    """The tab numbering moved from ① to `1.0` on 3 Sep 2026. Two of them were written as `\u2463`
+    escapes rather than as the character, so a scan for the glyph could not see them and they
+    rendered as circled numerals on a page where everything else had changed."""
+
+    @staticmethod
+    def _sources():
+        import pathlib
+        root = pathlib.Path(__file__).resolve().parent.parent
+        return [root / "app.py"] + sorted((root / "hcwc").rglob("*.py"))
+
+    def test_no_source_file_carries_one(self):
+        import re
+
+        # Two kinds, because the second is what got missed: a numeral written as a backslash-u
+        # escape is not the character, so a scan for the character walks straight past it.
+        glyph = "[\u2460-\u2473]"
+        escaped = "\\\\u24(?:6[0-9A-Fa-f]|7[0-3])"
+        pattern = re.compile(f"{glyph}|{escaped}")
+        offenders = []
+        for path in self._sources():
+            for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if pattern.search(line) and "Charge" not in line:
+                    offenders.append(f"{path.name}:{i}")
+        assert not offenders, f"circled numerals left in: {offenders}"
+
+    def test_the_one_deliberate_exception_is_tab_threes_own_sub_tabs(self):
+        """They are positions inside one tab, not tab numbers. Renumbering them to 3.1, 3.2 would
+        collide head-on with `Figure 3.1` and `Table 3.2`, which is the ambiguity the whole
+        numbering scheme exists to avoid."""
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        text = (root / "hcwc" / "ui" / "limiters_tab.py").read_text(encoding="utf-8")
+        assert '["① Charge", "② Closure", "③ Retention", "④ Correlations"]' in text

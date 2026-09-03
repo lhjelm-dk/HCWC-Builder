@@ -132,7 +132,7 @@ def test_the_dhi_fake_matches_the_real_posterior():
     for attribute in ("effective_sample_size", "r_dhi"):
         assert isinstance(getattr(dhi.DhiPosterior, attribute), property), (
             f"dhi.DhiPosterior.{attribute} is no longer a property — trust.dhi_evidence reads it "
-            f"without parentheses, and the DHI trust check will break on tab ④"
+            f"without parentheses, and the DHI trust check will break on tab 4.0"
         )
 
 
@@ -168,7 +168,7 @@ def test_exceedance_grid_matches_the_pair_ordering():
 
 
 def test_a_stale_dhi_posterior_is_flagged_rather_than_averaged_in(real_minimum):
-    """Tab ⑥ renders after tab ④, so a changed trial count leaves the posterior one run behind.
+    """Tab 6.0 renders after tab 4.0, so a changed trial count leaves the posterior one run behind.
 
     The panel's own denominator would then disagree with the DHI check's, silently. That is the
     exact class of error this panel exists to catch, so it catches its own.

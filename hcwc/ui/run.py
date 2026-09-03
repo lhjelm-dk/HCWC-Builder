@@ -20,7 +20,7 @@ import streamlit as st
 from hcwc.core import engine
 from hcwc.core.limits import LimitSet
 
-#: Defaults, in one place. Tab ② owns these widgets; every reader needs the same fallbacks for the
+#: Defaults, in one place. Tab 2.0 owns these widgets; every reader needs the same fallbacks for the
 #: runs that happen before it has been visited.
 DEFAULT_TRIALS = 10_000
 DEFAULT_SEED = 20260825

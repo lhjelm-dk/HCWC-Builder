@@ -383,7 +383,7 @@ class TestTheUpdateIsAnchoredToTheGeologicalPos:
     This tool anchored to `F(h_min)` alone, which is `P(column reaches the threshold | the prospect
     works)`. At a zero assessment minimum that is exactly 1.0, so a perfectly ordinary DHI appeared
     to leave POS at 100 %: nothing can move certainty. The prospect POS is the **product** of the
-    two, and both halves already existed — the element chances on tab ② and the exceedance from the
+    two, and both halves already existed — the element chances on tab 2.0 and the exceedance from the
     engine.
     """
 

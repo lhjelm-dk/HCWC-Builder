@@ -1,4 +1,4 @@
-"""Tab ④ — per-element chance against depth, derived rather than allocated.
+"""Tab 4.0 — per-element chance against depth, derived rather than allocated.
 
 The claim this tab makes, and then tests on itself: because the engine knows which element bound
 the column in each realisation, each element gets a genuine chance-versus-depth curve. WellVolPOS
@@ -42,7 +42,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     n = n or Numbering(tab)
     limit_set = st.session_state.get("limit_set")
     if limit_set is None:
-        st.info("Define the limits on tab ③ first.")
+        st.info("Define the limits on tab 3.0 first.")
         return
     result = run.current(limit_set)
 
@@ -50,7 +50,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         st.subheader("Risk against depth, per element | DHI")
         st.info(
             "**This prospect is not marked as a DHI prospect**, so there is nothing to update. "
-            "Turn on *This is a DHI prospect* on tab ②. Tab ④ carries the geological "
+            "Turn on *This is a DHI prospect* on tab 2.0. Tab 4.0 carries the geological "
             "decomposition and is unaffected either way."
         )
         return
@@ -62,10 +62,10 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         "The element chances are unchanged — a fluid indicator may move the total and may not "
         "re-attribute it between elements. Only the depth curves respond."
         if with_dhi else
-        "The competing limits alone. The DHI-updated version of this tab is ⑤.")
+        "The competing limits alone. The DHI-updated version of this tab is 5.0.")
     if with_dhi:
         st.markdown(
-            "The same decomposition as tab ④, after the Bayesian update on tab ⑤. The "
+            "The same decomposition as tab 4.0, after the Bayesian update on tab 5.0. The "
             "geological curves are drawn underneath unchanged, because **the DHI may move the "
             "total and may not re-attribute it between elements** — E-POS's resolution "
             "ceiling: a fluid indicator senses whether a reservoir exists and what fluid fills it, "
@@ -87,7 +87,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.markdown(
         "Two things get called *reservoir versus depth* and only one moves the contact. "
         "**R2, the base or pinchout**, ends the reservoir so the column cannot continue — that is a "
-        "geometric limit like spill and belongs on tab ③. **R1, effectiveness** — diagenesis, "
+        "geometric limit like spill and belongs on tab 3.0. **R1, effectiveness** — diagenesis, "
         "cementation, a net-to-gross trend — does not move the contact; it changes the chance of "
         "success *at* a depth. Conflating them breaks the consistency identity below, so R1 lives "
         "here and the identity is checked over the contact-controlling elements only."
@@ -106,7 +106,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         # of the answer: switching the toggle on immediately penalised three-quarters of the
         # realisations, so the control arrived already biting hard and the first thing anyone did
         # was drag it deeper. The spill point is also the honest datum — it is a property of the
-        # closure the assessor stated on tab ②, not an output of the run being adjusted, so the
+        # closure the assessor stated on tab 2.0, not an output of the run being adjusted, so the
         # default does not move when the limits move.
         #
         # Lars's values, 2 Sep 2026: the decline occupies the deepest 50 m of the closure.
@@ -127,7 +127,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                                      key=f"r1_none_{tab}",
                                      help="Below this there is effectively no reservoir left, so "
                                           "a contact down there adds nothing. Defaults to the "
-                                          "spill point from tab ②, below which there is no closure "
+                                          "spill point from tab 2.0, below which there is no closure "
                                           "to fill in any case.")
         if none_below < full_to:
             st.error("The reservoir cannot stop being effective above the depth it is fully "
@@ -154,10 +154,10 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     # typed here, after the results they feed, which put an input in the middle of an output.
     pos = st.session_state.get("element_pos")
     if not pos:
-        st.info("Set the element risk on tab ② first.")
+        st.info("Set the element risk on tab 2.0 first.")
         return
     st.caption(
-        "Element chances come from tab ② — "
+        "Element chances come from tab 2.0 — "
         + " · ".join(f"**{g.value}** {v:.2f}" for g, v in pos.items())
         + ". Change them there and this whole tab follows."
     )
@@ -260,12 +260,12 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                    "variations of its hue. A mechanism that flattens short of 1.0 is one that is "
                    "not always present — the flat value **is** its `P(active)`, read straight off "
                    "the axis." if sub_elements else "")
-                + ("  The red curve is the whole-prospect chance after the DHI update from tab ⑤."
+                + ("  The red curve is the whole-prospect chance after the DHI update from tab 5.0."
                    if show_dhi and overlay is not None else ""))
 
     if show_dhi and overlay is None:
         st.caption(
-            "**The DHI update has not been computed yet.** Open tab ⑤ (*Results + DHI*) once so "
+            "**The DHI update has not been computed yet.** Open tab 5.0 (*Results + DHI*) once so "
             "the evidence is entered; the curve appears here on the next interaction, because that "
             "tab computes it after this one has already drawn."
         )
@@ -277,7 +277,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                   "both read at the same threshold", delta_color="off")
         st.caption(
             "**The DHI moves the whole curve, not a scalar beside it.** That is the same point tab "
-            "⑤ makes with its POS-against-threshold figure, seen from the other side: because the "
+            "5.0 makes with its POS-against-threshold figure, seen from the other side: because the "
             "updated POS and the updated contact distribution are one object, a DHI that raises "
             "the chance of success also moves *where* the contact is, and both readings have to "
             "come from this one curve.\n\n"
@@ -354,6 +354,6 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
             f"and does — disagree.")
     st.caption(
         "Reservoir has no derived value here because no limit in this model is reservoir-"
-        "controlled; add an R2 pinchout limit on tab ③ to give it one. Its effectiveness decline "
+        "controlled; add an R2 pinchout limit on tab 3.0 to give it one. Its effectiveness decline "
         "(§1) is separate and applies either way."
     )

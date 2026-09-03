@@ -97,7 +97,7 @@ def compare(built: np.ndarray, benchmark: np.ndarray, name: str) -> Comparison:
         # answer, and the answer is not a traceback.
         raise ValueError(
             "there is nothing to compare: no realisation reached the assessment minimum, so the "
-            "built column distribution is empty. Lower the minimum on tab ② to see where this "
+            "built column distribution is empty. Lower the minimum on tab 2.0 to see where this "
             "prospect does sit against the benchmarks."
         )
     if benchmark.size == 0:

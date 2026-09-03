@@ -44,8 +44,8 @@ def test_the_tab_number_is_one_the_theme_knows_about(name):
 
 #: Modules that deliberately share a top-level tab, as sub-tabs of it. The contact distribution and
 #: its per-element decomposition against depth are two readings of one run, and the DHI pair is the
-#: same merge — so `results_tab` and `depth_risk_tab` are both tab ④, `dhi_tab` and
-#: `depth_risk_tab.TAB_DHI` are both tab ⑤. Listed rather than inferred, so an *accidental*
+#: same merge — so `results_tab` and `depth_risk_tab` are both tab 4.0, `dhi_tab` and
+#: `depth_risk_tab.TAB_DHI` are both tab 5.0. Listed rather than inferred, so an *accidental*
 #: collision between any other pair still fails.
 SHARED_TABS = {frozenset({"results_tab", "depth_risk_tab"}),
                frozenset({"dhi_tab", "depth_risk_tab"})}
@@ -73,7 +73,7 @@ def test_no_two_sub_tabs_can_produce_the_same_figure_number():
     Both tabs with sub-tabs stamp each one with its own ``sub=``, so a label carries the page it is
     on: `Figure 5.2.1` is the first exhibit on *What you saw*, and `Figure 4.1.6` and `Figure 5.3.6`
     are the same figure on the two bases. A flat sequence gave the reader `Figure 5.9` with no way
-    to know which of four pages to turn to, and matching tab ④ to it means someone comparing the two
+    to know which of four pages to turn to, and matching tab 4.0 to it means someone comparing the two
     bases reads one numbering scheme rather than two.
 
     The assertion is the invariant — every sub-tab stamped, none able to collide — rather than any
@@ -95,7 +95,7 @@ def test_app_py_opens_one_tab_per_theme_entry():
     """The tab strip is built from `theme.tab_labels()`, so a mismatch between the labels and the
     `st.tabs(...)` unpacking is a runtime ValueError on the Purpose tab and nowhere else.
 
-    Identified by its *argument* rather than by being the only one: tabs ④ and ⑤ open sub-strips
+    Identified by its *argument* rather than by being the only one: tabs 4.0 and 5.0 open sub-strips
     with `st.tabs([...])` of their own, and counting those as candidates would make this assert on
     whichever happened to come first.
     """
@@ -176,7 +176,7 @@ class TestTheDefaultStrengthIsDefensible:
 
 
 class TestBurialDepthDrivesSealTemperature:
-    """Tab ② → tab ③: one number, so the two cannot disagree about the same rock.
+    """Tab 2.0 → tab 3.0: one number, so the two cannot disagree about the same rock.
 
     Before this, burial depth and seal temperature were typed independently, which meant a 4 000 m
     prospect could be assessed with a 70 °C seal and nothing would object. Interfacial tension falls
@@ -259,7 +259,7 @@ class TestSliderDefaultsAreValid:
 
     @pytest.mark.parametrize("burial", [0.0, 200.0, 2050.0, 4500.0, 6000.0, 9000.0])
     def test_every_burial_depth_gives_a_slider_streamlit_will_accept(self, burial):
-        """The real guarantee: whatever depth is typed on tab ②, the seal calculator opens."""
+        """The real guarantee: whatever depth is typed on tab 2.0, the seal calculator opens."""
         from hcwc.ui.prospect_tab import temperature_range
         from hcwc.ui.sources import _slider_default
         low, high = _slider_default(temperature_range(burial), 10.0, 160.0)
@@ -268,14 +268,17 @@ class TestSliderDefaultsAreValid:
 
 
 class TestTabCrossReferences:
-    """The prose says "tab ⑤" in fifty-odd places. Renumbering makes all of them suspect.
+    """The prose says "tab 5.0" in fifty-odd places. Renumbering makes all of them suspect.
 
     R5 moved Empirical 7→8, Export 8→9 and Theory 9→10, and every sentence pointing at one of them
     silently became wrong. Nothing failed; the app just started telling the reader to look in the
     wrong place. These checks are cheap and catch the class.
     """
 
-    CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩"
+    #: A tab reference in prose. Was a class of circled glyphs until 3 Sep 2026, when the tab
+    #: numbering became `N.0` — which is why this is a pattern now rather than an alphabet, and why
+    #: the number is parsed rather than looked up by position.
+    REFERENCE = r"tabs? (\d+)\.0"
 
     @staticmethod
     def _sources():
@@ -287,8 +290,8 @@ class TestTabCrossReferences:
         import re
         for path in self._sources():
             text = path.read_text(encoding="utf-8")
-            for match in re.finditer(r"tab ([" + self.CIRCLED + r"])", text):
-                yield path.name, self.CIRCLED.index(match.group(1)) + 1, match.start(), text
+            for match in re.finditer(self.REFERENCE, text):
+                yield path.name, int(match.group(1)), match.start(), text
 
     def test_every_reference_names_a_tab_that_exists(self):
         from hcwc.ui import theme
@@ -312,9 +315,10 @@ class TestTabCrossReferences:
             for text in joined.values():
                 index = text.find(phrase)
                 while index != -1:
-                    numeral = text[index + len(phrase) + 1]
-                    assert numeral in self.CIRCLED, f"{phrase!r} is not followed by a tab numeral"
-                    got = self.CIRCLED.index(numeral) + 1
+                    import re as _re
+                    after = _re.match(r"\s*(\d+)\.0", text[index + len(phrase):])
+                    assert after, f"{phrase!r} is not followed by a tab number"
+                    got = int(after.group(1))
                     assert got == expected, (
                         f"{phrase!r} points at tab {got} but {expected_tab_name} is tab {expected}")
                     found += 1
@@ -324,16 +328,16 @@ class TestTabCrossReferences:
     def test_no_module_points_the_reader_at_its_own_tab(self):
         """A module telling you to go to the tab you are already on is always a leftover from a move.
 
-        `depth_risk_tab` and `results_tab` are the exceptions: each renders on both tab ④ and
-        tab ⑤ — the same analysis on the geological sample and on the DHI posterior — so neither
+        `depth_risk_tab` and `results_tab` are the exceptions: each renders on both tab 4.0 and
+        tab 5.0 — the same analysis on the geological sample and on the DHI posterior — so neither
         can avoid naming one of them. Every other module must point at a **sub-tab by name** when it
-        means the other half of its own tab — "the *Risk against depth* sub-tab", not "tab ④".
+        means the other half of its own tab — "the *Risk against depth* sub-tab", not "tab 4.0".
         That is clearer to the reader, and it is what keeps this guard sharp now that the merge
         from ten tabs to eight has made same-tab references possible for three modules that
         previously could not make one.
         """
         import importlib
-        # Both of these render on tab ④ AND tab ⑤ -- the same analysis on the geological
+        # Both of these render on tab 4.0 AND tab 5.0 -- the same analysis on the geological
         # sample and on the DHI posterior -- so each has to name one of the two.
         allowed = {"depth_risk_tab.py", "results_tab.py"}
         for name, number, _, _ in self._references():
@@ -349,7 +353,7 @@ class TestTabCrossReferences:
 
 
 def test_every_widget_in_the_shared_depth_risk_function_is_keyed():
-    """`depth_risk_tab.render` is called twice per run — tabs ④ and ⑤ — so any widget it creates
+    """`depth_risk_tab.render` is called twice per run — tabs 4.0 and 5.0 — so any widget it creates
     without an explicit key collides with its own twin.
 
     Streamlit derives an element's identity from its type and parameters, so the second instance

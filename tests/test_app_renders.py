@@ -3,14 +3,14 @@
 **This file exists because the suite had a hole exactly the shape of a refactor.** Every other test
 imports modules or calls functions; none of them rendered a page. So a name that moved between
 modules and was never imported back — `CLOSURE_FAMILY`, during the split of `empirical.py` — passed
-573 green tests and would have been a `NameError` on tab ⑥ in the browser.
+573 green tests and would have been a `NameError` on tab 6.0 in the browser.
 
 `AppTest` runs the real script against a real session, so anything that raises inside a tab body
 surfaces here. It costs about fifteen seconds, which is the cheapest fifteen seconds in the suite:
 a Streamlit exception is a red page, and a red page is the failure mode a user reports rather than
 one CI reports.
 
-Two runs, not one. Several things on tab ⑤ deliberately read state written by a sibling sub-tab, so
+Two runs, not one. Several things on tab 5.0 deliberately read state written by a sibling sub-tab, so
 the first render is a cold start and the second is the steady state the user actually sees.
 """
 from __future__ import annotations
@@ -55,7 +55,7 @@ def test_figure_numbers_are_unique(rendered):
 
 
 def test_the_dhi_update_reaches_the_tabs_that_read_it(rendered):
-    """Tab ⑤'s sub-tabs pass state between them; a broken hand-off is silent otherwise."""
+    """Tab 5.0's sub-tabs pass state between them; a broken hand-off is silent otherwise."""
     for key in ("dhi_posterior", "dhi_overlay", "dhi_r_strength"):
         assert key in rendered.session_state, f"{key} never reached session state"
 
@@ -82,7 +82,7 @@ def test_an_unreachable_assessment_minimum_is_answered_not_raised(minimum):
     """A minimum above every achievable column is a real question with a real answer: *no*.
 
     It used to be an ``IndexError`` out of ``np.percentile`` on an empty array, from two separate
-    sites — the benchmark calibration on tab ⑥ and the fusion table on tab ⑧. 2000 is the widget's
+    sites — the benchmark calibration on tab 6.0 and the fusion table on tab 8.0. 2000 is the widget's
     own maximum, so every one of these is a value the slider offers.
     """
     _no_exception(_run(min_column_input=minimum), f"assessment minimum {minimum:g} m")
@@ -136,7 +136,7 @@ def test_the_dhi_observation_survives_a_save_and_reload():
 def test_realisations_reaches_the_dhi_posterior():
     """The geological run honoured the trial count and the posterior did not — it was resampled at
     a hard-coded 20 000, so at 1 000 it was better resolved than its own prior, and at 100 000 it
-    ignored the precision asked for. Tab ⑦ exports this sample."""
+    ignored the precision asked for. Tab 7.0 exports this sample."""
     import numpy as np
 
     for trials in (1_000, 25_000):
@@ -150,7 +150,7 @@ def test_realisations_reaches_the_dhi_posterior():
                                      "Absent where one was expected"])
 def test_every_dhi_observation_type_renders(anomaly):
     """Partial conformance — bright over the crest, reliably absent below — is the third case, and
-    the walkthrough on sub-tab ⑤.1 reads the observation too. It called `pick_pdf` on an
+    the walkthrough on sub-tab 5.0.1 reads the observation too. It called `pick_pdf` on an
     observation that has no pick and took the page down."""
     _no_exception(_run(dhi_in_seen=anomaly), f"DHI observation {anomaly!r}")
 
@@ -266,7 +266,7 @@ def test_the_reservoir_decline_opens_on_the_deepest_part_of_the_closure(tab):
     _no_exception(at, f"the reservoir decline on tab {tab}")
     got = {w.key: w.value for w in at.number_input
            if w.key in (f"r1_full_{tab}", f"r1_none_{tab}")}
-    assert got[f"r1_none_{tab}"] == 2400.0, "should default to the spill point from tab ②"
+    assert got[f"r1_none_{tab}"] == 2400.0, "should default to the spill point from tab 2.0"
     assert got[f"r1_full_{tab}"] == 2350.0, "and start one decline interval above it"
 
 
@@ -337,11 +337,11 @@ def test_the_top_seal_is_the_datum_and_is_not_offset():
 
 
 def test_changing_the_dhi_strength_updates_tab_four_in_the_same_interaction():
-    """The trust panel on tab ④ reports the effective sample size behind the DHI update, and that
-    posterior is built on tab ⑤ — which renders *after* tab ④. Reading it there showed the previous
+    """The trust panel on tab 4.0 reports the effective sample size behind the DHI update, and that
+    posterior is built on tab 5.0 — which renders *after* tab 4.0. Reading it there showed the previous
     frame: 28 % where the answer was 10 %, then 10 % where it was 24 %, with nothing saying so.
 
-    The panel is now written into a container tab ④ reserves and app.py fills after tab ⑤. This
+    The panel is now written into a container tab 4.0 reserves and app.py fills after tab 5.0. This
     asserts the fix the only way that means anything: a second rerun with nothing touched must not
     change a single rendered line.
     """
@@ -359,7 +359,7 @@ def test_changing_the_dhi_strength_updates_tab_four_in_the_same_interaction():
         at.run()
         once = page(at)
         at.run()
-        assert once == page(at), f"tab ④ was stale after changing the DHI strength to {strength}"
+        assert once == page(at), f"tab 4.0 was stale after changing the DHI strength to {strength}"
 
 
 def test_a_neutral_dhi_strength_does_not_move_the_headline_chance():
@@ -536,8 +536,8 @@ class TestTheBenchmarkFiguresCanShowWhatTheToolProduced:
         at = _run(empirical_show_models=True)
         _no_exception(at, "the model overlay")
         names = set(self._violins(at))
-        assert "this prospect — geological (tab ④)" in names
-        assert "this prospect — given the DHI (tab ⑤)" in names
+        assert "this prospect — geological (tab 4.0)" in names
+        assert "this prospect — given the DHI (tab 5.0)" in names
 
     def test_all_three_are_column_height_in_metres_and_comparable(self):
         """The point of putting them on one axis. If any were a *depth* rather than a column the

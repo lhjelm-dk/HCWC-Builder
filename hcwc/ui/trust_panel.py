@@ -1,6 +1,6 @@
 """The "how much should you trust this" panel.
 
-Rendering only. Every judgement is in :mod:`hcwc.core.trust`, so the panel on tab ④ and the block in
+Rendering only. Every judgement is in :mod:`hcwc.core.trust`, so the panel on tab 4.0 and the block in
 the one-page report are the same list of checks read twice — they cannot drift apart, and neither
 can be quietly softened without softening the other.
 """
@@ -40,7 +40,7 @@ def _md(text: str) -> str:
     a finding — a finding that needs a list is two findings.
 
     Code spans were added when the assessment-minimum check started writing ``P(column ≥ h | G)``
-    in backticks: unhandled, a card that now stands where tab ④'s headline number used to be was
+    in backticks: unhandled, a card that now stands where tab 4.0's headline number used to be was
     printing the backticks themselves.
     """
     out = []
@@ -61,7 +61,7 @@ def _md(text: str) -> str:
 def stop_card(check: trust.Check) -> None:
     """One check, on its own, where a headline number would otherwise be.
 
-    Used by tab ④ when the assessment minimum is still zero: the chance it would print there is
+    Used by tab 4.0 when the assessment minimum is still zero: the chance it would print there is
     1.0 by construction, so the check goes in its place rather than five sections below it. Same
     renderer as the panel, so the wording cannot diverge between the two places it appears.
     """
@@ -86,7 +86,7 @@ def render(n, result, *, posterior=None, tab: int, heading: str = "6 · How much
     st.caption(
         "**These checks are about the arithmetic, not the geology.** Nothing here knows whether "
         "your minimum is sensible or your seal argument is any good — only whether the run "
-        "supports the digits being quoted from it. The geological sanity check is tab ⑥, against "
+        "supports the digits being quoted from it. The geological sanity check is tab 6.0, against "
         "the empirical record, and it is a different question with a different answer.\n\n"
         "**A *watch* is not a defect.** It means the number needs a sentence beside it when it "
         "travels: a prospect controlled 80 % by one limit is a legitimate prospect and a "
@@ -94,6 +94,6 @@ def render(n, result, *, posterior=None, tab: int, heading: str = "6 · How much
     )
     if posterior is None:
         st.caption("The DHI check is not run because no posterior has been built. It appears here "
-                   "once tab ⑤ has one — absent rather than passing, because a check that did not "
+                   "once tab 5.0 has one — absent rather than passing, because a check that did not "
                    "run is not a check that passed.")
     return checks

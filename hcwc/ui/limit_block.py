@@ -1,6 +1,6 @@
-"""One limit's input block — built once, instantiated twelve times on tab ③.
+"""One limit's input block — built once, instantiated twelve times on tab 3.0.
 
-This is the component the restructure exists to make possible. The old tab ③ put every limit in a
+This is the component the restructure exists to make possible. The old tab 3.0 put every limit in a
 `st.data_editor`, which forced all of them into one shape: four numeric columns whose meaning
 changed depending on a distribution named in a neighbouring cell, and a *Source* cell that had to
 be edited to reveal a whole calculator. Nothing about that is discoverable, and the calculator it
@@ -179,7 +179,7 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
                                    key=f"{key}_pa",
                                    help="The chance the mechanism is present at all. Below 1 the "
                                         "limit only bites in that share of realisations, and its "
-                                        "curve on tab ④ flattens at exactly this value.")
+                                        "curve on tab 4.0 flattens at exactly this value.")
         kind = c2.selectbox("Stated as", [COLUMN, DEPTH], key=f"{key}_kind",
                             index=[COLUMN, DEPTH].index(default_kind),
                             format_func=lambda k: ("m column below apex" if k == COLUMN

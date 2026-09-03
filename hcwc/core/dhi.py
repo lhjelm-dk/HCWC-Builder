@@ -397,7 +397,7 @@ class DhiPosterior:
 
         There is a deeper reason to be strict here. These "failures" are not failed *prospects* --
         every realisation the engine draws is already conditional on the four elements working, and
-        that chance lives in ``P(G)`` on tab ②. They are short columns. Comparing tall columns with
+        that chance lives in ``P(G)`` on tab 2.0. They are short columns. Comparing tall columns with
         short ones is the right question when the minimum is a real commercial threshold and a
         useful share of realisations miss it; it is meaningless when the minimum is a 5 m physical
         floor that only a rounding error fails to clear.

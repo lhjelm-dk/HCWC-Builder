@@ -18,7 +18,7 @@ which does volumetrics). Better a refused import with a clear reason than an acc
 fabricated column.
 
 **2. The element curves.** These are not per-trial data and do not belong in the same file. They
-are the thing tab ④ argues WellVolPOS should consume *instead of* allocating one location factor
+are the thing tab 4.0 argues WellVolPOS should consume *instead of* allocating one location factor
 across four elements — a chance-versus-depth curve per element, derived from which element bound
 the column in each realisation. WellVolPOS cannot compute them, because it never sees the competing
 limits; it can only take a single ``r`` and divide it up, and its own docstring says so.
@@ -71,7 +71,7 @@ def trial_table(result: EngineResult, area_depth=None, *,
     if not mask.any():
         raise ValueError(
             "no realisation reaches the assessment minimum, so there is nothing to export. "
-            "Lower the minimum on tab ② or revisit the limits."
+            "Lower the minimum on tab 2.0 or revisit the limits."
         )
 
     contact = result.contact_m[mask]
@@ -125,7 +125,7 @@ def element_curve_table(decomposition: Decomposition,
     ``direct`` is the whole-prospect curve read from the contact distribution itself. Under
     independent limits the four element columns multiply to it; where they do not, the elements
     share something and the columns must not be multiplied by anything else that also depends on
-    depth. Tab ④ §3 quantifies that gap, and it travels with the file rather than being left
+    depth. Tab 4.0 §3 quantifies that gap, and it travels with the file rather than being left
     behind.
     """
     curves = decomposition.element_pos_at_depth(element_pos)

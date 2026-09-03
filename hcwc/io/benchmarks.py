@@ -169,7 +169,7 @@ def ncs_seal_capacity(burial_depth_m: float, n: int, seed: int) -> np.ndarray:
     """Seal capacities the NCS record implies at this burial depth, in metres of column.
 
     **Capacity, not observed column** -- deliberately not clipped at any spill point. The observed
-    columns in the dataset are ``min(capacity, trap height)``; what a *limit* on tab ③ needs is the
+    columns in the dataset are ``min(capacity, trap height)``; what a *limit* on tab 3.0 needs is the
     capacity itself, because the engine does the competing-limits minimum for you. Clipping here
     would apply it twice.
     """

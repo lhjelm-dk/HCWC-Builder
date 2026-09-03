@@ -5,12 +5,12 @@ Eight numbered, colour-coded tabs, no sidebar. Figures and tables are numbered b
 so `Figure 5.2.1` names the page as well as the position on it. The trial count and seed are
 exposed rather than buried.
 
-**Organised by risk element, not by pipeline.** Tab ② is the prospect, tab ③ is every mechanism
+**Organised by risk element, not by pipeline.** Tab 2.0 is the prospect, tab 3.0 is every mechanism
 that could limit the column grouped as Charge / Closure / Retention, and the rest are outputs. The
 calculators — charge filling, seal capacity — are not tabs: each lives inside the limit it fills in,
 behind a *Typed / Computed* radio, next to the inputs it consumes.
 
-**Tab ④ is geological only.** The DHI update gets its own tab, ⑤, always present and saying so
+**Tab 4.0 is geological only.** The DHI update gets its own tab, 5.0, always present and saying so
 when the prospect has no DHI. Each carries the same two readings as sub-tabs — the contact and its
 per-element decomposition against depth. Keeping the geological and DHI pairs apart is not
 tidiness: a fluid indicator senses whether a reservoir exists and what fluid fills it, not *which*
@@ -76,7 +76,7 @@ st.caption(
 
 (tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8) = st.tabs(theme.tab_labels())
 
-# --------------------------------------------------------------------------- ① Purpose
+# --------------------------------------------------------------------------- 1.0 Purpose
 with tab1:
     st.markdown(
         """
@@ -112,18 +112,18 @@ provenance attached.
 
 **New here? The working path runs through four tabs, in this order.**
 
-- **② Prospect** — apex, spill point, element risk, and the **assessment minimum**: the smallest
+- **2.0 Prospect** — apex, spill point, element risk, and the **assessment minimum**: the smallest
   column that would make the well a discovery. Everything downstream is measured against it.
-- **③ HCWC limiters** — one block per mechanism that could stop the column. Switch off what does
+- **3.0 HCWC limiters** — one block per mechanism that could stop the column. Switch off what does
   not apply; each one you keep needs a probability of being active and a depth or capacity.
-- **④ Results** — the contact distribution, which limit controls it, and the chance at every
-  depth. **⑤** is the same reading with a seismic amplitude anomaly folded in.
-- **⑦ Export** — percentiles for a volumetrics package, with the basis stated on the file.
+- **4.0 Results** — the contact distribution, which limit controls it, and the chance at every
+  depth. **5.0** is the same reading with a seismic amplitude anomaly folded in.
+- **7.0 Export** — percentiles for a volumetrics package, with the basis stated on the file.
 
-**⑥ Benchmarks** and **⑧ Theory** are reference rather than steps: the published record behind the
+**6.0 Benchmarks** and **8.0 Theory** are reference rather than steps: the published record behind the
 defaults, and the reasoning the tool rests on.
 
-*In a hurry?* **Load the worked example on tab ②** and read tab ④ first — every number on this
+*In a hurry?* **Load the worked example on tab 2.0** and read tab 4.0 first — every number on this
 page is already filled in for a real prospect.
 """
     )
@@ -138,7 +138,7 @@ page is already filled in for a real prospect.
             "buoyancy to the structural apex, and filling then works **downward** from there — "
             "which is why every capacity in this tool is measured from the apex. Figure by Lars "
             "Hjelm; `reference/concept_full.png` is the uncropped version with the depth-axis "
-            "panel, which tab ④ builds from live data."
+            "panel, which tab 4.0 builds from live data."
         )
 
     theme.heading(1, "2 · The rule the whole tool rests on")
@@ -153,7 +153,7 @@ That single decision is the risk criterion, and everything else is downstream of
 **In this tool, naming that volume names a depth.** The smallest volume that counts is the volume
 above some contact, so choosing it fixes how far down the hydrocarbons must reach — a column height
 below the apex, or equivalently a depth in metres TVDSS. That number is the **assessment minimum**
-on tab ②, and it is not a detail of the run settings. It is the definition of success.
+on tab 2.0, and it is not a detail of the run settings. It is the definition of success.
 
 **Risk and volume are then one statement, not two.** POS is `F(h_min)` — the exceedance curve read
 at that depth — so the chance and the volume it refers to come off the same object and cannot drift
@@ -165,8 +165,8 @@ scalar from one tool and volume as a distribution from another.
 does not reduce the chance of finding hydrocarbons at the well — it reduces the chance of a *deeper
 contact*. Folding fault seal, top seal capacity or spill into the chance chain therefore understates
 POS and, because the volume is conditioned on that chance, **overstates volume**. Beha et al. (2012)
-is written about exactly this. Here those mechanisms are limits on tab ③, where they move the
-contact; only whether an element works *at the crest* belongs in the chance on tab ②.
+is written about exactly this. Here those mechanisms are limits on tab 3.0, where they move the
+contact; only whether an element works *at the crest* belongs in the chance on tab 2.0.
 """
     )
 
@@ -176,45 +176,45 @@ contact; only whether an element works *at the crest* belongs in the chance on t
 Eight tabs is a lot to meet cold. There are only four steps, and the third is the one people skip
 — so it now sits on the same screen as the second, where skipping it takes effort.
 
-**1 · Describe the prospect — tab ②.** Apex, spill point, burial depth, the four element chances
+**1 · Describe the prospect — tab 2.0.** Apex, spill point, burial depth, the four element chances
 from E-POS, and whether it has a DHI. **Set the assessment minimum**: it is the definition of
-success, not a run setting, and nothing downstream means anything without it. Tab ④ will refuse to
+success, not a run setting, and nothing downstream means anything without it. Tab 4.0 will refuse to
 show you a chance until you have.
 
-**2 · Say what could stop the column — tab ③.** Twelve mechanisms grouped by risk element. Do not
+**2 · Say what could stop the column — tab 3.0.** Twelve mechanisms grouped by risk element. Do not
 elicit them carefully yet. Leave the defaults, switch off the ones this prospect does not have, and
 move on.
 
-**3 · Elicit only what matters — tab ③ §1, without leaving the tab.** The ranking at the top of tab
-③ says which of the twelve is actually setting the contact, and it updates as you edit. **That
+**3 · Elicit only what matters — tab 3.0 §1, without leaving the tab.** The ranking at the top of tab
+3.0 says which of the twelve is actually setting the contact, and it updates as you edit. **That
 ranking is the point of the whole tool.** Most limits turn out not to move the answer, and the ones
 that do are usually not the ones you would have spent the afternoon on — so spend it on the top two
-or three and leave the rest rough. Tab ④ §4.1.3 has the fuller version: the same ranking restricted to
+or three and leave the rest rough. Tab 4.0 §4.1.3 has the fuller version: the same ranking restricted to
 realisations worth drilling, and why the two differ.
 
-**4 · Read the answer, and check it — tabs ④ and ⑥.** The exceedance curve is the output; the
-chance is a *reading* of it at your minimum. Tab ⑥ §8 then says whether your distribution is
+**4 · Read the answer, and check it — tabs 4.0 and 6.0.** The exceedance curve is the output; the
+chance is a *reading* of it at your minimum. Tab 6.0 §8 then says whether your distribution is
 optimistic or pessimistic against 242 NCS discoveries at your own structural relief.
 
-*If this is a DHI prospect, tab ⑤ carries the update across four sub-tabs — the walkthrough first,
-then what you saw, then the same two readings tab ④ gives. Tab ④ stays purely geological.*
+*If this is a DHI prospect, tab 5.0 carries the update across four sub-tabs — the walkthrough first,
+then what you saw, then the same two readings tab 4.0 gives. Tab 4.0 stays purely geological.*
 
-**Not sure where to begin?** Tab ② → *Save or load this prospect* → **Load the worked example**.
+**Not sure where to begin?** Tab 2.0 → *Save or load this prospect* → **Load the worked example**.
 """
     )
 
     with st.expander(f"**{theme.section_label(1, '4 · How it is arranged')}**",
                      expanded=False):
         st.markdown(
-            "**Tab ② is the prospect** — apex, spill point, burial depth, the element risk from E-POS, "
-            "and whether this is a DHI prospect. **Tab ③ is every mechanism that could limit the "
+            "**Tab 2.0 is the prospect** — apex, spill point, burial depth, the element risk from E-POS, "
+            "and whether this is a DHI prospect. **Tab 3.0 is every mechanism that could limit the "
             "column**, grouped by risk element: Charge, Closure, Retention. Everything after that is "
             "output.\n\n"
             "**Calculators are not tabs.** The charge filling and the seal-capacity calculation each "
             "live inside the limit they fill in, behind a *Typed / Computed* radio, beside the inputs "
             "they consume — the area–depth table sits next to the charge integration that reads it, "
             "and nowhere else.\n\n"
-            "**Tab ④ is geological only.** The DHI update has its own tab, ⑤. That is "
+            "**Tab 4.0 is geological only.** The DHI update has its own tab, 5.0. That is "
             "not tidiness: a fluid indicator may move the total chance and may **not** re-attribute it "
             "between elements, so the geological model has to stay readable on its own."
         )
@@ -232,14 +232,14 @@ then what you saw, then the same two readings tab ④ gives. Tab ④ stays purel
             "[code](https://github.com/lhjelm-dk/E-POS)\n"
             "Element risk: play and conditional for Charge, Closure, Reservoir and Retention, "
             "Italian-flag evidence support, and the Bayesian DHI/DFI update. Supplies the element "
-            "chances on tab ②, and the DHI strength model on tab ⑤ is adapted from its custom-R tool."
+            "chances on tab 2.0, and the DHI strength model on tab 5.0 is adapted from its custom-R tool."
         )
         mid.markdown(
             "**Volumetrics — SCOPE-HC**\n"
             "[app](https://scope-hc.streamlit.app) · "
             "[code](https://github.com/lhjelm-dk/SCOPE-HC)\n"
             "Probabilistic volumes from GRV, reservoir and fluid inputs. It is what supplies the "
-            "`resource` column the WellVolPOS export on tab ⑦ deliberately leaves out. **Planned:** it "
+            "`resource` column the WellVolPOS export on tab 7.0 deliberately leaves out. **Planned:** it "
             "will read the 101-percentile contact distribution exported there."
         )
         right.markdown(
@@ -247,7 +247,7 @@ then what you saw, then the same two readings tab ④ gives. Tab ④ stays purel
             "[app](https://wellvolpos.streamlit.app) · "
             "[code](https://github.com/lhjelm-dk/WellVolPOS)\n"
             "Turns a contact distribution into well-location chance and at-the-well volume. Consumes "
-            "the trial table and the per-element curves from tab ⑦."
+            "the trial table and the per-element curves from tab 7.0."
         )
 
     with st.expander(f"**{theme.section_label(1, '6 · Known limitations')}**",
@@ -282,7 +282,7 @@ then what you saw, then the same two readings tab ④ gives. Tab ④ stays purel
     than a defect of this implementation, and it is still a limitation.
 
     **The empirical benchmarks are conditioned on discovery**, censored above and truncated below.
-    Tab ⑥ sets out exactly what that does and what it means for using them as a pre-drill prior.
+    Tab 6.0 sets out exactly what that does and what it means for using them as a pre-drill prior.
 
     **The engine is validated against one published case, not against a population.** Beha et al.
     (2012) enumerate a two-fault closure by hand and get 0.60 / 0.12 / 0.28 at three leak points, and
@@ -297,20 +297,20 @@ then what you saw, then the same two readings tab ④ gives. Tab ④ stays purel
     elements to seal at once — is the principle in a sentence. Grant (2020) publishes the
     controlling-limit diagnostic as "column height control statistics"; Lowry et al. (2005) had
     chance against column height two decades ago. What is new here is the continuous, correlated
-    form of it, and the censoring correction on tab ⑥ — see tab ⑧ → *Beha et al. (2012)* and
+    form of it, and the censoring correction on tab 6.0 — see tab 8.0 → *Beha et al. (2012)* and
     *The article*.
     """
         )
 
-# --------------------------------------------------------------------------- ② Prospect
+# --------------------------------------------------------------------------- 2.0 Prospect
 with tab2:
     prospect_tab.render()
 
-# --------------------------------------------------------------------------- ③ Limits
+# --------------------------------------------------------------------------- 3.0 Limits
 with tab3:
     limiters_tab.render()
 
-# --------------------------------------------------------------------------- ④ Results
+# --------------------------------------------------------------------------- 4.0 Results
 #
 # **The contact and its depth decomposition are two readings of one run, so they are two sub-tabs
 # of one tab.** They were separate tabs until the strip outgrew its own rule — `theme.tab_labels`
@@ -322,9 +322,9 @@ with tab3:
 # both rather than restarting — two `Figure 4.1`s on one tab would break every cross-reference and
 # would collide as Streamlit element keys.
 with tab4:
-    # Numbered by sub-tab, as tab ⑤ is. Two sub-tabs is fewer than four, but the reason is the same
+    # Numbered by sub-tab, as tab 5.0 is. Two sub-tabs is fewer than four, but the reason is the same
     # and so is the reader's problem: `Figure 4.6` said nothing about which of the two pages it was
-    # on, and the tab-⑤ twin of the very same figure now says `5.3.6`. Matching them means a reader
+    # on, and the tab-5.0 twin of the very same figure now says `5.3.6`. Matching them means a reader
     # comparing the two bases is reading one numbering scheme, not two.
     _contact, _depth = st.tabs(["4.1 · Contact and chance", "4.2 · Risk against depth"])
     for _panel in (_contact, _depth):
@@ -335,14 +335,14 @@ with tab4:
     with _depth:
         depth_risk_tab.render(n=Numbering(4, sub=2))
 
-# --------------------------------------------------------------------------- ⑤ Results + DHI
+# --------------------------------------------------------------------------- 5.0 Results + DHI
 #
 # **Three sub-tabs, because the first one was doing two jobs.** It elicited the DHI evidence AND
-# presented the result, so the result half never grew the structure tab ④ has -- six of tab ④'s
+# presented the result, so the result half never grew the structure tab 4.0 has -- six of tab 4.0's
 # objects had no counterpart here, and the controlling mechanism against depth existed only as a
-# table. Splitting the evidence off makes room for the results to mirror tab ④ exactly.
+# table. Splitting the evidence off makes room for the results to mirror tab 4.0 exactly.
 #
-# Sub-tab ② is `results_tab.render` with a posterior: the same figures in the same order as tab ④,
+# Sub-tab 2.0 is `results_tab.render` with a posterior: the same figures in the same order as tab 4.0,
 # on the reweighted sample. The basis is a parameter rather than a control, so no widget can
 # misroute it.
 with tab5:
@@ -376,7 +376,7 @@ with tab5:
         if _post is None:
             st.info(
                 "**Nothing to show until the evidence is described.** Turn on *This is a DHI "
-                "prospect* on tab ② and fill in sub-tab 5.2 — the figures here are tab ④'s, drawn "
+                "prospect* on tab 2.0 and fill in sub-tab 5.2 — the figures here are tab 4.0's, drawn "
                 "on the updated distribution, so they need an update to draw."
             )
         else:
@@ -385,15 +385,15 @@ with tab5:
         depth_risk_tab.render(depth_risk_tab.TAB_DHI, with_dhi=True,
                               n=Numbering(5, sub=4))
 
-# Tab ④'s trust panel, now that tab ⑤ has published the posterior one of its checks reports on.
-# It is written into a container tab ④ reserved, so it still appears at the foot of tab ④.
+# Tab 4.0's trust panel, now that tab 5.0 has published the posterior one of its checks reports on.
+# It is written into a container tab 4.0 reserved, so it still appears at the foot of tab 4.0.
 results_tab.render_trust_panel()
 
-# --------------------------------------------------------------------------- ⑥ Benchmarks
+# --------------------------------------------------------------------------- 6.0 Benchmarks
 with tab6:
     empirical.render()
 
-# --------------------------------------------------------------------------- ⑤ Export
+# --------------------------------------------------------------------------- 7.0 Export
 with tab7:
     n8 = Numbering(7)
     theme.heading(7, "1 · 101-percentile export")
@@ -431,7 +431,7 @@ with tab7:
 
     limit_set = st.session_state.get("limit_set")
     if limit_set is None:
-        st.info("Define the limits on tab ③ first.")
+        st.info("Define the limits on tab 3.0 first.")
     elif basis == "— choose —":
         st.warning(
             "**This prospect has a DHI, so there are two contact distributions and they are not "
@@ -459,7 +459,7 @@ with tab7:
             "Two files, because they are two different things. The **trial table** is one row per "
             "realisation in WellVolPOS's canonical column names and units, so its importer maps "
             "every column with nothing to configure. The **element curves** are not per-trial data "
-            "at all — they are the chance-versus-depth curve per risk element from tab ④, the "
+            "at all — they are the chance-versus-depth curve per risk element from tab 4.0, the "
             "thing WellVolPOS cannot compute for itself because it never sees the competing limits."
         )
 
@@ -499,7 +499,7 @@ with tab7:
 
         element_pos = st.session_state.get("element_pos")
         if element_pos is None:
-            st.info("Set the element risk on tab ② to enable the element-curve export.")
+            st.info("Set the element risk on tab 2.0 to enable the element-curve export.")
         else:
             curves = wvp.element_curve_table(dc.decompose(result), element_pos)
             n8.table(curves.iloc[::20], "Chance against depth, one column per element, plus the "
@@ -573,7 +573,7 @@ with tab7:
             f"prospect chance and reads exactly like it."
         )
         if not _elements:
-            st.warning("**No element risk is set on tab ②, so `P(G)` is 1.0 and the page will say "
+            st.warning("**No element risk is set on tab 2.0, so `P(G)` is 1.0 and the page will say "
                        "so in red.** Set the four element chances before this goes to anyone: "
                        "without them the prospect POS on the sheet is the column term alone.")
         _checks = trust.review(result, posterior=(st.session_state.get("dhi_posterior")
@@ -635,7 +635,7 @@ with tab7:
             "font, no script — so it survives being emailed, and the figures are vector, so they "
             "print at the printer's resolution rather than the screenshot's.")
 
-# --------------------------------------------------------------------------- ⑥ Theory & Guide
+# --------------------------------------------------------------------------- 8.0 Theory & Guide
 with tab8:
     st.markdown(
         "**The reasoning this tool rests on, and the record of what was checked.** Everything "
@@ -649,8 +649,8 @@ with tab8:
     theme.heading(8, "1 · Can a base rate be a likelihood?")
     st.markdown(
         """
-The benchmark on tab ⑥ gives a probability distribution over column height. So does the model on
-tab ④. Bayes' rule multiplies a prior by a likelihood — so why can the DHI be a likelihood and the
+The benchmark on tab 6.0 gives a probability distribution over column height. So does the model on
+tab 4.0. Bayes' rule multiplies a prior by a likelihood — so why can the DHI be a likelihood and the
 statistics not?
 
 **Because a prior and a likelihood are the same kind of object.** Both are functions of the unknown;
@@ -690,7 +690,7 @@ already used?**
     _t8_spill = ([i for i, nm in enumerate(_t8_limits.names) if "spill" in nm.lower()]
                  if _t8_limits is not None else [])
     # `_t8_mine` is the success cases, and an assessment minimum above every achievable column
-    # leaves it empty -- the same emptiness tab ⑥ guards, reached by a different route. Checked
+    # leaves it empty -- the same emptiness tab 6.0 guards, reached by a different route. Checked
     # here rather than at each `np.percentile` below, because none of the four rows means anything
     # without it.
     _t8_have_successes = True
@@ -700,7 +700,7 @@ already used?**
         if not _t8_have_successes:
             st.info(
                 "**No realisation reaches the assessment minimum**, so there is no column "
-                "distribution to fuse with the benchmark. Lower the minimum on tab ②."
+                "distribution to fuse with the benchmark. Lower the minimum on tab 2.0."
             )
     if _t8_limits is not None and _t8_spill and _t8_have_successes:
         _t8_result = engine_run.current(_t8_limits)
@@ -747,7 +747,7 @@ already used?**
             ("your model", _t8_pct(_t8_dm, 10), _t8_pct(_t8_dm, 50), _t8_pct(_t8_dm, 90)),
             ("the benchmark at your relief", _t8_pct(_t8_db, 10), _t8_pct(_t8_db, 50),
              _t8_pct(_t8_db, 90)),
-            ("the two fused, weight 0.5 — what tab ⑥ draws",
+            ("the two fused, weight 0.5 — what tab 6.0 draws",
              float(np.percentile(_t8_fused, 10)), float(np.percentile(_t8_fused, 50)),
              float(np.percentile(_t8_fused, 90))),
             ("multiplied as if the benchmark were a likelihood",
@@ -788,7 +788,7 @@ theirs. So the honest chain has two steps, and only the first is Bayes:
 shared parameters  ──►  your prospect         shrinkage, with a stated weight
 ```
 
-That is empirical Bayes, and it is what the seal limit on tab ③ offers under *Pull this toward the
+That is empirical Bayes, and it is what the seal limit on tab 3.0 offers under *Pull this toward the
 NCS record*. **The reason that one is defensible and a direct update is not** is not a matter of
 taste: it updates something your prospect and the population genuinely share, rather than trying to
 update your prospect with somebody else's answers.
@@ -810,7 +810,7 @@ at all — which is the reason you are building a distribution for it.
 
 The third row is the one that catches published work. Multiplying a base rate's odds by a prospect
 PoS gives a rule that is **symmetric** — it returns the same answer if you swap them — and a
-Bayesian update is never symmetric between a prior and its evidence. Tab ⑥ §9 works that one
+Bayesian update is never symmetric between a prior and its evidence. Tab 6.0 §9 works that one
 through.
 
 **That is one argument.** The documents below are the rest of them, and the record of what was
@@ -837,7 +837,7 @@ checked to arrive at them.
          "Seal capacity", "Lowry et al. (2005)", "DHI alignment", "References"],
         captions=["the argument, for a general reader",
                   "is there a second public dataset? — no",
-                  "review · the paper behind the tab ① rule",
+                  "review · the paper behind the tab 1.0 rule",
                   "review · is the capillary maths right?",
                   "review · what it settles and what it does not",
                   "working note · POS and the DHI update",
@@ -856,7 +856,7 @@ checked to arrive at them.
             st.info(
                 "**Every number below is computed from the shipped dataset, not typed in.** The "
                 "coefficients, the fill rates and the censored count are the ones this app "
-                "produces — §3 of tab ⑥ draws them. If you change the tolerance or the dataset "
+                "produces — §3 of tab 6.0 draws them. If you change the tolerance or the dataset "
                 "they will move, and the article says so where it matters."
             )
             with st.expander("**Copy the source** — Markdown, for LinkedIn or a document"):

@@ -11,7 +11,7 @@ coloured chips with ordinary dark labels, not as coloured writing. Text stays at
 colour throughout, which also keeps the labels legible at every tint: coloured text on a light
 background fails contrast for the paler accents, a dark label on a tinted chip does not.
 
-The colours are not decoration: each tab owns one, and the number carries it (① in the chip,
+The colours are not decoration: each tab owns one, and the number carries it (1.0 in the chip,
 `Figure 3.2` inside it), so a reader who has scrolled a long way still knows where they are. Tints
 are kept low — roughly 18 % unselected, 50 % selected — because a saturated strip would fight the
 figures, which are the part that matters.
@@ -34,7 +34,7 @@ INK = "#1E1B16"
 #:
 #: **Eight, because ten did not fit.** The docstring on :func:`tab_labels` has warned since the
 #: strip was built that "at eight tabs the strip starts to scroll horizontally, and a tab you have
-#: to scroll to find is a tab nobody uses". It reached ten, and ⑧ Theory was measurably off-screen
+#: to scroll to find is a tab nobody uses". It reached ten, and 8.0 Theory was measurably off-screen
 #: at 1478 px — the documents tab, unreachable without a horizontal scroll nobody thinks to try.
 #: So the contact distribution and its depth decomposition are now sub-tabs of one Results tab
 #: (they are two readings of one run), and the DHI pair is the same merge one step warmer.
@@ -48,8 +48,8 @@ TAB_COLOURS: dict[int, tuple[str, str]] = {
     3: ("#E8A87C", "HCWC limiters"),
     4: ("#64B5CD", "Results"),
     # "Results + DHI", not "Results | DHI". The pipe read as the separator between tabs, so the
-    # strip said "④ Results | ⑤ Results | DHI" and a first-time reader saw three tabs where
-    # there are two. The plus pairs it with ④ instead of splitting it.
+    # strip said "4.0 Results | 5.0 Results | DHI" and a first-time reader saw three tabs where
+    # there are two. The plus pairs it with 4.0 instead of splitting it.
     5: ("#3E8FA3", "Results + DHI"),
     # "Benchmarks", not "Empirical". The tab holds the published column-height record this tool
     # compares against; "Empirical" named the *kind* of thing it is rather than what a reader would
@@ -67,14 +67,16 @@ def tab_labels() -> list[str]:
     kept short: at eight tabs the strip starts to scroll horizontally, and a tab you have to scroll
     to find is a tab nobody uses.
     """
-    # Derived, not typed. This was a literal map and the tab-merge rename walked straight
-    # through it, turning tab 5's numeral into a second ④ -- the one place in the app where a
-    # circled digit is an *index* rather than a cross-reference, so a blanket substitution
-    # over prose corrupted it silently. Computed from the key, it cannot drift again.
-    def numeral(i: int) -> str:
-        return chr(0x245F + i) if 1 <= i <= 20 else str(i)
-
-    return [f"{numeral(i)}  {name}" for i, (_, name) in sorted(TAB_COLOURS.items())]
+    # Derived, not typed. This was a literal map and the tab-merge rename walked straight through
+    # it, turning tab 5's number into a second 4 -- the one place in the app where the tab number is
+    # an *index* rather than a cross-reference, so a blanket substitution over prose corrupted it
+    # silently. Computed from the key, it cannot drift again.
+    #
+    # **`N.0`, not a circled glyph.** Lars, 3 Sep 2026. The circled numerals read well and were a
+    # dead end: they stop at 20, they are invisible to a plain-text search of the source, and they
+    # do not compose with the figure numbering a reader is already holding -- `4.0` sits in the same
+    # scheme as `4.1` the sub-tab and `4.1.2` the figure, so one glance places all three.
+    return [f"{i}.0  {name}" for i, (_, name) in sorted(TAB_COLOURS.items())]
 
 
 def _tab_css() -> str:
@@ -94,7 +96,7 @@ def _tab_css() -> str:
     Streamlit's default style and nothing else breaks — the numerals in the labels carry the
     ordering on their own, so the app stays usable and navigable with none of this applied.
     """
-    # Scoped to the *top-level* strip only. Nested tabs — tab ③'s Charge / Closure / Retention /
+    # Scoped to the *top-level* strip only. Nested tabs — tab 3.0's Charge / Closure / Retention /
     # Correlations — are also a `[role="tablist"]` with keys starting at 0, so an unscoped rule
     # painted them with the main palette by position: Charge came out Concept-blue and Closure
     # Prospect-orange, which is exactly the wrong signal on a tab organised by risk element.
@@ -124,7 +126,7 @@ def _tab_css() -> str:
     return "\n".join(rules)
 
 
-#: Tab ③'s sub-tabs, in order, and the risk element whose colour each takes. ``None`` is the
+#: Tab 3.0's sub-tabs, in order, and the risk element whose colour each takes. ``None`` is the
 #: Correlations sub-tab, which belongs to no single element and stays neutral.
 SUBTAB_ELEMENTS: tuple[str | None, ...] = ("Charge", "Closure", "Retention", None)
 
@@ -234,9 +236,9 @@ _SECTION = re.compile(r"^(\d+)\s*·\s*(.*)$", re.DOTALL)
 
 
 def section_label(tab: int, text: str, sub: int | None = None) -> str:
-    """``"4 · How it is arranged"`` on tab ① becomes ``"1.4 How it is arranged"``.
+    """``"4 · How it is arranged"`` on tab 1.0 becomes ``"1.4 How it is arranged"``.
 
-    Split out of :func:`heading` because tab ① carries three of its sections in *expanders*, whose
+    Split out of :func:`heading` because tab 1.0 carries three of its sections in *expanders*, whose
     labels never went through the heading path — so they rendered as a bare "4 ·" under headings
     numbered 1.1, 1.2, 1.3, and a reader met the numbering scheme broken on the first page of the
     app. One function now, used by both.
@@ -250,11 +252,11 @@ def heading(tab: int, text: str, sub: int | None = None) -> None:
     """A section heading in the tab's own colour, tying the content to the tab strip.
 
     **The section number carries its tab, and its sub-tab where there is one.** With ``sub``, a
-    heading written as ``"1 · What was observed"`` renders as **5.2.1** on tab ⑤'s second sub-tab,
+    heading written as ``"1 · What was observed"`` renders as **5.2.1** on tab 5.0's second sub-tab,
     matching ``Figure 5.2.1`` beneath it — so a number says which page as well as which item.
 
     **The section number carries its tab.** A heading written as ``"1 · Geometry"`` renders as
-    **2.1 Geometry** on tab ②, matching ``Figure 2.1`` and ``Table 2.3`` below it. Before this, a
+    **2.1 Geometry** on tab 2.0, matching ``Figure 2.1`` and ``Table 2.3`` below it. Before this, a
     reader looking at "1 · Geometry" beside "Figure 2.1" had two numbering schemes on one screen
     and no way to tell that the first was a section and the second a figure.
 
@@ -308,8 +310,8 @@ def basis_tag(basis: str) -> str:
 def element_heading(element: str, text: str, subtitle: str = "") -> None:
     """A section heading in a **risk element's** colour rather than the tab's.
 
-    Used on tab ③, where the sections are elements rather than steps, so the same hue that labels
-    Charge on tab ② labels the Charge sub-tab here. The rule Lars set on 25 Aug 2026 still holds
+    Used on tab 3.0, where the sections are elements rather than steps, so the same hue that labels
+    Charge on tab 2.0 labels the Charge sub-tab here. The rule Lars set on 25 Aug 2026 still holds
     one level down: the *element* gets the pure hue, and each individual limit inside it gets a
     variation of it, so the grouping is readable without the two levels competing.
     """

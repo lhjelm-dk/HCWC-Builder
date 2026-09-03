@@ -1,6 +1,6 @@
 """Which elicited number actually moves the answer?
 
-Tab ④ §3 ranks limits by how often they **control** the contact. That is a different question from
+Tab 4.0 §3 ranks limits by how often they **control** the contact. That is a different question from
 how much they **move** it, and the difference matters: a limit can control 60 % of realisations and
 still be worth no elicitation effort, because it always bites at nearly the same depth. What an
 assessor wants before spending an afternoon is the number whose *uncertainty* the answer is
@@ -143,7 +143,7 @@ def baseline(result: EngineResult, *, space: str = "column",
 # **The geology** still varies realisation by realisation, so it slices exactly as above -- except
 # the means are weighted, because after the update a realisation is worth its likelihood. That
 # already says something: a DHI can change which limit the answer is sensitive to, and the
-# geological tornado on tab ④ cannot show it.
+# geological tornado on tab 4.0 cannot show it.
 #
 # **The DHI's own numbers do not vary at all.** A picked contact, a pick sigma, a detection ceiling
 # are single typed values -- so their influence has to be found by moving them, one at a time, and

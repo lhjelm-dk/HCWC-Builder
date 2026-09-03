@@ -1,4 +1,4 @@
-"""Tab ⑤ — the empirical basis: the statistics and the benchmark comparison, together.
+"""Tab 5.0 — the empirical basis: the statistics and the benchmark comparison, together.
 
 These were two tabs and are now one, because they were never two subjects. The benchmark comparison
 *is* the statistics: you cannot sensibly plot a prospect against the published dataset without
@@ -103,13 +103,13 @@ def _overlay_models(fig, x: float, width: float) -> list[str]:
     drawn: list[str] = []
     if geological is not None:
         _add_prospect_violin(fig, x - 0.62 * width, geological, width * 0.55,
-                             name="this prospect — geological (tab ④)",
+                             name="this prospect — geological (tab 4.0)",
                              colour=theme.BASIS_COLOUR[theme.GEOLOGICAL],
                              fill=theme.rgba(theme.BASIS_COLOUR[theme.GEOLOGICAL], 0.30))
         drawn.append("geological")
     if given_dhi is not None:
         _add_prospect_violin(fig, x + 0.62 * width, given_dhi, width * 0.55,
-                             name="this prospect — given the DHI (tab ⑤)",
+                             name="this prospect — given the DHI (tab 5.0)",
                              colour=theme.BASIS_COLOUR[theme.GIVEN_DHI],
                              fill=theme.rgba(theme.BASIS_COLOUR[theme.GIVEN_DHI], 0.30))
         drawn.append("given the DHI")
@@ -232,12 +232,12 @@ What follows is a disagreement about **one estimator**, not about the data.
     burial = cb.number_input("Burial depth (m)", 200.0, 6000.0, 2050.0, 50.0,
                              help="Overburden thickness to the reservoir. Needed because the "
                                   "corrected fit finds burial depth to be a much stronger control "
-                                  "than the published analysis reported — see Table 7.4.")
+                                  "than the published analysis reported — see Table 6.4.")
     prior = _empirical_prior(closure, burial)
     show_models = st.toggle(
         "Draw what this tool produced beside it", value=False, key="empirical_show_models",
-        help="Adds the geological contact distribution from tab ④, and the DHI-updated one from "
-             "tab ⑤ where there is one, as violins next to the empirical prior. All three are "
+        help="Adds the geological contact distribution from tab 4.0, and the DHI-updated one from "
+             "tab 5.0 where there is one, as violins next to the empirical prior. All three are "
              "column height in metres and all three are success cases only, so they are directly "
              "comparable — and they are compared against the discoveries the fit was made on "
              "rather than against each other in the abstract.")
@@ -543,7 +543,7 @@ What follows is a disagreement about **one estimator**, not about the data.
     st.warning(
         "**The measured dataset is Norwegian, and there is no second one.** A search for a public "
         "non-NCS dataset relating column height to *closure* height (28 Aug 2026) found none — "
-        "tab ⑧ → *Benchmark sources* records what was checked. Edmundson et al. explain why in "
+        "tab 8.0 → *Benchmark sources* records what was checked. Edmundson et al. explain why in "
         "their own introduction: picking an apex and a spill point for every field needs 3D "
         "seismic and a velocity model, so *\"few studies of this kind have been carried out "
         "before\"*. The prior compilations — Gulf of Mexico, Malay Basin — report column-height "
@@ -713,7 +713,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             "closure starts binding: **the bend is the fill-to-spill point mass**, and where it "
             "sits is the most useful thing on this chart."
         )
-    n.plot(fam, ("**Orange is the prospect you built on tab ③; the dashed grey beside it is the "
+    n.plot(fam, ("**Orange is the prospect you built on tab 3.0; the dashed grey beside it is the "
                  "benchmark at your own structural relief.** Those two are the like-for-like pair "
                  "— the six coloured curves are the family it sits inside, not its comparators. "
                  "Read the gap between orange and dashed grey: to the right of it your model is "
@@ -761,7 +761,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             "supportive amplitude is more likely to have been drilled, so DHI-supported wells are "
             "over-represented among them by selection.\n\n"
             "**And the bias has a direction this tool can name.** Detectability rises with column "
-            "height — that is the detection function `D(h)` on tab ⑤ — so whatever share of "
+            "height — that is the detection function `D(h)` on tab 5.0 — so whatever share of "
             "these discoveries was DHI-driven is **enriched in large columns**, because short "
             "columns do not produce mappable anomalies. Comparing your posterior against them "
             "therefore risks **counting the DHI twice**: once in your own update, and once already "
@@ -821,7 +821,7 @@ What follows is a disagreement about **one estimator**, not about the data.
         built_column = _built_result.column_m[_built_result.above_minimum]
 
     if not _calibratable:
-        st.info("Build the limits on tab ③ and set a spill point on tab ② to calibrate against "
+        st.info("Build the limits on tab 3.0 and set a spill point on tab 2.0 to calibrate against "
                 "the benchmarks.")
     elif built_column.size == 0:
         # Drawn before anything is compared. A minimum above every achievable column leaves nothing
@@ -831,7 +831,7 @@ What follows is a disagreement about **one estimator**, not about the data.
         # reports POS 0.4 %, and from about 330 m there are no success cases left at all.
         st.info(
             "**No realisation reaches the assessment minimum**, so there is no column distribution "
-            "to place inside a benchmark. Lower the minimum on tab ② — the prospect still has a "
+            "to place inside a benchmark. Lower the minimum on tab 2.0 — the prospect still has a "
             "contact distribution, it simply has no success cases at this threshold."
         )
     else:
@@ -1048,7 +1048,7 @@ What follows is a disagreement about **one estimator**, not about the data.
         fuse_weight = st.slider(
             "Weight on the benchmark", 0.0, 1.0, 0.0, 0.05, key="fuse_benchmark",
             help="0 is your model untouched; 1 is the benchmark. In between, the two quantile "
-                 "functions are averaged — the same operation the seal limit offers on tab ③.")
+                 "functions are averaged — the same operation the seal limit offers on tab 3.0.")
 
         bench_source = st.selectbox(
             "Benchmark to combine with", sources, key="fuse_source",
@@ -1095,7 +1095,7 @@ What follows is a disagreement about **one estimator**, not about the data.
                 "where it belongs. Residual variance of 0.13 in log space is seal, charge and "
                 "fault behaviour in comparable rocks — a shared parameter your prospect genuinely "
                 "is exchangeable with. The censoring-corrected fit in §3 estimates it, and it sets "
-                "the prior for **one limit**: the top-seal capacity, with its own weight on tab ③ → "
+                "the prior for **one limit**: the top-seal capacity, with its own weight on tab 3.0 → "
                 "Retention. The competition then runs as before, so the controlling-limit "
                 "bookkeeping survives intact.\n\n"
                 "**Three reasons this stays a stated weight rather than a multiplication:**\n\n"
@@ -1111,7 +1111,7 @@ What follows is a disagreement about **one estimator**, not about the data.
                 "inform the chance of having one.\n\n"
                 "**What could be a likelihood without any of this.** Something observed on *this* "
                 "prospect whose probability depends on where the contact is: a seismic amplitude, "
-                "an offset penetration, a pressure point. That is why tab ⑤ is an unqualified "
+                "an offset penetration, a pressure point. That is why tab 5.0 is an unqualified "
                 "update and this section is a weight you set, defaulting to zero."
             )
 
@@ -1200,7 +1200,7 @@ What follows is a disagreement about **one estimator**, not about the data.
 
     matrix_limits = st.session_state.get("limit_set")
     if matrix_limits is None or not own_relief or own_relief <= 0:
-        st.info("Build the limits on tab ③ and set a spill point on tab ② to find the matching "
+        st.info("Build the limits on tab 3.0 and set a spill point on tab 2.0 to find the matching "
                 "cell.")
     else:
         from hcwc.ui import run as engine_run
@@ -1222,7 +1222,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             # presented beside real published ones -- which is worse, because it looks like data.
             st.info(
                 "**No realisation reaches the assessment minimum**, so there is no fill fraction "
-                "to compare against the published matrix. Lower the minimum on tab ②."
+                "to compare against the published matrix. Lower the minimum on tab 2.0."
             )
         else:
             cell = cell.iloc[0]
@@ -1401,5 +1401,5 @@ better filled than reality. **Used as a pre-drill prior it is optimistic at both
         "Data: Edmundson, I., Davies, R., Frette, L.U., Mackie, S., Kavli, E.A., Rotevatn, A., "
         "Yielding, G. & Dunbar, A. (2021), AAPG Bulletin 105(12), 2381–2403, "
         "doi:10.1306/03122119223. Raw table https://osf.io/6ysbv/ under CC-BY 4.0. "
-        "Full references in tab ⑧."
+        "Full references in tab 8.0."
     )

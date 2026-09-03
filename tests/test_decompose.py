@@ -340,7 +340,7 @@ class TestWeightedDecomposition:
 
     def test_the_curves_move_and_the_multipliers_do_not(self, result):
         """The resolution ceiling, enforced rather than promised. `element_pos_at_depth` scales by
-        the chances from tab ②; those are an argument, so the posterior cannot touch them, and only
+        the chances from tab 2.0; those are an argument, so the posterior cannot touch them, and only
         the shape underneath may change."""
         from hcwc.core.limits import Group
         pos = {Group.CHARGE: 0.9, Group.CLOSURE: 1.0,
@@ -361,7 +361,7 @@ class TestWeightedDecomposition:
         assert any(not np.allclose(before[g], after[g], atol=1e-3) for g in before)
 
     def test_the_depth_grid_is_shared_so_the_two_can_be_overlaid(self, result):
-        """Tab ⑦ draws geological and posterior on one figure. If the grids differed it would have
+        """Tab 7.0 draws geological and posterior on one figure. If the grids differed it would have
         to interpolate, and an interpolation between two curves that are already estimates is a
         third thing neither of them is."""
         weights = self._weights(result)

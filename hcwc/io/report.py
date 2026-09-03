@@ -175,7 +175,7 @@ def _svg_control(result: EngineResult, colours: dict[str, str] | None = None,
 
     Successes only because the reader of this page is reading a contact distribution that is itself
     conditioned on success, and putting the unconditional share beside it would be two different
-    denominators on one sheet. The unconditional view stays on tab ④, where there is room to explain
+    denominators on one sheet. The unconditional view stays on tab 4.0, where there is room to explain
     the difference.
     """
     shares = result.controlling_shares(successes_only=True)
@@ -249,7 +249,7 @@ def build(result: EngineResult, provenance: Provenance, *, checks=(),
           note: str = "") -> str:
     """The whole page, as a self-contained HTML string.
 
-    ``p_geological`` is ``P(G)``, the element product from tab ② — the chance the prospect works at
+    ``p_geological`` is ``P(G)``, the element product from tab 2.0 — the chance the prospect works at
     all. It has to be passed in because the engine does not know it: everything the engine returns
     is conditional on the elements having worked. It defaults to 1.0 so the function still runs
     without it, and the page then says in as many words that no element risk was supplied, rather

@@ -1,4 +1,4 @@
-"""Tab ⑤ — the DHI update.
+"""Tab 5.0 — the DHI update.
 
 The headline is one figure: **prospect POS against threshold**, geological and given the DHI, with
 markers at every threshold anyone quotes a chance at. It exists to make one error impossible to commit — quoting a
@@ -34,11 +34,11 @@ OBSERVATIONS = (CONFORMING, PARTIAL, ABSENT)
 
 
 def well_control() -> well_core.WellControl | None:
-    """The penetration described on tab ②, or ``None``.
+    """The penetration described on tab 2.0, or ``None``.
 
     Read through a function so the tab does not have to know how the switches are stored, and so an
     incomplete or contradictory entry becomes ``None`` here rather than an exception in the middle
-    of a render. Tab ② reports the contradiction where it is typed; this side simply declines to
+    of a render. Tab 2.0 reports the contradiction where it is typed; this side simply declines to
     use it.
     """
     if not st.session_state.get("well_on", False):
@@ -84,7 +84,7 @@ def _resample(values: np.ndarray, weights: np.ndarray, n: int) -> np.ndarray:
     ``n`` is the trial count the user set, not a constant. It defaulted to 20 000 and was never
     passed, so the posterior was drawn at 20 000 whatever *Realisations* said -- better resolved
     than its own prior at 1 000, and silently ignoring the precision asked for at 100 000. The
-    export on tab ⑦ takes this sample when the basis is "given the DHI", so the setting has to
+    export on tab 7.0 takes this sample when the basis is "given the DHI", so the setting has to
     reach it.
 
     Its cost is honest and already reported: the effective sample size, in §5. A posterior
@@ -104,7 +104,7 @@ def render(n: Numbering | None = None) -> None:
     n = n or Numbering(TAB)
     limit_set = st.session_state.get("limit_set")
     if limit_set is None:
-        st.info("Define the limits on tab ③ first.")
+        st.info("Define the limits on tab 3.0 first.")
         return
     result = run.current(limit_set)
     h_min = limit_set.min_column_m
@@ -116,26 +116,26 @@ def render(n: Numbering | None = None) -> None:
     if not st.session_state.get("dhi_on", False):
         st.markdown(
             "**This prospect is not marked as a DHI prospect.** Turn on *This is a DHI prospect* "
-            "on tab ② to add a seismic amplitude as evidence. The geological model on tabs ③ to ④ "
+            "on tab 2.0 to add a seismic amplitude as evidence. The geological model on tabs 3.0 to 4.0 "
             "stands on its own either way.\n\n"
             "**What a DHI may and may not do.** E-POS sets the ceiling: a fluid indicator can sense "
             "whether a reservoir exists and what fluid fills it, but *not which of charge, closure "
             "or retention failed*. So it may move POS and it may assert a contact depth. It may "
-            "**not** tell you *which element failed*, which is why the element chances on tab ② "
+            "**not** tell you *which element failed*, which is why the element chances on tab 2.0 "
             "are never touched here. It *may* tell you which limit set the contact, because "
             "knowing roughly where the contact sits is genuine evidence about which mechanism put "
-            "it there — so tab ④'s controlling-limit diagnostic stays purely geological and its "
+            "it there — so tab 4.0's controlling-limit diagnostic stays purely geological and its "
             "twin on this tab is the same diagnostic re-read through the amplitude."
         )
         # Otherwise a curve computed before the toggle was turned off would go on being drawn on
-        # tab ④, which is the worst kind of stale: plausible, labelled, and wrong.
+        # tab 4.0, which is the worst kind of stale: plausible, labelled, and wrong.
         st.session_state.pop("dhi_overlay", None)
         return
 
     theme.basis_banner(
         theme.GIVEN_DHI,
         "Every contact distribution below carries the amplitude evidence. The purely geological "
-        "model is on tab ④ and is unchanged by anything here.")
+        "model is on tab 4.0 and is unchanged by anything here.")
 
     # ------------------------------------------------------------------ observation
     theme.heading(TAB, sub=n.sub, text="1 · What was observed")
@@ -261,7 +261,7 @@ def render(n: Numbering | None = None) -> None:
         figb = go.Figure()
         figb.add_histogram(x=result.contact_m, nbinsx=70, histnorm="probability density",
                            marker_color=PRIOR, opacity=0.75,
-                           name="geological HCWC — the competing limits, tab ④")
+                           name="geological HCWC — the competing limits, tab 4.0")
         figb.add_vline(x=absent_below, line=dict(color=POSTERIOR, width=3),
                        annotation_text=f"absent below {absent_below:,.0f} m",
                        annotation_position="top right")
@@ -272,7 +272,7 @@ def render(n: Numbering | None = None) -> None:
         below = float((result.contact_m > absent_below).mean())
         n.plot(figb,
                "**Blue is the hydrocarbon–water contact your geology produced** — the "
-               "competing-limits model from tab ③. The red line is the only depth this "
+               "competing-limits model from tab 3.0. The red line is the only depth this "
                "observation gives, and it is a **bound rather than a pick**: everything shallower "
                "than it is equally consistent with what you saw, and the shaded side is what the "
                "evidence argues against.\n\n"
@@ -300,7 +300,7 @@ def render(n: Numbering | None = None) -> None:
                 f"posterior below will come out close to the prior and the DHI will appear to have "
                 f"changed nothing. **Read that as the disagreement it is, not as a null result.** "
                 f"Either the cutoff is picked shallower than the amplitude really supports, or the "
-                f"limits on tab ③ are letting the column go deeper than this prospect can."
+                f"limits on tab 3.0 are letting the column go deeper than this prospect can."
             )
 
     if seen and not partial:
@@ -315,7 +315,7 @@ def render(n: Numbering | None = None) -> None:
         # reader to translate before they can read the figure.
         figv.add_histogram(x=result.contact_m, nbinsx=70, histnorm="probability density",
                            marker_color=PRIOR, opacity=0.75,
-                           name="geological HCWC — the competing limits, tab ④")
+                           name="geological HCWC — the competing limits, tab 4.0")
         figv.add_scatter(x=axis, y=preview.pick_pdf(axis), mode="lines", name="your pick",
                          line=dict(color=POSTERIOR, width=3), fill="tozeroy",
                          fillcolor="rgba(196,78,82,0.15)")
@@ -330,7 +330,7 @@ def render(n: Numbering | None = None) -> None:
         sits_at = float((result.contact_m <= contact).mean())
         n.plot(figv,
                "**Blue is the hydrocarbon–water contact your geology produced** — the "
-               "competing-limits model from tab ③, which is what tab ④ draws. Red is what the "
+               "competing-limits model from tab 3.0, which is what tab 4.0 draws. Red is what the "
                "amplitude says. Everything downstream is these two meeting. *(Where this tab says "
                "**prior**, it means the blue one.)*\n\n"
                f"**Your pick is {sharper:,.0f}× sharper than the geology**, centred where "
@@ -437,7 +437,7 @@ is where your prospect sits relative to the two populations you drew.
             "processing artefact. **`p_valid` is the chance it is none of those**, and it decides "
             "how much of the contact depth the pick is allowed to settle.\n\n"
             "The rest of the probability goes to a branch where the pick says nothing about depth "
-            "and *the geological model on tab ④ stands untouched*. That branch is what keeps the "
+            "and *the geological model on tab 4.0 stands untouched*. That branch is what keeps the "
             "chance from ever reaching zero, however sharply the pick is drawn:\n\n"
             f"- the depth channel can say at most **{derived_p_valid / (1 - derived_p_valid):.1f} : 1** "
             f"against any contact depth\n"
@@ -512,7 +512,7 @@ is where your prospect sits relative to the two populations you drew.
         return
 
     # ---- the second evidence channel ---------------------------------------------------------
-    # A penetration, if there is one, described on tab ②. It multiplies in here rather than being
+    # A penetration, if there is one, described on tab 2.0. It multiplies in here rather than being
     # folded into `DhiObservation`, because it is not a DHI: no strength, no detection function,
     # and it needs no argument to be admissible. The two are close to independent evidence -- a
     # reflection coefficient and a resistivity log -- which is what makes them worth having
@@ -536,7 +536,7 @@ is where your prospect sits relative to the two populations you drew.
             bits.append(f"water at **{control.water_at_m:,.0f} m**")
         inside = float(((result.contact_m > lo) & (result.contact_m < hi)).mean())
         st.markdown(
-            f"The penetration described on tab ② is folded in above: {' and '.join(bits)}, tied to "
+            f"The penetration described on tab 2.0 is folded in above: {' and '.join(bits)}, tied to "
             f"the mapped surface with σ = **{control.depth_sigma_m:,.0f} m**, and a "
             f"**{control.p_connected:.0%}** chance it samples this accumulation.\n\n"
             f"**{inside:.0%} of the geological realisations already sit inside what the well "
@@ -551,12 +551,12 @@ is where your prospect sits relative to the two populations you drew.
                 "penalised by roughly the same saturated amount, the likelihood goes flat, and the "
                 "posterior below will come out close to the prior. **Read that as the "
                 "disagreement it is, not as the well having said nothing** — either the depths are "
-                "tied to a different datum than the apex, or the limits on tab ③ are letting the "
+                "tied to a different datum than the apex, or the limits on tab 3.0 are letting the "
                 "column go somewhere this well has already ruled out."
             )
 
-    # Published for the trust panel on tab ④, which reports the effective sample size behind this
-    # update. Same one-frame lag as `dhi_overlay` below and for the same reason: tab ④ renders
+    # Published for the trust panel on tab 4.0, which reports the effective sample size behind this
+    # update. Same one-frame lag as `dhi_overlay` below and for the same reason: tab 4.0 renders
     # first, so it reads the posterior built on the previous run. Every interaction reruns both.
     st.session_state["dhi_posterior"] = post
 
@@ -565,7 +565,7 @@ is where your prospect sits relative to the two populations you drew.
             "**R is undefined here.** It compares the likelihood over the success cases against "
             "the likelihood over the failures, and with the assessment minimum at "
             f"{h_min:.0f} m every realisation counts as a success — so there is no failure set to "
-            "compare against. Set a minimum column height on tab ② to get a likelihood ratio "
+            "compare against. Set a minimum column height on tab 2.0 to get a likelihood ratio "
             "comparable with E-POS's `r_dfi`."
         )
 
@@ -617,7 +617,7 @@ is where your prospect sits relative to the two populations you drew.
     if not element_pos:
         st.warning(
             "**No element risk set**, so the update is anchored to the geometric chance alone. "
-            "Set play × conditional on tab ② — anchoring a DHI to a probability of 1.0 makes any "
+            "Set play × conditional on tab 2.0 — anchoring a DHI to a probability of 1.0 makes any "
             "evidence look like it changed nothing."
         )
 
@@ -835,7 +835,7 @@ So the combination is discounted rather than taken raw.
     c4.metric("Prospect POS", f"{combined.posterior_pos:.1%}",
               f"prior {combined.prior_pos:.1%}")
 
-    # Published for tab ④, which draws the posterior beside the per-element decomposition. Tab ④
+    # Published for tab 4.0, which draws the posterior beside the per-element decomposition. Tab 4.0
     # renders before this one, so it reads the value written on the previous run -- a one-frame lag
     # that is invisible in practice, because every interaction reruns both and the user has to
     # switch tabs to look. Storing the curve rather than the object keeps the dependency one-way.
@@ -881,7 +881,7 @@ So the combination is discounted rather than taken raw.
         st.info(
             "**The geometry channel is undefined**, because the assessment minimum is zero and "
             "there is no failure set for R to compare against. The combination has fallen back to "
-            "the strength channel alone. Set a minimum column height on tab ② to use both."
+            "the strength channel alone. Set a minimum column height on tab 2.0 to use both."
         )
     elif post.r_dhi > dhi_core.R_CAP:
         # Found by wiring this section up: the geometry channel is not clipped, and on a sharp pick
@@ -896,7 +896,7 @@ So the combination is discounted rather than taken raw.
             "is an artefact of comparing a sharp pick against a failure set that the pick sits far "
             "away from — not a statement about the seismic. **Simm's caution applies: for a single "
             "line of fluid-indicator evidence an honest R rarely exceeds about 3 either way.** "
-            "Widen the pick σ in §1, raise the assessment minimum on tab ②, or lower the detection "
+            "Widen the pick σ in §1, raise the assessment minimum on tab 2.0, or lower the detection "
             "ceiling in §3, and watch it fall. If it will not fall, the model — not the DHI — is "
             "asserting the answer."
         )
@@ -949,7 +949,7 @@ So the combination is discounted rather than taken raw.
         st.markdown(
             "**Two kinds of input, and the figure keeps them apart because they are argued about "
             "differently.** The geology varies realisation by realisation and is sliced the same way "
-            "as on tab \u2463 \u2014 except the means are now *weighted*, because after the update a "
+            "as on tab 4.0 \u2014 except the means are now *weighted*, because after the update a "
             "realisation is worth its likelihood. The DHI's own numbers do not vary at all: a picked "
             "contact and a pick \u03c3 are single typed values, so their influence is found by moving "
             "them and recomputing.\n\n"
@@ -995,7 +995,7 @@ So the combination is discounted rather than taken raw.
                    f"seismic assumptions rather than about the prospect \u2014 and the pick \u03c3 and the "
                    f"detection ceiling are usually the least defensible numbers on this tab. That is "
                    f"worth saying out loud rather than quoting.\n\n"
-                   f"**The geological ranking can differ from tab \u2463's.** Reweighting changes which "
+                   f"**The geological ranking can differ from tab 4.0's.** Reweighting changes which "
                    f"limits the answer is sensitive to, which is a real consequence of the update and "
                    f"not visible anywhere else.")
         else:
@@ -1006,7 +1006,7 @@ So the combination is discounted rather than taken raw.
             "**This is not the risk re-attributed — it is the *shallowest active limit* re-attributed, "
             "and the two are different questions.**\n\n"
             "*Given the prospect failed, which element failed?* A fluid indicator cannot say. The "
-            "element chances on tab ② are untouched by anything here, and the *Risk against depth* "
+            "element chances on tab 2.0 are untouched by anything here, and the *Risk against depth* "
             "sub-tab draws them "
             "unchanged.\n\n"
             "*Given it worked, and the contact is where the amplitude says, which mechanism stopped it "

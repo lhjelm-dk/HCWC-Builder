@@ -2,7 +2,7 @@
 
 The one assumption everything rests on is the direction: **below P50 is optimistic**. A taller
 predicted column scores *lower*, because fewer of the benchmark's closures reach it. Inverting that
-would flip every verdict on tab ⑧ and raise nothing anywhere, so it is the first thing tested.
+would flip every verdict on tab 8.0 and raise nothing anywhere, so it is the first thing tested.
 """
 from __future__ import annotations
 

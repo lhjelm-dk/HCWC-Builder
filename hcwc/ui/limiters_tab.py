@@ -1,4 +1,4 @@
-"""Tab ③ — HCWC limiters: every mechanism that could stop the column, grouped by risk element.
+"""Tab 3.0 — HCWC limiters: every mechanism that could stop the column, grouped by risk element.
 
 The replacement for the `st.data_editor` limits table. That table forced twelve very different
 mechanisms into one shape — four numeric columns whose meaning depended on a distribution named in
@@ -33,7 +33,7 @@ TAB = 3
 CORR_KEY = "limiter_correlations"
 EXTRA_KEY = "limiter_extras"
 
-#: Fallback apex when tab ② has not been visited. The reference prospect's own crest.
+#: Fallback apex when tab 2.0 has not been visited. The reference prospect's own crest.
 DEFAULT_APEX = (2049.0, 2051.0)
 
 
@@ -138,7 +138,7 @@ SUB_TABS: tuple[tuple[str, Group], ...] = (
 
 #: Which calculator a limit may be computed from. "empirical" is offered on every limit
 #: because the censoring-corrected NCS fit is a legitimate fallback for any mechanism
-#: nothing better is known about — it was reachable before the tab-③ rebuild and was lost
+#: nothing better is known about — it was reachable before the tab-3.0 rebuild and was lost
 #: in it, which is the kind of regression a restructure makes easy and silent.
 COMPUTED = {"charge": render_charge_computed, "seal": render_seal_computed,
             "seal_as_top": render_seal_as_top_computed,
@@ -158,7 +158,7 @@ def _span_for(spec: LimitSpec) -> tuple[float, float]:
     apex = float(np.mean(st.session_state.get("apex", DEFAULT_APEX)))
     if spec.name.startswith("Closure"):
         # The spill point is the one depth limit the user has usually already mapped, so it opens
-        # around the value tab ② carries rather than around a generic offset.
+        # around the value tab 2.0 carries rather than around a generic offset.
         spill = float(st.session_state.get("spill_point", apex + hi))
         return spill - 60.0, spill + 20.0
     return apex + lo, apex + hi
@@ -167,7 +167,7 @@ def _span_for(spec: LimitSpec) -> tuple[float, float]:
 def _render_group(group: Group, n_trials: int, seed: int) -> list[Limit]:
     """Every limit in one risk element, each in its own expander.
 
-    The section carries the **element's own colour** from tab ②, so the same hue that labels
+    The section carries the **element's own colour** from tab 2.0, so the same hue that labels
     Charge there labels it here. Each limit inside gets a *variation* of that hue, never the pure
     one, so the two levels do not compete.
     """
@@ -175,9 +175,9 @@ def _render_group(group: Group, n_trials: int, seed: int) -> list[Limit]:
     if group is Group.RETENTION:
         st.caption(
             "**These are *how much* the seals and faults hold, not *whether* they work.** Whether "
-            "Retention works at the crest is the element chance on tab ②. Entering the same "
+            "Retention works at the crest is the element chance on tab 2.0. Entering the same "
             "uncertainty in both places counts it twice — the error Beha et al. (2012) is written "
-            "about, which understates POS and overstates volume. See tab ⑧ → *Beha et al. (2012)*."
+            "about, which understates POS and overstates volume. See tab 8.0 → *Beha et al. (2012)*."
         )
     built: list[Limit] = []
     specs = [s for s in SPECS if s.group is group]
@@ -241,7 +241,7 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
         "apex are picked off the *same* depth-converted surface, so a depth-conversion error moves "
         "both together. Leaving them independent is what lets a realisation put the spill above "
         "the apex — and it is the same errors-in-variables coupling that inflates the published "
-        "column-height regression on tab ⑥. Correlating them is the honest default, not a "
+        "column-height regression on tab 6.0. Correlating them is the honest default, not a "
         "refinement.\n\n"
         "**How much it is worth.** On a 120 m apex uncertainty with a mapped spill, treating the "
         "two as independent gives the derived closure height a spread of 33 m; correlating them at "
@@ -283,12 +283,12 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
 def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int) -> None:
     """Which of these twelve is actually setting the contact — **on the tab where you edit them**.
 
-    Tab ① calls the ranking *"the point of the whole tool"* and tells the assessor to run once, read
-    it, then elicit only the top two or three. It lived on tab ④, so following that instruction meant
+    Tab 1.0 calls the ranking *"the point of the whole tool"* and tells the assessor to run once, read
+    it, then elicit only the top two or three. It lived on tab 4.0, so following that instruction meant
     a round trip on every refinement cycle — and people do not make round trips. They either elicit
     all twelve carefully or none of them, which are the two outcomes the ranking exists to prevent.
 
-    So it is here too, above the inputs it directs, updating as they change. Tab ④ §3 keeps the full
+    So it is here too, above the inputs it directs, updating as they change. Tab 4.0 §3 keeps the full
     version — the successes-only toggle, the shift table, the selection-effect argument. This is the
     workflow instrument: which rows are worth an afternoon.
 
@@ -324,7 +324,7 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
            f"All realisations, not successes only: at elicitation time the question is *what "
            f"controls this closure*, and a limit that usually kills the prospect outright is the "
            f"one you least want to leave at a default. The restricted view, the shift between them "
-           f"and why the difference matters are on tab ④ §3.")
+           f"and why the difference matters are on tab 4.0 §3.")
     idle = [name for name, share in ranking if share <= 0.0005]
     if idle:
         st.caption(
@@ -355,7 +355,7 @@ def render() -> None:
     charge_tab, closure_tab, retention_tab, corr_tab = st.tabs(
         ["① Charge", "② Closure", "③ Retention", "④ Correlations"])
     # Names this strip so the stylesheet can colour it by risk element. It used to be picked out by
-    # being four sub-tabs long, which was true until tab ⑤ grew a fourth and started wearing these
+    # being four sub-tabs long, which was true until tab 5.0 grew a fourth and started wearing these
     # element colours by accident.
     for _panel in (charge_tab, closure_tab, retention_tab, corr_tab):
         with _panel:

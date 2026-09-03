@@ -29,7 +29,7 @@ proposal can never disagree.
 **What this deliberately does not do.** It does not score the geology. Nothing here knows whether
 120 m is a sensible minimum or whether the seal argument is any good. Every check is about whether
 the arithmetic supports the number being quoted, which is the only thing a run can audit about
-itself. The geological sanity check lives on tab ⑥, against the empirical record, and says so.
+itself. The geological sanity check lives on tab 6.0, against the empirical record, and says so.
 """
 from __future__ import annotations
 
@@ -222,7 +222,7 @@ def correlation_projection(result: EngineResult) -> Check:
             level="ok",
             finding="No correlations were elicited, so every limit is drawn independently.",
             meaning="Independence is a modelling choice too. If two limits share a cause — the same "
-                    "seal, the same fault — say so on tab ③ rather than leaving it at zero.",
+                    "seal, the same fault — say so on tab 3.0 rather than leaving it at zero.",
         )
     worst = max(pairs, key=lambda row: abs(row[2] - row[3]))
     moved = abs(worst[2] - worst[3])
@@ -236,7 +236,7 @@ def correlation_projection(result: EngineResult) -> Check:
         meaning=("The matrix was already consistent, so what was asked for is what was sampled."
                  if level == "ok" else
                  "The elicited matrix was not internally consistent and had to be projected. "
-                 "Revisit that pair on tab ③ — the correlation in the model is not the one you "
+                 "Revisit that pair on tab 3.0 — the correlation in the model is not the one you "
                  "stated, and the difference came from what was said about a third limit."),
     )
 
@@ -277,15 +277,15 @@ def dhi_evidence(posterior, current: EngineResult | None = None) -> Check:
     evidence concentrates the weight on a few draws, and past a point the posterior percentiles are
     a handful of realisations wearing a smooth curve.
 
-    ``current`` is the run the rest of the panel is describing. The posterior reaches tab ④ through
-    session state written by tab ⑤, which renders *after* it, so on the run where the trial count or
+    ``current`` is the run the rest of the panel is describing. The posterior reaches tab 4.0 through
+    session state written by tab 5.0, which renders *after* it, so on the run where the trial count or
     seed changes the two are one interaction apart. Everywhere else in the app that lag is invisible;
     on a panel whose whole job is catching mismatched denominators, printing "6,920 of 10,000"
     beside "8,349 of 12,000" without a word would be the panel committing the error it exists to
     find. So it is checked and said.
     """
     # `effective_sample_size` and `r_dhi` are **properties** on `dhi.DhiPosterior`, not methods.
-    # Read with `()` they raise `'float' object is not callable`, which is what tab ④ did the first
+    # Read with `()` they raise `'float' object is not callable`, which is what tab 4.0 did the first
     # time a real posterior reached it — the test's stub had made them methods, so the test agreed
     # with the bug rather than catching it.
     ess = float(posterior.effective_sample_size)
@@ -301,7 +301,7 @@ def dhi_evidence(posterior, current: EngineResult | None = None) -> Check:
             finding=f"The DHI update on hand was built on **{n:,} realisations at seed "
                     f"{posterior.result.seed}**, and this run is {current.n:,} at seed "
                     f"{current.seed}. It is one interaction behind.",
-            meaning="Not an error and not yet a number to quote: tab ⑤ rebuilds after this panel "
+            meaning="Not an error and not yet a number to quote: tab 5.0 rebuilds after this panel "
                     "renders, so the run that changed the trial count or seed sees the previous "
                     "posterior. Touch anything and it catches up.",
         )

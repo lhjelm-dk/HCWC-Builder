@@ -256,7 +256,7 @@ class TestSharedApexMeasurementError:
 
 
 class TestTheBenchmarkFamily:
-    """The curves tab ⑦ §7 draws, and the specific numbers its text quotes.
+    """The curves tab 7.0 §7 draws, and the specific numbers its text quotes.
 
     The family chart is where the censoring argument stops being about a coefficient and becomes
     about a deliverable — a prior for a closure of a given size. Every number asserted here appears

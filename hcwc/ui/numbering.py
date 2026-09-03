@@ -93,16 +93,16 @@ class Numbering:
     """
     tab: int
     #: Which sub-tab this sequence belongs to, when the tab has them. With it, labels carry three
-    #: parts -- ``Figure 5.2.1`` is the first exhibit on tab ⑤'s second sub-tab -- so a number
-    #: locates the page as well as the position on it. Tab ⑤ needs this and tab ④ will when its
+    #: parts -- ``Figure 5.2.1`` is the first exhibit on tab 5.0's second sub-tab -- so a number
+    #: locates the page as well as the position on it. Tab 5.0 needs this and tab 4.0 will when its
     #: two sub-tabs grow; a tab that passes nothing keeps two-part numbers and is untouched.
     sub: int | None = None
     _count: int = field(default=0, init=False)
 
     def __post_init__(self) -> None:
         # The figure store is per *run*, not per session: a figure drawn on the previous run may
-        # no longer exist, and exporting a stale one would be worse than exporting none. Tab ① has
-        # no Numbering, so the first one created is tab ②'s and that is early enough.
+        # no longer exist, and exporting a stale one would be worse than exporting none. Tab 1.0 has
+        # no Numbering, so the first one created is tab 2.0's and that is early enough.
         if self.tab <= 2:
             st.session_state[FIGURES_KEY] = {}
 
@@ -149,7 +149,7 @@ class Numbering:
 
         **The label is also the widget key.** Streamlit derives an element's identity from its type
         and parameters, so two tabs drawing structurally identical figures collide with
-        ``StreamlitDuplicateElementId``. That is not hypothetical: tabs ④ and ⑤ are the same
+        ``StreamlitDuplicateElementId``. That is not hypothetical: tabs 4.0 and 5.0 are the same
         function rendered twice, and the consistency-test figure is identical in both until the
         user changes something. ``Figure 5.3`` and ``Figure 7.3`` are unique by construction, which
         makes the number we already compute the right key.

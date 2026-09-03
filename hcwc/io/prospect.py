@@ -81,7 +81,7 @@ def _items(state) -> list[tuple[str, Any]]:
     return list(dict(state).items())
 
 
-#: How the structure is described on tab ③ → Charge. Mirrors `hcwc.ui.sources`, which cannot be
+#: How the structure is described on tab 3.0 → Charge. Mirrors `hcwc.ui.sources`, which cannot be
 #: imported here: `hcwc.io` must not pull in Streamlit. A test asserts the two agree.
 AREA_DEPTH_METHODS: tuple[str, ...] = ("Two mapped surfaces", "Top surface and a thickness")
 

@@ -267,7 +267,7 @@ class TestAsAnEngineLimit:
 
     def test_every_calculator_is_reachable_from_at_least_one_limit(self):
         """A calculator nobody can open is dead weight, and one silently *became* dead in the
-        tab-③ rebuild: the empirical NCS source survived in `sources.py` while the new tab offered
+        tab-3.0 rebuild: the empirical NCS source survived in `sources.py` while the new tab offered
         only charge and seal, so it was code with no route to it for two days.
         """
         from hcwc.ui.limiters_tab import COMPUTED, SPECS

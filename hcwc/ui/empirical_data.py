@@ -1,4 +1,4 @@
-"""The data behind tab ⑥: the fits, the samplers and the probit axis.
+"""The data behind tab 6.0: the fits, the samplers and the probit axis.
 
 Split out of ``empirical.py``, which had reached 1 334 lines — the largest module in the repo by a
 third, holding ten sections across five subjects that share a tab and almost nothing else. The cost

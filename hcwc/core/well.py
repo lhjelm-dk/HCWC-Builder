@@ -1,7 +1,7 @@
 """Well control: a penetration that saw where the hydrocarbons stop, or where they had not started.
 
 **This is the one piece of evidence about a contact that needs no argument.** A DHI is an
-inference, and tab ⑤ spends four sub-tabs earning the right to use it. A well that logged a water
+inference, and tab 5.0 spends four sub-tabs earning the right to use it. A well that logged a water
 leg at 2 260 m is not an inference — the reservoir was there, the fluid was measured, and the
 contact is above it. Where the DHI needs a detection function and a validity term to become a
 likelihood, this arrives as one.
@@ -21,7 +21,7 @@ nothing at all about whether the prospect works.
 
 *Hydrocarbons proven down to a depth* says the contact is deeper — and it also says the prospect
 **is a discovery**, which is a far larger statement than anything about depth. This module deals
-only with the depth. It deliberately does not touch the element chances on tab ②, because a proven
+only with the depth. It deliberately does not touch the element chances on tab 2.0, because a proven
 accumulation means those are no longer prior beliefs about an untested prospect, and quietly setting
 P(G) to 1 inside a contact calculation would hide that. See :meth:`WellControl.proves_hydrocarbons`,
 which exists so the interface can say so out loud.
@@ -88,7 +88,7 @@ class WellControl:
         """Whether the observation establishes that the prospect works.
 
         Read by the interface so it can say what the depth arithmetic below deliberately will not:
-        a proven column makes the element chances on tab ② a statement about an appraisal, not a
+        a proven column makes the element chances on tab 2.0 a statement about an appraisal, not a
         prospect, and that is a decision for the assessor rather than a side effect of entering
         a depth.
         """

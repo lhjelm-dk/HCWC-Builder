@@ -1,4 +1,4 @@
-"""Tab ⑤ sub-tab ① — the Bayesian update, walked through one term at a time.
+"""Tab 5.0 sub-tab 1.0 — the Bayesian update, walked through one term at a time.
 
 The rest of this tab applies Bayes' rule nine times and never once writes it down. A geoscientist
 who wants to check the reasoning has nowhere to look, and the two questions that actually stop
@@ -44,7 +44,7 @@ def render(n: Numbering | None = None) -> None:
     if post is None or overlay is None:
         st.info(
             "**This page runs on your own prospect's numbers, so it needs an observation first.** "
-            "Turn on *This is a DHI prospect* on tab ②, then describe the amplitude on sub-tab ②. "
+            "Turn on *This is a DHI prospect* on tab 2.0, then describe the amplitude on sub-tab 2.0. "
             "Everything here is explanation — nothing on this page changes a result."
         )
         return
@@ -71,12 +71,12 @@ def render(n: Numbering | None = None) -> None:
     # ------------------------------------------------------------------ 1 · the prior
     st.markdown("#### Step 1 · P(HC) — what you believed before the seismic")
     st.markdown(
-        "The prior is everything on tabs ② and ③ and **nothing else**. It has two parts, and "
+        "The prior is everything on tabs 2.0 and 3.0 and **nothing else**. It has two parts, and "
         "keeping them apart is most of the battle:\n\n"
         f"- **a number** — `P(G) = {element_product:.3f}`, the chance the prospect works at all. "
-        "The product of the element chances on tab ②.\n"
+        "The product of the element chances on tab 2.0.\n"
         f"- **a distribution** — `p(h | G)`, how tall the column is *given* it works. The "
-        "competing-limits model on tab ③.\n\n"
+        "competing-limits model on tab 3.0.\n\n"
         "What people call *the prospect POS* is neither. It is a **reading** of the two together, "
         "and it cannot be quoted without saying at what column height it was read:"
     )
@@ -94,7 +94,7 @@ def render(n: Numbering | None = None) -> None:
     figp.update_layout(xaxis_title="Contact depth (m TVDSS)", yaxis_title="Realisations",
                        height=320, margin=dict(t=20), showlegend=False)
     n.plot(figp,
-           "**The prior, drawn.** This is tab ④'s answer and it contains no seismic amplitude — "
+           "**The prior, drawn.** This is tab 4.0's answer and it contains no seismic amplitude — "
            "that is an assumption the model makes and cannot check.\n\n"
            "⚠ **It is also the assumption most likely to be false in practice.** If the closure was "
            "mapped with the anomaly on screen — and the apex especially, since it enters the "
@@ -162,14 +162,14 @@ def render(n: Numbering | None = None) -> None:
         "Your tool answers it in two places, one for each thing the amplitude carries:"
     )
     rows = [{"Aspect of the observation": "**Character** — how hydrocarbon-like the amplitude looks",
-             "Answered by": "the two-curve strength model, sub-tab ② §2",
+             "Answered by": "the two-curve strength model, sub-tab 2.0 §2",
              "Gives": f"R = {r_strength:.2f}" if r_strength else "R from strength"},
             {"Aspect of the observation": "**Geometry** — where the event terminates",
              "Answered by": "the pick likelihood against a flat rival, §4 below",
              "Gives": f"floor 1 − p_valid = {1 - observation.p_valid:.3f}"}]
     n.table(pd.DataFrame(rows),
             "**Two aspects of one observation, not two observations.** They are combined with a "
-            "discount for exactly that reason — see sub-tab ② §5, where `dependence` lives.")
+            "discount for exactly that reason — see sub-tab 2.0 §5, where `dependence` lives.")
 
     # ------------------------------------------------------------------ 4 · the two branches
     st.markdown("#### Step 4 · What if the thing I picked isn't the contact at all?")
@@ -226,7 +226,7 @@ def render(n: Numbering | None = None) -> None:
                            legend=dict(orientation="h", y=-0.2))
         n.plot(figb,
                "**The grey dashed line is the geological model, unchanged.** That is branch ¬V — "
-               "if the picked event is not the contact, tab ④'s answer stands exactly as it was.\n\n"
+               "if the picked event is not the contact, tab 4.0's answer stands exactly as it was.\n\n"
                "The mixture never leaves the corridor between the two branches, so it can never "
                "reach zero while the grey line is above zero. Read that as the guarantee it is: "
                f"**the depth channel can say at most "
@@ -274,7 +274,7 @@ def render(n: Numbering | None = None) -> None:
             f"{h_min:.0f} m every realisation counts as a success, so there is no failure set for "
             "the geometry channel to compare against and `R geometry` is undefined. The flat "
             "spot's *position* reshapes your contact distribution and moves your POS by nothing.\n\n"
-            "Raise the assessment minimum on tab ② and geometry starts paying in — and once the "
+            "Raise the assessment minimum on tab 2.0 and geometry starts paying in — and once the "
             "minimum sits below the picked contact, it pays in **negatively**, which is the "
             "downgrade you would expect from being asked for more column than the amplitude "
             "supports."

@@ -136,19 +136,19 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
                  # Which axis the tornado measures its swing on. A reading choice, not an
                  # input to the model.
                  # Display choices, now suffixed by tab because the results renderer draws
-                 # on both ④ and ⑤ and the two keep separate state.
+                 # on both 4.0 and 5.0 and the two keep separate state.
                  "tornado_space", "dhi_tornado_space", "tornado_space_4", "tornado_space_5",
                  "restrict_successes_4", "restrict_successes_5",
                  "combo_all_4", "combo_all_5",
                  # Which contact distributions to draw behind the chance curves. A way of
                  # looking at the answer, not a part of it.
                  "hcwc_hist_5", "contact_hist_4", "contact_hist_5",
-                 # Whether tab ⑥ draws the built distributions beside the empirical one. The same
+                 # Whether tab 6.0 draws the built distributions beside the empirical one. The same
                  # kind of choice: it changes what is on the figure, not what the model says.
                  "empirical_show_models",
-                 # The benchmark fusion on tab ⑥ is drawn and never consumed: no limit, no
+                 # The benchmark fusion on tab 6.0 is drawn and never consumed: no limit, no
                  # engine run and no export reads it, so the weight is a way of looking at
-                 # the answer rather than part of it. The seal shrinkage on tab ③ is the
+                 # the answer rather than part of it. The seal shrinkage on tab 3.0 is the
                  # opposite — it moves a limit, so it is saved with that limit block.
                  "fuse_benchmark", "fuse_source",
                  # A one-shot action, not state: saving "the user pressed a button once" would
@@ -219,7 +219,7 @@ class TestTheValueCheckCoversEveryKindOfWidget:
         the minimum-column test vacuous and changes the question being answered."""
         import re
 
-        # Both files: the run settings live on tab ②, the area–depth thickness on tab ③, and a
+        # Both files: the run settings live on tab 2.0, the area–depth thickness on tab 3.0, and a
         # declared bound has to match its widget wherever that widget happens to be written.
         root = pathlib.Path(__file__).resolve().parent.parent / "hcwc" / "ui"
         source = "\n".join((root / name).read_text(encoding="utf-8")

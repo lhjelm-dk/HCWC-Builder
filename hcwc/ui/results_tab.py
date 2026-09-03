@@ -1,4 +1,4 @@
-"""Tab ④ — the three outputs the engine exists to produce.
+"""Tab 4.0 — the three outputs the engine exists to produce.
 
 1. The exceedance curve, `F(h) = P(column >= h)`, which is the primary risk output. **Never a bare
    POS**: every chance quoted here carries the threshold it was read at, because a POS read at one
@@ -25,7 +25,7 @@ from hcwc.ui.numbering import Numbering
 
 TAB = 4
 
-#: Where tab ④ parks the container its trust panel is drawn into. See :func:`render`.
+#: Where tab 4.0 parks the container its trust panel is drawn into. See :func:`render`.
 TRUST_SLOT_KEY = "_trust_slot"
 
 #: Below this effective sample size a tornado bar is reported as thin rather than drawn as though
@@ -73,7 +73,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
 
     ``posterior`` is a :class:`hcwc.core.dhi.DhiPosterior` or ``None``. With one, every figure is
     drawn on the reweighted sample and the tab number, colour and basis banner follow. **The same
-    figures in the same order either way** -- which is what makes flipping between tab ④ and tab ⑤
+    figures in the same order either way** -- which is what makes flipping between tab 4.0 and tab 5.0
     a comparison rather than a hunt, and why the basis is a parameter here rather than a control
     the user could set inconsistently.
     """
@@ -85,7 +85,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     n = n or Numbering(tab)
     limit_set = st.session_state.get("limit_set")
     if limit_set is None:
-        st.info("Define the limits on tab ③ first.")
+        st.info("Define the limits on tab 3.0 first.")
         return
 
     result = posterior.result if given_dhi else run.current(limit_set)
@@ -96,19 +96,19 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         theme.basis_banner(
             theme.GIVEN_DHI,
             "Every figure below carries the amplitude evidence. The purely geological versions of "
-            "the same figures are on tab ④, in the same order — they are a different "
+            "the same figures are on tab 4.0, in the same order — they are a different "
             "distribution, not a different view of this one.")
     else:
         theme.basis_banner(
             theme.GEOLOGICAL,
             "The competing limits alone. If this prospect has a DHI, its updated results are on "
-            "tab ⑤ and are a different distribution — not a different view of this one.")
+            "tab 5.0 and are a different distribution — not a different view of this one.")
 
     # ------------------------------------------------------------------ headline
     #
     # **Two chances, and they are not the same number.** `result.pos` is the *conditional*
     # column-height term: given the four elements work, does the column reach the assessment
-    # minimum. The reportable prospect chance is that times the element product from tab ②. The
+    # minimum. The reportable prospect chance is that times the element product from tab 2.0. The
     # app showed only the conditional one here and called it "POS", which is the exact confusion
     # the rest of the tool is arranged to prevent -- Lars caught it on the report sheet, where a
     # 79.8 % read as a prospect chance when the prospect chance was 32.6 %.
@@ -164,7 +164,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             f"them.**\n\n"
             f"`Prospect POS = P(G) × P(column ≥ h | G)` = "
             f"**{p_geological:.3f} × {column_pos:.3f} = {prospect_pos:.3f}**\n\n"
-            f"`P(G)` is the **geological POS** from tab ② — the product of the four element "
+            f"`P(G)` is the **geological POS** from tab 2.0 — the product of the four element "
             f"chances, the chance the prospect works *at all*. It is E-POS's headline number and "
             f"it says nothing about how tall the column is. `P(column ≥ h | G)` is everything on "
             f"this tab: the competing limits, **conditional on the elements having worked**. A "
@@ -175,7 +175,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             "under.** The contact percentiles are *success cases only* — conditional, in the sense "
             "WellVolPOS settled: the distribution is the primary object and the chance multiplies "
             "it, never the other way round. Quoting a chance from one threshold beside a volume "
-            "from another is the error tab ⑥ is written to prevent, and quoting the conditional "
+            "from another is the error tab 6.0 is written to prevent, and quoting the conditional "
             "term as though it were the prospect chance is the same error one level up."
         )
 
@@ -235,7 +235,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
 
     # **The DHI is in this figure and was invisible in it.** Drawn on its own the updated shares
     # look like any other stacked bar; the only way to see what the amplitude did was to hold the
-    # geological twin on tab ④ in your head and flip between tabs. Three views of one figure fixes
+    # geological twin on tab 4.0 in your head and flip between tabs. Three views of one figure fixes
     # that, and the third is the one worth having — the difference is where the finding is.
     GIVEN, GEOLOGICAL, DIFFERENCE = "Given the DHI", "Geological", "What the DHI changed"
     view, scaled = GEOLOGICAL, False
@@ -344,7 +344,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      "This is a claim about **geometry**, not about elements. The amplitude says "
                      "roughly where the contact is and some mechanisms explain that depth better "
                      "than others; it is not evidence about which element failed, and the element "
-                     "chances on tab ② are untouched by it.")
+                     "chances on tab 2.0 are untouched by it.")
     else:
         n.plot(fig2, "The diagnostic the argmin bookkeeping buys, and the reason for keeping it: "
                      "**the controlling mechanism changes as you step down structure.** Hue is the "
@@ -553,8 +553,8 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # repeatability, the correlation projection -- and those are properties of the sample, not of
     # the reweighting. Its DHI check already reports the effective sample size behind the update.
     if not given_dhi:
-        # **Reserved now, filled after tab ⑤ has run.** One of these checks reports the effective
-        # sample size behind the DHI update, and that posterior is built on tab ⑤ -- which renders
+        # **Reserved now, filled after tab 5.0 has run.** One of these checks reports the effective
+        # sample size behind the DHI update, and that posterior is built on tab 5.0 -- which renders
         # *after* this one. Rendering here read the previous frame's posterior, so changing the DHI
         # strength left this panel one interaction behind: it showed 28 % where the answer was
         # 10 %, then 10 % where it was 24 %, silently and with nothing on the page to say so.
@@ -566,9 +566,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
 
 
 def render_trust_panel() -> None:
-    """Fill the slot tab ④ reserved, once tab ⑤ has published its posterior.
+    """Fill the slot tab 4.0 reserved, once tab 5.0 has published its posterior.
 
-    Called from ``app.py`` after tab ⑤, and a no-op when tab ④ did not run or is showing the
+    Called from ``app.py`` after tab 5.0, and a no-op when tab 4.0 did not run or is showing the
     DHI-updated view, which has its own reporting.
     """
     slot = st.session_state.pop(TRUST_SLOT_KEY, None)

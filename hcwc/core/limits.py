@@ -344,7 +344,7 @@ def reference_prospect() -> LimitSet:
       make the controlling-limit diagnostic longer without making it more informative.
     * **Charge and Closure are always active.** Every prospect has a spill point, and charge that
       delivers nothing is a charge *element* failure rather than a shallow contact — that belongs
-      in the element chance on tab ②, not here.
+      in the element chance on tab 2.0, not here.
     """
     return LimitSet(
         name="Reference prospect",
@@ -355,7 +355,7 @@ def reference_prospect() -> LimitSet:
             Limit("Charge", Group.CHARGE, 1.0,
                   DepthDistribution("pert", {"minimum": 150.0, "mode": 300.0, "maximum": 420.0}),
                   "A typed stand-in for the charge calculator, charge-limited near 304 m. Use "
-                  "the *Computed* source on tab ③ to derive it from an area–depth integration."),
+                  "the *Computed* source on tab 3.0 to derive it from an area–depth integration."),
             Limit("Closure / spill", Group.CLOSURE, 1.0,
                   DepthDistribution("normal_alt", {"p1": 0.01, "x1": 340.0,
                                                    "p2": 0.99, "x2": 360.0}), ""),
