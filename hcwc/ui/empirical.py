@@ -49,16 +49,71 @@ from hcwc.ui.empirical_data import (  # noqa: E402
     _fit, _load, _p_spill, _probit, _samples_for, imported_label,
 )
 
-def _add_prospect_violin(fig, x: float, samples: np.ndarray, width: float) -> None:
-    """The prospect's predicted column height, drawn into the population cross-plot."""
-    fig.add_violin(x=np.full(samples.size, x), y=samples, width=width, side="both",
-                   points=False, line_color=PROSPECT, fillcolor=PROSPECT_FILL,
-                   name="this prospect — empirical prior", hoverinfo="skip", spanmode="hard")
+def _add_prospect_violin(fig, x: float, samples: np.ndarray, width: float,
+                         *, name: str = "this prospect — empirical prior",
+                         colour: str = PROSPECT, fill: str = PROSPECT_FILL) -> None:
+    """One column-height distribution, drawn into the population cross-plot at ``x``.
+
+    Used for all three things worth putting there: what the statistics predict for a closure of
+    these dimensions, what the competing-limits model produced, and what the amplitude did to it.
+    Same axis, same units, so they can be read against each other and against the record behind
+    them.
+    """
+    if samples is None or not len(samples):
+        return
+    fig.add_violin(x=np.full(len(samples), x), y=samples, width=width, side="both",
+                   points=False, line_color=colour, fillcolor=fill,
+                   name=name, hoverinfo="skip", spanmode="hard")
     for pct, dash in ((90, "dot"), (50, "solid"), (10, "dot")):
         v = float(np.percentile(samples, 100 - pct))
         fig.add_scatter(x=[x - width / 2, x + width / 2], y=[v, v], mode="lines",
-                        line=dict(color=PROSPECT, width=2, dash=dash),
-                        showlegend=False, hovertext=f"P{pct} = {v:.0f} m", hoverinfo="text")
+                        line=dict(color=colour, width=2, dash=dash),
+                        showlegend=False, hovertext=f"{name} · P{pct} = {v:.0f} m",
+                        hoverinfo="text")
+
+
+def _model_columns() -> tuple["np.ndarray | None", "np.ndarray | None"]:
+    """The built column distribution, geological and given the DHI, or ``None`` for each.
+
+    Success cases only, to match the empirical prior: every discovery in the record had
+    hydrocarbons in it, so comparing the whole geological sample against it would put realisations
+    that never made a discovery beside a population of discoveries.
+    """
+    limit_set = st.session_state.get("limit_set")
+    if limit_set is None:
+        return None, None
+    from hcwc.ui import run as engine_run
+
+    result = engine_run.current(limit_set)
+    keep = result.above_minimum
+    geological = result.column_m[keep] if keep.any() else None
+
+    given_dhi = None
+    overlay = st.session_state.get("dhi_overlay")
+    posterior = st.session_state.get("dhi_posterior")
+    if overlay is not None and posterior is not None:
+        apex = float(np.median(posterior.result.apex_m))
+        given_dhi = np.asarray(overlay["contact_samples"], dtype=float) - apex
+    return geological, given_dhi
+
+
+def _overlay_models(fig, x: float, width: float) -> list[str]:
+    """Draw the built distributions beside the empirical one. Returns what was drawn."""
+    geological, given_dhi = _model_columns()
+    drawn: list[str] = []
+    if geological is not None:
+        _add_prospect_violin(fig, x - 0.62 * width, geological, width * 0.55,
+                             name="this prospect — geological (tab ④)",
+                             colour=theme.BASIS_COLOUR[theme.GEOLOGICAL],
+                             fill=theme.rgba(theme.BASIS_COLOUR[theme.GEOLOGICAL], 0.30))
+        drawn.append("geological")
+    if given_dhi is not None:
+        _add_prospect_violin(fig, x + 0.62 * width, given_dhi, width * 0.55,
+                             name="this prospect — given the DHI (tab ⑤)",
+                             colour=theme.BASIS_COLOUR[theme.GIVEN_DHI],
+                             fill=theme.rgba(theme.BASIS_COLOUR[theme.GIVEN_DHI], 0.30))
+        drawn.append("given the DHI")
+    return drawn
 
 
 def _render_import() -> None:
@@ -179,6 +234,13 @@ What follows is a disagreement about **one estimator**, not about the data.
                                   "corrected fit finds burial depth to be a much stronger control "
                                   "than the published analysis reported — see Table 7.4.")
     prior = _empirical_prior(closure, burial)
+    show_models = st.toggle(
+        "Draw what this tool produced beside it", value=False, key="empirical_show_models",
+        help="Adds the geological contact distribution from tab ④, and the DHI-updated one from "
+             "tab ⑤ where there is one, as violins next to the empirical prior. All three are "
+             "column height in metres and all three are success cases only, so they are directly "
+             "comparable — and they are compared against the discoveries the fit was made on "
+             "rather than against each other in the abstract.")
     cc.metric("Empirical prior, P50 column",
               f"{np.percentile(prior, 50):.0f} m",
               f"P90 {np.percentile(prior, 10):.0f} m · P10 {np.percentile(prior, 90):.0f} m",
@@ -223,6 +285,7 @@ What follows is a disagreement about **one estimator**, not about the data.
                          name=f"censored MLE — median seal capacity (r = {mle_r:.2f})",
                          line=dict(color=FITTED, width=3))
     _add_prospect_violin(figA, closure, prior, width=45.0)
+    drawn_a = _overlay_models(figA, closure, 45.0) if show_models else []
     figA.update_layout(xaxis_title="Closure height (m)",
                        yaxis_title="Hydrocarbon column height (m)", height=560,
                        legend=dict(orientation="h", y=-0.16), margin=dict(t=20))
@@ -299,6 +362,8 @@ What follows is a disagreement about **one estimator**, not about the data.
         figB.add_scatter(x=zgrid, y=pred2, mode="lines", name="censored MLE — median seal capacity",
                          line=dict(color=FITTED, width=3))
     _add_prospect_violin(figB, burial, prior, width=260.0)
+    if show_models:
+        _overlay_models(figB, burial, 260.0)
     figB.update_layout(xaxis_title="Burial depth (m)", yaxis_title="Hydrocarbon column height (m)",
                        height=560, legend=dict(orientation="h", y=-0.16), margin=dict(t=20))
     n.plot(figB, "Column height against burial depth, after Edmundson et al. Fig. 6B. **This is "

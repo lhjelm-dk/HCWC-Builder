@@ -501,3 +501,58 @@ class TestTheSealDensitiesAreInSitu:
         at = _run()
         got = [m.value for m in at.metric if m.label.endswith("capacity")]
         assert got == ["79 m", "148 m", "433 m"], got
+
+
+class TestTheBenchmarkFiguresCanShowWhatTheToolProduced:
+    """Lars asked whether the *empirical prior* violin is what the statistics predict for this
+    prospect — it is — and whether the built distributions could sit beside it. They can now."""
+
+    @staticmethod
+    def _violins(at):
+        import base64
+        import json
+
+        import numpy as np
+
+        def decode(v):
+            if isinstance(v, dict) and "bdata" in v:
+                return np.frombuffer(base64.b64decode(v["bdata"]),
+                                     dtype=np.dtype(v.get("dtype", "f8")))
+            return np.asarray(v, dtype=float)
+
+        out = {}
+        for el in at.get("plotly_chart"):
+            for trace in json.loads(el.proto.spec).get("data", []):
+                name = str(trace.get("name"))
+                if trace.get("type") == "violin" and "this prospect" in name:
+                    out.setdefault(name, decode(trace.get("y")))
+        return out
+
+    def test_the_empirical_prior_is_drawn_by_default_and_nothing_else_is(self):
+        names = set(self._violins(_run()))
+        assert names == {"this prospect — empirical prior"}
+
+    def test_the_toggle_adds_the_geological_and_dhi_distributions(self):
+        at = _run(empirical_show_models=True)
+        _no_exception(at, "the model overlay")
+        names = set(self._violins(at))
+        assert "this prospect — geological (tab ④)" in names
+        assert "this prospect — given the DHI (tab ⑤)" in names
+
+    def test_all_three_are_column_height_in_metres_and_comparable(self):
+        """The point of putting them on one axis. If any were a *depth* rather than a column the
+        medians would differ by an apex, which is two thousand metres rather than a hundred."""
+        import numpy as np
+
+        violins = self._violins(_run(empirical_show_models=True))
+        medians = {k: float(np.median(v)) for k, v in violins.items()}
+        assert len(medians) == 3
+        assert all(0.0 < m < 1000.0 for m in medians.values()), medians
+
+    def test_the_empirical_prior_cannot_exceed_the_closure(self):
+        """It is seal capacity capped by `min(S, H)` — the same spill cap the geology applies —
+        which is what makes it a prior for *this* prospect rather than the raw population."""
+        import numpy as np
+
+        prior = self._violins(_run())["this prospect — empirical prior"]
+        assert np.max(prior) <= 350.0 + 1e-6

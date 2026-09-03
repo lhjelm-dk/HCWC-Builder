@@ -143,6 +143,9 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
                  # Which contact distributions to draw behind the chance curves. A way of
                  # looking at the answer, not a part of it.
                  "hcwc_hist_5", "contact_hist_4", "contact_hist_5",
+                 # Whether tab ⑥ draws the built distributions beside the empirical one. The same
+                 # kind of choice: it changes what is on the figure, not what the model says.
+                 "empirical_show_models",
                  # The benchmark fusion on tab ⑥ is drawn and never consumed: no limit, no
                  # engine run and no export reads it, so the weight is a way of looking at
                  # the answer rather than part of it. The seal shrinkage on tab ③ is the
