@@ -511,7 +511,11 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         "`P(active)`** — read that number off the right-hand end of its curve — and **the result is "
         "the lower envelope**, because the contact is the shallowest active limit. A curve far to "
         "the right of the bold line is a mechanism that never mattered."
-    )
+        + ("\n\n**Both answers are on the axis.** The bold red line is the contact *given the DHI* "
+           "— the answer on this tab — and the dashed blue one is the purely geological contact "
+           "from tab 4.0, kept beside it because the gap between them is what the amplitude "
+           "bought. Every thin limit curve is drawn under the DHI weights as well, which is what "
+           "keeps the lower-envelope reading true." if given_dhi else ""))
     c1, c2, c3 = st.columns([2, 2, 1])
     space = c1.radio(
         "Show depths as", [limits_mod.DEPTH, limits_mod.COLUMN], horizontal=True,
@@ -546,7 +550,12 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
            "**Violin** and **half violin** show where each limit's mass sits, which is better for "
            "spotting overlap and worse for reading a probability. **Histogram** is the same "
            "unsmoothed, for when a kernel would invent a shape the samples do not have. "
-           "**Points** shows the sample itself.")
+           "**Points** shows the sample itself."
+           + (" Two contact lanes in every mode: "
+              + theme.basis_tag(theme.GEOLOGICAL) + " and " + theme.basis_tag(theme.GIVEN_DHI)
+              + ". In **Points** the updated lane is an importance *resample* of the same "
+                "realisations, so a realisation the amplitude favours appears more than once — "
+                "that repetition is the update." if given_dhi else ""))
 
     # ------------------------------------------------------------------ 6 · trust
     # Geological only. The panel audits the run -- realisation counts, seed

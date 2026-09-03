@@ -556,3 +556,105 @@ class TestTheBenchmarkFiguresCanShowWhatTheToolProduced:
 
         prior = self._violins(_run())["this prospect — empirical prior"]
         assert np.max(prior) <= 350.0 + 1e-6
+
+
+class TestTheLimitStackSaysWhichContactItIsDrawing:
+    """Lars, 3 Sep 2026, of Figure 5.3.6: *"is the resulting hc the geological or | dhi?"*
+
+    It was the geological one, on a tab whose banner says everything below it carries the amplitude
+    evidence \u2014 and the dashed line that claimed to be the DHI was the **weight vector itself**.
+    `posterior` is one weight per realisation; it was handed straight to a trace's `x` against 260
+    depths, and plotly zips to the shorter of the two, so the curve was the first 260 raw weights
+    read as probabilities: values between 0.1\u202f% and 2\u202f% drawn on a 0\u2013100\u202f% axis. In the four
+    density modes the posterior never arrived at all.
+    """
+
+    @staticmethod
+    def _traces(at):
+        import base64
+        import json
+
+        import numpy as np
+
+        def decode(v):
+            if isinstance(v, dict) and "bdata" in v:
+                return np.frombuffer(base64.b64decode(v["bdata"]),
+                                     dtype=np.dtype(v.get("dtype", "f8")))
+            return np.asarray(v)
+
+        for el in at.get("plotly_chart"):
+            traces = {str(t.get("name")): t for t in json.loads(el.proto.spec).get("data", [])}
+            if any(k.startswith("Resulting HC depth") for k in traces):
+                yield {k: {a: decode(t[a]) for a in ("x", "y") if a in t}
+                       for k, t in traces.items()}
+
+    def test_no_trace_anywhere_pairs_two_axes_of_different_lengths(self):
+        """The bug class, caught across the whole page rather than at the one place it happened.
+        Plotly draws a mismatched pair silently, truncated to the shorter, which is how a weight
+        vector passed for a curve produced a plausible-looking line instead of an error."""
+        bad = []
+        for chart in self._traces(_run()):
+            for name, axes in chart.items():
+                if "x" in axes and "y" in axes and axes["x"].size != axes["y"].size:
+                    bad.append(f"{name}: x={axes['x'].size} y={axes['y'].size}")
+        assert not bad, f"traces with mismatched axes: {bad}"
+
+    def test_the_dhi_tab_draws_both_contacts_and_names_each(self):
+        charts = [c for c in self._traces(_run())
+                  if any("given the DHI" in k for k in c)]
+        assert charts, "tab 5.0's limit stack shows no DHI-updated contact at all"
+        for chart in charts:
+            assert "Resulting HC depth | geological" in chart
+            assert "Resulting HC depth | given the DHI" in chart
+
+    def test_the_geological_tab_draws_one_contact_and_does_not_call_it_a_basis(self):
+        """Tab 4.0 has nothing to compare against, so the bare name is right there."""
+        plain = [c for c in self._traces(_run()) if "Resulting HC depth" in c]
+        assert plain, "tab 4.0's limit stack has no contact curve"
+
+    def test_the_two_curves_are_different_distributions(self):
+        """If they coincided the figure would be decoration. The amplitude concentrates rather
+        than shifts, so the medians stay close and the separation shows up mid-curve."""
+        import numpy as np
+
+        for chart in self._traces(_run()):
+            if "Resulting HC depth | given the DHI" not in chart:
+                continue
+            if chart["Resulting HC depth | given the DHI"]["x"].size != 260:
+                continue
+            geological = chart["Resulting HC depth | geological"]["x"]
+            updated = chart["Resulting HC depth | given the DHI"]["x"]
+            assert np.abs(geological - updated).max() > 0.02, \
+                "the DHI curve is indistinguishable from the geological one"
+            return
+        raise AssertionError("no exceedance-mode limit stack was drawn on tab 5.0")
+
+    def test_the_answer_is_the_lower_envelope_of_the_limits_it_is_drawn_with(self):
+        """The caption's promise, and the reason every thin curve is reweighted too. The identity
+        holds under any *one* weighting; mixing geological limits with a DHI answer would let the
+        bold line cross above a thin one, which the caption then reads as impossible."""
+        import numpy as np
+
+        checked = 0
+        for chart in self._traces(_run()):
+            bold = [k for k in chart if k.startswith("Resulting HC depth")]
+            answer = chart[bold[-1]]["x"]
+            if answer.size != 260:
+                continue
+            for name, axes in chart.items():
+                if name.startswith("Resulting HC depth") or axes["x"].size != 260:
+                    continue
+                assert (axes["x"] >= answer - 1e-9).all(), \
+                    f"{name} runs shallower than the contact it is supposed to bound"
+                checked += 1
+        assert checked, "no limit curves were checked"
+
+    @pytest.mark.parametrize("mode", ["Exceedance curves", "Violin", "Half violin",
+                                      "Histogram", "Points"])
+    def test_every_mode_carries_the_posterior(self, mode):
+        """Four of the five silently drew the geological sample: `_density_mode` was never given
+        the weights. *Points* shows it by importance resampling, the other three exactly."""
+        at = _run(**{"stack_mode_5": mode})
+        _no_exception(at, f"stack mode {mode!r} on tab 5.0")
+        assert any("Resulting HC depth | given the DHI" in c for c in self._traces(at)), \
+            f"{mode} on tab 5.0 shows no DHI-updated contact"
