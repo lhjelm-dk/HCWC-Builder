@@ -153,19 +153,28 @@ def render(n: Numbering | None = None) -> None:
              "a contact on. It carries a bound, not a depth.")
     seen = anomaly != ABSENT
     partial = anomaly == PARTIAL
-    # **The model's own median, always.** This was a fixed 2 250 m, used whenever that depth fell
-    # anywhere inside the contact range -- which it does for almost any prospect, since the test was
-    # against the *extremes* rather than against the bulk. On the shipped prospect it opened at the
-    # **P94** of the geological contact, so the tab greeted every new reader with an amplitude
-    # arguing hard against the geology, an effective sample size of 2 801 of 10 000, and a POS the
-    # DHI had dragged most of the way up on its own.
+    # **2 250 m, because that is the prospect's pick** -- Lars, 3 Sep 2026, asked for it back after
+    # a spell on the model's own median.
     #
-    # The median is the one defensible opening position: it is the depth the geology already
-    # considers most likely, so the update starts neutral in the geometry channel and moves only
-    # when the reader states an amplitude that actually disagrees. It also cannot land outside the
-    # prior, which is what the old fallback was guarding against.
+    # The median was a reaction to a real fault and the fix for that fault is kept below. The
+    # original code took 2 250 m whenever it fell anywhere inside the contact *range*, a test
+    # against the extremes rather than against the bulk, and on the prospect as it then shipped
+    # 2 250 m was the **P94** of the geological contact: every new reader was greeted by an amplitude
+    # arguing hard against the geology, an effective sample size of 2 801 of 10 000, and a POS the
+    # DHI had dragged most of the way up on its own. The defaults have moved since -- the base seal
+    # sits a reservoir thickness down, the charge mean is 110 -- and 2 250 m is now the P86, 65 m
+    # below the median. Still a pick on the deep side, which is a statement about this prospect
+    # rather than an accident of the code, and it is the reader's to change.
+    #
+    # What stays is the guard, tightened: the fallback fires when the pick sits outside the central
+    # 98 % of the prior rather than outside its full range, so a prospect whose contact cannot
+    # plausibly reach 2 250 m opens on its own median instead of on an update built from a handful
+    # of realisations.
     DEFAULT_SIGMA_M = 10.0
-    default_contact = float(np.percentile(result.contact_m, 50))
+    PROSPECT_PICK_M = 2_250.0
+    lo_prior, hi_prior = np.percentile(result.contact_m, [1.0, 99.0])
+    default_contact = (PROSPECT_PICK_M if lo_prior <= PROSPECT_PICK_M <= hi_prior
+                       else float(np.percentile(result.contact_m, 50)))
     shape = st.radio(
         "How is the pick shaped?", dhi_core.PICK_SHAPES, horizontal=True,
         disabled=not seen or partial,

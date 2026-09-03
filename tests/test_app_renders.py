@@ -658,3 +658,186 @@ class TestTheLimitStackSaysWhichContactItIsDrawing:
         _no_exception(at, f"stack mode {mode!r} on tab 5.0")
         assert any("Resulting HC depth | given the DHI" in c for c in self._traces(at)), \
             f"{mode} on tab 5.0 shows no DHI-updated contact"
+
+
+class TestTheLimitStackGroupsWhatItDraws:
+    """Lars, 3 Sep 2026: *"could we see the limit distributions and then the dhi distribution (not a
+    limit) and then the one or two resulting distributions, maybe with just a bit of visual
+    separation"*.
+
+    Three groups, in that order, with a gap and a dotted rule between them and a heading over each.
+    The middle one is the point of the exercise: the amplitude is **not** a competing mechanism, so
+    it does not belong among them, and it is not a sample either, so it is not drawn like one.
+    """
+
+    LANE_MODES = ["Violin", "Half violin", "Histogram", "Points"]
+
+    @staticmethod
+    def _stack(at):
+        """The lane-mode limit stack on tab 5.0, as (lane name -> lane centre) plus its layout.
+
+        Read off the **x-axis ticks**, not off the traces. A bar's ``x`` is its length from ``base``
+        and a half violin's left edge *is* the lane centre, so deriving a position from the trace
+        geometry means a different rule per mode -- and the ticks are what the reader is actually
+        matching a lane to.
+        """
+        import json
+
+        for el in at.get("plotly_chart"):
+            spec = json.loads(el.proto.spec)
+            names = [str(t.get("name")) for t in spec.get("data", [])]
+            if not any(n.startswith("Resulting HC depth |") for n in names):
+                continue
+            axis = spec.get("layout", {}).get("xaxis", {})
+            ticks = axis.get("tickvals") or []
+            labels = axis.get("ticktext") or []
+            if not ticks:
+                continue
+            return {str(k): float(v) for k, v in zip(labels, ticks)}, spec.get("layout", {})
+        return None, None
+
+    @pytest.mark.parametrize("mode", LANE_MODES)
+    def test_the_amplitude_gets_its_own_lane_between_the_limits_and_the_answer(self, mode):
+        at = _run(**{"stack_mode_5": mode})
+        _no_exception(at, f"grouped lanes in {mode!r}")
+        centres, _ = self._stack(at)
+        assert centres is not None, f"{mode} drew no lane-mode stack on tab 5.0"
+        assert "The DHI, on its own" in centres, "the amplitude has no lane of its own"
+
+        evidence = centres["The DHI, on its own"]
+        limits = [x for name, x in centres.items()
+                  if not name.startswith("Resulting HC depth") and name != "The DHI, on its own"]
+        results = [x for name, x in centres.items() if name.startswith("Resulting HC depth")]
+        assert limits and results
+        assert max(limits) < evidence < min(results), \
+            "the three groups are not in the order limits / amplitude / result"
+
+    @pytest.mark.parametrize("mode", LANE_MODES)
+    def test_the_groups_are_separated_by_a_gap_and_a_rule(self, mode):
+        """A gap alone reads as an accident and a rule alone is easy to miss, so both. The rule has
+        to land *in* the gap -- between the two lanes it separates, not on top of one of them."""
+        centres, layout = self._stack(_run(**{"stack_mode_5": mode}))
+        rules = sorted(float(s["x0"]) for s in layout.get("shapes", [])
+                       if s.get("yref") == "paper" and s.get("type") == "line")
+        assert len(rules) == 2, f"expected two group rules, found {len(rules)}"
+
+        ordered = sorted(centres.values())
+        for rule in rules:
+            below = [x for x in ordered if x < rule]
+            above = [x for x in ordered if x > rule]
+            assert below and above, "a group rule sits outside the lanes"
+            gap = min(above) - max(below)
+            assert gap > 1.5, f"the group boundary at {rule:.2f} has no visible gap ({gap:.2f})"
+
+    @pytest.mark.parametrize("mode", LANE_MODES)
+    def test_each_group_carries_a_heading(self, mode):
+        _, layout = self._stack(_run(**{"stack_mode_5": mode}))
+        headings = {str(a.get("text")) for a in layout.get("annotations", [])
+                    if a.get("yref") == "paper"}
+        from hcwc.ui import limit_stack
+        assert {limit_stack.LIMITS_GROUP, limit_stack.EVIDENCE_GROUP,
+                limit_stack.RESULT_GROUP} <= headings, f"headings found: {headings}"
+
+    def test_the_geological_tab_has_no_amplitude_group(self):
+        """Nothing to show there, and a group heading over an empty gap would be worse than none."""
+        centres, layout = None, None
+        at = _run(**{"stack_mode_4": "Violin"})
+        import base64
+        import json
+
+        import numpy as np
+        for el in at.get("plotly_chart"):
+            spec = json.loads(el.proto.spec)
+            names = [str(t.get("name")) for t in spec.get("data", [])]
+            if "Resulting HC depth" in names and not any("given the DHI" in n for n in names):
+                assert "The DHI, on its own" not in names
+                rules = [s for s in spec.get("layout", {}).get("shapes", [])
+                         if s.get("yref") == "paper" and s.get("type") == "line"]
+                assert len(rules) == 1, "tab 4.0 should have one group boundary, not two"
+                return
+        raise AssertionError("tab 4.0 drew no lane-mode stack")
+
+    def test_the_amplitude_lane_is_a_shape_not_a_frequency(self):
+        """It is a likelihood ratio, peak-normalised. Nothing about it should be readable as a
+        count: it is the only lane drawn as a dotted outline, and that is deliberate."""
+        import base64
+        import json
+
+        import numpy as np
+
+        at = _run(**{"stack_mode_5": "Violin"})
+        for el in at.get("plotly_chart"):
+            for trace in json.loads(el.proto.spec).get("data", []):
+                if str(trace.get("name")) != "The DHI, on its own":
+                    continue
+                assert trace.get("line", {}).get("dash") == "dot", \
+                    "the amplitude lane is drawn like a sample"
+                x = np.frombuffer(base64.b64decode(trace["x"]["bdata"]),
+                                  dtype=np.dtype(trace["x"].get("dtype", "f8")))
+                # Peak-normalised into a lane of width LANE_FILL, so it spans at most that.
+                from hcwc.ui import limit_stack
+                assert (x.max() - x.min()) <= limit_stack.LANE_FILL + 1e-6
+                return
+        raise AssertionError("the amplitude lane was not drawn")
+
+    def test_the_amplitude_lane_prefers_the_depth_that_was_picked(self):
+        """The sanity check that says the lane is the evidence and not something else: its peak
+        should sit near the picked contact, because that is what the likelihood is about."""
+        import base64
+        import json
+
+        import numpy as np
+
+        pick = 2_150.0
+        at = _run(**{"stack_mode_5": "Violin", "dhi_in_contact": pick})
+        _no_exception(at, "the amplitude lane at a moved pick")
+        for el in at.get("plotly_chart"):
+            for trace in json.loads(el.proto.spec).get("data", []):
+                if str(trace.get("name")) != "The DHI, on its own":
+                    continue
+
+                def dec(v):
+                    return np.frombuffer(base64.b64decode(v["bdata"]),
+                                         dtype=np.dtype(v.get("dtype", "f8")))
+
+                x, y = dec(trace["x"]), dec(trace["y"])
+                # The polygon is right edge then reversed left edge; the widest point is the peak.
+                centre = float((x.min() + x.max()) / 2)
+                peak_at = float(y[np.argmax(np.abs(x - centre))])
+                assert abs(peak_at - pick) < 150.0, \
+                    f"the amplitude lane peaks at {peak_at:,.0f} m for a pick at {pick:,.0f} m"
+                return
+        raise AssertionError("the amplitude lane was not drawn")
+
+
+class TestTheDhiOpensOnTheProspectsPick:
+    """Lars, 3 Sep 2026: *"default picked dhi: set Picked contact to 2250 m"*.
+
+    It was a fixed 2 250 m, then the model's median after that default turned out to open at the
+    **P94** of the geological contact. The number is back because it is the prospect's actual pick;
+    the guard that made the old version wrong is not.
+    """
+
+    def test_the_pick_opens_at_two_two_five_zero(self):
+        assert _run().session_state["dhi_in_contact"] == pytest.approx(2_250.0)
+
+    def test_it_is_inside_the_prior_it_is_updating(self):
+        """The whole failure mode of a hard-coded default. Outside the central 98 % of the prior the
+        update rests on a handful of realisations, and the fallback exists for that case."""
+        import numpy as np
+
+        at = _run()
+        contacts = _contact_quantiles()
+        assert min(contacts) <= 2_250.0 <= max(contacts), \
+            f"2 250 m is outside the contact range {min(contacts):,.0f}-{max(contacts):,.0f} m"
+        assert not at.exception
+
+    def test_moving_the_pick_moves_the_contact_and_the_effective_sample_size(self):
+        """Both directions matter: a pick further from the prior median buys a sharper answer from
+        fewer realisations, and the tab has to report that trade rather than hide it."""
+        seen = {}
+        for pick in (2_185.0, 2_250.0):
+            at = _run(**{"dhi_in_contact": pick})
+            _no_exception(at, f"a pick at {pick:,.0f} m")
+            seen[pick] = {str(m.label): m.value for m in at.get("metric")}["Contact P50"]
+        assert seen[2_185.0] != seen[2_250.0], "the picked contact does not move the answer"

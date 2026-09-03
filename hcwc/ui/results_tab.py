@@ -551,9 +551,15 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
            "spotting overlap and worse for reading a probability. **Histogram** is the same "
            "unsmoothed, for when a kernel would invent a shape the samples do not have. "
            "**Points** shows the sample itself."
-           + (" Two contact lanes in every mode: "
+           + ("\n\n**Three groups, left to right, and they are three different kinds of thing.** "
+              "*Competing limits* are the mechanisms. *The amplitude alone* is not one of them — it "
+              "is the evidence they are being judged against, drawn as a dotted outline rather than "
+              "a filled shape because it is a **likelihood, not a count of realisations**: read its "
+              "shape, which is the factor the geology is multiplied by at each depth, and not its "
+              "area. *Result* carries both answers, "
               + theme.basis_tag(theme.GEOLOGICAL) + " and " + theme.basis_tag(theme.GIVEN_DHI)
-              + ". In **Points** the updated lane is an importance *resample* of the same "
+              + ", so the middle group is visibly what turns the first into the second.\n\n"
+                "In **Points** the updated lane is an importance *resample* of the same "
                 "realisations, so a realisation the amplitude favours appears more than once — "
                 "that repetition is the update." if given_dhi else ""))
 

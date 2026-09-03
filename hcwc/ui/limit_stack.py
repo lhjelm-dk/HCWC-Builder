@@ -20,6 +20,8 @@ display mode is the honest version of all three.
 """
 from __future__ import annotations
 
+from typing import NamedTuple
+
 import numpy as np
 import plotly.graph_objects as go
 
@@ -31,6 +33,22 @@ MODES = ("Exceedance curves", "Violin", "Half violin", "Histogram", "Points")
 
 #: Vertical space one limit's density occupies, as a share of its lane.
 LANE_FILL = 0.86
+
+#: Empty space between the three groups of lanes, in lane widths. Lars, 3 Sep 2026, asking for
+#: *"the limit distributions and then the dhi distribution (not a limit) and then the one or two
+#: resulting distributions ... with just a bit of visual separation"*. The three are different
+#: kinds of thing -- twelve competing mechanisms, one piece of evidence, and the answer -- and a
+#: reader scanning fourteen identical lanes has nothing to tell them apart. Gap, rule and a label
+#: over each group: the gap alone reads as an accident, the rule alone is easy to miss.
+GROUP_GAP = 0.9
+
+#: Where the amplitude's own lane is cut off. It is a *ratio* of two kernel densities, so out in the
+#: tails it is a small number divided by a smaller one and can take any value at all. Below this
+#: share of the prior's peak there are too few realisations for the ratio to mean anything.
+EVIDENCE_FLOOR = 0.03
+
+#: Group headings, so the vocabulary is in one place.
+LIMITS_GROUP, EVIDENCE_GROUP, RESULT_GROUP = "Competing limits", "The amplitude alone", "Result"
 
 
 def default_window(result, space: str, apex: float, spill: float | None) -> tuple[float, float]:
@@ -78,7 +96,14 @@ def figure(result, *, space: str = DEPTH, mode: str = "Exceedance curves",
         _density_mode(fig, result, space, apex, ranked, colour_of, lo, hi, mode, every, posterior)
 
     fig.update_yaxes(title_text=Limit.label_for(space), autorange="reversed", range=[hi, lo])
-    fig.update_layout(height=660, margin=dict(t=30, b=20, l=80, r=10),
+    # The lane modes carry a heading over each group, which needs room above the plot.
+    fig.update_layout(height=660,
+                      # The lane modes need room above for the group headings and a great deal
+                      # below for the tick labels: they are limit names, set at -40°, and `b=20`
+                      # was cutting every one of them off part-way through. "Resulting HC depth |
+                      # given the DHI" is the longest and sets the figure.
+                      margin=(dict(t=30, b=20, l=80, r=10) if mode == "Exceedance curves"
+                              else dict(t=64, b=150, l=80, r=10)),
                       legend=dict(orientation="v", x=1.02), plot_bgcolor="rgba(0,0,0,0)")
     _datums(fig, result, space, apex)
     return fig
@@ -152,7 +177,9 @@ def _density_mode(fig, result, space, apex, ranked, colour_of, lo, hi, mode, eve
     which is the honest rendering (a realisation the DHI likes appears more than once).
     """
     weights = None if posterior is None else np.asarray(posterior, dtype=float)
-    series: list[tuple[str, np.ndarray, str, np.ndarray | None]] = []
+    grid = np.linspace(lo, hi, 300)
+
+    limits: list[_Lane] = []
     for j, limit in enumerate(result.limit_set.limits):
         drawn = np.where(result.active[:, j], result.sampled_m[:, j], np.nan)
         keep = np.isfinite(drawn)
@@ -162,40 +189,66 @@ def _density_mode(fig, result, space, apex, ranked, colour_of, lo, hi, mode, eve
         # The mask has to be carried onto the weights as well. A limit is only drawn in the
         # realisations where it is active, and pairing that subset with the full weight vector
         # would silently pair each value with some other realisation's weight.
-        series.append((limit.name, convert(drawn, frm=COLUMN, to=space, apex_m=apex),
-                       colour_of[limit.name], None if weights is None else weights[keep]))
-    series.sort(key=lambda s: ranked.index(s[0]) if s[0] in ranked else len(ranked))
-    contact = convert(result.contact_m, frm=DEPTH, to=space, apex_m=apex)
-    if weights is None:
-        series.append(("Resulting HC depth", contact,
-                       theme.BASIS_COLOUR[theme.GEOLOGICAL], None))
-    else:
-        series.append(("Resulting HC depth | geological", contact,
-                       theme.BASIS_COLOUR[theme.GEOLOGICAL], None))
-        series.append(("Resulting HC depth | given the DHI", contact,
-                       theme.BASIS_COLOUR[theme.GIVEN_DHI], weights))
+        limits.append(_Lane(limit.name, colour_of[limit.name],
+                            convert(drawn, frm=COLUMN, to=space, apex_m=apex),
+                            None if weights is None else weights[keep]))
+    limits.sort(key=lambda s: ranked.index(s.name) if s.name in ranked else len(ranked))
 
-    grid = np.linspace(lo, hi, 300)
-    for lane, (name, values, colour, w) in enumerate(series):
-        centre = lane + 0.5
+    contact = convert(result.contact_m, frm=DEPTH, to=space, apex_m=apex)
+    groups: list[tuple[str, list[_Lane]]] = [(LIMITS_GROUP, limits)]
+    if weights is None:
+        groups.append((RESULT_GROUP,
+                       [_Lane("Resulting HC depth", theme.BASIS_COLOUR[theme.GEOLOGICAL], contact)]))
+    else:
+        groups.append((EVIDENCE_GROUP,
+                       [_Lane("The DHI, on its own", theme.BASIS_COLOUR[theme.GIVEN_DHI],
+                              curve=_evidence_curve(contact, weights, grid))]))
+        groups.append((RESULT_GROUP, [
+            _Lane("Resulting HC depth | geological", theme.BASIS_COLOUR[theme.GEOLOGICAL], contact),
+            _Lane("Resulting HC depth | given the DHI", theme.BASIS_COLOUR[theme.GIVEN_DHI],
+                  contact, weights)]),
+        )
+
+    # Lay the lanes out with a gap between groups, then hang the rules and headings off the gaps.
+    centres: list[float] = []
+    spans: list[tuple[float, float]] = []
+    cursor = 0.0
+    for index, (_, lanes) in enumerate(groups):
+        if index:
+            cursor += GROUP_GAP
+        start = cursor
+        for _ in lanes:
+            centres.append(cursor + 0.5)
+            cursor += 1.0
+        spans.append((start, cursor))
+
+    flat = [lane for _, lanes in groups for lane in lanes]
+    for position, (centre, lane) in enumerate(zip(centres, flat)):
+        if lane.curve is not None:
+            _outline(fig, lane, centre, grid)
+            continue
+        values, w = lane.values, lane.weights
         if mode == "Points":
             if w is not None:
-                rng = np.random.default_rng(lane)
+                # The one mode that cannot take its weights exactly: it draws realisations, so the
+                # posterior has to be shown *as* realisations. Importance resampling is the honest
+                # rendering -- a realisation the amplitude favours appears more than once.
+                rng = np.random.default_rng(position)
                 values = values[rng.choice(values.size, values.size, p=w / w.sum())]
             thinned = values[::max(int(every), 1)]
-            jitter = np.random.default_rng(lane).uniform(-0.30, 0.30, thinned.size)
-            fig.add_scatter(x=centre + jitter, y=thinned, mode="markers", name=name,
-                            marker=dict(color=colour, size=3, opacity=0.45),
-                            hovertemplate=f"{name}<br>%{{y:,.0f}}<extra></extra>")
+            jitter = np.random.default_rng(position).uniform(-0.30, 0.30, thinned.size)
+            fig.add_scatter(x=centre + jitter, y=thinned, mode="markers", name=lane.name,
+                            marker=dict(color=lane.colour, size=3, opacity=0.45),
+                            hovertemplate=f"{lane.name}<br>%{{y:,.0f}}<extra></extra>")
             continue
         if mode == "Histogram":
             counts, edges = np.histogram(values, bins=45, range=(lo, hi), weights=w)
             peak = counts.max() or 1
             mids = 0.5 * (edges[:-1] + edges[1:])
-            fig.add_bar(x=LANE_FILL * counts / peak, y=mids, orientation="h", name=name,
+            fig.add_bar(x=LANE_FILL * counts / peak, y=mids, orientation="h", name=lane.name,
                         width=(hi - lo) / 45, base=centre - LANE_FILL / 2,
-                        marker=dict(color=theme.rgba(colour, 0.75), line_width=0),
-                        hovertemplate=f"{name}<br>%{{y:,.0f}}<extra></extra>")
+                        marker=dict(color=theme.rgba(lane.colour, 0.75), line_width=0),
+                        hovertemplate=f"{lane.name}<br>%{{y:,.0f}}<extra></extra>")
             continue
         density = _density(values, grid, w)
         half = mode == "Half violin"
@@ -207,14 +260,92 @@ def _density_mode(fig, result, space, apex, ranked, colour_of, lo, hi, mode, eve
         right = centre + (LANE_FILL if half else LANE_FILL / 2) * density
         fig.add_scatter(x=np.concatenate([right, left[::-1]]),
                         y=np.concatenate([grid, grid[::-1]]), fill="toself", mode="lines",
-                        name=name, fillcolor=theme.rgba(colour, 0.70),
-                        line=dict(color=theme.shade_hex(colour, -0.35), width=1),
-                        hovertemplate=f"{name}<br>%{{y:,.0f}}<extra></extra>")
+                        name=lane.name, fillcolor=theme.rgba(lane.colour, 0.70),
+                        line=dict(color=theme.shade_hex(lane.colour, -0.35), width=1),
+                        hovertemplate=f"{lane.name}<br>%{{y:,.0f}}<extra></extra>")
 
-    fig.update_xaxes(tickvals=[i + 0.5 for i in range(len(series))],
-                     ticktext=[name for name, *_ in series], tickangle=-40,
-                     showgrid=False, zeroline=False, range=[0, len(series)])
-    fig.update_layout(barmode="overlay", showlegend=False)
+    rules = [dict(type="line", x0=x, x1=x, y0=0, y1=1, yref="paper",
+                  line=dict(color="#B9B4AA", width=1, dash="dot"))
+             for x in [(spans[i][1] + spans[i + 1][0]) / 2 for i in range(len(spans) - 1)]]
+    headings = [dict(x=(start + end) / 2, y=1.0, yref="paper", yanchor="bottom", text=title,
+                     showarrow=False, font=dict(size=11, color=theme.INK))
+                for (title, _), (start, end) in zip(groups, spans)]
+    fig.update_xaxes(tickvals=centres, ticktext=[lane.name for lane in flat], tickangle=-40,
+                     showgrid=False, zeroline=False, range=[0, cursor])
+    fig.update_layout(barmode="overlay", showlegend=False, shapes=rules, annotations=headings)
+
+
+class _Lane(NamedTuple):
+    """One column of the lane modes.
+
+    Either a **sample** — ``values``, optionally with per-realisation ``weights`` — which each mode
+    draws in its own way, or a ready-made peak-normalised ``curve``, which is drawn as an outline in
+    every mode because there is no sample behind it to bin, jitter or resample.
+    """
+    name: str
+    colour: str
+    values: np.ndarray | None = None
+    weights: np.ndarray | None = None
+    curve: np.ndarray | None = None
+
+
+def _evidence_curve(contact: np.ndarray, weights: np.ndarray, grid: np.ndarray) -> np.ndarray:
+    """What the amplitude says about depth **on its own**, peak-normalised.
+
+    Lars asked for the DHI beside the limits but *not as a limit*, which is exactly right: it is not
+    a competing mechanism, it is the evidence the mechanisms are being judged against. The object
+    that belongs in that lane is the likelihood as a function of depth — the factor the update
+    multiplies the geology by — and it is recoverable from what is already here without any new
+    model. Since ``posterior(z) ∝ prior(z) · E[L | z]``, the ratio of the two kernel densities *is*
+    ``E[L | z]`` up to a constant::
+
+        E[L | z]  ∝  KDE(contact, weights=L)(z)  /  KDE(contact)(z)
+
+    Read it as a shape, not as a probability. A likelihood has no area to normalise — dividing it by
+    its own integral over whatever window happens to be on screen would make the lane's height
+    depend on the depth slider, which is worse than having no scale at all. So it is normalised to
+    its own peak, which is what every other lane in these modes already is.
+
+    **Why it is clipped.** Out in the tails this is a small number divided by a smaller one, and a
+    handful of realisations can send the ratio anywhere. Below :data:`EVIDENCE_FLOOR` of the prior's
+    peak the lane is drawn as zero rather than as noise the reader would have to know to distrust.
+    """
+    from scipy.stats import gaussian_kde
+
+    if contact.size < 2 or np.allclose(contact, contact[0]) or weights.sum() <= 0:
+        return np.zeros_like(grid)
+    prior = gaussian_kde(contact)(grid)
+    updated = gaussian_kde(contact, weights=weights)(grid)
+    out = np.zeros_like(grid)
+    live = prior > EVIDENCE_FLOOR * prior.max()
+    out[live] = updated[live] / prior[live]
+    peak = float(out.max())
+    return out / peak if peak > 0 else out
+
+
+def _outline(fig, lane: "_Lane", centre: float, grid: np.ndarray) -> None:
+    """A lane drawn as an unfilled outline, for a curve that is not a sample of realisations.
+
+    The different treatment is the point. A filled violin beside it says *this many realisations
+    landed here*; this one says *the amplitude prefers this depth by this much*, which is a claim of
+    a different kind, and drawing them identically would invite reading a likelihood as a frequency.
+    """
+    # Drawn only where the curve is alive. Outside the floor it is zero, and a zero-width polygon
+    # is not nothing on screen -- it is a dotted line running the full height of the plot, which
+    # reads as a tail the evidence does not have. The shape should simply stop.
+    curve = lane.curve
+    live = curve > 0
+    if not live.any():
+        return
+    first, last = int(np.argmax(live)), len(live) - int(np.argmax(live[::-1]))
+    curve, grid = curve[first:last], grid[first:last]
+    left = centre - LANE_FILL / 2 * curve
+    right = centre + LANE_FILL / 2 * curve
+    fig.add_scatter(x=np.concatenate([right, left[::-1]]),
+                    y=np.concatenate([grid, grid[::-1]]), fill="toself", mode="lines",
+                    name=lane.name, fillcolor=theme.rgba(lane.colour, 0.13),
+                    line=dict(color=lane.colour, width=1.6, dash="dot"),
+                    hovertemplate=f"{lane.name}<br>%{{y:,.0f}}<extra></extra>")
 
 
 def _density(values: np.ndarray, grid: np.ndarray,
