@@ -105,20 +105,35 @@ def _figure(samples: np.ndarray, colour: str, unit: str) -> go.Figure:
     the shape of every exceedance curve elsewhere in the tool.
     """
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_histogram(x=samples, nbinsx=50, name="Frequency", marker_color=colour, opacity=0.75)
+
+    # **Binned here, not in the browser.** `add_histogram` ships every sample and lets plotly count
+    # them client-side: twenty thousand numbers per limit, twelve limits, on every rerun. The
+    # picture is fifty bars either way, so the bars are what gets sent -- 20 000 points down to 50,
+    # and the page's payload from 6.7 MB to about a megabyte.
+    counts, edges = np.histogram(samples, bins=50)
+    centres = 0.5 * (edges[:-1] + edges[1:])
+    fig.add_bar(x=centres, y=counts, name="Frequency", marker_color=colour, opacity=0.75,
+                width=float(edges[1] - edges[0]), hovertemplate="%{y:,} of the sample<extra></extra>")
 
     grid = np.linspace(float(np.min(samples)), float(np.max(samples)), 200)
     exceedance = engine.exceedance(samples, grid)
     fig.add_scatter(x=grid, y=exceedance, name="Probability of exceedance", mode="lines",
                     line=dict(color=theme.shade_hex(colour, -0.35), width=2.5), secondary_y=True)
 
+    # `add_vline` costs about 4 ms each -- it re-walks every axis-spanning shape on the figure
+    # every time it is called. Forty-five of them across the page is 190 ms of the render, against
+    # 1 ms for the same lines declared once. Same picture, same annotations.
+    rules, notes = [], []
     for label, value in (("P90", np.percentile(samples, 10)),
                          ("P50", np.percentile(samples, 50)),
                          ("P10", np.percentile(samples, 90))):
-        fig.add_vline(x=float(value), line=dict(color="#888", width=1, dash="dash"),
-                      annotation_text=f"{label}: {value:,.0f}", annotation_font_size=10)
+        value = float(value)
+        rules.append(dict(type="line", x0=value, x1=value, y0=0, y1=1, yref="paper",
+                          line=dict(color="#888", width=1, dash="dash")))
+        notes.append(dict(x=value, y=1, yref="paper", text=f"{label}: {value:,.0f}",
+                          showarrow=False, font=dict(size=10), yanchor="bottom"))
 
-    fig.update_layout(height=300, margin=dict(t=30, b=10),
+    fig.update_layout(height=300, margin=dict(t=30, b=10), shapes=rules, annotations=notes,
                       legend=dict(orientation="h", y=1.15), bargap=0.02)
     fig.update_xaxes(title_text=unit)
     fig.update_yaxes(title_text="Frequency", secondary_y=False)

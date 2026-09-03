@@ -40,6 +40,10 @@ PROSPECT = "#DD8452"
 #: Plotly rejects 8-digit hex for fillcolor, so the translucent form is spelled out.
 PROSPECT_FILL = "rgba(221, 132, 82, 0.35)"
 
+#: How many points a violin is drawn from. The shape is a kernel density and settles long before
+#: this; the percentile rules beside it are still read off the full sample.
+VIOLIN_POINTS = 3_000
+
 
 # The fits, the samplers and the probit axis moved to `empirical_data`; what stays here draws.
 # Imported by name rather than as a module so the call sites below did not have to change — there
@@ -61,7 +65,19 @@ def _add_prospect_violin(fig, x: float, samples: np.ndarray, width: float,
     """
     if samples is None or not len(samples):
         return
-    fig.add_violin(x=np.full(len(samples), x), y=samples, width=width, side="both",
+    # **Thinned before it is sent.** A violin is a kernel density that plotly computes in the
+    # browser from the raw points, so the whole sample crosses the wire: forty thousand for the
+    # empirical prior and ten thousand for each model, twice over on two figures. The percentile
+    # rules below are taken from the *full* sample, so the numbers a reader quotes are unchanged;
+    # only the shape is drawn from a subsample, and a violin's shape is settled long before three
+    # thousand points.
+    samples = np.asarray(samples, dtype=float)
+    if samples.size > VIOLIN_POINTS:
+        step = samples.size // VIOLIN_POINTS
+        drawn = np.sort(samples)[::step]
+    else:
+        drawn = samples
+    fig.add_violin(x=np.full(drawn.size, x), y=drawn, width=width, side="both",
                    points=False, line_color=colour, fillcolor=fill,
                    name=name, hoverinfo="skip", spanmode="hard")
     for pct, dash in ((90, "dot"), (50, "solid"), (10, "dot")):
