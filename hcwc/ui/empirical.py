@@ -948,7 +948,34 @@ What follows is a disagreement about **one estimator**, not about the data.
                 f"optimistic against one and in line with another, they disagree more than you do."))
 
             for c in comparisons:
-                st.markdown(f"- {c.sentence}")
+                st.markdown(f"- {c.sentence}"
+                            + (f" *({theme.GEOLOGICAL})*" if len(bases) > 1 else ""))
+
+            # **The verdict is a calibration statement, and only one basis supports one.** §7
+            # already argues this at length against figure 6.8, in the strongest terms the tab
+            # uses: *"use the DHI curve to see how far the evidence moved you, not to judge whether
+            # you are calibrated."* That warning is a section away by the time a reader reaches the
+            # Verdict column here, and once both bases are in the table it is the column most
+            # likely to be misread. So the short form goes where the number is.
+            #
+            # The argument, compressed: Graham et al. say in their opening sentence that their
+            # synthesis is for the case *without* DHIs; Edmundson's 242 carry no DHI flag and are
+            # discoveries, so DHI-supported wells are over-represented among them by selection; and
+            # detectability rises with column height, so that over-representation is concentrated in
+            # exactly the long columns the comparison turns on.
+            if len(bases) > 1:
+                st.info(
+                    "**Both rows are worth reading, but only the geological one is a calibration "
+                    "verdict.** The benchmarks cannot be conditioned on a DHI — Graham et al. is "
+                    "explicitly the *no-DHI* prior, and Edmundson's discoveries are partly selected "
+                    "by other people's amplitudes, enriched in long columns because that is what "
+                    "detectability does. Judging your posterior against them **counts the DHI "
+                    "twice** and makes you look less optimistic than you are. §7 above sets this "
+                    "out in full.\n\n"
+                    "**Read the updated row as displacement, not as a score:** how far the evidence "
+                    "moved you, against a fixed backdrop. The distance between the two rows is the "
+                    "honest quantity here."
+                )
 
             # **A selector rather than both at once, and the medium decides it.** Four benchmarks
             # against two bases is eight curves on a figure whose whole reading is which side of one
@@ -1403,6 +1430,16 @@ What follows is a disagreement about **one estimator**, not about the data.
                     "to differ — the question a difference raises is *which of my elicited limits "
                     "would have to move to close it*, and §8 above answers the direction.")
 
+            if len(fill_bases) > 1:
+                st.caption(
+                    "**The updated bars are displacement, not calibration.** Every one of these "
+                    f"{int(cell.n)} traps is a discovery, and discoveries are partly selected by "
+                    "amplitudes — so the cell is not a DHI-free base rate any more than the "
+                    "benchmarks in §8 are. What the second bar shows is **how far the evidence "
+                    "moved your fill distribution**, against a fixed backdrop; on this prospect it "
+                    "moves most of the way toward the record, which is worth seeing and is not the "
+                    "same claim as being better calibrated."
+                )
             st.warning(
                 f"**This informs the contact distribution and never the chance.** The matrix is "
                 f"`P(trap fill | discovery)` — all {int(cell.n)} of those traps had hydrocarbons "
