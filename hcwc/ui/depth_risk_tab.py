@@ -337,21 +337,42 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                         float(np.percentile(result.contact_m, 40)), 5.0,
                         key=f"z_entry_{tab}")
     comp = dc.allocation_comparison(d, pos, z_entry)
+    # **Both bases, side by side, when there is a posterior to compare against.** Lars, 4 Sep 2026:
+    # this table was the DHI-updated allocation on tab 5.0 and the geological one on tab 4.0, drawn
+    # identically, with nothing on either to say which — and the two differ by more than the
+    # rounding. They differ through `r` alone: `r = P(contact > z_entry | success)` is read off the
+    # contact distribution, which is the one thing the amplitude does move, while the element
+    # chances above it are untouched by construction. So the whole gap between the two pairs of
+    # columns below is the amplitude's opinion about depth, and nothing else.
+    comp_geo = dc.allocation_comparison(d_geo, pos, z_entry) if weights is not None else None
     rows = []
     for element in ELEMENTS:
-        derived = comp.get(f"derived::{element.value}")
-        rows.append({
-            "Element": element.value,
-            "Prospect POS": f"{pos[element]:.2f}",
-            "Derived at the well": "—" if derived is None else f"{derived:.3f}",
-            "Allocated (equal cube-root)": f"{comp[f'allocated::{element.value}']:.3f}",
-        })
+        row = {"Element": element.value, "Prospect POS": f"{pos[element]:.2f}"}
+        if comp_geo is None:
+            derived = comp.get(f"derived::{element.value}")
+            row["Derived at the well"] = "—" if derived is None else f"{derived:.3f}"
+            row["Allocated (equal cube-root)"] = f"{comp[f'allocated::{element.value}']:.3f}"
+        else:
+            for label, table in (("geological", comp_geo), ("given the DHI", comp)):
+                derived = table.get(f"derived::{element.value}")
+                row[f"Derived · {label}"] = "—" if derived is None else f"{derived:.3f}"
+                row[f"Allocated · {label}"] = f"{table[f'allocated::{element.value}']:.3f}"
+        rows.append(row)
+
+    basis = theme.GIVEN_DHI if with_dhi else theme.GEOLOGICAL
     n.table(pd.DataFrame(rows),
-            f"At {z_entry:,.0f} m, r = {comp['r_location']:.3f}. **The two columns are different "
-            f"kinds of object.** The allocation divides one number by a rule and reproduces "
-            f"P_well = {comp['allocated::P_well']:.3f} whatever rule is chosen. The derived column "
-            f"carries information about which element actually binds at this depth, so it can — "
-            f"and does — disagree.")
+            (f"{theme.basis_tag(basis)} &nbsp; "
+             + (f"At {z_entry:,.0f} m the location factor is **r = {comp_geo['r_location']:.3f} "
+                f"geological** and **r = {comp['r_location']:.3f} given the DHI**, and every "
+                f"difference in the table follows from that one number — the element chances from "
+                f"tab 2.0 are identical in both halves, because a fluid indicator moves the total "
+                f"and may not re-attribute it between elements. "
+                if comp_geo is not None else
+                f"At {z_entry:,.0f} m, r = {comp['r_location']:.3f}. ")
+             + f"**Derived and allocated are different kinds of object.** The allocation divides "
+               f"one number by a rule and reproduces P_well = {comp['allocated::P_well']:.3f} "
+               f"whatever rule is chosen. The derived columns carry information about which element "
+               f"actually binds at this depth, so they can — and do — disagree."))
     st.caption(
         "Reservoir has no derived value here because no limit in this model is reservoir-"
         "controlled; add an R2 pinchout limit on tab 3.0 to give it one. Its effectiveness decline "

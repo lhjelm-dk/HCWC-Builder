@@ -937,3 +937,64 @@ class TestTheLimitStackHonoursItsControls:
         at = _run()
         for tab in (4, 5):
             assert at.session_state[f"stack_mode_{tab}"] == "Violin"
+
+
+class TestTheAllocationTableSaysWhichBasisItIs:
+    """Lars, 4 Sep 2026, of tables 4.2.3 and 5.4.3: *"I want a clear statement on whether this are
+    geological or given dhi ... and maybe for the 5.4.3 I want a geological AND |dhi allocation"*.
+
+    The two tables were drawn identically and neither said which it was — while 5.4.3 was silently
+    the DHI-updated one. They differ through `r` alone, and by a lot: derived Retention moves 0.449
+    to 0.597 on the shipped prospect.
+    """
+
+    @staticmethod
+    def _allocation_tables(at):
+        out = []
+        for el in at.get("dataframe"):
+            frame = el.value
+            columns = list(getattr(frame, "columns", []))
+            if "Prospect POS" in columns:
+                out.append(frame)
+        return out
+
+    def test_the_geological_tab_shows_one_pair_of_columns(self):
+        frames = self._allocation_tables(_run())
+        assert frames, "no allocation table was drawn"
+        geological = frames[0]
+        assert "Derived at the well" in geological.columns
+        assert not any("given the DHI" in c for c in geological.columns), \
+            "tab 4.0 is showing a DHI column"
+
+    def test_the_dhi_tab_shows_both_bases(self):
+        frames = self._allocation_tables(_run())
+        assert len(frames) >= 2, "tab 5.0 drew no allocation table of its own"
+        updated = frames[-1]
+        for column in ("Derived · geological", "Allocated · geological",
+                       "Derived · given the DHI", "Allocated · given the DHI"):
+            assert column in updated.columns, f"{column} missing from table 5.4.3"
+
+    def test_the_two_bases_actually_differ(self):
+        """If they matched, the extra columns would be clutter. They differ through the location
+        factor `r`, which is read off the contact distribution — the one thing the amplitude
+        moves — while the element chances above it are untouched."""
+        updated = self._allocation_tables(_run())[-1]
+        pairs = [(g, d) for g, d in zip(updated["Derived · geological"],
+                                        updated["Derived · given the DHI"]) if g != "—"]
+        assert pairs, "no derived values to compare"
+        assert any(g != d for g, d in pairs), \
+            "the geological and DHI allocations are identical, so one of them is not being used"
+
+    def test_the_element_chances_are_the_same_in_both_halves(self):
+        """The claim the caption makes, asserted. A fluid indicator moves the total and may not
+        re-attribute it between elements, so `Prospect POS` is one column, not two."""
+        updated = self._allocation_tables(_run())[-1]
+        assert sum(c == "Prospect POS" for c in updated.columns) == 1
+
+    @pytest.mark.parametrize("tab,expected", [(4, "GEOLOGICAL"), (5, "GIVEN THE DHI")])
+    def test_each_table_carries_its_basis_chip(self, tab, expected):
+        """The statement Lars asked for, in the caption where the number is read."""
+        at = _run()
+        captions = [str(c.value) for c in at.get("caption")]
+        assert any(expected in c and "Prospect POS" not in c for c in captions), \
+            f"no {expected} chip found on the allocation captions"
