@@ -91,18 +91,22 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     result = posterior.result if given_dhi else run.current(limit_set)
     h_min = limit_set.min_column_m
 
-    st.subheader("Results | given the DHI" if given_dhi else "Results")
+    # Named for the evidence actually in the posterior. A prospect updated by an offset
+    # penetration alone reaches this page too, and a heading reading "given the DHI" on it would be
+    # simply false -- the one thing a basis label must never be.
+    st.subheader(f"Results | {theme.evidence_basis()}" if given_dhi else "Results")
     if given_dhi:
         theme.basis_banner(
             theme.GIVEN_DHI,
-            "Every figure below carries the amplitude evidence. The purely geological versions of "
-            "the same figures are on tab 4.0, in the same order — they are a different "
+            "Every figure below carries the evidence named above. The purely geological versions "
+            "of the same figures are on tab 4.0, in the same order — they are a different "
             "distribution, not a different view of this one.")
     else:
         theme.basis_banner(
             theme.GEOLOGICAL,
-            "The competing limits alone. If this prospect has a DHI, its updated results are on "
-            "tab 5.0 and are a different distribution — not a different view of this one.")
+            "The competing limits alone. If this prospect has a DHI or a penetration, its updated "
+            "results are on tab 5.0 and are a different distribution — not a different view of "
+            "this one.")
 
     # ------------------------------------------------------------------ headline
     #
@@ -194,12 +198,14 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     fig = go.Figure()
 
     if show_hist:
+        # The token picks the colour; the words come from what is actually in the weights.
         basis = theme.GIVEN_DHI if given_dhi else theme.GEOLOGICAL
+        basis_words = theme.evidence_basis() if given_dhi else theme.GEOLOGICAL
         edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 61)
         counts, _ = np.histogram(result.contact_m, bins=edges, weights=weights)
         total = float(counts.sum())
         fig.add_bar(y=0.5 * (edges[:-1] + edges[1:]), x=counts / total if total else counts,
-                    orientation="h", xaxis="x2", name=f"contacts — {basis}", opacity=0.45,
+                    orientation="h", xaxis="x2", name=f"contacts — {basis_words}", opacity=0.45,
                     marker_color=theme.BASIS_COLOUR[basis], marker_line_width=0,
                     hovertemplate="%{y:.0f} m TVDSS<br>%{x:.1%} of realisations<extra></extra>")
 
@@ -237,7 +243,11 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # look like any other stacked bar; the only way to see what the amplitude did was to hold the
     # geological twin on tab 4.0 in your head and flip between tabs. Three views of one figure fixes
     # that, and the third is the one worth having — the difference is where the finding is.
-    GIVEN, GEOLOGICAL, DIFFERENCE = "Given the DHI", "Geological", "What the DHI changed"
+    # The option labels name the two distributions being compared, so they follow the evidence
+    # like every other basis label. `DIFFERENCE` names the *operation*, and "what the evidence
+    # changed" is the honest reading of it whichever channel supplied the weights.
+    GIVEN = theme.evidence_title()
+    GEOLOGICAL, DIFFERENCE = "Geological", "What the evidence changed"
     view, scaled = GEOLOGICAL, False
     if given_dhi:
         view = st.radio("Show", (GIVEN, GEOLOGICAL, DIFFERENCE), horizontal=True,
@@ -354,11 +364,11 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      "statistics\"; the per-element curves built from it are, as far as I can "
                      "find, unpublished."
                      + (("\n\n**Bin height carries the contact distribution here**, which is why "
-                         "*Given the DHI* and *Geological* differ visibly: the amplitude moves "
+                         f"*{GIVEN}* and *Geological* differ visibly: the evidence moves "
                          "which depths are reached, by up to ten points, far more than it moves "
                          "the mechanism mix at any one depth."
                          if scaled else
-                         "\n\n**In this view *Given the DHI* and *Geological* are "
+                         f"\n\n**In this view *{GIVEN}* and *Geological* are "
                          f"indistinguishable — they differ by {_within_bin_move(result, edges, weights):.1%} "
                          "at most — and that is a property of the evidence, not a broken control.** "
                          "Normalising each bin against itself conditions on contact depth, and the "
@@ -401,16 +411,28 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
              "moves the CONTACT one-for-one, so a tool offering only one would hide half the "
              "sensitivity.")
     space = "column" if swing_space.startswith("Column") else "depth"
-    effects = (sensitivity.dhi_tornado(posterior, space=space) if given_dhi
+    # **The DHI tornado needs a DHI.** It perturbs the amplitude's own inputs -- pick sigma, the
+    # strength, the detection function -- so a posterior built from an offset penetration alone has
+    # nothing for it to move, and it raised on `observation.pick_sigma_m` being `None`. The
+    # geological tornado is the honest fallback there: what varies on such a prospect is the limits.
+    amplitude = given_dhi and posterior.observation is not None
+    effects = (sensitivity.dhi_tornado(posterior, space=space) if amplitude
                else sensitivity.tornado(result, space=space))
-    centre = (sensitivity.dhi_baseline(posterior, space=space) if given_dhi
+    centre = (sensitivity.dhi_baseline(posterior, space=space) if amplitude
               else sensitivity.baseline(result, space=space))
+    if given_dhi and not amplitude:
+        st.caption(
+            "**This tornado is geological.** The updated one perturbs the amplitude's own inputs — "
+            "the pick, its σ, the detection function — and this prospect is updated by a "
+            "penetration rather than by an amplitude, so there is nothing there to perturb. What "
+            "moves the answer here is the limits, which is what is ranked below."
+        )
 
     # A bar's width says how much the answer moves; nothing on it says how much evidence that
     # rests on. Unweighted the two are the same, because every tail is a fixed tenth of the run.
     # Weighted they are not: after a sharp DHI update a tail of a thousand realisations can carry
     # an effective sample of twenty-odd, and the bar is drawn exactly as wide either way.
-    if given_dhi and effects:
+    if amplitude and effects:
         _thin = [e for e in effects[:12] if e.support < MIN_TORNADO_SUPPORT]
         if _thin:
             st.warning(
@@ -511,11 +533,12 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         "`P(active)`** — read that number off the right-hand end of its curve — and **the result is "
         "the lower envelope**, because the contact is the shallowest active limit. A curve far to "
         "the right of the bold line is a mechanism that never mattered."
-        + ("\n\n**Both answers are on the axis.** The bold red line is the contact *given the DHI* "
-           "— the answer on this tab — and the dashed blue one is the purely geological contact "
-           "from tab 4.0, kept beside it because the gap between them is what the amplitude "
-           "bought. Every thin limit curve is drawn under the DHI weights as well, which is what "
-           "keeps the lower-envelope reading true." if given_dhi else ""))
+        + (f"\n\n**Both answers are on the axis.** The bold red line is the contact "
+           f"*{theme.evidence_basis()}* — the answer on this tab — and the dashed blue one "
+           f"is the purely geological contact from tab 4.0, kept beside it because the gap "
+           f"between them is what the evidence bought. Every thin limit curve is drawn under "
+           f"the same weights, which is what keeps the lower-envelope reading true."
+           if given_dhi else ""))
     c1, c2, c3 = st.columns([2, 2, 1])
     space = c1.radio(
         "Show depths as", [limits_mod.DEPTH, limits_mod.COLUMN], horizontal=True,

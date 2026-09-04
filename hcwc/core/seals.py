@@ -400,3 +400,115 @@ def sample_max_column_m(inputs: SealInputs, n: int, seed: int = 20260825) -> np.
         r_res = u(inputs.reservoir_radius_um) * 1e-6
         pc = pc - 2.0 * gamma * DYNE_PER_CM_TO_N_PER_M * np.cos(theta) / r_res
     return pc / (delta_rho * G)
+
+
+# --------------------------------------------------------------------------- mechanical top seal
+#: Pressure gradient of a fluid of unit density, in **bar per metre**. One g/cm3 under gravity is
+#: 9806.65 Pa/m, and a bar is 1e5 Pa.
+BAR_PER_M_PER_G_CM3 = 0.0980665
+
+#: Equivalent mud weight of a gradient, in specific gravity, is the gradient divided by this.
+#: Same number, kept under its own name because the two readings are used for different things and
+#: `gradient / BAR_PER_M_PER_G_CM3` reads as arithmetic rather than as a unit conversion.
+EMW_PER_BAR_PER_M = 0.0980665
+
+
+def fracture_headroom_bar(s_hmin_bar, pore_pressure_bar):
+    """``S_Hmin - P_p`` — the pressure a trap can still take before the top seal hydrofractures.
+
+    Grant (2020), equation 7: the seal fails when ``P_f >= S_Hmin + T``, with the tensile strength
+    ``T`` usually taken as zero because natural flaws and pre-existing sealed fractures leave the
+    intact rock's tensile strength unrepresentative. It is therefore folded into ``S_Hmin`` rather
+    than asked for separately.
+
+    A **negative or zero headroom is not a short column, it is a failed trap**: the aquifer alone
+    already satisfies the fracture criterion, with no hydrocarbon buoyancy needed. That is a
+    different finding from "this trap holds fifty metres" and the caller has to say so.
+    """
+    return np.asarray(s_hmin_bar, dtype=float) - np.asarray(pore_pressure_bar, dtype=float)
+
+
+def mechanical_column_m(s_hmin_bar, pore_pressure_bar, water_density_g_cm3, hc_density_g_cm3):
+    """The column a trap can hold before the top seal fails in tension.
+
+    Grant (2020), equation 8::
+
+        H = (S_Hmin - P_p) / (grad_w - grad_h)
+
+    written there in pressure gradients. The buoyant column raises the pressure at the crest above
+    the aquifer's by ``(grad_w - grad_h)`` per metre, so the headroom divided by that excess is how
+    many metres fit before the crest pressure reaches ``S_Hmin``.
+
+    **This is a different mechanism from capillary failure, not a refinement of it.** A capillary
+    seal leaks when the buoyancy pressure exceeds the entry pressure of the *pore throats*; a
+    mechanical seal breaks when the total pressure exceeds the *minimum stress* and the rock parts.
+    The first is a property of the shale's texture, the second of the stress state, and a trap can
+    be comfortable on one and against the wall on the other. Both belong in the competition.
+
+    Grant is careful that this is a **valve, not a catastrophe**: pressure bleeds off through the
+    fracture, the fracture closes and reseals, so the mechanism caps a column rather than emptying
+    an accumulation. Which is exactly what a limit in this tool does.
+    """
+    headroom = fracture_headroom_bar(s_hmin_bar, pore_pressure_bar)
+    contrast = (np.asarray(water_density_g_cm3, dtype=float)
+                - np.asarray(hc_density_g_cm3, dtype=float)) * BAR_PER_M_PER_G_CM3
+    with np.errstate(divide="ignore", invalid="ignore"):
+        out = np.where(contrast > 0, headroom / contrast, np.nan)
+    # Headroom already spent is a failed trap, and a negative column is not a shallower limit --
+    # it is no column at all. Clipped here so the caller cannot accidentally compete a negative
+    # against the others and win.
+    return np.clip(out, 0.0, None)
+
+
+@dataclass(frozen=True)
+class MechanicalSealInputs:
+    """Fracture-limited column inputs as ranges, sampled uniformly like :class:`SealInputs`.
+
+    Pressures are **absolute, in bar, at the crest of the trap** rather than gradients, because
+    that is the form the data arrives in: a leak-off or formation-integrity test gives a pressure at
+    a depth, and an MDT or RFT gives a reservoir pressure at a depth. The UI defaults them from the
+    crest depth at typical gradients and reports the gradients back, so a number that came from a
+    gradient can still be checked against one.
+    """
+    s_hmin_bar: tuple[float, float] = (300.0, 330.0)
+    pore_pressure_bar: tuple[float, float] = (215.0, 225.0)
+    water_density_g_cm3: tuple[float, float] = (1.00, 1.10)
+    hc_density_g_cm3: tuple[float, float] = (0.70, 0.85)
+
+    def __post_init__(self) -> None:
+        for name in ("s_hmin_bar", "pore_pressure_bar",
+                     "water_density_g_cm3", "hc_density_g_cm3"):
+            lo, hi = getattr(self, name)
+            if hi < lo:
+                raise ValueError(f"{name}: the high value must not be below the low one")
+        if self.hc_density_g_cm3[1] >= self.water_density_g_cm3[0]:
+            raise ValueError(
+                "the hydrocarbon and water density ranges overlap, so some realisations have "
+                "nothing buoyant"
+            )
+        if self.s_hmin_bar[1] <= self.pore_pressure_bar[0]:
+            raise ValueError(
+                "the minimum stress is below the pore pressure in every realisation, so the trap "
+                "is already at its fracture pressure with no hydrocarbon in it. That is a trap "
+                "failure rather than a column limit -- carry it as a risk on Retention, not here"
+            )
+
+
+def sample_mechanical_column_m(inputs: MechanicalSealInputs, n: int,
+                               seed: int = 20260825) -> np.ndarray:
+    """A distribution of the fracture-limited column, for use as a limit.
+
+    Stress and pore pressure are sampled **independently**, which overstates the spread wherever
+    they are coupled -- and they usually are, since pore-pressure/stress coupling is most of why a
+    fracture gradient rises with overpressure at all (Swarbrick & Lahann 2016). The honest place to
+    put that back is the correlation matrix on tab 3.0, where every other dependence in this tool
+    lives, rather than a hidden coupling here that an assessor cannot see or override.
+    """
+    rng = np.random.default_rng(seed)
+
+    def u(pair: tuple[float, float]) -> np.ndarray:
+        lo, hi = pair
+        return np.full(n, lo) if hi == lo else rng.uniform(lo, hi, n)
+
+    return mechanical_column_m(u(inputs.s_hmin_bar), u(inputs.pore_pressure_bar),
+                               u(inputs.water_density_g_cm3), u(inputs.hc_density_g_cm3))

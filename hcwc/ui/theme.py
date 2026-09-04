@@ -278,6 +278,36 @@ GEOLOGICAL, GIVEN_DHI = "geological", "given the DHI"
 BASIS_COLOUR = {GEOLOGICAL: "#4C72B0", GIVEN_DHI: "#C44E52"}
 
 
+def evidence_basis() -> str:
+    """What the updated basis should be *called*, given which channels are actually in it.
+
+    ``GIVEN_DHI`` is the token every call site passes and the key the colour is looked up under; it
+    is not always the right words. Once an offset penetration can update a prospect with no
+    amplitude at all, a banner reading GIVEN THE DHI on a well-only prospect is simply false, and
+    the basis label is the one thing in this app that must never be.
+
+    One function so the banner, the chips and the sub-headings cannot disagree with each other.
+    """
+    have_dhi = bool(st.session_state.get("dhi_on", False))
+    have_well = bool(st.session_state.get("well_on", False))
+    if have_dhi and have_well:
+        return "given the DHI + well"
+    if have_well:
+        return "given the well"
+    return GIVEN_DHI
+
+
+def evidence_title() -> str:
+    """:func:`evidence_basis` as a heading — *Given the DHI*, *Given the well*.
+
+    ``str.capitalize`` would lowercase the acronym, and a heading reading *Given the dhi* beside a
+    chip reading *GIVEN THE DHI* is the kind of small inconsistency that makes a reader wonder
+    whether the two are the same thing.
+    """
+    words = evidence_basis()
+    return words[0].upper() + words[1:]
+
+
 def basis_banner(basis: str, detail: str = "") -> None:
     """A strip naming which contact distribution everything below it is built from.
 
@@ -287,11 +317,12 @@ def basis_banner(basis: str, detail: str = "") -> None:
     figure, because a reader who has scrolled to Figure 7.2 will not scroll back to check.
     """
     colour = BASIS_COLOUR[basis]
+    words = evidence_basis() if basis == GIVEN_DHI else basis
     st.markdown(
         f"<div style='background:{rgba(colour, 0.13)};border-left:6px solid {colour};"
         f"padding:0.5rem 0.8rem;margin:0.2rem 0 1rem 0;border-radius:3px'>"
         f"<b style='color:{shade_hex(colour, -0.45)}'>Everything on this tab is the "
-        f"{basis.upper()} contact distribution.</b>"
+        f"{words.upper()} contact distribution.</b>"
         + (f"<div style='font-size:0.88rem;opacity:0.85;margin-top:0.15rem'>{detail}</div>"
            if detail else "")
         + "</div>",
@@ -302,9 +333,10 @@ def basis_banner(basis: str, detail: str = "") -> None:
 def basis_tag(basis: str) -> str:
     """An inline chip for a caption, where a whole banner would be noise."""
     colour = BASIS_COLOUR[basis]
+    words = evidence_basis() if basis == GIVEN_DHI else basis
     return (f"<span style='background:{rgba(colour, 0.18)};color:{shade_hex(colour, -0.45)};"
             f"padding:0.05rem 0.4rem;border-radius:3px;font-weight:700;font-size:0.8rem'>"
-            f"{basis.upper()}</span>")
+            f"{words.upper()}</span>")
 
 
 def element_heading(element: str, text: str, subtitle: str = "") -> None:

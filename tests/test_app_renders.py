@@ -703,11 +703,11 @@ class TestTheLimitStackGroupsWhatItDraws:
         _no_exception(at, f"grouped lanes in {mode!r}")
         centres, _ = self._stack(at)
         assert centres is not None, f"{mode} drew no lane-mode stack on tab 5.0"
-        assert "The DHI, on its own" in centres, "the amplitude has no lane of its own"
+        assert "The evidence, on its own" in centres, "the amplitude has no lane of its own"
 
-        evidence = centres["The DHI, on its own"]
+        evidence = centres["The evidence, on its own"]
         limits = [x for name, x in centres.items()
-                  if not name.startswith("Resulting HC depth") and name != "The DHI, on its own"]
+                  if not name.startswith("Resulting HC depth") and name != "The evidence, on its own"]
         results = [x for name, x in centres.items() if name.startswith("Resulting HC depth")]
         assert limits and results
         assert max(limits) < evidence < min(results), \
@@ -751,7 +751,7 @@ class TestTheLimitStackGroupsWhatItDraws:
             spec = json.loads(el.proto.spec)
             names = [str(t.get("name")) for t in spec.get("data", [])]
             if "Resulting HC depth" in names and not any("given the DHI" in n for n in names):
-                assert "The DHI, on its own" not in names
+                assert "The evidence, on its own" not in names
                 rules = [s for s in spec.get("layout", {}).get("shapes", [])
                          if s.get("yref") == "paper" and s.get("type") == "line"]
                 assert len(rules) == 1, "tab 4.0 should have one group boundary, not two"
@@ -769,7 +769,7 @@ class TestTheLimitStackGroupsWhatItDraws:
         at = _run(**{"stack_mode_5": "Violin"})
         for el in at.get("plotly_chart"):
             for trace in json.loads(el.proto.spec).get("data", []):
-                if str(trace.get("name")) != "The DHI, on its own":
+                if str(trace.get("name")) != "The evidence, on its own":
                     continue
                 assert trace.get("line", {}).get("dash") == "dot", \
                     "the amplitude lane is drawn like a sample"
@@ -794,7 +794,7 @@ class TestTheLimitStackGroupsWhatItDraws:
         _no_exception(at, "the amplitude lane at a moved pick")
         for el in at.get("plotly_chart"):
             for trace in json.loads(el.proto.spec).get("data", []):
-                if str(trace.get("name")) != "The DHI, on its own":
+                if str(trace.get("name")) != "The evidence, on its own":
                     continue
 
                 def dec(v):
@@ -902,7 +902,7 @@ class TestTheLimitStackHonoursItsControls:
         distinction is carried by style -- hollow shape, hollow bars, open markers."""
         at = _run(**{"stack_mode_5": mode})
         _no_exception(at, f"the amplitude lane in {mode!r}")
-        found = [t for t, _, _ in self._traces(at, "The DHI, on its own")]
+        found = [t for t, _, _ in self._traces(at, "The evidence, on its own")]
         assert found, f"{mode} drew no amplitude lane"
         for trace in found:
             assert trace.get("type") == kind, \
@@ -922,7 +922,7 @@ class TestTheLimitStackHonoursItsControls:
         import numpy as np
 
         for trace, _, _ in self._traces(_run(**{"stack_mode_5": "Half violin"}),
-                                        "The DHI, on its own"):
+                                        "The evidence, on its own"):
             x = np.frombuffer(base64.b64decode(trace["x"]["bdata"]),
                               dtype=np.dtype(trace["x"].get("dtype", "f8")))
             # A half violin's flat edge is the lane centre, so half the outline is a constant.
@@ -998,3 +998,176 @@ class TestTheAllocationTableSaysWhichBasisItIs:
         captions = [str(c.value) for c in at.get("caption")]
         assert any(expected in c and "Prospect POS" not in c for c in captions), \
             f"no {expected} chip found on the allocation captions"
+
+
+# ---------------------------------------------------------------------------------------------
+# Grant (2020) eq. 8, offset well control, and the basis vocabulary that had to follow them.
+# ---------------------------------------------------------------------------------------------
+
+WELL_ONLY = dict(dhi_toggle=False, well_toggle=True, well_in_water_on=True, well_in_water=2_260.0)
+WELL_AND_DHI = dict(well_toggle=True, well_in_water_on=True, well_in_water=2_260.0)
+
+
+class TestTheMechanicalTopSealIsAvailableAsALimit:
+    """Grant (2020) eq. 8, added 4 Sep 2026 after reviewing the paper the tool's method comes from.
+
+    Every other Retention limit fails because the pore throats are wide enough or because there is a
+    hole in the seal. This one fails because the rock parts in tension, and the two are independent.
+    """
+
+    KEY = "lim_Top seal (fracture)"
+
+    def test_it_is_in_the_limit_set_and_off_by_default(self):
+        """In the list but never biting, like every other mechanism most prospects do not have.
+        Off means visible and auditable rather than silently absent."""
+        limits = {lim.name: lim for lim in _run().session_state["limit_set"].limits}
+        assert "Top seal (fracture)" in limits
+        assert limits["Top seal (fracture)"].p_active == pytest.approx(0.0)
+
+    def test_it_does_not_move_the_shipped_answer(self):
+        """A thirteenth limit that changed the reference prospect's POS would mean it was biting,
+        which at hydrostatic pressure it must not."""
+        metrics = {str(m.label): m.value for m in _run().get("metric")}
+        assert metrics["P(column ≥ 5 m | G)"] in ("99.9%", "100.0%")
+
+    def test_the_calculator_renders_and_produces_a_column(self):
+        at = _run(**{f"{self.KEY}_src": "fracture"})
+        _no_exception(at, "the fracture-pressure calculator")
+        limits = {lim.name: lim for lim in at.session_state["limit_set"].limits}
+        assert "headroom" in limits["Top seal (fracture)"].note
+
+    def test_a_normally_pressured_trap_is_told_it_cannot_fracture(self):
+        """The finding, not a defect: hundreds of bar of headroom is thousands of metres of column,
+        so the mechanism is correct and irrelevant — and a reader not told that will wonder why it
+        never appears in the controlling-limit statistics."""
+        at = _run(**{f"{self.KEY}_src": "fracture"})
+        assert any("nowhere near its fracture limit" in str(i.value) for i in at.get("info"))
+
+    def test_overpressure_is_what_makes_it_bite(self):
+        """Twenty bar of headroom instead of a hundred, and the column falls by an order of
+        magnitude. The physics, asserted end to end through the UI."""
+        import numpy as np
+
+        def column(at):
+            for lim in at.session_state["limit_set"].limits:
+                if lim.name == "Top seal (fracture)":
+                    return float(np.median(
+                        lim.distribution.ppf(np.random.default_rng(1).random(4_000))))
+            raise AssertionError("the fracture limit is missing")
+
+        normal = column(_run(**{f"{self.KEY}_src": "fracture"}))
+        tight = column(_run(**{f"{self.KEY}_src": "fracture",
+                               f"{self.KEY}_pp": (300.0, 315.0),
+                               f"{self.KEY}_shmin": (320.0, 335.0)}))
+        assert tight < normal / 3.0, f"overpressure barely moved it: {normal:,.0f} -> {tight:,.0f} m"
+
+    def test_the_source_survives_a_save_and_reload(self):
+        """`fracture` had to be added to the saved-file enumeration. Streamlit does not complain
+        about a stored value outside a selector's options — it silently takes the first one, so the
+        prospect would reload as *Typed* and look fine."""
+        import json
+
+        from hcwc.io import prospect
+
+        at = _run(**{f"{self.KEY}_src": "fracture"})
+        saved = prospect.document(at.session_state.filtered_state)
+        assert saved["inputs"][f"{self.KEY}_src"] == "fracture"
+        assert prospect.read(json.dumps(saved))[f"{self.KEY}_src"] == "fracture"
+
+
+class TestOffsetWellControlIsReachableWithoutADhi:
+    """Lars, 4 Sep 2026, challenging what well control is *for*: at appraisal a contact is proven,
+    so the model is decoration. He is right about the appraisal well and it is the wrong case —
+    the channel is for the *offset* well, whose commonest result is a bracket rather than a pick.
+
+    It was unreachable for exactly that case. The inputs live on tab 2.0 but the evidence was only
+    ever used inside tab 5.0, which renders nothing unless the prospect is marked as a DHI prospect.
+    """
+
+    def test_a_well_with_no_dhi_now_produces_an_update(self):
+        at = _run(**WELL_ONLY)
+        _no_exception(at, "a well-only prospect")
+        assert at.session_state["dhi_posterior"] is not None
+        assert at.session_state["dhi_overlay"] is not None
+
+    def test_the_update_actually_moves_the_contact(self):
+        at = _run(**WELL_ONLY)
+        post = at.session_state["dhi_posterior"]
+        import numpy as np
+        geological = float(np.percentile(post.result.contact_m, 50))
+        updated = float(post.percentiles(50)[0])
+        assert abs(updated - geological) > 1.0, "the penetration changed nothing"
+
+    def test_the_overlay_carries_every_key_its_readers_use(self):
+        """A partial overlay does not degrade gracefully — it raises `KeyError` in the middle of
+        somebody else's figure, which is how this first failed."""
+        overlay = _run(**WELL_ONLY).session_state["dhi_overlay"]
+        for key in ("depths_m", "pos_curve", "prior_curve", "contact_samples", "weights",
+                    "picked_contact_m", "prior_pos", "posterior_pos", "h_min"):
+            assert key in overlay, f"{key} missing from a well-only overlay"
+
+    def test_there_is_no_likelihood_ratio_without_an_amplitude(self):
+        """`r_dhi` is E-POS's `r_dfi`: the seismic likelihood over tall columns against short ones.
+        A number computed from a well's weights under that name would be the wrong quantity wearing
+        the right label."""
+        import numpy as np
+        assert np.isnan(_run(**WELL_ONLY).session_state["dhi_posterior"].r_dhi)
+
+    def test_the_tornado_falls_back_to_the_geological_one(self):
+        """It perturbs the amplitude's own inputs — the pick, its σ, the detection function — and
+        raised on `observation.pick_sigma_m` being `None`."""
+        at = _run(**WELL_ONLY)
+        _no_exception(at, "the tornado on a well-only prospect")
+        assert any("This tornado is geological" in str(c.value) for c in at.get("caption"))
+
+    def test_the_defaults_are_an_offset_wells_and_not_an_appraisals(self):
+        """The tell Lars's challenge exposed: σ = 5–10 m and p_connected = 0.9 are same-well,
+        same-log numbers, for the case he correctly said needs no model."""
+        at = _run(well_toggle=True)
+        assert at.session_state["well_in_sigma"] >= 20.0
+        assert at.session_state["well_in_connected"] <= 0.75
+
+
+class TestTheBasisIsNamedForTheEvidenceInIt:
+    """Once a penetration alone can update a prospect, a banner reading GIVEN THE DHI on it is
+    false — and the basis label is the one thing in this app that must never be."""
+
+    @staticmethod
+    def _phrases(at):
+        import json
+
+        texts = [str(m.value) for m in
+                 list(at.get("markdown")) + list(at.get("caption")) + list(at.get("subheader"))]
+        for el in at.get("plotly_chart"):
+            for trace in json.loads(el.proto.spec).get("data", []):
+                if trace.get("name"):
+                    texts.append(str(trace["name"]))
+        found = set()
+        for text in texts:
+            low = text.lower()
+            for phrase in ("given the dhi + well", "given the well", "given the dhi"):
+                if phrase in low:
+                    found.add(phrase)
+                    break
+        return found
+
+    def test_a_well_only_prospect_is_never_told_it_has_a_dhi(self):
+        assert "given the dhi" not in self._phrases(_run(**WELL_ONLY))
+
+    def test_a_dhi_only_prospect_is_never_told_it_has_a_well(self):
+        found = self._phrases(_run())
+        assert found == {"given the dhi"}, found
+
+    def test_both_channels_are_named_when_both_are_present(self):
+        found = self._phrases(_run(**WELL_AND_DHI))
+        assert "given the dhi + well" in found
+        assert "given the dhi" not in found, "a stale DHI-only label survived"
+
+    def test_a_prospect_with_no_evidence_claims_none(self):
+        assert not self._phrases(_run(dhi_toggle=False))
+
+    def test_the_title_form_keeps_the_acronym(self):
+        """`str.capitalize` would give *Given the dhi*, beside a chip reading *GIVEN THE DHI*."""
+        from hcwc.ui import theme
+        assert theme.evidence_title().startswith("Given the ")
+        assert "dhi" not in theme.evidence_title() or "DHI" in theme.evidence_title()

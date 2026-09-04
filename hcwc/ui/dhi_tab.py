@@ -130,6 +130,7 @@ def render(n: Numbering | None = None) -> None:
         # Otherwise a curve computed before the toggle was turned off would go on being drawn on
         # tab 4.0, which is the worst kind of stale: plausible, labelled, and wrong.
         st.session_state.pop("dhi_overlay", None)
+        _well_only(result, n)
         return
 
     theme.basis_banner(
@@ -725,13 +726,16 @@ is where your prospect sits relative to the two populations you drew.
         shares[basis] = counts / total if total > 0 else counts
     for basis, values in shares.items():
         fig.add_bar(y=hist_centres, x=values, orientation="h", xaxis="x2",
-                    name=f"contacts — {basis}", opacity=0.45,
+                    # The token picks the colour; the words say what is in the weights, which on
+                    # a prospect that also has a penetration is both channels.
+                    name=(f"contacts — " + (theme.evidence_basis() if basis == theme.GIVEN_DHI
+                                              else basis)), opacity=0.45,
                     marker_color=theme.BASIS_COLOUR[basis], marker_line_width=0,
                     hovertemplate="%{y:.0f} m TVDSS<br>%{x:.1%} of realisations<extra></extra>")
 
-    fig.add_scatter(x=geological, y=depths, mode="lines", name="geological — before the DHI",
+    fig.add_scatter(x=geological, y=depths, mode="lines", name="geological — before the update",
                     line=dict(color=PRIOR, width=3))
-    fig.add_scatter(x=updated, y=depths, mode="lines", name="given the DHI",
+    fig.add_scatter(x=updated, y=depths, mode="lines", name=theme.evidence_basis(),
                     line=dict(color=POSTERIOR, width=3.4))
 
     if show_all and seen:
@@ -928,7 +932,7 @@ So the combination is discounted rather than taken raw.
         x=span,
         y=[dhi_core.CombinedUpdate(combined.prior_pos, combined.r_geometry,
                                    combined.r_strength, float(d)).posterior_pos for d in span],
-        mode="lines", name="POS given the DHI", line=dict(color=POSTERIOR, width=2.5))
+        mode="lines", name=f"POS {theme.evidence_basis()}", line=dict(color=POSTERIOR, width=2.5))
     figc.add_hline(y=combined.prior_pos, line=dict(color=PRIOR, dash="dash"),
                    annotation_text="geological POS", annotation_position="bottom right")
     figc.add_scatter(x=[dependence], y=[combined.posterior_pos], mode="markers",
@@ -1010,7 +1014,8 @@ So the combination is discounted rather than taken raw.
         else:
             st.info("Not enough weight spread to slice a sensitivity from this posterior.")
 
-        theme.heading(TAB, sub=n.sub, text="7 · Which mechanism set the contact, given the DHI")
+        theme.heading(TAB, sub=n.sub,
+                      text=f"7 · Which mechanism set the contact, {theme.evidence_basis()}")
         st.markdown(
             "**This is not the risk re-attributed — it is the *shallowest active limit* re-attributed, "
             "and the two are different questions.**\n\n"
@@ -1107,3 +1112,96 @@ So the combination is discounted rather than taken raw.
             )
         else:
             st.caption("The scenario switch has nothing to switch to when no anomaly was seen.")
+
+
+def _well_only(result, n: Numbering) -> None:
+    """The update for a prospect with an offset penetration and no amplitude.
+
+    **The gate used to be the DHI toggle, and that stranded the evidence.** Well control is entered
+    on tab 2.0 but was only ever *used* inside this tab, which renders nothing unless the prospect
+    is marked as a DHI prospect. So a closure with a penetration and no bright spot -- an offset
+    well through the same reservoir, a dry hole on the same structure -- could not reach the one
+    channel in the tool that needed no argument to be admissible. Lars, 4 Sep 2026, asking what well
+    control was *for*: this is what it is for, and it was unreachable.
+
+    The DHI path below is untouched. When both channels exist they still combine there, discounted
+    for dependence; this is the branch where there is nothing to combine with.
+    """
+    control = well_control()
+    if control is None:
+        return
+    posterior = dhi_core.DhiPosterior(result=result,
+                                      weights=well_core.likelihood(result, control))
+    st.session_state["dhi_posterior"] = posterior
+
+    # **The whole overlay contract, not a convenient subset.** Four other modules read this dict by
+    # key -- the depth decomposition wants `depths_m` and both curves, the walkthrough wants the two
+    # chances, the export wants `contact_samples`. A partial overlay does not degrade gracefully; it
+    # raises `KeyError` in the middle of somebody else's figure. So this branch writes the same keys
+    # the amplitude branch writes, with `picked_contact_m` as `None` because there is no pick.
+    apex = float(np.median(result.apex_m))
+    h_min = float(result.limit_set.min_column_m)
+    depth_grid = apex + np.linspace(0.0, float(result.column_m.max()), 300)
+    element_pos = st.session_state.get("element_pos") or {}
+    product = float(np.prod([float(v) for v in element_pos.values()])) if element_pos else 1.0
+    prior_pos = product * posterior.pos(posterior=False)
+    posterior_pos = product * posterior.pos()
+    st.session_state["dhi_overlay"] = {
+        "depths_m": depth_grid,
+        # Anchored at the assessment minimum exactly as the amplitude branch is, so the two curves
+        # are the same quantity and the sibling sub-tab can draw either without knowing which.
+        "pos_curve": (posterior_pos * posterior.exceedance(depth_grid - apex)
+                      / max(float(posterior.exceedance(np.array([h_min]))[0]), 1e-12)),
+        "prior_curve": (prior_pos * posterior.exceedance(depth_grid - apex, posterior=False)
+                        / max(float(posterior.exceedance(np.array([h_min]),
+                                                         posterior=False)[0]), 1e-12)),
+        "contact_samples": _resample(result.contact_m[result.above_minimum],
+                                     posterior.weights[result.above_minimum],
+                                     int(st.session_state.get("n_trials", 10_000))),
+        "weights": posterior.weights,
+        "picked_contact_m": None,
+        "prior_pos": prior_pos,
+        "posterior_pos": posterior_pos,
+        "h_min": h_min,
+    }
+
+    theme.basis_banner(
+        theme.GIVEN_DHI,
+        "There is no amplitude on this prospect, so the update below is the **penetration alone**. "
+        "The purely geological model is on tab 4.0 and is unchanged by it.")
+    theme.heading(TAB, sub=n.sub, text="1 · The penetration, as evidence")
+    lo, hi = control.bracket()
+    bits = []
+    if control.hc_down_to_m is not None:
+        bits.append(f"hydrocarbons proven to **{control.hc_down_to_m:,.0f} m**")
+    if control.water_at_m is not None:
+        bits.append(f"water at **{control.water_at_m:,.0f} m**")
+    inside = float(((result.contact_m > lo) & (result.contact_m < hi)).mean())
+    st.markdown(
+        f"The well described on tab 2.0: {' and '.join(bits)}, tied to the mapped surface with "
+        f"σ = **{control.depth_sigma_m:,.0f} m**, and a **{control.p_connected:.0%}** chance it "
+        f"samples this accumulation.\n\n"
+        f"**{inside:.0%} of the geological realisations already sit inside what the well allows.** "
+        f"The update is the rest being pushed down toward the floor of "
+        f"`1 − {control.p_connected:.2f} = {1 - control.p_connected:.2f}`, which is what stops one "
+        f"penetration ruling a contact out altogether.\n\n"
+        f"**Prospect POS {prior_pos:.1%} → {posterior_pos:.1%}**, on an effective sample size of "
+        f"**{posterior.effective_sample_size:,.0f}** of {result.n:,}. Everything on sub-tabs 5.3 "
+        f"and 5.4 is drawn on this."
+    )
+    if inside < 0.05:
+        st.warning(
+            "**The well and the geological model disagree almost completely.** Nearly every "
+            "realisation falls outside what the penetration allows, so all of them are penalised "
+            "by roughly the same saturated amount, the likelihood goes flat, and the posterior "
+            "comes out close to the prior. **Read that as the disagreement it is** — either the "
+            "depths are tied to a different datum than the apex, or the limits on tab 3.0 are "
+            "letting the column go somewhere this well has already ruled out."
+        )
+    st.info(
+        "**No `R` and no tornado on this page.** Both are statements about an *amplitude* — E-POS's "
+        "`r_dfi` compares the seismic likelihood over tall columns against short ones — and there "
+        "is no amplitude here. The evidence is a depth bracket, and what it does is visible "
+        "directly in the contact distribution on tab 5.3."
+    )
+

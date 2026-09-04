@@ -355,7 +355,7 @@ def render() -> None:
     # penetrated is a fact about the prospect. It is the strongest evidence this tool takes and the
     # only one needing no argument -- a logged water leg is a measurement, where an amplitude is an
     # inference -- so it sits beside the geometry it constrains rather than behind the seismic.
-    theme.heading(TAB, "4 · Well control")
+    theme.heading(TAB, "4 · Offset well control")
     st.markdown(
         "**A penetration in this closure is the sharpest evidence there is about the contact.** A "
         "water leg says the contact is above it; hydrocarbons say it is below. Either enters as "
@@ -388,12 +388,12 @@ def render() -> None:
 
         c1, c2 = st.columns(2)
         c1.slider(
-            "Depth-tie uncertainty σ (m)", 1.0, 100.0, 10.0, 1.0, key="well_in_sigma",
+            "Depth-tie uncertainty σ (m)", 1.0, 100.0, 30.0, 1.0, key="well_in_sigma",
             help="**Not the well's own depth error**, which is a metre or two. This is the error "
                  "in tying that depth to the mapped surface the apex is measured from — the same "
                  "depth conversion that makes the apex a range rather than a number.")
         c2.slider(
-            "Chance the well samples this accumulation", 0.05, 1.0, 0.90, 0.05,
+            "Chance the well samples this accumulation", 0.05, 1.0, 0.60, 0.05,
             key="well_in_connected",
             help="The fluid call is reliable; its *relevance* is what is uncertain. A different "
                  "fault block, a different compartment, a different sand. Below 1 on purpose: it "

@@ -125,10 +125,10 @@ def _overlay_models(fig, x: float, width: float) -> list[str]:
         drawn.append("geological")
     if given_dhi is not None:
         _add_prospect_violin(fig, x + 0.62 * width, given_dhi, width * 0.55,
-                             name="this prospect — given the DHI (tab 5.0)",
+                             name=f"this prospect — {theme.evidence_basis()} (tab 5.0)",
                              colour=theme.BASIS_COLOUR[theme.GIVEN_DHI],
                              fill=theme.rgba(theme.BASIS_COLOUR[theme.GIVEN_DHI], 0.30))
-        drawn.append("given the DHI")
+        drawn.append(theme.evidence_basis())
     return drawn
 
 
@@ -688,7 +688,7 @@ What follows is a disagreement about **one estimator**, not about the data.
                 # Same weight and style as the geological curve, different colour. They are two
                 # readings of the same prospect and the question is which is deeper -- a dotted
                 # line reads as provisional or as a construction line, which this is not.
-                mode="lines", name="THIS PROSPECT, given the DHI",
+                mode="lines", name=f"THIS PROSPECT, {theme.evidence_basis()}",
                 line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], width=4.5))
 
         fam.add_scatter(x=built_grid, y=_y(_exceedance(column, built_grid)), mode="lines",
@@ -1152,7 +1152,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             if overlay is not None and posterior is not None:
                 apex_here = float(np.median(posterior.result.apex_m))
                 dhi_columns = np.asarray(overlay["contact_samples"], float) - apex_here
-                curves.append(("your model — given the DHI", dhi_columns,
+                curves.append((f"your model — {theme.evidence_basis()}", dhi_columns,
                                theme.BASIS_COLOUR[theme.GIVEN_DHI], "solid", 3.2))
 
             curves.append((f"{bench_source}, at {own_relief:,.0f} m relief", bench,

@@ -46,23 +46,25 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         return
     result = run.current(limit_set)
 
-    if with_dhi and not st.session_state.get("dhi_on", False):
-        st.subheader("Risk against depth, per element | DHI")
+    # Gated on there being an update, not on the DHI toggle -- an offset penetration alone now
+    # produces one, and this page is a reading of the posterior rather than of the amplitude.
+    if with_dhi and st.session_state.get("dhi_posterior") is None:
+        st.subheader("Risk against depth, per element | updated")
         st.info(
-            "**This prospect is not marked as a DHI prospect**, so there is nothing to update. "
-            "Turn on *This is a DHI prospect* on tab 2.0. Tab 4.0 carries the geological "
+            "**Nothing here has been updated yet.** On tab 2.0, turn on either *This is a DHI "
+            "prospect* or *This closure has been penetrated*. Tab 4.0 carries the geological "
             "decomposition and is unaffected either way."
         )
         return
 
     st.subheader("Risk against depth, per element"
-                 + (" | DHI" if with_dhi else ""))
+                 + (f" | {theme.evidence_basis()}" if with_dhi else ""))
     theme.basis_banner(
         theme.GIVEN_DHI if with_dhi else theme.GEOLOGICAL,
-        "The element chances are unchanged — a fluid indicator may move the total and may not "
-        "re-attribute it between elements. Only the depth curves respond."
+        "The element chances are unchanged — evidence about *where* the contact is may move the "
+        "total and may not re-attribute it between elements. Only the depth curves respond."
         if with_dhi else
-        "The competing limits alone. The DHI-updated version of this tab is 5.0.")
+        "The competing limits alone. The updated version of this tab is 5.4.")
     if with_dhi:
         st.markdown(
             "The same decomposition as tab 4.0, after the Bayesian update on tab 5.0. The "
@@ -183,7 +185,8 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                             line=dict(color=theme.PILLAR_COLOURS[element.value], width=1.6,
                                       dash="dot"), opacity=0.75)
         fig.add_scatter(x=curves[element], y=d.depths_m, mode="lines",
-                        name=element.value + (" — given the DHI" if weights is not None else ""),
+                        name=element.value + (f" — {theme.evidence_basis()}"
+                                              if weights is not None else ""),
                         legendgroup=element.value,
                         line=dict(color=theme.PILLAR_COLOURS[element.value], width=3))
     if Group.RESERVOIR not in curves and reservoir.active:
@@ -353,7 +356,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
             row["Derived at the well"] = "—" if derived is None else f"{derived:.3f}"
             row["Allocated (equal cube-root)"] = f"{comp[f'allocated::{element.value}']:.3f}"
         else:
-            for label, table in (("geological", comp_geo), ("given the DHI", comp)):
+            for label, table in ((theme.GEOLOGICAL, comp_geo), (theme.evidence_basis(), comp)):
                 derived = table.get(f"derived::{element.value}")
                 row[f"Derived · {label}"] = "—" if derived is None else f"{derived:.3f}"
                 row[f"Allocated · {label}"] = f"{table[f'allocated::{element.value}']:.3f}"
@@ -363,10 +366,11 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     n.table(pd.DataFrame(rows),
             (f"{theme.basis_tag(basis)} &nbsp; "
              + (f"At {z_entry:,.0f} m the location factor is **r = {comp_geo['r_location']:.3f} "
-                f"geological** and **r = {comp['r_location']:.3f} given the DHI**, and every "
-                f"difference in the table follows from that one number — the element chances from "
-                f"tab 2.0 are identical in both halves, because a fluid indicator moves the total "
-                f"and may not re-attribute it between elements. "
+                f"geological** and **r = {comp['r_location']:.3f} {theme.evidence_basis()}**, "
+                f"and every difference in the table follows from that one number — the element "
+                f"chances from tab 2.0 are identical in both halves, because evidence about "
+                f"*where* the contact is moves the total and may not re-attribute it between "
+                f"elements. "
                 if comp_geo is not None else
                 f"At {z_entry:,.0f} m, r = {comp['r_location']:.3f}. ")
              + f"**Derived and allocated are different kinds of object.** The allocation divides "

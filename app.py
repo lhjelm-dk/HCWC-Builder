@@ -372,12 +372,17 @@ with tab5:
     with _how:
         dhi_walkthrough.render(Numbering(5, sub=1))
     with _contact_dhi:
-        _post = st.session_state.get("dhi_posterior") if st.session_state.get("dhi_on") else None
+        # **The posterior, whatever built it.** This asked for `dhi_on` and so hid the page from a
+        # prospect updated by an offset penetration alone -- which is exactly the case sub-tab 5.2
+        # now handles. The question this page answers is "is there an update", and the posterior
+        # being there is that question.
+        _post = st.session_state.get("dhi_posterior")
         if _post is None:
             st.info(
-                "**Nothing to show until the evidence is described.** Turn on *This is a DHI "
-                "prospect* on tab 2.0 and fill in sub-tab 5.2 — the figures here are tab 4.0's, drawn "
-                "on the updated distribution, so they need an update to draw."
+                "**Nothing to show until the evidence is described.** On tab 2.0, turn on either "
+                "*This is a DHI prospect* or *This closure has been penetrated*, then fill in "
+                "sub-tab 5.2 — the figures here are tab 4.0's, drawn on the updated distribution, "
+                "so they need an update to draw."
             )
         else:
             results_tab.render(Numbering(5, sub=3), posterior=_post)

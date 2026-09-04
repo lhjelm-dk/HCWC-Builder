@@ -54,6 +54,7 @@ FORMS: dict[str, tuple[str, tuple[tuple[str, str], ...]]] = {
 #: Human names for the calculators a block can offer.
 LABELS = {"charge": "From charge volume", "seal": "From seal capacity",
           "seal_as_top": "Same as the top seal",
+          "fracture": "From fracture pressure",
           "empirical": "From the NCS data"}
 
 #: The exceedance fractiles shown under every block. P100 is the shallowest outcome and P0 the

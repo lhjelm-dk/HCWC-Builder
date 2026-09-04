@@ -26,7 +26,8 @@ from hcwc.core.limits import APEX, COLUMN, DEPTH, DepthDistribution, Group, Limi
 from hcwc.ui import limit_block, theme
 from hcwc.ui.numbering import Numbering
 from hcwc.ui.sources import (render_charge_computed, render_empirical_computed,
-                             render_seal_as_top_computed, render_seal_computed)
+                             render_mechanical_computed, render_seal_as_top_computed,
+                             render_seal_computed)
 
 TAB = 3
 
@@ -119,6 +120,23 @@ SPECS: tuple[LimitSpec, ...] = (
     LimitSpec("Preservation / tilt", Group.RETENTION, COLUMN, (150.0, 400.0), 0.2, "pert",
               "Post-charge tilting spilling part of the column, or a palaeo-contact left behind. "
               "It bites rarely, but when it does it can be severe."),
+    # Grant (2020), eq. 8, added 4 Sep 2026. The mechanism the tool was missing: every other
+    # Retention limit here fails because the pore throats are wide enough or because there is a hole
+    # in the seal, and this one fails because the *rock parts*. The two are independent -- a shale
+    # can have superb capillary properties and still sit against its fracture limit in an
+    # overpressured section -- which is the case for competing them rather than choosing.
+    #
+    # **`P(active)` 0.0, like every other mechanism most prospects do not have.** It bites in
+    # overpressured sections; at a normally pressured two kilometres the headroom is hundreds of bar
+    # and so thousands of metres of column, far more than any structure holds. Off means visible and
+    # auditable rather than silently absent, and turning it on is one number.
+    LimitSpec("Top seal (fracture)", Group.RETENTION, COLUMN, (200.0, 500.0), 0.0, "pert",
+              "The column the trap can hold before the **top seal parts in tension** — pressure at "
+              "the crest reaching the minimum horizontal stress, not the pore throats letting go. "
+              "Grant (2020): a pressure-release *valve* rather than a catastrophe, since the "
+              "fracture closes and reseals once pressure bleeds off, so it caps a column rather "
+              "than emptying a trap. **It only ever controls in overpressured sections.**",
+              computed=("fracture",)),
 )
 
 #: What each element's sub-tab is for, shown under its coloured heading.
@@ -142,6 +160,7 @@ SUB_TABS: tuple[tuple[str, Group], ...] = (
 #: in it, which is the kind of regression a restructure makes easy and silent.
 COMPUTED = {"charge": render_charge_computed, "seal": render_seal_computed,
             "seal_as_top": render_seal_as_top_computed,
+            "fracture": render_mechanical_computed,
             "empirical": render_empirical_computed}
 
 

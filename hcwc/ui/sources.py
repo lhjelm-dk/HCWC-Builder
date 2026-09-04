@@ -831,3 +831,177 @@ def calibration_figure(rho_w: float, rho_hc: float, burial_m: float | None,
                       yaxis_range=[0, 1000], height=430, margin=dict(t=30),
                       legend=dict(orientation="h", y=-0.22))
     return fig
+
+
+# --------------------------------------------------------------------------- mechanical top seal
+#: Typical gradients used only to *default* the two pressure sliders from the crest depth, so the
+#: calculator opens on numbers of the right size rather than on zeros. Both are wrong for any
+#: particular prospect, which is the point of asking.
+HYDROSTATIC_BAR_PER_M = 0.105
+FRACTURE_BAR_PER_M = 0.158
+
+
+def _crest_depth_m() -> float:
+    """The structural apex from tab 2.0, or the reference prospect's own crest."""
+    apex = st.session_state.get("apex")
+    if apex:
+        return float(np.mean(apex))
+    return 2050.0
+
+
+def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
+    """The fracture-limited column: how much pressure the trap can take before the seal parts.
+
+    Grant (2020) equation 8, and the mechanism the tool was missing. Every other Retention limit
+    here is capillary or geometric -- a seal leaks because its pore throats are wide enough, or
+    because there is a hole in it. This one is neither: the seal *breaks*, because the pressure at
+    the crest reaches the minimum horizontal stress and the rock parts in tension.
+
+    The two are independent. A shale can have superb capillary properties and still sit against its
+    fracture limit in an overpressured section, and a mediocre one can be nowhere near it. Which is
+    exactly the case for competing them rather than picking the one that sounds most likely.
+    """
+    st.markdown(
+        "`H = (S_Hmin − P_p) / (grad_w − grad_h)` — Grant (2020), eq. 8.\n\n"
+        "The trap can take **`S_Hmin − P_p`** more bar at its crest before the seal hydrofractures. "
+        "A buoyant column raises the crest pressure above the aquifer's by `grad_w − grad_h` per "
+        "metre, so that headroom divided by the excess is how many metres fit. Tensile strength is "
+        "taken as zero and folded into `S_Hmin`: natural flaws and pre-existing sealed fractures "
+        "make an intact rock's tensile strength the wrong number to use."
+    )
+
+    crest = _crest_depth_m()
+    c1, c2 = st.columns(2)
+    p_pore = c1.slider(
+        "Reservoir pore pressure at the crest (bar)", 0.0, 1200.0,
+        (float(round(crest * HYDROSTATIC_BAR_PER_M - 5)),
+         float(round(crest * HYDROSTATIC_BAR_PER_M + 5))), 1.0,
+        key=f"{key}_pp",
+        help=f"From an MDT, RFT or a pressure model, at **{crest:,.0f} m** — the crest from tab "
+             f"2.0. Defaulted at a hydrostatic {HYDROSTATIC_BAR_PER_M:.3f} bar/m; a prospect with "
+             f"any overpressure sits above that, and overpressure is what makes this mechanism "
+             f"bite at all.")
+    s_hmin = c2.slider(
+        "Minimum horizontal stress S_Hmin at the crest (bar)", 0.0, 1500.0,
+        (float(round(crest * FRACTURE_BAR_PER_M - 10)),
+         float(round(crest * FRACTURE_BAR_PER_M + 10))), 1.0,
+        key=f"{key}_shmin",
+        help="From the lower envelope of regional leak-off tests (Gaarenstroom et al. 1993), from "
+             "a pore-pressure/stress coupling model, or from an offset structure known to be "
+             "leaking. The *lower* envelope, not the mean: a seal fails at its weakest point.")
+
+    c3, c4 = st.columns(2)
+    rho_w = c3.slider(
+        "Water density (g/cm³)", 0.95, 1.20, (1.00, 1.10), 0.01, key=f"{key}_rw",
+        help="**Formation water at reservoir conditions.** Only the contrast with the hydrocarbon "
+             "matters here — it is what converts spare pressure into metres.")
+    rho_hc = c4.slider(
+        "HC density (g/cm³)", 0.10, 1.00, (0.70, 0.85), 0.01, key=f"{key}_rh",
+        help="**In situ, at reservoir pressure and temperature.** Typical: gas 0.15–0.35, live oil "
+             "0.60–0.85. A lighter fluid buoys harder, so the same headroom holds a shorter column "
+             "of gas than of oil — the opposite way round from how it feels.")
+
+    try:
+        inputs = seals.MechanicalSealInputs(s_hmin_bar=s_hmin, pore_pressure_bar=p_pore,
+                                           water_density_g_cm3=rho_w, hc_density_g_cm3=rho_hc)
+        column = seals.sample_mechanical_column_m(inputs, n_trials, seed + 617)
+    except ValueError as exc:
+        st.error(str(exc))
+        return None
+
+    headroom = seals.fracture_headroom_bar(np.mean(s_hmin), np.mean(p_pore))
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Headroom at the crest", f"{headroom:,.0f} bar",
+              f"{np.mean(s_hmin):,.0f} − {np.mean(p_pore):,.0f}", delta_color="off")
+    for col, p, label in ((m2, 10, "P90"), (m3, 50, "P50"), (m4, 90, "P10")):
+        col.metric(f"{label} column", f"{np.percentile(column, p):,.0f} m", delta_color="off")
+
+    st.caption(
+        f"At **{crest:,.0f} m** those are gradients of "
+        f"**{np.mean(p_pore) / crest:.3f} bar/m** pore pressure "
+        f"({np.mean(p_pore) / crest / seals.EMW_PER_BAR_PER_M:.2f} s.g. equivalent mud weight) and "
+        f"**{np.mean(s_hmin) / crest:.3f} bar/m** minimum stress "
+        f"({np.mean(s_hmin) / crest / seals.EMW_PER_BAR_PER_M:.2f} s.g.). "
+        "Worth reading back: a pore-pressure gradient much above 0.105 bar/m is overpressure, and "
+        "overpressure is the whole reason this mechanism ever controls a column."
+    )
+
+    # **Say when it cannot bite.** A normally pressured trap at two kilometres has hundreds of bar
+    # of headroom, which is thousands of metres of column -- far more than any structure holds. The
+    # limit is then correct and irrelevant, and a reader who is not told that will wonder why it
+    # never appears in the controlling-limit statistics. It is also the honest reading of Grant's
+    # own Figure 5c, where the mechanical seal holds "a long oil column" and nothing else happens.
+    relief = _structural_relief_m()
+    median = float(np.percentile(column, 50))
+    if relief and median > 3.0 * relief:
+        st.info(
+            f"**This trap is nowhere near its fracture limit.** {headroom:,.0f} bar of headroom is "
+            f"about {median:,.0f} m of column, against roughly {relief:,.0f} m of structural "
+            f"relief — the mechanism cannot control the contact here and will sit far to the right "
+            f"of every other curve on tab 4.0. That is a finding, not a fault: it says the trap "
+            f"fails capillary or geometrically, if at all, and never mechanically. It bites in "
+            f"overpressured sections, where the headroom is tens of bar rather than hundreds."
+        )
+
+    st.plotly_chart(_pressure_depth_figure(crest, np.mean(p_pore), np.mean(s_hmin),
+                                           float(np.mean(rho_w)), float(np.mean(rho_hc)), median),
+                    use_container_width=True, key=f"{key}_pd_fig")
+    st.caption(
+        "**The P50 realisation as a pressure–depth plot**, the frame this mechanism is read in "
+        "(Grant 2020, fig. 5c). The aquifer runs through the crest pressure at the water gradient. "
+        "The hydrocarbon leg leaves it at the contact and climbs the shallower hydrocarbon "
+        "gradient, so the gap between the two lines is buoyancy. The column is the depth at which "
+        "that gap has grown enough for the crest pressure to reach `S_Hmin` — where the "
+        "hydrocarbon line meets the stress marker. Anything deeper parts the seal."
+    )
+
+    return Handover(DepthDistribution.from_samples(column), 1.0,
+                    f"headroom {headroom:,.0f} bar at {crest:,.0f} m")
+
+
+def _structural_relief_m() -> float | None:
+    """Apex to spill, from tab 2.0, for the *can this even bite* check. ``None`` if not set yet."""
+    apex, spill = st.session_state.get("apex"), st.session_state.get("spill_point")
+    if not apex or spill is None:
+        return None
+    relief = float(spill) - float(np.mean(apex))
+    return relief if relief > 0 else None
+
+
+def _pressure_depth_figure(crest: float, p_pore: float, s_hmin: float,
+                           rho_w: float, rho_hc: float, column: float):
+    """Aquifer, hydrocarbon leg and the stress limit, on one pressure–depth frame."""
+    import plotly.graph_objects as go
+
+    grad_w = rho_w * seals.BAR_PER_M_PER_G_CM3
+    grad_h = rho_hc * seals.BAR_PER_M_PER_G_CM3
+    # Drawn over the column itself plus a margin, so the geometry is legible whatever its size.
+    top, base = crest - 0.15 * max(column, 50.0), crest + 1.15 * max(column, 50.0)
+    depths = np.linspace(top, base, 120)
+
+    fig = go.Figure()
+    fig.add_scatter(x=p_pore + grad_w * (depths - crest), y=depths, mode="lines", name="Aquifer",
+                    line=dict(color=theme.PILLAR_COLOURS["Closure"], width=2))
+    contact = crest + column
+    leg = np.linspace(crest, contact, 60)
+    fig.add_scatter(x=p_pore + grad_w * (contact - crest) - grad_h * (contact - leg), y=leg,
+                    mode="lines", name="Hydrocarbon leg",
+                    line=dict(color=theme.PILLAR_COLOURS["Retention"], width=3))
+    fig.add_scatter(x=[s_hmin], y=[crest], mode="markers+text", name="S_Hmin at the crest",
+                    marker=dict(color="#C44E52", size=12, symbol="x"),
+                    text=["  S_Hmin"], textposition="middle right")
+    fig.add_scatter(x=[p_pore], y=[crest], mode="markers", name="Aquifer at the crest",
+                    marker=dict(color=theme.PILLAR_COLOURS["Closure"], size=9))
+    fig.add_hline(y=contact, line=dict(color="#8A8A8A", width=1, dash="dot"),
+                  annotation_text=f"contact {contact:,.0f} m", annotation_position="top left",
+                  annotation_font_size=10)
+    fig.update_xaxes(title_text="Pressure (bar)")
+    fig.update_yaxes(title_text="Depth (m TVDSS)", range=[base, top], autorange=False)
+    fig.update_layout(height=380, margin=dict(t=30, b=20),
+                      legend=dict(orientation="h", y=1.16), plot_bgcolor="rgba(0,0,0,0)")
+    return fig
+
+
+def render_mechanical_computed(key: str, n_trials: int, seed: int):
+    """The fracture-pressure calculator, for use as a `limit_block` ``computed`` hook."""
+    return _as_triple(render_mechanical(key, n_trials, seed))

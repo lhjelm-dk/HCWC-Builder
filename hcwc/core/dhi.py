@@ -326,8 +326,12 @@ class DhiPosterior:
     """The prior and posterior as one object, because they are one object."""
     result: EngineResult
     weights: np.ndarray
-    detection: DetectionFunction
-    observation: DhiObservation
+    #: The DHI channel, when there is one. **Both are optional** so that a prospect with an offset
+    #: penetration and no amplitude can still produce an updated distribution: the weights are the
+    #: object, and where they came from is metadata. Everything that reads these two -- the
+    #: walkthrough, the tornado -- is reached only from the DHI path and can rely on them there.
+    detection: "DetectionFunction | None" = None
+    observation: "DhiObservation | None" = None
 
     @property
     def effective_sample_size(self) -> float:
@@ -402,6 +406,12 @@ class DhiPosterior:
         useful share of realisations miss it; it is meaningless when the minimum is a 5 m physical
         floor that only a rounding error fails to clear.
         """
+        # No DHI, no `r_dhi`. A prospect updated by well control alone has a perfectly good
+        # posterior and no likelihood ratio *against an amplitude* to report, and returning some
+        # number computed from the well's weights under E-POS's name for the DHI ratio would be
+        # the wrong quantity wearing the right label.
+        if self.observation is None:
+            return float("nan")
         success = self.result.above_minimum
         if not self.observation.seen:
             # Still undefined when nothing succeeds: with no success set there is no

@@ -48,7 +48,8 @@ GROUP_GAP = 0.9
 EVIDENCE_FLOOR = 0.03
 
 #: Group headings, so the vocabulary is in one place.
-LIMITS_GROUP, EVIDENCE_GROUP, RESULT_GROUP = "Competing limits", "The amplitude alone", "Result"
+LIMITS_GROUP, EVIDENCE_GROUP, RESULT_GROUP = ("Competing limits", "The evidence alone",
+                                              "Result")
 
 
 def default_window(result, space: str, apex: float, spill: float | None) -> tuple[float, float]:
@@ -159,9 +160,14 @@ def _exceedance_mode(fig, result, space, apex, ranked, colour_of, lo, hi, poster
                         line=dict(color=theme.BASIS_COLOUR[theme.GEOLOGICAL], width=2.2,
                                   dash="dash"),
                         hovertemplate="Geological<br>%{y:,.0f} · %{x:.0%}<extra></extra>")
-        fig.add_scatter(x=updated, y=depths, mode="lines", name="Resulting HC depth | given the DHI",
+        # Named for the evidence actually in the weights, not for the amplitude that usually
+        # supplies them. A prospect updated by an offset penetration alone reaches this figure
+        # too, and a legend entry reading "given the DHI" on it would be false.
+        fig.add_scatter(x=updated, y=depths, mode="lines",
+                        name=f"Resulting HC depth | {theme.evidence_basis()}",
                         line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], width=5),
-                        hovertemplate="Given the DHI<br>%{y:,.0f} · %{x:.0%}<extra></extra>")
+                        hovertemplate=theme.evidence_title()
+                        + "<br>%{y:,.0f} · %{x:.0%}<extra></extra>")
     fig.update_xaxes(title_text="Probability the contact is deeper", range=[0, 1],
                      tickformat=".0%")
 
@@ -207,12 +213,12 @@ def _density_mode(fig, result, space, apex, ranked, colour_of, lo, hi, mode, eve
                        [_Lane("Resulting HC depth", theme.BASIS_COLOUR[theme.GEOLOGICAL], contact)]))
     else:
         groups.append((EVIDENCE_GROUP,
-                       [_Lane("The DHI, on its own", theme.BASIS_COLOUR[theme.GIVEN_DHI],
+                       [_Lane("The evidence, on its own", theme.BASIS_COLOUR[theme.GIVEN_DHI],
                               curve=_evidence_curve(contact, weights, grid))]))
         groups.append((RESULT_GROUP, [
             _Lane("Resulting HC depth | geological", theme.BASIS_COLOUR[theme.GEOLOGICAL], contact),
-            _Lane("Resulting HC depth | given the DHI", theme.BASIS_COLOUR[theme.GIVEN_DHI],
-                  contact, weights)]),
+            _Lane(f"Resulting HC depth | {theme.evidence_basis()}",
+                  theme.BASIS_COLOUR[theme.GIVEN_DHI], contact, weights)]),
         )
 
     # Lay the lanes out with a gap between groups, then hang the rules and headings off the gaps.

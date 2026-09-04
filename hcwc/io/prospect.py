@@ -222,7 +222,7 @@ STACK_MODES: tuple[str, ...] = (
 ENUM_SUFFIXES: dict[str, frozenset[str]] = {
     "_kind": frozenset({COLUMN, DEPTH}),
     "_form": frozenset(ELICITED_KINDS),
-    "_src": frozenset({"Typed", "charge", "seal", "seal_as_top", "empirical"}),
+    "_src": frozenset({"Typed", "charge", "seal", "seal_as_top", "fracture", "empirical"}),
 }
 
 #: Exact keys whose value must be one of a fixed set.
