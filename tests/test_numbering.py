@@ -141,16 +141,26 @@ class TestNoCircledNumeralsSurvive:
         offenders = []
         for path in self._sources():
             for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-                if pattern.search(line) and "Charge" not in line:
+                # No exemptions any more. Tab 3.0's sub-tabs were the last holdout and went to
+                # letters on 3 Sep 2026, so the scan can be absolute rather than carrying a
+                # `"Charge" not in line` escape hatch that would hide the next one.
+                if pattern.search(line):
                     offenders.append(f"{path.name}:{i}")
         assert not offenders, f"circled numerals left in: {offenders}"
 
-    def test_the_one_deliberate_exception_is_tab_threes_own_sub_tabs(self):
-        """They are positions inside one tab, not tab numbers. Renumbering them to 3.1, 3.2 would
-        collide head-on with `Figure 3.1` and `Table 3.2`, which is the ambiguity the whole
-        numbering scheme exists to avoid."""
+    def test_tab_threes_sub_tabs_are_lettered(self):
+        """The one place the `N.0` scheme could not reach. Numbering them 3.1-3.4 would collide with
+        `Figure 3.1` and `Table 3.2`, which is exactly the ambiguity the scheme exists to avoid, so
+        Lars settled it on 3 Sep 2026 with letters — outside the number sequence altogether."""
         import pathlib
 
         root = pathlib.Path(__file__).resolve().parent.parent
         text = (root / "hcwc" / "ui" / "limiters_tab.py").read_text(encoding="utf-8")
-        assert '["① Charge", "② Closure", "③ Retention", "④ Correlations"]' in text
+        assert '["A · Charge", "B · Closure", "C · Retention", "D · Correlations"]' in text
+
+    def test_the_figures_on_tab_three_ignore_the_letters(self):
+        """One sequence for the whole tab, counting straight through A, B, C, D. `Figure 3.4` is the
+        fourth exhibit on tab 3.0 wherever it sits, which is what makes a reference findable."""
+        n = Numbering(3)
+        assert [n.ref("Figure") for _ in range(4)] == [
+            "Figure 3.1", "Figure 3.2", "Figure 3.3", "Figure 3.4"]

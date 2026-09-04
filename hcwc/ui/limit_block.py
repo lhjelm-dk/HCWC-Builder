@@ -95,6 +95,32 @@ def _defaults(lo: float, hi: float) -> dict[str, float]:
             "x1": lo + 0.1 * span, "x2": lo + 0.9 * span}
 
 
+def _param_key(params: dict) -> tuple:
+    """A distribution's parameters as something hashable, for the preview cache.
+
+    Most parameters are floats, but ``empirical`` carries two arrays, and an array is neither
+    hashable nor comparable — so they become tuples, which ``np.asarray`` reads back identically.
+    """
+    return tuple(sorted((k, tuple(np.ravel(v).tolist()) if np.ndim(v) else float(v))
+                        for k, v in params.items()))
+
+
+@st.cache_data(show_spinner=False, max_entries=256)
+def _preview_samples(kind: str, params: tuple, n: int) -> np.ndarray:
+    """The twenty thousand draws behind one limit's preview, cached on what they depend on.
+
+    They depend on the distribution and nothing else — the seed is fixed at 1 — so redrawing them
+    on every rerun was the second-largest cost on the page after the browser payload: twelve
+    limits, ~0.48 s of `pert_ppf` and `beta_general_ppf` per interaction, all of it recomputing
+    identical numbers. Editing one limit now costs one limit's worth of sampling instead of twelve.
+
+    Kept at twenty thousand rather than thinned. The cheaper fix was a smaller sample (4 000 draws
+    measured at 20 ms against 95 ms) but it buys a rougher histogram and noisier percentiles for a
+    saving the cache already makes on eleven of the twelve.
+    """
+    return DepthDistribution(kind, dict(params)).ppf(np.random.default_rng(1).random(n))
+
+
 def _figure(samples: np.ndarray, colour: str, unit: str) -> go.Figure:
     """Histogram and cumulative exceedance on one figure, twin axes.
 
@@ -237,7 +263,7 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
         st.error(f"**{name}** — {exc}")
         return None
 
-    samples = distribution.ppf(np.random.default_rng(1).random(n_preview))
+    samples = _preview_samples(distribution.kind, _param_key(distribution.params), n_preview)
     stats = stats_row(samples)
     metrics = st.columns(len(stats))
     for col, (label, value) in zip(metrics, stats.items()):

@@ -241,13 +241,19 @@ def correlation_projection(result: EngineResult) -> Check:
     )
 
 
-def repeatability(result: EngineResult) -> Check:
+def repeatability(result: EngineResult, other: EngineResult | None = None) -> Check:
     """Does the answer move if you press go again?
 
     The most honest single number about a Monte Carlo, and the one nobody computes: rerun at the
     next seed and report how far P10 shifted. Everything else here is a proxy for this.
+
+    ``other`` is that second run. It defaults to computing one, so this stays a self-contained core
+    function and every test of it reads as it did; the UI passes a cached one, because otherwise the
+    whole Monte Carlo ran again on every interaction to answer a question whose answer had not
+    changed.
     """
-    other = engine.run(result.limit_set, n=result.n, seed=result.seed + 1)
+    if other is None:
+        other = engine.run(result.limit_set, n=result.n, seed=result.seed + 1)
     mine = result.percentiles(np.array([90.0, 50.0, 10.0]))
     theirs = other.percentiles(np.array([90.0, 50.0, 10.0]))
     if not np.all(np.isfinite(mine)) or not np.all(np.isfinite(theirs)):
@@ -320,16 +326,19 @@ def dhi_evidence(posterior, current: EngineResult | None = None) -> Check:
     )
 
 
-def review(result: EngineResult, *, posterior=None) -> list[Check]:
+def review(result: EngineResult, *, posterior=None, other: EngineResult | None = None) -> list[Check]:
     """Every check, in the order they should be read.
 
     ``posterior`` is optional because the DHI tabs are optional; when it is absent the DHI check is
     simply not run rather than reported as passing, which would be a lie about work not done.
+
+    ``other`` is the next-seed run :func:`repeatability` compares against, passed in so the caller
+    can cache it.
     """
     checks = [
         assessment_minimum(result),
         tail_support(result),
-        repeatability(result),
+        repeatability(result, other),
         concentration(result),
         correlation_projection(result),
     ]

@@ -352,8 +352,14 @@ def render() -> None:
     n_trials = int(st.session_state.get("n_trials", 10_000))
     seed = int(st.session_state.get("seed", 20260825))
 
+    # **Letters, not numbers.** Lars, 3 Sep 2026, settling the one place the `N.0` tab numbering
+    # could not reach: numbering these `3.1`-`3.4` would collide head-on with `Figure 3.1` and
+    # `Table 3.2`, and the whole point of the scheme is that a number names exactly one thing.
+    # Letters sit outside that sequence entirely, so they can label a position without claiming one.
+    # The figures and tables here go on counting straight through A, B, C, D as one sequence —
+    # `Figure 3.4` is the fourth exhibit on this tab wherever it happens to sit.
     charge_tab, closure_tab, retention_tab, corr_tab = st.tabs(
-        ["① Charge", "② Closure", "③ Retention", "④ Correlations"])
+        ["A · Charge", "B · Closure", "C · Retention", "D · Correlations"])
     # Names this strip so the stylesheet can colour it by risk element. It used to be picked out by
     # being four sub-tabs long, which was true until tab 5.0 grew a fourth and started wearing these
     # element colours by accident.
@@ -432,7 +438,12 @@ def render() -> None:
         theme.heading(TAB, "2 · Summary")
         rows = []
         for limit in limit_set.limits:
-            drawn = limit.distribution.ppf(np.random.default_rng(1).random(20_000))
+            # The same twenty thousand draws the limit's own preview already made, through the same
+            # cache. This line used to redraw them -- identical distribution, identical seed --
+            # which made the summary table cost as much as all twelve previews put together and
+            # made it the single largest remaining chunk of the rerun.
+            drawn = limit_block._preview_samples(
+                limit.distribution.kind, limit_block._param_key(limit.distribution.params), 20_000)
             stats = limit_block.stats_row(drawn)
             rows.append({
                 "Limit": limit.name,

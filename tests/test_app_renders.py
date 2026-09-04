@@ -617,7 +617,7 @@ class TestTheLimitStackSaysWhichContactItIsDrawing:
         than shifts, so the medians stay close and the separation shows up mid-curve."""
         import numpy as np
 
-        for chart in self._traces(_run()):
+        for chart in self._traces(_run(**{"stack_mode_5": "Exceedance curves"})):
             if "Resulting HC depth | given the DHI" not in chart:
                 continue
             if chart["Resulting HC depth | given the DHI"]["x"].size != 260:
@@ -636,7 +636,8 @@ class TestTheLimitStackSaysWhichContactItIsDrawing:
         import numpy as np
 
         checked = 0
-        for chart in self._traces(_run()):
+        for chart in self._traces(_run(**{"stack_mode_4": "Exceedance curves",
+                                          "stack_mode_5": "Exceedance curves"})):
             bold = [k for k in chart if k.startswith("Resulting HC depth")]
             answer = chart[bold[-1]]["x"]
             if answer.size != 260:
@@ -841,3 +842,98 @@ class TestTheDhiOpensOnTheProspectsPick:
             _no_exception(at, f"a pick at {pick:,.0f} m")
             seen[pick] = {str(m.label): m.value for m in at.get("metric")}["Contact P50"]
         assert seen[2_185.0] != seen[2_250.0], "the picked contact does not move the answer"
+
+
+class TestTheLimitStackHonoursItsControls:
+    """Two things Lars caught on 3 Sep 2026 looking at the rendered figure."""
+
+    @staticmethod
+    def _traces(at, name_startswith):
+        import base64
+        import json
+
+        import numpy as np
+
+        def decode(v):
+            if isinstance(v, dict) and "bdata" in v:
+                return np.frombuffer(base64.b64decode(v["bdata"]),
+                                     dtype=np.dtype(v.get("dtype", "f8")))
+            return np.asarray(v, dtype=float)
+
+        for el in at.get("plotly_chart"):
+            spec = json.loads(el.proto.spec)
+            names = [str(t.get("name")) for t in spec.get("data", [])]
+            if not any(n.startswith("Resulting HC depth |") for n in names):
+                continue
+            for trace in spec["data"]:
+                if str(trace.get("name")).startswith(name_startswith):
+                    yield trace, decode(trace.get("y")), spec.get("layout", {})
+
+    def test_points_stays_inside_the_depth_window(self):
+        """*"the selected depth range is not honored when plotting points"*. Two causes, and the
+        second is the one that would have come back: the points were not clipped, **and**
+        `update_yaxes(autorange="reversed", range=[hi, lo])` let autorange win, so the axis stretched
+        to fit them. The other four modes clip their own data, which is why they looked correct."""
+        at = _run(**{"stack_mode_5": "Points"})
+        _no_exception(at, "points mode")
+        seen = 0
+        for trace, y, layout in self._traces(at, "Resulting HC depth"):
+            top, bottom = layout["yaxis"]["range"]
+            assert y.min() >= min(top, bottom) - 1e-6, "a point sits above the window"
+            assert y.max() <= max(top, bottom) + 1e-6, "a point sits below the window"
+            seen += 1
+        assert seen, "points mode drew no contact lane"
+
+    def test_the_axis_is_pinned_rather_than_auto_ranged(self):
+        """The root cause, asserted directly: with `autorange` set, `range` is advisory."""
+        for mode in ("Violin", "Points", "Histogram"):
+            for _, _, layout in self._traces(_run(**{"stack_mode_5": mode}),
+                                             "Resulting HC depth"):
+                axis = layout["yaxis"]
+                assert axis.get("autorange") is False, f"{mode}: the depth axis still auto-ranges"
+                assert axis.get("range"), f"{mode}: the depth axis has no explicit range"
+                break
+
+    @pytest.mark.parametrize("mode,kind", [("Violin", "scatter"), ("Half violin", "scatter"),
+                                           ("Histogram", "bar"), ("Points", "scatter")])
+    def test_the_amplitude_lane_follows_the_chosen_mode(self, mode, kind):
+        """*"the amp alone is a violin even if you select half-violin or histogram or points"*. It
+        looked like the control had failed on one lane. The geometry follows the mode now and the
+        distinction is carried by style -- hollow shape, hollow bars, open markers."""
+        at = _run(**{"stack_mode_5": mode})
+        _no_exception(at, f"the amplitude lane in {mode!r}")
+        found = [t for t, _, _ in self._traces(at, "The DHI, on its own")]
+        assert found, f"{mode} drew no amplitude lane"
+        for trace in found:
+            assert trace.get("type") == kind, \
+                f"{mode}: the amplitude lane is a {trace.get('type')}, not a {kind}"
+            if mode == "Points":
+                assert trace["marker"].get("symbol") == "circle-open", \
+                    "the amplitude's markers are drawn from a likelihood and must not look observed"
+            elif mode == "Histogram":
+                assert trace["marker"].get("line", {}).get("color"), "the bars are not outlined"
+            else:
+                assert trace["line"].get("dash") == "dot"
+
+    def test_half_violin_draws_the_amplitude_on_one_side_only(self):
+        """The mode's whole point, and the lane was ignoring it."""
+        import base64
+
+        import numpy as np
+
+        for trace, _, _ in self._traces(_run(**{"stack_mode_5": "Half violin"}),
+                                        "The DHI, on its own"):
+            x = np.frombuffer(base64.b64decode(trace["x"]["bdata"]),
+                              dtype=np.dtype(trace["x"].get("dtype", "f8")))
+            # A half violin's flat edge is the lane centre, so half the outline is a constant.
+            flat = np.isclose(x, x.min())
+            assert flat.sum() >= x.size // 2 - 1, "the amplitude lane is not drawn as a half"
+            return
+        raise AssertionError("no amplitude lane in half violin mode")
+
+    def test_violin_is_the_opening_view_on_both_tabs(self):
+        """Lars's call. A default that differed between 4.0 and 5.0 would make flipping between
+        them a hunt rather than a comparison."""
+        at = _run()
+        for tab in (4, 5):
+            assert at.session_state[f"stack_mode_{tab}"] == "Violin"

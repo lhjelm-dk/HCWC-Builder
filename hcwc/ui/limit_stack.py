@@ -95,7 +95,13 @@ def figure(result, *, space: str = DEPTH, mode: str = "Exceedance curves",
     else:
         _density_mode(fig, result, space, apex, ranked, colour_of, lo, hi, mode, every, posterior)
 
-    fig.update_yaxes(title_text=Limit.label_for(space), autorange="reversed", range=[hi, lo])
+    # **`autorange` and `range` together is `autorange` winning**, which is why the depth slider
+    # looked like it worked in four modes and not in **Points**. The other four clip their own data
+    # to the window -- the KDE grid runs lo..hi, the histogram passes `range=(lo, hi)` -- so
+    # auto-ranging landed on the window by accident. Points drew every realisation, so the axis
+    # stretched to 3 600 m on a window set to 2 030-2 400 m. Descending bounds are what reverses a
+    # depth axis, so the explicit range does both jobs and `autorange` has to go.
+    fig.update_yaxes(title_text=Limit.label_for(space), range=[hi, lo], autorange=False)
     # The lane modes carry a heading over each group, which needs room above the plot.
     fig.update_layout(height=660,
                       # The lane modes need room above for the group headings and a great deal
@@ -223,9 +229,10 @@ def _density_mode(fig, result, space, apex, ranked, colour_of, lo, hi, mode, eve
         spans.append((start, cursor))
 
     flat = [lane for _, lanes in groups for lane in lanes]
+    drawn_points = max(1, contact.size // max(int(every), 1))
     for position, (centre, lane) in enumerate(zip(centres, flat)):
         if lane.curve is not None:
-            _outline(fig, lane, centre, grid)
+            _evidence_lane(fig, lane, centre, grid, mode, lo, hi, drawn_points)
             continue
         values, w = lane.values, lane.weights
         if mode == "Points":
@@ -235,6 +242,12 @@ def _density_mode(fig, result, space, apex, ranked, colour_of, lo, hi, mode, eve
                 # rendering -- a realisation the amplitude favours appears more than once.
                 rng = np.random.default_rng(position)
                 values = values[rng.choice(values.size, values.size, p=w / w.sum())]
+            # Thin what is on screen, not what was sampled. Every tenth realisation of a set that
+            # runs to 3 600 m spends most of its budget below a window ending at 2 400 m, so the
+            # visible cloud was thinner than the control claimed.
+            values = values[(values >= lo) & (values <= hi)]
+            if values.size == 0:
+                continue
             thinned = values[::max(int(every), 1)]
             jitter = np.random.default_rng(position).uniform(-0.30, 0.30, thinned.size)
             fig.add_scatter(x=centre + jitter, y=thinned, mode="markers", name=lane.name,
@@ -323,12 +336,24 @@ def _evidence_curve(contact: np.ndarray, weights: np.ndarray, grid: np.ndarray) 
     return out / peak if peak > 0 else out
 
 
-def _outline(fig, lane: "_Lane", centre: float, grid: np.ndarray) -> None:
-    """A lane drawn as an unfilled outline, for a curve that is not a sample of realisations.
+def _evidence_lane(fig, lane: "_Lane", centre: float, grid: np.ndarray, mode: str,
+                   lo: float, hi: float, n_points: int) -> None:
+    """The amplitude's lane, drawn in whichever idiom the reader has chosen.
 
-    The different treatment is the point. A filled violin beside it says *this many realisations
-    landed here*; this one says *the amplitude prefers this depth by this much*, which is a claim of
-    a different kind, and drawing them identically would invite reading a likelihood as a frequency.
+    Lars, 3 Sep 2026: *"the amp alone is a violin even if you select half-violin or histogram or
+    points. make consistent."* It was, and it looked like the control had failed on that one lane.
+
+    So the geometry follows the mode and the **distinction is carried by style instead**: a hollow
+    shape with a dotted edge, hollow bars, open markers. That distinction still has to be there,
+    because this lane is a likelihood and every other lane is a count of realisations -- one says
+    *the amplitude prefers this depth by this much*, the others say *this many realisations landed
+    here*, and drawing them identically would invite reading the first as the second.
+
+    **Points is the awkward one and is labelled as such.** There are no realisations behind a
+    likelihood, so the markers are drawn *from* the curve by inverse-transform sampling rather than
+    observed. Open circles, and the caption says so. The alternative -- leaving one lane as a violin
+    while the other fourteen became points -- is what Lars was objecting to, and it reads as a bug
+    rather than as a distinction.
     """
     # Drawn only where the curve is alive. Outside the floor it is zero, and a zero-width polygon
     # is not nothing on screen -- it is a dotted line running the full height of the plot, which
@@ -339,8 +364,33 @@ def _outline(fig, lane: "_Lane", centre: float, grid: np.ndarray) -> None:
         return
     first, last = int(np.argmax(live)), len(live) - int(np.argmax(live[::-1]))
     curve, grid = curve[first:last], grid[first:last]
-    left = centre - LANE_FILL / 2 * curve
-    right = centre + LANE_FILL / 2 * curve
+
+    if mode == "Points":
+        cumulative = np.cumsum(curve)
+        if cumulative[-1] <= 0:
+            return
+        rng = np.random.default_rng(0)
+        draws = np.interp(rng.random(n_points), cumulative / cumulative[-1], grid)
+        fig.add_scatter(x=centre + rng.uniform(-0.30, 0.30, draws.size), y=draws, mode="markers",
+                        name=lane.name,
+                        marker=dict(color=lane.colour, size=4, opacity=0.55, symbol="circle-open"),
+                        hovertemplate=f"{lane.name}<br>%{{y:,.0f}}<extra></extra>")
+        return
+
+    if mode == "Histogram":
+        edges = np.linspace(lo, hi, 46)
+        mids = 0.5 * (edges[:-1] + edges[1:])
+        heights = np.interp(mids, grid, curve, left=0.0, right=0.0)
+        fig.add_bar(x=LANE_FILL * heights, y=mids, orientation="h", name=lane.name,
+                    width=(hi - lo) / 45, base=centre - LANE_FILL / 2,
+                    marker=dict(color=theme.rgba(lane.colour, 0.13),
+                                line=dict(color=lane.colour, width=1)),
+                    hovertemplate=f"{lane.name}<br>%{{y:,.0f}}<extra></extra>")
+        return
+
+    half = mode == "Half violin"
+    left = (np.full_like(curve, centre) if half else centre - LANE_FILL / 2 * curve)
+    right = centre + (LANE_FILL if half else LANE_FILL / 2) * curve
     fig.add_scatter(x=np.concatenate([right, left[::-1]]),
                     y=np.concatenate([grid, grid[::-1]]), fill="toself", mode="lines",
                     name=lane.name, fillcolor=theme.rgba(lane.colour, 0.13),

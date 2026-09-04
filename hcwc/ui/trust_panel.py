@@ -9,7 +9,7 @@ from __future__ import annotations
 import streamlit as st
 
 from hcwc.core import trust
-from hcwc.ui import theme
+from hcwc.ui import run, theme
 
 #: One hue per level. Green is deliberately muted: a passing check should be legible without being
 #: the loudest thing on the page.
@@ -71,7 +71,7 @@ def stop_card(check: trust.Check) -> None:
 def render(n, result, *, posterior=None, tab: int, heading: str = "6 · How much should you "
                                                                  "trust this run?") -> list:
     """Draw the panel and return the checks, so a caller can reuse them without recomputing."""
-    checks = trust.review(result, posterior=posterior)
+    checks = trust.review(result, posterior=posterior, other=run.repeat_of(result))
     level, sentence = trust.headline(checks)
 
     theme.heading(tab, heading)

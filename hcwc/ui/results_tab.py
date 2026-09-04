@@ -524,7 +524,14 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         help="Display only. The model always competes in column height, because that is the space "
              "where comparing a seal capacity with a spill point means anything.")
     mode = c2.selectbox(
-        "Draw as", limit_stack.MODES, key=f"stack_mode_{tab}",
+        # **Violin, not the exceedance curves.** Lars's call, 3 Sep 2026, and it is the right one
+        # for an opening view: the curves are the analytic reading and reward knowing what a
+        # flattening level means, while the violins show where each limit's mass actually sits,
+        # which is the question a reader arrives with. Both tabs open the same way — a default that
+        # differed between 4.0 and 5.0 would make flipping between them a hunt rather than a
+        # comparison.
+        "Draw as", limit_stack.MODES, index=limit_stack.MODES.index("Violin"),
+        key=f"stack_mode_{tab}",
         help="Exceedance curves read as probabilities; the violins and the histogram show where each limit actually lands; points show the individual realisations behind them.")
     every = c3.number_input(
         "Every n-th point", 1, 500, 10, 1, key=f"stack_every_{tab}",
@@ -553,10 +560,12 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
            "**Points** shows the sample itself."
            + ("\n\n**Three groups, left to right, and they are three different kinds of thing.** "
               "*Competing limits* are the mechanisms. *The amplitude alone* is not one of them — it "
-              "is the evidence they are being judged against, drawn as a dotted outline rather than "
-              "a filled shape because it is a **likelihood, not a count of realisations**: read its "
-              "shape, which is the factor the geology is multiplied by at each depth, and not its "
-              "area. *Result* carries both answers, "
+              "is the evidence they are being judged against, drawn hollow — a dotted edge, open "
+              "bars, open markers — because it is a **likelihood, not a count of realisations**: "
+              "read its shape, which is the factor the geology is multiplied by at each depth, and "
+              "not its area. In **Points** its markers are drawn *from* that shape rather than "
+              "observed, since a likelihood has no realisations behind it. *Result* carries both "
+              "answers, "
               + theme.basis_tag(theme.GEOLOGICAL) + " and " + theme.basis_tag(theme.GIVEN_DHI)
               + ", so the middle group is visibly what turns the first into the second.\n\n"
                 "In **Points** the updated lane is an importance *resample* of the same "

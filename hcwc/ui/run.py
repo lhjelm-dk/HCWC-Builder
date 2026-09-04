@@ -58,3 +58,27 @@ def current(limit_set: LimitSet) -> engine.EngineResult:
     return run(limit_set.to_dict(),
                int(st.session_state.get("n_trials", DEFAULT_TRIALS)),
                int(st.session_state.get("seed", DEFAULT_SEED)))
+
+
+#: The repeatability check's second run gets its own small cache rather than a slot in the one
+#: above. Sharing would halve how many *prospects* the main cache can hold — two entries each
+#: instead of one — and at 100 000 trials that is the out-of-memory the main cache's bound exists to
+#: prevent. Two entries is the whole working set here: this prospect's comparison run, and the one
+#: before it.
+MAX_CACHED_REPEATS = 2
+
+
+@st.cache_data(show_spinner=False, max_entries=MAX_CACHED_REPEATS, ttl=CACHE_TTL_S)
+def _repeat(payload: dict, n: int, seed: int) -> engine.EngineResult:
+    return engine.run(LimitSet.from_dict(payload), n, seed)
+
+
+def repeat_of(result: engine.EngineResult) -> engine.EngineResult:
+    """The same limit set at the next seed, for :func:`hcwc.core.trust.repeatability`.
+
+    That check reruns the whole Monte Carlo to ask whether the answer moves — the most honest single
+    number about a simulation, and worth its cost *once*. It was paying it on **every interaction**:
+    twelve limits at ten thousand trials, recomputed identically whenever anything on the page
+    changed, because it called the engine directly and so never met a cache.
+    """
+    return _repeat(result.limit_set.to_dict(), int(result.n), int(result.seed) + 1)
