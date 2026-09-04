@@ -345,7 +345,7 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
            f"All realisations, not successes only: at elicitation time the question is *what "
            f"controls this closure*, and a limit that usually kills the prospect outright is the "
            f"one you least want to leave at a default. The restricted view, the shift between them "
-           f"and why the difference matters are on tab 4.0 §3.")
+           f"and why the difference matters are on tab 4.0 → *Contact and chance* §3.")
     idle = [name for name, share in ranking if share <= 0.0005]
     if idle:
         st.caption(

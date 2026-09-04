@@ -15,7 +15,8 @@ disagree with us and still use the tab.
 **On "trap" versus "closure".** Edmundson's measured variable is *trap height* and that is what the
 published data, the published figures and the quoted r-values call it, so it keeps that name here.
 Our own risk element is *Closure*, matching the pillar name in E-POS. They are the same measurement
-— apex to spill — under two names, and §0 says so once rather than leaving a reader to wonder.
+— apex to spill — under two names, and the tab says so once at the top rather than leaving a
+reader to wonder.
 """
 from __future__ import annotations
 
@@ -428,7 +429,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             "prospect. Open them when you want to disagree with the method; skip them when you "
             "want to use it."
         )
-        theme.heading(TAB, "3.1 · Why the published regression measures the wrong thing")
+        theme.heading(TAB, "3 · Why the published regression measures the wrong thing")
         st.markdown(
             """
     The quantity a pre-drill model needs is **seal capacity `S`** — the column the seal *could* hold.
@@ -494,7 +495,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             )
 
         # ------------------------------------------------------------------ calibration
-        theme.heading(TAB, "3.2 · Does the corrected model fit?")
+        theme.heading(TAB, "4 · Does the corrected model fit?")
         bands = [(0, 150), (150, 250), (250, 400), (400, 10**9)]
         labels, obs, mod, ns = [], [], [], []
         for lo, hi in bands:
@@ -525,7 +526,7 @@ What follows is a disagreement about **one estimator**, not about the data.
         )
 
         # ------------------------------------------------------------------ second bias
-        theme.heading(TAB, "3.3 · A second bias, which the correction does not remove")
+        theme.heading(TAB, "5 · A second bias, which the correction does not remove")
         st.markdown(
             """
     The corrected closure-height elasticity is still ~0.70, higher than a rock property should be —
@@ -581,7 +582,7 @@ What follows is a disagreement about **one estimator**, not about the data.
                        f"source: {imported.source}" if imported else "load one below"],
         }),
         "Kept separate rather than merged into one 'empirical prior'. They are conditioned "
-        "differently and disagree informatively — the NCS/global gap in §4 is an example, and a "
+        "differently and disagree informatively — the NCS/global gap in §8 is an example, and a "
         "benchmark that agrees with the others tells you less than one that does not.",
     )
     st.warning(

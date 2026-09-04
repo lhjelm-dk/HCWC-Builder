@@ -1368,3 +1368,74 @@ class TestEveryResultExhibitDeclaresItsBasis:
         for label, caption in captions.items():
             if label.split()[-1].startswith("3."):
                 assert "GEOLOGICAL" not in caption and "GIVEN THE" not in caption, label
+
+
+class TestSectionNumbersHaveNoGaps:
+    """Tab 6.0 read `1, 2, 3.1, 3.2, 3.3, 6, 7, 8, 9, 10` for a week.
+
+    On 28 Aug 2026 (`9368ce5`, *tab 6 folded*) sections 3, 4 and 5 were folded into one expander and
+    renumbered 3.1-3.3, and the five sections after them were not renumbered down. Nothing sat at 4
+    or 5, and a caption pointed at "§4" -- into the hole. The figure numbering had a test; the
+    *section* numbering did not, which is why a gap survived two numbering audits.
+
+    Separately, tab 4.0's trust panel drew its heading without the sub-tab it lives on, so it came
+    out as `4.6` beside sections `4.1.1` to `4.1.5`: two schemes on one page, and the heading is
+    what a reader navigates by.
+    """
+
+    @staticmethod
+    def _sections(at):
+        """{tab: [section numbers rendered]}, read off the headings themselves."""
+        import collections
+        import re
+
+        found = collections.defaultdict(set)
+        for element in at.get("markdown"):
+            for match in re.finditer(r"<h3[^>]*>(\d+)\.(\d+(?:\.\d+)?)\s", str(element.value)):
+                found[int(match.group(1))].add(match.group(2))
+        return found
+
+    def test_no_tab_skips_a_section_number(self):
+        sections = self._sections(_run())
+        assert sections, "no headings were found at all"
+        for tab, numbers in sorted(sections.items()):
+            # Sub-tabbed tabs number their sections `sub.section`, so the run has to be per prefix.
+            groups = {}
+            for number in numbers:
+                parts = number.split(".")
+                groups.setdefault(".".join(parts[:-1]), []).append(int(parts[-1]))
+            for prefix, seen in groups.items():
+                seen.sort()
+                where = f"tab {tab}" + (f" sub-tab {prefix}" if prefix else "")
+                assert seen == list(range(1, len(seen) + 1)), \
+                    f"{where} sections are {seen}, which skips a number"
+
+    def test_tab_six_runs_one_to_ten(self):
+        """The specific regression, named, because the fix was to restore three numbers rather than
+        to renumber the five after them -- which keeps every `§6`-`§10` reference correct."""
+        assert sorted(int(s) for s in self._sections(_run())[6]) == list(range(1, 11))
+
+    def test_the_trust_panel_is_numbered_inside_its_sub_tab(self):
+        """It renders into a container reserved on sub-tab 4.1 and its figures are numbered 4.1.x,
+        so its heading has to be too."""
+        sections = self._sections(_run())[4]
+        assert "1.6" in sections, f"the trust panel is not 4.1.6: {sorted(sections)}"
+        assert "6" not in sections, "a bare `4.6` heading is still being drawn"
+
+    def test_every_section_reference_in_prose_points_at_a_real_section(self):
+        """`§4` on tab 6.0 pointed into the gap. Citations of other people's papers are excluded by
+        requiring the reference to name a tab -- `Edmundson's §5.2` is not a claim about this app."""
+        import re
+
+        at = _run()
+        sections = self._sections(at)
+        blob = "\n".join(str(e.value) for kind in ("markdown", "caption", "info", "warning")
+                          for e in at.get(kind))
+        broken = []
+        for tab, section in re.findall(r"[Tt]ab (\d)\.0[^.§]{0,20}§\s?(\d+(?:\.\d+){0,2})", blob):
+            drawn = sections.get(int(tab), set())
+            # A reference may repeat the tab number — `Tab 4.0 §4.1.3` is how the heading actually
+            # prints — so both spellings count as pointing at the same section.
+            if section not in drawn and section.removeprefix(f"{tab}.") not in drawn:
+                broken.append(f"tab {tab}.0 §{section}")
+        assert not broken, f"references to sections that do not exist: {sorted(set(broken))}"

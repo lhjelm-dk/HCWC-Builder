@@ -74,7 +74,7 @@ def render(n, result, *, posterior=None, tab: int, heading: str = "6 · How much
     checks = trust.review(result, posterior=posterior, other=run.repeat_of(result))
     level, sentence = trust.headline(checks)
 
-    theme.heading(tab, heading)
+    theme.heading(tab, heading, sub=n.sub)
     st.markdown(
         f"<div style='background:{theme.rgba(COLOUR[level], 0.14)};border:1px solid "
         f"{theme.rgba(COLOUR[level], 0.45)};border-radius:5px;padding:0.6rem 0.9rem;"
