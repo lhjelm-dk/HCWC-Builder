@@ -1180,3 +1180,116 @@ class TestTheBasisIsNamedForTheEvidenceInIt:
         from hcwc.ui import theme
         assert theme.evidence_title().startswith("Given the ")
         assert "dhi" not in theme.evidence_title() or "DHI" in theme.evidence_title()
+
+
+class TestTheCalibrationComparesBothBases:
+    """Lars, 4 Sep 2026: *"in section 6.8 I want the |dhi represented as well. it looks like it is
+    only the geological that is being compared to stats. I want both."*
+
+    It was. Every exhibit in sections 8 and 9 read `engine_run.current(...)` — the geological run —
+    so the whole calibration exercise checked the half of the tool that had not heard the evidence.
+    Which exhibit shows both at once and which asks you to pick is decided by the medium: a table
+    can carry a `Basis` column, and four benchmarks against two bases on one Q-Q plot cannot.
+    """
+
+    @staticmethod
+    def _frames(at, *required):
+        out = []
+        for el in at.get("dataframe"):
+            columns = list(getattr(el.value, "columns", []))
+            if all(any(name in c for c in columns) for name in required):
+                out.append(el.value)
+        return out
+
+    @staticmethod
+    def _named_traces(at, needle):
+        import json
+        for el in at.get("plotly_chart"):
+            names = [str(t.get("name")) for t in json.loads(el.proto.spec).get("data", [])
+                     if t.get("name")]
+            if any(needle in name for name in names):
+                return names
+        return []
+
+    def test_the_benchmark_table_carries_a_row_per_basis(self):
+        frames = self._frames(_run(), "Benchmark", "Basis")
+        assert frames, "table 6.10 has no Basis column"
+        bases = set(frames[0]["Basis"])
+        assert bases == {"geological", "given the DHI"}, bases
+
+    def test_the_two_bases_land_on_different_percentiles(self):
+        """If they agreed, the extra rows would be clutter. The amplitude moves the model toward
+        the record here, which is the finding the comparison exists to surface."""
+        frame = self._frames(_run(), "Benchmark", "Basis")[0]
+        by_basis = {b: p for b, p in zip(frame["Basis"], frame["Your P50 is their"])}
+        assert by_basis["geological"] != by_basis["given the DHI"]
+
+    def test_the_quantile_figures_take_one_basis_and_the_control_switches_them(self):
+        """Eight curves on a figure whose whole reading is which side of one diagonal is not a
+        comparison, it is a mess. So a selector — and flipping it is the comparison."""
+        geological = self._named_traces(_run(), "in band")
+        updated = self._named_traces(_run(calibration_basis="given the DHI"), "in band")
+        assert geological and updated
+        assert geological != updated, "the basis selector changes nothing"
+
+    def test_the_quantile_captions_name_the_basis_they_are_drawn_on(self):
+        at = _run(calibration_basis="given the DHI")
+        _no_exception(at, "the calibration figures on the updated basis")
+        captions = [str(c.value) for c in at.get("caption")]
+        assert any("Matched quantiles" in c and "GIVEN THE DHI" in c for c in captions)
+
+    def test_the_fusion_gives_every_basis_its_own_combined_curve(self):
+        """*"in 6.12 is the combined just the geological?"* It was. The fusion is a weighted
+        quantile average, so it applies to either basis unchanged — drawing it for only one made
+        the figure read as though the evidence had been folded in when it had not."""
+        names = self._named_traces(_run(fuse_benchmark=0.4), "your model")
+        assert any("your model — geological" == n for n in names)
+        assert any("your model — given the DHI" == n for n in names)
+        assert any(n.startswith("geological + benchmark") for n in names)
+        assert any(n.startswith("given the DHI + benchmark") for n in names)
+
+    def test_the_fusion_draws_no_combined_curve_at_zero_weight(self):
+        """At weight zero the combination *is* your model, and a second identical curve under a
+        different name would invite reading it as a result."""
+        names = self._named_traces(_run(fuse_benchmark=0.0), "your model")
+        assert not any("benchmark, weight" in n for n in names)
+
+    def test_the_base_rate_gets_a_bar_for_each_basis(self):
+        """*"in 6.13 maybe a bar for the |dhi?"*"""
+        names = self._named_traces(_run(), "base rate")
+        assert "your model · geological" in names
+        assert "your model · given the DHI" in names
+
+    def test_the_base_rate_table_carries_both(self):
+        frames = self._frames(_run(), "Trap fill", "given the DHI")
+        assert frames, "table 6.14 has no updated column"
+        assert "Your model · given the DHI" in frames[0].columns
+
+    def test_a_prospect_with_no_evidence_shows_only_the_geological_one(self):
+        """The whole apparatus collapses to what it was when there is nothing to compare against,
+        rather than drawing an empty second series."""
+        at = _run(dhi_toggle=False)
+        _no_exception(at, "calibration with no evidence")
+        assert set(self._frames(at, "Benchmark", "Basis")[0]["Basis"]) == {"geological"}
+        assert self._named_traces(at, "base rate") == ["your model · geological",
+                                                       "NCS base rate (n = 23)"]
+
+    def test_the_updated_columns_are_resampled_rather_than_apex_subtracted(self):
+        """The overlay carries *contacts*; subtracting a median apex from those is off by however
+        much the apex varies, which is the quantity tab 4.0 spends a section on.
+        `dhi.posterior_columns` resamples `column_m` directly, so no apex arithmetic happens.
+
+        Driven off the app's own posterior rather than through `empirical.dhi_columns`, which reads
+        session state and so returns `None` when called from outside a script run."""
+        import numpy as np
+
+        from hcwc.core import dhi as dhi_core
+
+        posterior = _run().session_state["dhi_posterior"]
+        columns = dhi_core.posterior_columns(posterior, 5_000)
+        assert columns.size == 5_000
+        allowed = posterior.result.column_m[posterior.result.above_minimum]
+        assert np.isin(columns, allowed).all(), "a resampled column is not one the engine drew"
+        # And it is a *posterior* sample, not the prior over again.
+        assert abs(float(np.median(columns))
+                   - float(np.median(allowed))) > 1.0, "the weights did nothing"

@@ -281,3 +281,28 @@ class TestTheAllowListMatchesTheApp:
             prospect.read('{"format": "1", "inputs": {}}')
         with pytest.raises(ValueError, match="newer version"):
             prospect.read('{"format": 99, "inputs": {}}')
+
+
+class TestTheBasisEnumerationMatchesTheThemes:
+    """`hcwc.io` must not import Streamlit, so the four basis strings are duplicated. This is the
+    test that stops the copies drifting -- a saved file whose basis is not in the enumeration is
+    silently reset to the first option, and the reader is told nothing."""
+
+    def test_every_basis_the_ui_can_produce_is_accepted(self):
+        from hcwc.io import prospect
+        from hcwc.ui import theme
+
+        assert theme.GEOLOGICAL in prospect.BASIS_VALUES
+        assert theme.GIVEN_DHI in prospect.BASIS_VALUES
+        # The two combined forms `evidence_basis` builds, spelled out rather than derived, because
+        # deriving them here would test the copy against itself.
+        assert "given the well" in prospect.BASIS_VALUES
+        assert "given the DHI + well" in prospect.BASIS_VALUES
+
+    def test_the_calibration_basis_survives_a_reload(self):
+        import json
+
+        from hcwc.io import prospect
+
+        saved = prospect.document({"calibration_basis": "given the DHI"})
+        assert prospect.read(json.dumps(saved))["calibration_basis"] == "given the DHI"

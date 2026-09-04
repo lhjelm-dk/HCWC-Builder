@@ -40,6 +40,7 @@ EXACT: frozenset[str] = frozenset({
     # two entries were dead. The window and entry-depth sliders are deliberately NOT saved: their
     # bounds are computed from the run, so a stored value means nothing to a different prospect.
     "stack_space_4", "stack_space_5", "stack_mode_4", "stack_mode_5",
+    "calibration_basis",
     "stack_every_4", "stack_every_5",
     "well_toggle",
     # The area-depth table, flattened into three parallel lists plus how it is described. Written
@@ -208,6 +209,16 @@ NUMERIC_BOUNDS: dict[str, tuple[float, float]] = {
 STACK_MODES: tuple[str, ...] = (
     "Exceedance curves", "Violin", "Half violin", "Histogram", "Points")
 
+#: Every basis a distribution in this tool can be on. Duplicated from ``hcwc.ui.theme`` for the same
+#: reason as the modes above, and a test asserts the two agree.
+#:
+#: All four are listed even though only two are ever *offered* at once -- which two depends on which
+#: evidence channels the prospect has, and a saved file must still validate when it is reopened with
+#: a different set of them switched on. An enumeration that only admitted the currently reachable
+#: pair would reject a legitimate file.
+BASIS_VALUES: tuple[str, ...] = (
+    "geological", "given the DHI", "given the well", "given the DHI + well")
+
 #: Widget keys whose value must be one of a fixed set, keyed by the suffix that identifies them.
 #:
 #: Streamlit does not complain about a stored value that is not among a selector's options -- it
@@ -230,6 +241,7 @@ ENUM_EXACT: dict[str, frozenset[str]] = {
     "stack_space_4": frozenset({COLUMN, DEPTH}),
     "stack_space_5": frozenset({COLUMN, DEPTH}),
     "charge_ad_method": frozenset(AREA_DEPTH_METHODS),
+    "calibration_basis": frozenset(BASIS_VALUES),
     "stack_mode_4": frozenset(STACK_MODES),
     "stack_mode_5": frozenset(STACK_MODES),
     "dhi_in_seen": frozenset({"Seen", "Seen over the crest only",

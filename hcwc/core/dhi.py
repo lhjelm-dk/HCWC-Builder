@@ -423,6 +423,35 @@ class DhiPosterior:
         return float(self.weights[success].mean() / self.weights[~success].mean())
 
 
+def posterior_columns(posterior: DhiPosterior, n: int = 10_000,
+                      seed: int = 20260904) -> np.ndarray:
+    """The updated column distribution as a **sample**, success cases only.
+
+    The posterior lives as weights on the prior's realisations, and anything that needs a
+    distribution rather than a curve -- the benchmark comparison on tab 6.0, the export -- needs
+    those weights collapsed. Importance resampling with replacement, which is exact in the limit and
+    honest about the effective sample size the tab already reports.
+
+    **Columns, not contacts minus an apex.** The tempting shortcut is to take the resampled contacts
+    the overlay already carries and subtract a median apex, and it is wrong by however much the apex
+    varies between realisations -- which is a quantity this tool spends a whole section on. The
+    engine holds ``column_m`` per realisation, so no apex arithmetic is needed at all.
+
+    Success cases only, because every trap in every benchmark this feeds is a discovery.
+
+    Returns an empty array when there is nothing to resample: no success cases, or weights that sum
+    to zero because the evidence rules out everything the model drew.
+    """
+    keep = posterior.result.above_minimum
+    columns = np.asarray(posterior.result.column_m, dtype=float)[keep]
+    weights = np.asarray(posterior.weights, dtype=float)[keep]
+    total = float(weights.sum())
+    if columns.size == 0 or not np.isfinite(total) or total <= 0:
+        return np.asarray([], dtype=float)
+    rng = np.random.default_rng(seed)
+    return columns[rng.choice(columns.size, int(n), p=weights / total)]
+
+
 def update(result: EngineResult, detection: DetectionFunction,
            observation: DhiObservation) -> DhiPosterior:
     """Formulation B — reweight the geological realisations by the seismic likelihood.

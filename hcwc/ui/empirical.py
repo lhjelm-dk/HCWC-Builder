@@ -24,6 +24,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from hcwc.core import dhi as dhi_core
 from hcwc.core import engine
 from hcwc.core import censoring
 from hcwc.io import benchmarks
@@ -130,6 +131,30 @@ def _overlay_models(fig, x: float, width: float) -> list[str]:
                              fill=theme.rgba(theme.BASIS_COLOUR[theme.GIVEN_DHI], 0.30))
         drawn.append(theme.evidence_basis())
     return drawn
+
+
+def dhi_columns(n_draw: int = 10_000) -> "np.ndarray | None":
+    """This prospect's column distribution **given the evidence**, success cases only, or ``None``.
+
+    Section 8 compared the record against the geological model and nothing else -- Lars, 4 Sep 2026:
+    *"it looks like it is only the geological that is being compared to stats. I want both."* He is
+    right that it is the more interesting comparison: the geological model is what the limits allow,
+    and the updated one is what the limits allow *after the amplitude or the well has spoken*. A
+    calibration exercise that never sees the second is checking half the tool.
+
+    **Resampled from the column array, not reconstructed from contacts.** The overlay carries
+    `contact_samples`, and subtracting a median apex from those is off by however much the apex
+    varies -- which is exactly the quantity tab 4.0 spends a section on. The engine already holds
+    `column_m` per realisation, so the posterior columns are that array importance-resampled under
+    the same weights, with no apex arithmetic anywhere.
+
+    Success cases only, because every trap in every benchmark on this tab is a discovery.
+    """
+    posterior = st.session_state.get("dhi_posterior")
+    if posterior is None:
+        return None
+    drawn = dhi_core.posterior_columns(posterior, int(n_draw))
+    return drawn if drawn.size else None
 
 
 def _render_import() -> None:
@@ -856,6 +881,14 @@ What follows is a disagreement about **one estimator**, not about the data.
     else:
         from hcwc.core import calibration
 
+        # **Both bases, throughout.** Which exhibit shows them together and which asks you to pick
+        # is decided by the medium, not by preference: a table can carry a `Basis` column and be
+        # read; four benchmarks times two bases on one Q-Q plot is eight curves and is not.
+        updated_column = dhi_columns(built_column.size)
+        bases = [(theme.GEOLOGICAL, built_column)]
+        if updated_column is not None:
+            bases.append((theme.evidence_basis(), updated_column))
+
         st.markdown(
             f"Every benchmark below is evaluated at **this prospect's own structural relief of "
             f"{own_relief:,.0f} m** and its {burial:,.0f} m burial depth, so the comparison is "
@@ -872,13 +905,21 @@ What follows is a disagreement about **one estimator**, not about the data.
         if loaded is not None:
             sources.append(imported_label(loaded))
 
+        # One comparison per (benchmark, basis). `comparisons` stays the geological list because
+        # the Q-Q and ratio figures below draw one basis at a time; `all_comparisons` carries both
+        # for the table, which can show them side by side without becoming unreadable.
         comparisons = []
+        all_comparisons = []
         for label in sources:
             drawn = _samples_for(label, (round(own_relief, 1),), float(burial))
             if not drawn:
                 continue
-            comparisons.append(
-                calibration.compare(built_column, next(iter(drawn.values())), label))
+            sample = next(iter(drawn.values()))
+            for basis, columns in bases:
+                comparison = calibration.compare(columns, sample, label)
+                all_comparisons.append((basis, comparison))
+                if basis == theme.GEOLOGICAL:
+                    comparisons.append(comparison)
 
         if not comparisons:
             st.info("No benchmark could be evaluated at this relief.")
@@ -886,6 +927,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             n.table(
                 pd.DataFrame([
                     {"Benchmark": c.name,
+                     "Basis": basis,
                      "Their P90": f"{c.bench_p90:,.0f}",
                      "Their P50": f"{c.bench_p50:,.0f}",
                      "Their P10": f"{c.bench_p10:,.0f}",
@@ -893,20 +935,43 @@ What follows is a disagreement about **one estimator**, not about the data.
                      "Ratio": f"{c.ratio:.2f}",
                      "Your P50 is their": f"P{c.p50_lands_at:.0f}",
                      "Verdict": c.verdict}
-                    for c in comparisons]),
-                f"{theme.basis_tag(theme.GEOLOGICAL)} &nbsp; All columns in metres, at "
+                    for basis, c in all_comparisons]),
+                (f"{theme.basis_tag(theme.GEOLOGICAL)} "
+                 + (f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; **Two rows per benchmark**, one "
+                    f"per basis, because the question *am I optimistic* has a different answer "
+                    f"before and after the evidence and both are worth knowing. "
+                    if len(bases) > 1 else "&nbsp; ")
+                 + f"All columns in metres, at "
                 f"{own_relief:,.0f} m relief. **Read the last two columns.** The ratio says how far "
                 f"apart the medians are; the percentile says how unusual your median would be among "
                 f"closures of this size. The spread *between* benchmarks matters too — if you are "
-                f"optimistic against one and in line with another, they disagree more than you do.")
+                f"optimistic against one and in line with another, they disagree more than you do."))
 
             for c in comparisons:
                 st.markdown(f"- {c.sentence}")
 
+            # **A selector rather than both at once, and the medium decides it.** Four benchmarks
+            # against two bases is eight curves on a figure whose whole reading is which side of one
+            # diagonal a curve sits; the table above shows both together because a table can carry
+            # that. Flipping this is the comparison -- if the curve crosses the diagonal when you
+            # switch, the evidence moved you from optimistic to conservative, which is a finding.
+            qq_basis, qq_column = theme.GEOLOGICAL, built_column
+            if len(bases) > 1:
+                qq_basis = st.radio(
+                    "Draw these two figures on", [b for b, _ in bases], horizontal=True,
+                    key="calibration_basis",
+                    help="The table above carries both at once. These two read one distribution "
+                         "against the benchmarks, so they take one basis at a time — switch to see "
+                         "whether the evidence moved you across the diagonal.")
+                qq_column = dict(bases)[qq_basis]
+            qq_comparisons = [c for basis, c in all_comparisons if basis == qq_basis]
+            qq_tag = theme.basis_tag(theme.GEOLOGICAL if qq_basis == theme.GEOLOGICAL
+                                     else theme.GIVEN_DHI)
+
             qq = go.Figure()
-            lo = min(c.bench_p90 for c in comparisons) * 0.75
-            hi = max(max(c.built_p10 for c in comparisons),
-                     max(c.bench_p10 for c in comparisons)) * 1.1
+            lo = min(c.bench_p90 for c in qq_comparisons) * 0.75
+            hi = max(max(c.built_p10 for c in qq_comparisons),
+                     max(c.bench_p10 for c in qq_comparisons)) * 1.1
             edge = np.array([lo, hi])
 
             # The two zones, named. On a Q-Q plot "which side of the diagonal" is the whole
@@ -933,11 +998,11 @@ What follows is a disagreement about **one estimator**, not about the data.
             qq.add_scatter(x=edge, y=edge, mode="lines", name="agreement",
                            line=dict(color="#555", width=1.6, dash="dash"))
 
-            for c, colour in zip(comparisons, (FITTED, PUBLISHED, "#E8A33D", "#4C72B0")):
+            for c, colour in zip(qq_comparisons, (FITTED, PUBLISHED, "#E8A33D", "#4C72B0")):
                 drawn = next(iter(_samples_for(
                     c.name, (round(own_relief, 1),), float(burial)).values()))
-                mine, theirs = calibration.quantile_pairs(built_column, drawn)
-                share = calibration.corridor_share(built_column, drawn)
+                mine, theirs = calibration.quantile_pairs(qq_column, drawn)
+                share = calibration.corridor_share(qq_column, drawn)
                 qq.add_scatter(x=theirs, y=mine, mode="lines",
                                name=f"{c.name} — {share:.0%} in band",
                                line=dict(color=colour, width=2.6),
@@ -979,7 +1044,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             qq.update_yaxes(title_text="Your column (m) — larger downward",
                             range=[hi, lo], autorange=False)
             n.plot(qq,
-                   f"{theme.basis_tag(theme.GEOLOGICAL)} &nbsp; **Matched quantiles, yours against "
+                   f"{qq_tag} &nbsp; **Matched quantiles, yours against "
                    f"theirs, with agreement as the dashed diagonal and the two zones named.** The "
                    f"y-axis reads **downward like every other column axis here**, so a taller "
                    f"predicted column falls into the lower, red zone.\n\n"
@@ -1015,11 +1080,11 @@ What follows is a disagreement about **one estimator**, not about the data.
                             fillcolor="rgba(120,120,120,0.16)", line_width=0, layer="below")
             ratio.add_hline(y=1.0, line=dict(color="#555", width=1.6, dash="dash"))
 
-            for c, colour in zip(comparisons, (FITTED, PUBLISHED, "#E8A33D", "#4C72B0")):
+            for c, colour in zip(qq_comparisons, (FITTED, PUBLISHED, "#E8A33D", "#4C72B0")):
                 drawn = next(iter(_samples_for(
                     c.name, (round(own_relief, 1),), float(burial)).values()))
                 ratio.add_scatter(
-                    x=probabilities, y=calibration.quantile_ratios(built_column, drawn),
+                    x=probabilities, y=calibration.quantile_ratios(qq_column, drawn),
                     mode="lines", name=c.name, line=dict(color=colour, width=2.6),
                     hovertemplate=f"{c.name}<br>exceedance P%{{x:.0f}}<br>"
                                   f"%{{y:.2f}}× the benchmark<extra></extra>")
@@ -1041,7 +1106,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             # P90 / P50 / P10 are read aloud, even though the numbers themselves count down.
             ratio.update_xaxes(autorange="reversed")
             n.plot(ratio, optional=True,
-                   caption=f"{theme.basis_tag(theme.GEOLOGICAL)} &nbsp; **The same comparison as "
+                   caption=f"{qq_tag} &nbsp; **The same comparison as "
                            f"one number, at every percentile.** Parity is the dashed line, the grey "
                            f"band is ±{calibration.CORRIDOR:.0%}, and the shaded halves say which "
                            f"way you are wrong.\n\n"
@@ -1140,28 +1205,33 @@ What follows is a disagreement about **one estimator**, not about the data.
             st.info("That benchmark cannot be evaluated at this relief.")
         else:
             bench = next(iter(bench_draw.values()))
-            fused = benchmarks.shrink_toward(built_column, bench, fuse_weight)
 
             top = float(max(np.percentile(built_column, 99.5), np.percentile(bench, 99.5)))
             grid = np.linspace(0.0, top, 320)
 
-            curves = [("your model — geological", built_column,
-                       theme.BASIS_COLOUR[theme.GEOLOGICAL], "solid", 3.2)]
-
-            # The DHI-updated columns, when the prospect has one. Resampled from the posterior
-            # weights, because the benchmark comparison needs a *sample* rather than a curve.
-            overlay = st.session_state.get("dhi_overlay")
-            posterior = st.session_state.get("dhi_posterior")
-            if overlay is not None and posterior is not None:
-                apex_here = float(np.median(posterior.result.apex_m))
-                dhi_columns = np.asarray(overlay["contact_samples"], float) - apex_here
-                curves.append((f"your model — {theme.evidence_basis()}", dhi_columns,
-                               theme.BASIS_COLOUR[theme.GIVEN_DHI], "solid", 3.2))
+            # **Every basis gets a combined curve, not just the geological one.** Lars, 4 Sep
+            # 2026: *"in 6.12 is the combined just the geological, or what about the |DHI?"*
+            # It was the geological one, and drawing the updated model beside a fusion that
+            # ignored it made the figure read as though the evidence had been folded in when
+            # it had not. The fusion is a weighted quantile average, so it applies to either
+            # basis unchanged -- there was never a reason for one to be privileged.
+            #
+            # The `curves` list is built basis by basis so the model and its fusion sit
+            # together in the legend, sharing a colour and separated by the dash.
+            fused_by_basis = {}
+            curves = []
+            for basis, columns in bases:
+                colour = (theme.BASIS_COLOUR[theme.GEOLOGICAL] if basis == theme.GEOLOGICAL
+                          else theme.BASIS_COLOUR[theme.GIVEN_DHI])
+                curves.append((f"your model — {basis}", columns, colour, "solid", 3.2))
+                fused_by_basis[basis] = benchmarks.shrink_toward(columns, bench, fuse_weight)
+                if fuse_weight > 0:
+                    curves.append((f"{basis} + benchmark, weight {fuse_weight:.2f}",
+                                   fused_by_basis[basis], colour, "dot", 3.0))
+            fused = fused_by_basis[theme.GEOLOGICAL]
 
             curves.append((f"{bench_source}, at {own_relief:,.0f} m relief", bench,
                            "#8172B2", "dash", 2.4))
-            if fuse_weight > 0:
-                curves.append((f"combined, weight {fuse_weight:.2f}", fused, "#937860", "dot", 3.0))
 
             fig_fuse = go.Figure()
             for label, sample, colour, dash, width in curves:
@@ -1173,7 +1243,14 @@ What follows is a disagreement about **one estimator**, not about the data.
                 yaxis_range=[0, 1.02], height=460, margin=dict(t=20),
                 legend=dict(orientation="h", y=-0.2))
             n.plot(fig_fuse,
-                   "**Every curve is conditional on the prospect working** — these are column "
+                   (f"{theme.basis_tag(theme.GEOLOGICAL)} "
+                    + (f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; **Both of your distributions "
+                       f"are here, and each has its own combined curve** — same colour, dotted. "
+                       f"The fusion is a weighted quantile average, so it applies to either basis "
+                       f"unchanged, and drawing it for only one of them would read as though the "
+                       f"evidence had been folded in when it had not.\n\n"
+                       if len(bases) > 1 else "&nbsp; ")
+                    + "**Every curve is conditional on the prospect working** — these are column "
                    "distributions, not chances. The benchmark is discoveries only, so it could not "
                    "carry a chance even if you wanted it to.\n\n"
                    "**The combined curve is a fusion, not a Bayesian update, and the distinction "
@@ -1186,14 +1263,17 @@ What follows is a disagreement about **one estimator**, not about the data.
                    "starts at zero.\n\n"
                    "Quantile averaging rather than a mixture of densities: mixing two disagreeing "
                    "distributions produces two humps — a claim that the truth is one *or* the "
-                   "other — where averaging quantiles says it lies *between* them.")
+                   "other — where averaging quantiles says it lies *between* them."))
 
-            f1, f2, f3 = st.columns(3)
-            for col, pct_ in ((f1, 90), (f2, 50), (f3, 10)):
-                mine_v = float(np.percentile(built_column, 100 - pct_))
-                fused_v = float(np.percentile(fused, 100 - pct_))
-                col.metric(f"Combined P{pct_}", f"{fused_v:,.0f} m",
-                           f"yours {mine_v:,.0f} m", delta_color="off")
+            for basis, columns in bases:
+                if len(bases) > 1:
+                    st.caption(f"**Combined with the benchmark, on the {basis} model**")
+                f1, f2, f3 = st.columns(3)
+                for col, pct_ in ((f1, 90), (f2, 50), (f3, 10)):
+                    mine_v = float(np.percentile(columns, 100 - pct_))
+                    fused_v = float(np.percentile(fused_by_basis[basis], 100 - pct_))
+                    col.metric(f"Combined P{pct_}", f"{fused_v:,.0f} m",
+                               f"yours {mine_v:,.0f} m", delta_color="off")
 
         st.warning(
             "**This is a sanity check, not a score, and the reason is structural.** Every benchmark "
@@ -1249,10 +1329,26 @@ What follows is a disagreement about **one estimator**, not about the data.
             # comparison is only like-for-like against realisations that would have been drilled
             # and found something.
             built = _built_fill
-            fill = np.clip(built.column_m[built.above_minimum] / float(own_relief), 0.0, 1.0)
             bands = ((0.0, 0.5), (0.5, 0.75), (0.75, 0.99))
-            mine = [float(((fill > lo) & (fill <= hi)).mean()) for lo, hi in bands]
-            mine_spill = float((fill > 0.99).mean())
+
+            def _fill_shares(columns: np.ndarray) -> list[float]:
+                """Share of realisations in each fill band, plus filled-to-spill."""
+                fill = np.clip(np.asarray(columns, float) / float(own_relief), 0.0, 1.0)
+                return ([float(((fill > lo) & (fill <= hi)).mean()) for lo, hi in bands]
+                        + [float((fill > 0.99).mean())])
+
+            # Both bases, as bars. Lars, 4 Sep 2026: *"in 6.13 maybe a bar for the |DHI?"* The base
+            # rate is `P(trap fill | discovery)`, and what the amplitude or the well says about
+            # where the contact sits changes the fill fraction directly -- so leaving the updated
+            # model out compared the record against the half of the tool that had not heard the
+            # evidence.
+            fill_bases = [(theme.GEOLOGICAL, built.column_m[built.above_minimum])]
+            _updated = dhi_columns(int(built.above_minimum.sum()) or 1)
+            if _updated is not None:
+                fill_bases.append((theme.evidence_basis(), _updated))
+            shares = {basis: _fill_shares(columns) for basis, columns in fill_bases}
+            mine = shares[theme.GEOLOGICAL][:3]
+            mine_spill = shares[theme.GEOLOGICAL][3]
             theirs = [float(cell.p_fill_0_50), float(cell.p_fill_51_75),
                       float(cell.p_fill_76_99)]
 
@@ -1263,35 +1359,43 @@ What follows is a disagreement about **one estimator**, not about the data.
             c3.metric("Of those, filled to spill", f"{float(cell.p_fill_100):.0%}",
                       "censored — capacity never observed", delta_color="off")
 
-            comparison = pd.DataFrame([
-                {"Trap fill": label, "Your model": f"{a:.1%}", "This cell": f"{b:.1%}",
-                 "Difference": f"{a - b:+.1%}"}
-                for label, a, b in zip(("0–50%", "51–75%", "76–99%"), mine, theirs)
-            ] + [{"Trap fill": "100% — censored", "Your model": f"{mine_spill:.1%}",
-                  "This cell": f"{float(cell.p_fill_100):.1%}",
-                  "Difference": f"{mine_spill - float(cell.p_fill_100):+.1%}"}])
+            labels = ("0–50%", "51–75%", "76–99%", "100% — censored")
+            published = theirs + [float(cell.p_fill_100)]
+            rows = []
+            for i, label in enumerate(labels):
+                row = {"Trap fill": label, "This cell": f"{published[i]:.1%}"}
+                for basis, _ in fill_bases:
+                    row[f"Your model · {basis}"] = f"{shares[basis][i]:.1%}"
+                    row[f"Difference · {basis}"] = f"{shares[basis][i] - published[i]:+.1%}"
+                rows.append(row)
+            comparison = pd.DataFrame(rows)
 
+            axis = ["0–50%", "51–75%", "76–99%", "100%"]
             fig_base = go.Figure()
-            fig_base.add_bar(x=mine + [mine_spill],
-                             y=["0–50%", "51–75%", "76–99%", "100%"], orientation="h",
-                             name="your model",
-                             marker_color=theme.BASIS_COLOUR[theme.GEOLOGICAL])
-            fig_base.add_bar(y=["0–50%", "51–75%", "76–99%", "100%"],
-                             x=theirs + [float(cell.p_fill_100)], orientation="h",
+            for basis, _ in fill_bases:
+                fig_base.add_bar(
+                    x=shares[basis], y=axis, orientation="h", name=f"your model · {basis}",
+                    marker_color=(theme.BASIS_COLOUR[theme.GEOLOGICAL]
+                                  if basis == theme.GEOLOGICAL
+                                  else theme.BASIS_COLOUR[theme.GIVEN_DHI]))
+            fig_base.add_bar(y=axis, x=published, orientation="h",
                              name=f"NCS base rate (n = {int(cell.n)})", marker_color="#8172B2")
             fig_base.update_layout(barmode="group", height=330, margin=dict(t=20),
                                    xaxis_title="Share of cases", xaxis_tickformat=".0%",
                                    yaxis_title="Trap fill", yaxis=dict(autorange="reversed"),
                                    legend=dict(orientation="h", y=-0.28))
             n.plot(fig_base,
-                   f"**Your competing limits against the {int(cell.n)} NCS discoveries in the same "
+                   (f"{theme.basis_tag(theme.GEOLOGICAL)} "
+                    + (f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; "
+                       if len(fill_bases) > 1 else "&nbsp; ")
+                    + f"**Your competing limits against the {int(cell.n)} NCS discoveries in the same "
                    f"trap-height and burial-depth cell.** Restricted to your success cases, because "
                    "every one of theirs is a discovery.\n\n"
                    "**Read the bottom pair apart from the other three.** The 100 % bar is not a "
                    "fill outcome — it is the share of traps whose seal capacity was never "
                    "observed, because geometry stopped the column first. It is a right-censoring "
                    "rate, and comparing your model's filled-to-spill share against it compares "
-                   "two different kinds of number.")
+                   "two different kinds of number."))
             n.table(comparison,
                     "**A disagreement here is a finding, not an error.** The base rate describes "
                     "what was drilled and found on the NCS; your model describes what your "
