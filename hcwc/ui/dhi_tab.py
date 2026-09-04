@@ -131,7 +131,8 @@ def render(n: Numbering | None = None) -> None:
             "on tab 2.0 to add a seismic amplitude as evidence. The geological model on tabs 3.0 to 4.0 "
             "stands on its own either way.\n\n"
             "**What a DHI may and may not do.** E-POS sets the ceiling: a fluid indicator can sense "
-            "whether a reservoir exists and what fluid fills it, but *not which of charge, closure "
+            "whether a reservoir exists and, more weakly, what fluid fills it — but *not which of "
+            "charge, closure "
             "or retention failed*. So it may move POS and it may assert a contact depth. It may "
             "**not** tell you *which element failed*, which is why the element chances on tab 2.0 "
             "are never touched here. It *may* tell you which limit set the contact, because "
@@ -218,7 +219,12 @@ def render(n: Numbering | None = None) -> None:
         o1, o2, o3 = st.columns(3)
         contact = o1.number_input(
             "Picked contact (m TVDSS)", 0.0, 10000.0, default_contact, 5.0, disabled=not seen,
-            key="dhi_in_contact", help="The down-dip amplitude termination or flat spot.")
+            key="dhi_in_contact",
+            help="The down-dip amplitude termination or flat spot.\n\n"
+                 "**This tool takes it as the hydrocarbon–water contact**, and does not ask whether "
+                 "it might be a gas–oil contact instead. On a two-phase prospect that is a real "
+                 "ambiguity the amplitude is poor at resolving — see the note under §2 — and it "
+                 "matters, because a GOC picked as an HCWC understates the column.")
         sigma = o2.number_input(
             "Pick σ (m)", 1.0, 500.0, DEFAULT_SIGMA_M, 1.0, key="dhi_in_sigma",
             help="Flat-spot pick uncertainty **plus depth-conversion error**. The second is "
@@ -389,6 +395,60 @@ is where your prospect sits relative to the two populations you drew.
              f"moves nothing states a barely-supportive DHI rather than a neutral one. E-POS's own "
              f"default on the same axis is {dhi_core.DEFAULT_STRENGTH:.0f}; this is a shade more "
              f"conservative and the two are otherwise the same scale.")
+
+    with st.expander("**What does a real amplitude buy?** — three measured likelihood ratios"):
+        st.markdown(
+            "The axis above is a scale with no external referent: **−100 to 100 is a canvas, not a "
+            "measurement.** These are the only published numbers I know of that put a *measured* "
+            "value on the same quantity — Kjønsberg, Hauge, Kolbjørnsen & Buland (2010), "
+            "*Bayesian Monte Carlo method for seismic predrill prospect assessment*, Geophysics "
+            "75(5), O9–O19. They invert prestack AVO for the joint lithology–fluid distribution "
+            "down a trace by Markov chain Monte Carlo, and report prior and posterior "
+            "hydrocarbon probabilities at three locations offshore Norway. The implied likelihood "
+            "ratio is the change in odds."
+        )
+        st.dataframe(
+            pd.DataFrame([
+                {"Location": "Prior (their facies model)", "P(hydrocarbon)": "0.53",
+                 "Odds": "1.13", "Implied R": "—"},
+                {"Location": "A — at a well", "P(hydrocarbon)": "0.76",
+                 "Odds": "3.17", "Implied R": "2.8"},
+                {"Location": "B — prospect centre", "P(hydrocarbon)": "0.97",
+                 "Odds": "32.3", "Implied R": "28.7"},
+                {"Location": "C — outskirts", "P(hydrocarbon)": "0.44",
+                 "Odds": "0.79", "Implied R": "0.70"},
+            ]), hide_index=True, use_container_width=True)
+        st.markdown(
+            "**Three things to take from it.**\n\n"
+            "**The scale is plausible.** The strongest amplitude in a careful, prestack, "
+            "well-calibrated inversion bought a factor of **29**, against this tool's cap of "
+            f"**{dhi_core.R_CAP:.0f}**. Location B was subsequently drilled and gas was found in "
+            "two separate layers, so that R was earned rather than merely asserted.\n\n"
+            "**The evidence is strongly asymmetric.** The best positive was R ≈ 29; the negative "
+            "at the outskirts was only R ≈ 0.70 — a factor of 1.4 *against*, where the positive "
+            "was a factor of 29 *for*. Absence of an anomaly is much weaker evidence than presence "
+            "of one, which is the asymmetry §3 builds into the detection function and §1 into the "
+            "*absent* case.\n\n"
+            "**These are combined ratios, not this slider alone.** Their number carries the "
+            "amplitude *and* the geometry — the fluid contacts are part of what their chain "
+            "samples — so it is comparable with the combined R in §5, not with `r_strength` here. "
+            "Read it as a ceiling on the whole update, not a calibration of one channel."
+        )
+        st.warning(
+            "**And it separates hydrocarbon from brine far better than one hydrocarbon from "
+            "another.** Their rock-physics model has oil sand and gas sand overlapping heavily in "
+            "acoustic impedance and V\u209a/V\u209b, and the posterior shows what that costs: at "
+            "location B the inversion put **0.03** on wet \u2014 near-certainty that hydrocarbon is "
+            "there \u2014 and then **0.45 on gas alone against 0.46 on gas *and* oil**, which is no "
+            "discrimination at all. Given both, their oil and gas volumes come out strongly "
+            "*anti*-correlated: the seismic pins the total and trades the split.\n\n"
+            "E-POS\u2019s ceiling, quoted at the top of this tab, says a fluid indicator senses "
+            "*whether a reservoir exists and what fluid fills it*. The first half is much better "
+            "supported than the second. **The practical consequence here is the pick**: a flat "
+            "spot may be a gas\u2013oil contact rather than a hydrocarbon\u2013water contact, this tool "
+            "assumes the latter, and on a two-phase prospect the amplitude alone will not settle "
+            "which \u2014 so it is a judgement to make and record, not one to read off the seismic."
+        )
 
     with st.expander("The two populations (E-POS defaults)"):
         st.caption(

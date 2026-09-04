@@ -36,7 +36,8 @@ The first two stay in the code and on the tab as a **teaching comparison**, neve
 model, because seeing what a dropped term costs is the only way to make the argument concrete.
 
 **What the DHI may not do.** E-POS's ``logic/dfi_pillar_update.py`` sets the ceiling: a fluid
-indicator can sense whether a reservoir exists and what fluid fills it, but *not which of charge,
+indicator can sense whether a reservoir exists and -- more weakly, see the Kjonsberg note on the
+strength section -- what fluid fills it, but *not which of charge,
 closure or retention failed*. So a DHI may move POS and may assert a contact depth. It may **not**
 tell you which element failed.
 
