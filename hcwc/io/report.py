@@ -377,6 +377,51 @@ def _figure_block(label: str, caption: str, payload: bytes) -> str:
     )
 
 
+def _table_block(label: str, payload, caption: str, hide_index: bool) -> str:
+    """One table and its caption, as a page-breakable unit.
+
+    ``payload`` is whatever the sequence was handed: a dataframe from :meth:`Numbering.table`, or
+    the markdown of a hand-written one from :meth:`Numbering.markdown_table`. The second is rendered
+    here rather than stored as HTML, so the registry keeps what the app actually drew.
+    """
+    if isinstance(payload, str):
+        body = _markdown_table_to_html(payload)
+    else:
+        # `escape=False` because several cells carry the same inline formatting the captions do --
+        # a bold verdict, a chip -- and escaping them prints their source. The content is this
+        # app's own, not a user's file: an imported dataset reaches a figure, never a cell here.
+        body = payload.to_html(index=not hide_index, escape=False, border=0,
+                               classes="tbl", justify="left")
+    return (f"<figure class='fig'>{body}"
+            f"<figcaption><b>{_e(label)}</b> \u2014 {_markdownish(caption)}</figcaption>"
+            f"</figure>")
+
+
+def _markdown_table_to_html(body: str) -> str:
+    """A pipe table, as HTML. Enough Markdown for the three hand-written tables in the app.
+
+    Same reasoning as :func:`_markdownish`: a dependency to render one construct is a dependency to
+    keep up to date. Anything that is not a pipe row is passed through as a paragraph, because these
+    bodies sometimes carry a sentence above the table.
+    """
+    rows, out, header_done = [], [], False
+    for line in body.strip().splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            if line:
+                out.append(f"<p>{_markdownish(line)}</p>")
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if all(set(c) <= set("-: ") for c in cells) and cells:
+            header_done = True
+            continue
+        tag = "th" if not header_done and not rows else "td"
+        rows.append("<tr>" + "".join(f"<{tag}>{_markdownish(c)}</{tag}>" for c in cells) + "</tr>")
+    if rows:
+        out.append("<table class='tbl'>" + "".join(rows) + "</table>")
+    return "".join(out)
+
+
 def _markdownish(text: str) -> str:
     """The bold, italic, code and paragraph breaks these captions actually use.
 
@@ -402,20 +447,31 @@ def _markdownish(text: str) -> str:
 
 
 def build_full(result: EngineResult, provenance: Provenance, figures: dict, *,
-               checks=(), p_geological: float = 1.0, colours=None,
+               tables: dict | None = None, checks=(), p_geological: float = 1.0, colours=None,
                note: str = "") -> tuple[str, list[str]]:
-    """The working record: the one-page summary, then every figure with its caption.
+    """The working record: the one-page summary, then every exhibit with its caption.
 
     Returns the HTML and a list of figures that would not render, so the caller can say which are
     missing rather than shipping a document that is quietly short.
 
-    ``figures`` is ``{label: (plotly_figure, caption)}`` — :data:`hcwc.ui.numbering.FIGURES_KEY`
-    as the app fills it during a run.
+    ``figures`` is ``{label: (plotly_figure, caption)}`` and ``tables`` is
+    ``{label: (payload, caption, hide_index)}`` — :data:`hcwc.ui.numbering.FIGURES_KEY` and
+    :data:`hcwc.ui.numbering.TABLES_KEY` as the app fills them during a run.
+
+    **The two are interleaved by number, not appended.** They already share one counter per tab --
+    that is the whole point of the numbering scheme, so that `2.3` names exactly one thing -- and a
+    document that ran every figure and then every table would put `Table 3.2` after `Figure 6.13`
+    and lose the reading order the numbers exist to carry.
     """
     from hcwc.ui.numbering import figure_order
 
     blocks, failed = [], []
-    for label in sorted(figures, key=figure_order):
+    tables = tables or {}
+    for label in sorted(set(figures) | set(tables), key=figure_order):
+        if label in tables:
+            payload, caption, hide_index = tables[label]
+            blocks.append(_table_block(label, payload, caption, hide_index))
+            continue
         figure, caption = figures[label]
         try:
             payload = figure.to_image(format=FIGURE_FORMAT,

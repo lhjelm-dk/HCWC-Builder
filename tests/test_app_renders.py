@@ -1439,3 +1439,85 @@ class TestSectionNumbersHaveNoGaps:
             if section not in drawn and section.removeprefix(f"{tab}.") not in drawn:
                 broken.append(f"tab {tab}.0 §{section}")
         assert not broken, f"references to sections that do not exist: {sorted(set(broken))}"
+
+
+class TestTheFullReportCarriesTheTables:
+    """Lars, 4 Sep 2026: *"I want the tables."*
+
+    The document called *the full report* shipped 33 figures and none of the 17 tables. Figures were
+    registered as they were drawn; tables were not registered anywhere, which is why nothing
+    noticed — the limits as entered, the group minima, the allocation comparison and the whole
+    benchmark section were simply absent.
+    """
+
+    @staticmethod
+    def _document(at, figure_limit=2):
+        """The report, with only a couple of figures so kaleido does not take a minute."""
+        from hcwc.io import report
+        from hcwc.ui import numbering
+
+        figures = at.session_state[numbering.FIGURES_KEY]
+        tables = at.session_state[numbering.TABLES_KEY]
+        keep = {k: figures[k] for k in sorted(figures)[:figure_limit]}
+        html, missing = report.build_full(
+            at.session_state["dhi_posterior"].result,
+            report.Provenance(prospect="T", basis="geological", trials=10_000, seed=1,
+                              source_file=""),
+            keep, tables=tables)
+        return html, missing, tables
+
+    def test_the_tables_are_registered_as_they_are_drawn(self):
+        from hcwc.ui import numbering
+
+        tables = _run().session_state[numbering.TABLES_KEY]
+        assert len(tables) > 10, f"only {len(tables)} tables registered"
+        for label in ("Table 3.2", "Table 4.1.5", "Table 4.2.3", "Table 6.10"):
+            assert label in tables, f"{label} was drawn but never registered"
+
+    def test_every_registered_table_reaches_the_document(self):
+        html, _, tables = self._document(_run())
+        for label in tables:
+            assert f"<b>{label}</b>" in html, f"{label} is registered but absent from the report"
+
+    def test_exhibits_are_interleaved_in_number_order(self):
+        """They share one counter per tab — that is the whole point of the scheme, so that `2.3`
+        names exactly one thing. A document that ran every figure and then every table would put
+        `Table 3.2` after `Figure 6.13` and lose the reading order the numbers carry."""
+        import re
+
+        from hcwc.ui.numbering import figure_order
+
+        html, _, _ = self._document(_run(), figure_limit=6)
+        order = re.findall(r"<b>((?:Figure|Table) [\d.]+)</b>", html)
+        assert order == sorted(order, key=figure_order), order
+
+    def test_a_hand_written_markdown_table_renders_as_a_table(self):
+        """`markdown_table` stores its pipe-table source, not HTML, so the registry keeps what the
+        app drew. The report turns it into rows."""
+        html, _, _ = self._document(_run())
+        assert "<table class='tbl'>" in html
+        assert "Censoring-corrected (MLE)" in html
+
+    def test_the_stored_caption_carries_the_basis(self):
+        """Same reason as for figures: this dict is what the report renders from, and a table
+        exported without its basis is the defect that started all of this."""
+        from hcwc.ui import numbering
+
+        tables = _run().session_state[numbering.TABLES_KEY]
+        assert "GEOLOGICAL" in tables["Table 4.1.5"][1]
+        assert "GIVEN THE DHI" in tables["Table 5.3.5"][1]
+
+    def test_a_failed_figure_is_still_reported_and_the_tables_survive_it(self):
+        """The missing-figure path had to keep working once the loop walked both kinds."""
+        from hcwc.io import report
+        from hcwc.ui import numbering
+
+        at = _run()
+        tables = at.session_state[numbering.TABLES_KEY]
+        html, missing = report.build_full(
+            at.session_state["dhi_posterior"].result,
+            report.Provenance(prospect="T", basis="geological", trials=10_000, seed=1,
+                              source_file=""),
+            {"Figure 9.1": (object(), "a figure that cannot render")}, tables=tables)
+        assert missing and "Figure 9.1" in missing[0]
+        assert "<b>Table 3.2</b>" in html

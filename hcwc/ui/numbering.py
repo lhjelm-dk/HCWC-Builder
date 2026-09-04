@@ -70,6 +70,16 @@ def render_caption(label: str, caption: str, basis: str | None = None) -> None:
 #: are where the finding is stated and where the caveat lives.
 FIGURES_KEY = "_figures"
 
+#: The same, for tables: ``{label: (payload, caption)}`` where the payload is a dataframe or the
+#: markdown of a hand-written table.
+#:
+#: **The report shipped every figure and no table.** Thirty-three figures and twenty-odd tables are
+#: drawn on a run, and only the figures reached the document -- so the limits as entered, the group
+#: minima, the allocation comparison and the whole benchmark section were absent from "the full
+#: report". Lars, 4 Sep 2026: *"I want the tables."* They were never registered anywhere, which is
+#: why nothing noticed.
+TABLES_KEY = "_tables"
+
 
 def theme_tag(basis: str) -> str:
     """The basis chip, imported late so ``hcwc.ui.theme`` and this module stay independent."""
@@ -135,6 +145,7 @@ class Numbering:
         # no Numbering, so the first one created is tab 2.0's and that is early enough.
         if self.tab <= 2:
             st.session_state[FIGURES_KEY] = {}
+            st.session_state[TABLES_KEY] = {}
 
     _optional: int = field(default=0, init=False)
 
@@ -204,7 +215,10 @@ class Numbering:
         """
         label = self.optional("Table") if optional else self._label("Table")
         st.dataframe(data, hide_index=hide_index, use_container_width=True, key=label, **kwargs)
-        render_caption(label, caption, self.basis if basis == INHERIT else basis)
+        basis = self.basis if basis == INHERIT else basis
+        stored = caption if not basis else f"{theme_tag(basis)} &nbsp; {caption}"
+        st.session_state.setdefault(TABLES_KEY, {})[label] = (data, stored, hide_index)
+        render_caption(label, caption, basis)
         return label
 
     def markdown_table(self, body: str, caption: str) -> str:
@@ -215,5 +229,7 @@ class Numbering:
         """
         label = self._label("Table")
         st.markdown(body)
+        stored = caption if not self.basis else f"{theme_tag(self.basis)} &nbsp; {caption}"
+        st.session_state.setdefault(TABLES_KEY, {})[label] = (body, stored, True)
         render_caption(label, caption, self.basis)
         return label

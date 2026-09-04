@@ -603,7 +603,8 @@ with tab7:
         # The working record: the same summary, then every figure drawn this run with the caption
         # shown beside it in the app. Built on demand rather than every rerun -- it renders each
         # figure through kaleido, which is about a second apiece.
-        if d2.button("Build the full report (with every figure)", key="build_full_report",
+        if d2.button("Build the full report (with every figure and table)",
+                     key="build_full_report",
                      use_container_width=True):
             _full, _missing = report.build_full(
                 result,
@@ -612,6 +613,7 @@ with tab7:
                                   seed=int(st.session_state.get("seed", 20260825)),
                                   source_file=st.session_state.get("_loaded_name", "")),
                 st.session_state.get(numbering.FIGURES_KEY) or {},
+                tables=st.session_state.get(numbering.TABLES_KEY) or {},
                 checks=_checks, p_geological=_p_g,
                 colours=results_tab.limit_colours(limit_set),
                 note=st.session_state.get("report_note", ""))
@@ -626,10 +628,15 @@ with tab7:
             "**Two documents, two moments.** The **one-pager** is what you hand across a table: one "
             "sheet, two charts drawn at report size, every number on it one somebody will quote. "
             "The **full report** is the working record — the same summary followed by every figure "
-            "the app actually drew, each with the caption that says what it means and what it "
-            "cannot tell you. Nobody reads that end to end; it exists so a number quoted six "
-            "months from now can be traced to the figure it came from, and so a reviewer can "
-            "disagree with a specific chart rather than with the tool.\n\n"
+            "*and every table* the app drew, interleaved in number order, each with the caption "
+            "that says what it means and what it cannot tell you. Nobody reads that end to end; it "
+            "exists so a number quoted six months from now can be traced to the exhibit it came "
+            "from, and so a reviewer can disagree with a specific chart rather than with the "
+            "tool.\n\n"
+            "**The tables were missing from it until 4 Sep 2026.** Figures were registered as they "
+            "were drawn and tables were not, so the limits as entered, the group minima, the "
+            "allocation comparison and the whole benchmark section were absent from a document "
+            "called *the full report*.\n\n"
             "Figures embed as **vector SVG** — a few kilobytes each, sharp at any zoom, which "
             "matters because the arguments about a column-height distribution happen in the tails."
         )
