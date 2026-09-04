@@ -1293,3 +1293,78 @@ class TestTheCalibrationComparesBothBases:
         # And it is a *posterior* sample, not the prior over again.
         assert abs(float(np.median(columns))
                    - float(np.median(allowed))) > 1.0, "the weights did nothing"
+
+
+class TestEveryResultExhibitDeclaresItsBasis:
+    """Lars, 4 Sep 2026: *"check is geological and |dhi represented! ok?"* On tabs 4.0 and 5.0 it
+    was not: 3 of 32 exhibits carried a basis chip, and nineteen of the rest were **byte-identical
+    captions across the two tabs** — `Figure 4.1.1` and `Figure 5.3.1` were the same words over two
+    different distributions.
+
+    The tab-level banner said which, and its own docstring says why that was the fix: *"a reader who
+    has scrolled to Figure 7.2 will not scroll back to check."* But **a caption travels and a banner
+    does not.** The export on tab 7.0 ships every figure with its caption and no banner, and so does
+    the camera button on any chart. So the basis lives on the sequence now, and every exhibit it
+    numbers inherits it.
+    """
+
+    @staticmethod
+    def _captions(at):
+        import re
+
+        out = {}
+        for element in at.get("caption"):
+            match = re.match(r"\*\*((?:Figure|Table) [\d.]+)\*\*", str(element.value))
+            if match:
+                out[match.group(1)] = str(element.value)
+        return out
+
+    @staticmethod
+    def _sequence(label):
+        """`Figure 5.3.6` -> `5.3` — the sub-tab sequence it belongs to."""
+        parts = label.split()[-1].split(".")
+        return ".".join(parts[:2])
+
+    @pytest.mark.parametrize("sequence,expected", [("4.1", "GEOLOGICAL"), ("4.2", "GEOLOGICAL"),
+                                                   ("5.3", "GIVEN THE DHI"),
+                                                   ("5.4", "GIVEN THE DHI")])
+    def test_every_exhibit_on_a_result_sub_tab_carries_its_chip(self, sequence, expected):
+        captions = self._captions(_run())
+        mine = {k: v for k, v in captions.items() if self._sequence(k) == sequence}
+        assert mine, f"no exhibits found on {sequence}"
+        missing = sorted(k for k, v in mine.items() if expected not in v)
+        assert not missing, f"{sequence} exhibits with no {expected} chip: {missing}"
+
+    def test_the_paired_captions_are_no_longer_identical(self):
+        """The precise defect: same words, two distributions, nothing to tell them apart."""
+        captions = self._captions(_run())
+        for a, b in (("Figure 4.1.1", "Figure 5.3.1"), ("Figure 4.1.3", "Figure 5.3.3"),
+                     ("Table 4.1.5", "Table 5.3.5"), ("Figure 4.2.2", "Figure 5.4.2")):
+            assert captions[a] != captions[b], f"{a} and {b} still read identically"
+
+    def test_the_chip_follows_the_evidence_on_a_well_only_prospect(self):
+        """The sequence is handed the token; the chip renders whatever the weights actually hold."""
+        captions = self._captions(_run(**WELL_ONLY))
+        updated = [v for k, v in captions.items() if self._sequence(k) in ("5.3", "5.4")]
+        assert updated
+        assert all("GIVEN THE WELL" in v for v in updated)
+        assert not any("GIVEN THE DHI" in v for v in updated)
+
+    def test_the_exported_figure_carries_the_chip_too(self):
+        """The reason this is on the caption rather than only on screen. The report renders from
+        this registry, and a figure exported without its basis is the whole problem."""
+        figures = _run().session_state["_figures"]
+        for label, (_, caption) in figures.items():
+            sequence = self._sequence(label)
+            if sequence in ("4.1", "4.2"):
+                assert "GEOLOGICAL" in caption, f"{label} exports with no basis"
+            elif sequence in ("5.3", "5.4"):
+                assert "GIVEN THE DHI" in caption, f"{label} exports with no basis"
+
+    def test_a_sequence_with_no_basis_adds_no_chip(self):
+        """Tab 3.0 and tab 6.0 are not readings of one contact distribution, and a chip there would
+        be a claim rather than a label. `None` has to stay distinguishable from *not set*."""
+        captions = self._captions(_run())
+        for label, caption in captions.items():
+            if label.split()[-1].startswith("3."):
+                assert "GEOLOGICAL" not in caption and "GIVEN THE" not in caption, label

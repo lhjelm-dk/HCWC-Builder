@@ -84,7 +84,9 @@ def test_no_two_sub_tabs_can_produce_the_same_figure_number():
     source = (root / "app.py").read_text(encoding="utf-8")
 
     for tab, count in ((4, 2), (5, 4)):
-        subs = re.findall(rf"Numbering\({tab},\s*sub=(\d)\)", source)
+        # The sequence carries a `basis=` as well since 4 Sep 2026, so the pattern stops at the
+        # sub number rather than at a closing bracket that is no longer there.
+        subs = re.findall(rf"Numbering\({tab},\s*sub=(\d)", source)
         assert sorted(subs) == [str(i) for i in range(1, count + 1)], (
             f"tab {tab} should hand each of its {count} sub-tabs its own Numbering, got sub={subs}")
     assert "Numbering(4)\n" not in source and "Numbering(5)\n" not in source, (

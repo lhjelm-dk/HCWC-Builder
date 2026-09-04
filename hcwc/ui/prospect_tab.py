@@ -97,7 +97,7 @@ def render() -> None:
     with st.expander("Save or load this prospect — or load the worked example"):
         st.markdown(
             "**Everything lives in the browser session until you save it** — close the tab and an "
-            "hour of eliciting twelve limits is gone. A saved file carries every input you touched, "
+            "hour of eliciting limits is gone. A saved file carries every input you touched, "
             "including each calculator's own settings, so a reloaded prospect recomputes from the "
             "numbers it was computed from.\n\n"
             "**The file stores inputs, not answers.** Reopened after the tool changes it gives the "

@@ -362,10 +362,8 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                 row[f"Allocated · {label}"] = f"{table[f'allocated::{element.value}']:.3f}"
         rows.append(row)
 
-    basis = theme.GIVEN_DHI if with_dhi else theme.GEOLOGICAL
     n.table(pd.DataFrame(rows),
-            (f"{theme.basis_tag(basis)} &nbsp; "
-             + (f"At {z_entry:,.0f} m the location factor is **r = {comp_geo['r_location']:.3f} "
+            ((f"At {z_entry:,.0f} m the location factor is **r = {comp_geo['r_location']:.3f} "
                 f"geological** and **r = {comp['r_location']:.3f} {theme.evidence_basis()}**, "
                 f"and every difference in the table follows from that one number — the element "
                 f"chances from tab 2.0 are identical in both halves, because evidence about "

@@ -9,8 +9,9 @@ Charge, then Closure, then Retention, in the order they think. Each limit is one
 :func:`hcwc.ui.limit_block.render` instance, and the summary at the top is built from the same
 objects the sub-tabs return, so it cannot drift from them.
 
-**The twelve are data, not code** (:data:`SPECS`). Adding fault seal later, or a lateral seal, is a
-row in that table plus a helper — not a new tab and not a new branch.
+**The limits are data, not code** (:data:`SPECS`). Adding fault seal later, or a lateral seal, is a
+row in that table plus a helper — not a new tab and not a new branch. Grant's mechanical top seal
+went in that way on 4 Sep 2026, which is the claim being tested.
 """
 from __future__ import annotations
 
@@ -45,7 +46,7 @@ class LimitSpec:
     ``below_apex`` is the default parameter span expressed as **metres of column below the apex**,
     whatever the limit's own parameterisation. For a ``DEPTH`` limit the block is handed
     ``apex + span`` instead, so a spill point opens with sensible depths rather than with numbers
-    an assessor has to translate. Stating both in one place keeps the twelve comparable.
+    an assessor has to translate. Stating both in one place keeps them comparable.
     """
     name: str
     group: Group
@@ -248,7 +249,8 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
     # acted on. `LimitSet.correlated_names` owns the ordering; this owns the offer.
     choices = (APEX, *names)
     st.markdown(
-        "Pairs, not a matrix. A full matrix over twelve limits is 66 numbers and nobody fills that "
+        f"Pairs, not a matrix. A full matrix over {len(SPECS)} limits is "
+        f"{len(SPECS) * (len(SPECS) - 1) // 2} numbers and nobody fills that "
         "in; an assessor states the couplings they believe in and the rest are zero — which is "
         "itself a modelling statement, and usually a wrong one for the seal pairs.\n\n"
         "Values are **rank** correlations, which is what an assessor means and what `RiskCorrmat` "
@@ -305,7 +307,7 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
     Tab 1.0 calls the ranking *"the point of the whole tool"* and tells the assessor to run once, read
     it, then elicit only the top two or three. It lived on tab 4.0, so following that instruction meant
     a round trip on every refinement cycle — and people do not make round trips. They either elicit
-    all twelve carefully or none of them, which are the two outcomes the ranking exists to prevent.
+    all of them carefully or none of them, which are the two outcomes the ranking exists to prevent.
 
     So it is here too, above the inputs it directs, updating as they change. Tab 4.0 §3 keeps the full
     version — the successes-only toggle, the shift table, the selection-effect argument. This is the

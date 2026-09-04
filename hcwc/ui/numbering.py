@@ -38,7 +38,13 @@ Kind = Literal["Figure", "Table"]
 # be, which is worse than no label at all.
 
 
-def render_caption(label: str, caption: str) -> None:
+#: Passed as ``basis`` to mean *use the sequence's own*, so that ``None`` can still mean
+#: *no basis on this one* -- which is a real answer for a figure that is neither, like the
+#: detection function, and has to be distinguishable from "not specified".
+INHERIT = "__inherit__"
+
+
+def render_caption(label: str, caption: str, basis: str | None = None) -> None:
     """One numbered caption, whole.
 
     There was briefly a Full/Brief control that folded everything after the first paragraph behind
@@ -49,7 +55,10 @@ def render_caption(label: str, caption: str) -> None:
     The function stays as the single place a label and a caption are joined, which is worth having
     even with nothing to decide inside it.
     """
-    st.caption(f"**{label}** \u2014 {caption}", unsafe_allow_html=True)
+    from hcwc.ui import theme
+
+    chip = f"{theme.basis_tag(basis)} &nbsp; " if basis else ""
+    st.caption(f"**{label}** \u2014 {chip}{caption}", unsafe_allow_html=True)
 
 
 #: Where every figure drawn this run is kept as ``{label: (figure, caption)}``, so the Export tab
@@ -60,6 +69,13 @@ def render_caption(label: str, caption: str) -> None:
 #: **The caption travels with the figure.** A figure without one is a picture; the captions here
 #: are where the finding is stated and where the caveat lives.
 FIGURES_KEY = "_figures"
+
+
+def theme_tag(basis: str) -> str:
+    """The basis chip, imported late so ``hcwc.ui.theme`` and this module stay independent."""
+    from hcwc.ui import theme
+
+    return theme.basis_tag(basis)
 
 
 def figure_order(label: str) -> tuple:
@@ -97,6 +113,20 @@ class Numbering:
     #: locates the page as well as the position on it. Tab 5.0 needs this and tab 4.0 will when its
     #: two sub-tabs grow; a tab that passes nothing keeps two-part numbers and is untouched.
     sub: int | None = None
+    #: Which contact distribution everything in this sequence is drawn from, or ``None`` where the
+    #: question does not apply.
+    #:
+    #: **The caption is where this belongs, not only the banner at the top of the tab.** The banner
+    #: was the original fix, and its own docstring says why -- *"a reader who has scrolled to Figure
+    #: 7.2 will not scroll back to check"*. But a caption travels and a banner does not: the export
+    #: on tab 7.0 ships every figure with its caption and no banner, and so does the camera button
+    #: on any chart. Nineteen exhibits on tabs 4.0 and 5.0 carried **byte-identical captions** across
+    #: the two tabs -- `Figure 4.1.1` and `Figure 5.3.1` were the same words over two different
+    #: distributions -- and nothing on either said which. Lars, 4 Sep 2026, asking exactly that.
+    #:
+    #: Set on the sequence rather than passed at each call because the failure mode is *forgetting*,
+    #: and the three exhibits that had a chip were the three somebody had remembered.
+    basis: str | None = None
     _count: int = field(default=0, init=False)
 
     def __post_init__(self) -> None:
@@ -144,7 +174,7 @@ class Numbering:
         return self._label(kind)
 
     def plot(self, fig, caption: str, *, use_container_width: bool = True,
-             optional: bool = False) -> str:
+             optional: bool = False, basis: str | None = INHERIT) -> str:
         """Render a Plotly figure with a numbered caption beneath it. Returns the label.
 
         **The label is also the widget key.** Streamlit derives an element's identity from its type
@@ -158,19 +188,23 @@ class Numbering:
         st.plotly_chart(fig, use_container_width=use_container_width, key=label,
                         config=_plotly_config(label))
         # Kept so the Export tab can render every figure without each tab publishing its own.
-        st.session_state.setdefault(FIGURES_KEY, {})[label] = (fig, caption)
-        render_caption(label, caption)
+        basis = self.basis if basis == INHERIT else basis
+        # Stored with the chip already in it, because this dict *is* what the report renders and a
+        # figure exported without its basis is the whole problem this solves.
+        stored = caption if not basis else f"{theme_tag(basis)} &nbsp; {caption}"
+        st.session_state.setdefault(FIGURES_KEY, {})[label] = (fig, stored)
+        render_caption(label, caption, basis)
         return label
 
     def table(self, data, caption: str, *, hide_index: bool = True,
-              optional: bool = False, **kwargs) -> str:
+              optional: bool = False, basis: str | None = INHERIT, **kwargs) -> str:
         """Render a dataframe with a numbered caption beneath it. Returns the label.
 
         Keyed by its label for the same reason as :meth:`plot`.
         """
         label = self.optional("Table") if optional else self._label("Table")
         st.dataframe(data, hide_index=hide_index, use_container_width=True, key=label, **kwargs)
-        render_caption(label, caption)
+        render_caption(label, caption, self.basis if basis == INHERIT else basis)
         return label
 
     def markdown_table(self, body: str, caption: str) -> str:
@@ -181,5 +215,5 @@ class Numbering:
         """
         label = self._label("Table")
         st.markdown(body)
-        render_caption(label, caption)
+        render_caption(label, caption, self.basis)
         return label

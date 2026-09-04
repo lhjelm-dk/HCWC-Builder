@@ -186,7 +186,7 @@ elicit them carefully yet. Leave the defaults, switch off the ones this prospect
 move on.
 
 **3 · Elicit only what matters — tab 3.0 §1, without leaving the tab.** The ranking at the top of tab
-3.0 says which of the twelve is actually setting the contact, and it updates as you edit. **That
+3.0 says which limit is actually setting the contact, and it updates as you edit. **That
 ranking is the point of the whole tool.** Most limits turn out not to move the answer, and the ones
 that do are usually not the ones you would have spent the afternoon on — so spend it on the top two
 or three and leave the rest rough. Tab 4.0 §4.1.3 has the fuller version: the same ranking restricted to
@@ -331,9 +331,9 @@ with tab4:
         with _panel:
             st.markdown(theme.subtab_marker(4), unsafe_allow_html=True)
     with _contact:
-        results_tab.render(Numbering(4, sub=1))
+        results_tab.render(Numbering(4, sub=1, basis=theme.GEOLOGICAL))
     with _depth:
-        depth_risk_tab.render(n=Numbering(4, sub=2))
+        depth_risk_tab.render(n=Numbering(4, sub=2, basis=theme.GEOLOGICAL))
 
 # --------------------------------------------------------------------------- 5.0 Results + DHI
 #
@@ -385,10 +385,10 @@ with tab5:
                 "so they need an update to draw."
             )
         else:
-            results_tab.render(Numbering(5, sub=3), posterior=_post)
+            results_tab.render(Numbering(5, sub=3, basis=theme.GIVEN_DHI), posterior=_post)
     with _depth_dhi:
         depth_risk_tab.render(depth_risk_tab.TAB_DHI, with_dhi=True,
-                              n=Numbering(5, sub=4))
+                              n=Numbering(5, sub=4, basis=theme.GIVEN_DHI))
 
 # Tab 4.0's trust panel, now that tab 5.0 has published the posterior one of its checks reports on.
 # It is written into a container tab 4.0 reserved, so it still appears at the foot of tab 4.0.
