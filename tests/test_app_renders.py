@@ -528,8 +528,17 @@ class TestTheBenchmarkFiguresCanShowWhatTheToolProduced:
                     out.setdefault(name, decode(trace.get("y")))
         return out
 
-    def test_the_empirical_prior_is_drawn_by_default_and_nothing_else_is(self):
+    def test_the_comparison_is_drawn_on_arrival(self):
+        """Lars, 4 Sep 2026, turning this on by default. The empirical prior alone is a statement
+        about the NCS record; the comparison is the reason anyone is on this tab, and a toggle
+        defaulting off made the more interesting figure the one you had to know to ask for."""
         names = set(self._violins(_run()))
+        assert "this prospect — empirical prior" in names
+        assert any("geological" in name for name in names), names
+
+    def test_the_toggle_still_takes_the_comparison_away(self):
+        """A default is not a fixture. Turned off, the tab is the record on its own again."""
+        names = set(self._violins(_run(empirical_show_models=False)))
         assert names == {"this prospect — empirical prior"}
 
     def test_the_toggle_adds_the_geological_and_dhi_distributions(self):

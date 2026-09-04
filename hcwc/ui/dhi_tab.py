@@ -32,6 +32,18 @@ PARTIAL = "Seen over the crest only"
 ABSENT = "Absent where one was expected"
 OBSERVATIONS = (CONFORMING, PARTIAL, ABSENT)
 
+#: Where the strength slider opens. Lars, 4 Sep 2026.
+#:
+#: **Deliberately not** :data:`hcwc.core.dhi.DEFAULT_STRENGTH`, which is 7.0 and is a faithful copy
+#: of E-POS's ``DEFAULT_SLIDER``. That constant exists so the two tools agree about what E-POS's
+#: default *is*, and a test pins it; overwriting it to change where a slider opens would make this
+#: app quietly disagree with E-POS about a number it claims to be copying.
+#:
+#: Five rather than seven is a slightly more conservative opening position on the same axis — still
+#: above the crossing point, so an assessor who moves nothing states a barely-supportive DHI rather
+#: than a neutral one, which is the property the E-POS default was chosen for.
+OPENING_STRENGTH = 5.0
+
 
 def well_control() -> well_core.WellControl | None:
     """The penetration described on tab 2.0, or ``None``.
@@ -372,9 +384,11 @@ is where your prospect sits relative to the two populations you drew.
     )
 
     strength = st.slider(
-        "DHI strength", -100.0, 100.0, dhi_core.DEFAULT_STRENGTH, 1.0, key="dhi_in_strength",
-        help="E-POS's default is 7 — just above the crossing point, so an assessor who moves "
-             "nothing states a barely-supportive DHI rather than a neutral one.")
+        "DHI strength", -100.0, 100.0, OPENING_STRENGTH, 1.0, key="dhi_in_strength",
+        help=f"Opens at {OPENING_STRENGTH:.0f} — just above the crossing point, so an assessor who "
+             f"moves nothing states a barely-supportive DHI rather than a neutral one. E-POS's own "
+             f"default on the same axis is {dhi_core.DEFAULT_STRENGTH:.0f}; this is a shade more "
+             f"conservative and the two are otherwise the same scale.")
 
     with st.expander("The two populations (E-POS defaults)"):
         st.caption(

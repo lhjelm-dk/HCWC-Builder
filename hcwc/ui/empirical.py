@@ -250,8 +250,11 @@ What follows is a disagreement about **one estimator**, not about the data.
                                   "corrected fit finds burial depth to be a much stronger control "
                                   "than the published analysis reported — see Table 6.4.")
     prior = _empirical_prior(closure, burial)
+    # **On by arrival.** Lars, 4 Sep 2026. The empirical prior on its own is a statement about the
+    # NCS record; the comparison is the reason anyone is on this tab, and a toggle defaulting off
+    # made the more interesting of the two figures the one you had to know to ask for.
     show_models = st.toggle(
-        "Draw what this tool produced beside it", value=False, key="empirical_show_models",
+        "Draw what this tool produced beside it", value=True, key="empirical_show_models",
         help="Adds the geological contact distribution from tab 4.0, and the DHI-updated one from "
              "tab 5.0 where there is one, as violins next to the empirical prior. All three are "
              "column height in metres and all three are success cases only, so they are directly "
