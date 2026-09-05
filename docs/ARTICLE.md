@@ -72,84 +72,95 @@ no contact to distribute; only its geometric end — the pinch-out — moves the
 Compartmentalisation is not modelled: it turns one contact into several, which is a different
 object from the one this builds.
 
-## This idea is not mine, and saying so makes the case stronger
+## The ideas are published. A working tool was not.
 
-**Beha, Christensen & Young (2012)** set out a general method for consistent volume assessment of
-complex hydrocarbon traps by enumerating the combinations of trapping elements being present or
-failing, assigning a probability to each resulting scenario, and deriving the leak point that
-follows. Their worked example — a faulted four-way with two faults at 2050 m and 2100 m and a
-lowest closing contour at 2150 m — collapses four scenarios onto three leak points with
-probabilities 0.60, 0.12 and 0.28.
+Almost none of the thinking here is mine, and saying so is not modesty — it is the reason to trust
+the result.
 
-Their own headline observation is the one worth quoting:
+**Hood (2019, 2024, ExxonMobil)** states the rule the engine implements: build the geological column
+and each geometric limit as *separate* distributions and take the minimum per realisation. Merging
+them into one weighted input, he shows, "produces non-geologic and erroneous results" — apparent
+volume can *increase* when you add a leak.
+
+**Beha, Christensen & Young (2012)** did it by hand. They enumerate the combinations of trapping
+elements sealing or failing, weight each scenario, and collapse the result onto leak-point
+frequencies. Their headline observation is the competing-limits principle, in print, in 2012:
 
 > it is not intuitively obvious that a deep leak point can be statistically more likely than a leak
 > point higher up the structure, although the deeper leak point requires more elements to seal
 > simultaneously.
 
-That is the competing-limits principle, in print, in 2012. **It is one of the closest published
-precedents for the engine I have implemented**, and the logic is theirs, not mine.
+Their worked example — 0.60 / 0.12 / 0.28 at 2050 / 2100 / 2150 m — is reproduced exactly by this
+tool's test suite, and is its only external validation.
 
-What I have built is an implementation and an extension. Beha et al. enumerate *discrete* leak
-points by hand and explicitly assume no dependency between their two faults. I sample each
-mechanism as a *continuous distribution*, which lets a seal capacity or a charge volume enter
-directly rather than as a fixed depth; I let the *depths* at which mechanisms bite be correlated
-through a Gaussian copula — including, deliberately, the apex against any depth-stated limit, since
-both are picked off the same depth-converted surface; and I record the controlling mechanism per
-realisation.
+**Grant (2020, ConocoPhillips)** is the closest prior art and goes furthest: Monte Carlo over fault
+seal capacity, fault orientation, the regional stress tensor and trap geometry, referenced to the
+crest, with juxtaposition *and* membrane seal, hydrodynamics and reactivation risk — and he already
+publishes the controlling-mechanism diagnostic, under the name "column height control statistics".
+**Lowry, Suttill & Taylor (2005)** had depth-dependent risk two decades ago.
 
-One honest gap there: **whether** a mechanism is present is still drawn independently, so I can say
-that two faults leak at similar depths but not that they are the same fault and therefore stand or
-fall together. Beha et al. make the same independence assumption explicitly. Neither of us has
-solved it.
+So the engine is not the contribution. **Here is what I think is.**
 
-They are the same model at two levels of generality, and their hand enumeration is exact where mine
-is a simulation.
+**A working tool, in the open, that you can run on a prospect this afternoon.** Every one of the
+references above is either a method paper or an in-house implementation. The published
+implementations that do exist — the Petrel plug-in workflows Grant cites — need a 3D geomodel, and
+Grant's own argument for his approach is that such a model "is not always available or built when
+evaluating exploration prospects". That gap between a well-argued method and something an explorer
+can actually use is the one this fills. *I have looked and not found an open tool that does this. If
+one exists I would genuinely like to be pointed at it.*
 
-Others got there too. **Grant (2020)** published Monte Carlo column-height modelling with fault
-effects and what he calls "column height control statistics" — the controlling-mechanism diagnostic,
-already in the literature. **Lowry, Suttill & Taylor (2005)** built a variable risk array across
-column heights for exactly the fill-to-spill-versus-seal-capacity case, which is depth-dependent
-risk two decades ago.
+**A correction to the benchmark everyone calibrates against** — the censoring above. I have not seen
+it applied to this dataset.
 
-So: the engine is not the contribution. What follows is.
+**Per-element chance against depth, derived rather than allocated.** Because the engine records
+which mechanism won in each realisation, each risk element gets its own chance-versus-depth curve
+from its own group minimum. Grant publishes the aggregate; the per-element decomposition I have not
+found in print.
 
-## The empirical record has a hole in it, and it is a statistical one
+One honest gap, and it is Beha's too: **whether** a mechanism is present is drawn independently, so
+I can say that two faults leak at similar depths but not that they are the same fault and therefore
+stand or fall together. Neither of us has solved it.
 
-If you calibrate a column-height model against discoveries — and you should — you run into
-something that took me a while to see.
+## Calibrate the answer against the record, and know the one trap in doing it
+
+A derived distribution is not automatically a better one. It has to be checked, and there is
+exactly one public dataset to check it against: **Edmundson et al. (2021)**, 242 NCS discoveries
+with both column height and closure height, published under CC-BY.
+
+The check that matters is not against the record as a whole — it is against the part of it that
+looks like your prospect. Evaluate the benchmark at **your own structural relief and burial depth**
+and three questions become answerable:
+
+- **Where does my P50 land?** If it is the benchmark's P25, only a quarter of comparable closures
+  reach it and I am optimistic. Below 50, optimistic; above 50, conservative.
+- **How much of the distribution agrees, not just the median?** A curve parallel to the record is a
+  uniform bias you can correct with one number. A curve that meets it in the middle and departs at
+  P10 is disagreement in the upside only — the tail the volume comes from.
+- **Does my model fill traps the way the record does?** The share of realisations reaching spill is
+  a single number, and it is the sharpest QC there is.
+
+Disagreement is a finding, not an error. A prospect can be legitimately optimistic — a better seal
+than the average NCS closure is a real thing to believe. It just has to be believed **on evidence
+you can name**, and the useful question a gap raises is *which of my elicited limits would have to
+move to close it.*
+
+### The trap
 
 **A trap that filled to spill tells you what the closure could hold. It does not tell you what the
-seal could hold.**
+seal could hold.** It is a **lower bound** — in survival-analysis terms a right-censored
+observation — and treating it as a measurement is the error. **111 of the 242 are filled to spill.
+Forty-six per cent of the record is censored, not measured.**
 
-That sentence is deliberately blunt, and it needs one qualification. Such an observation is not
-*uninformative* about seal capacity: it tells you the seal held **at least** the full closure. It is
-a **lower bound** — in survival-analysis terms a **right-censored observation** — and the error is
-to treat it as a *measurement* of the maximum seal-supported column. The seal might have held twice
-that. Nothing in the observation distinguishes the two cases.
-
-In **Edmundson et al.'s (2021)** open dataset of 242 NCS discoveries — published under CC-BY, which
-is the only reason any of this is checkable — **111 are classified as filled to spill.** Forty-six
-per cent of the record is censored, not measured.
-
-Fit column height on trap height and burial depth the ordinary way, then fit it treating filled
-traps as censored:
+Fitted the ordinary way, the record says closure height controls column height more than it does,
+and burial depth less:
 
 | | trap height | burial depth |
 |---|---|---|
 | ordinary least squares | 0.880 | 0.143 |
 | censoring-corrected | **0.701** | **0.277** |
 
-Censoring **inflates** the trap-height term — unsurprising, since a filled trap is a point where
-column equals trap by construction, so a naive fit is partly fitting an identity. And it **halves**
-the burial-depth term. "Burial depth is the weaker control" is a fair reading of the uncorrected
-fit; it does not survive the correction.
-
-*The third digit is not robust: the trap-height coefficient runs 0.720 / 0.701 / 0.697 as you move
-the tolerance for "at its spill" from 0.5 m to 1 m to 2 m. The direction and size of the effect are.*
-
-**The check that convinced me** needs no simulated data. Ask each fit to reproduce the one statistic
-anyone can verify — how often a discovery fills to spill:
+The check that settles it needs no simulated data — ask each fit to reproduce the one statistic
+anyone can verify, how often a discovery fills to spill:
 
 ```
 observed in the dataset        45.9 %
@@ -158,9 +169,12 @@ the uncorrected relationship   32.1 %
 ```
 
 The corrected fit reproduces the filling behaviour of the dataset it was fitted to. The uncorrected
-one is out by fourteen points, in the direction the omitted censoring predicts. *(Both computed
-exactly, both given the same residual spread so only the mean function differs — the choice less
-flattering to my argument, since letting the naive fit keep its own narrower spread gives 24.1 %.)*
+one is out by fourteen points, in the direction the omitted censoring predicts.
+
+So calibrate — but calibrate against the corrected fit. The tool ships both and draws them side by
+side, because the difference between them is large enough to change what you conclude about your own
+prospect. The derivation, the sensitivity of the third digit, and the argument for why a benchmark
+can never inform the *chance* of a discovery — only where the contact sits — are in the tool.
 
 ## A DHI is evidence to be weighed, not a contact to be substituted
 
