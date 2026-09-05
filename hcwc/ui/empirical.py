@@ -1173,66 +1173,17 @@ What follows is a disagreement about **one estimator**, not about the data.
             "Benchmark to combine with", sources, key="fuse_source",
             help="The censoring-corrected NCS fit is the default because the naive one carries the "
                  "filled-to-spill bias §3 is about.")
-        with st.expander("**Why this is a weight and not a Bayesian update** — the question keeps "
-                         "coming back, and the answer is the same one as the Milkov note in §9"):
-            st.markdown(
-                "The tempting move is to treat the benchmark as evidence and multiply:"
-            )
-            st.latex(r"p(h \mid \mathrm{benchmark}) \;\propto\; p(h)\,"
-                     r"L(\mathrm{benchmark} \mid h)")
-            st.markdown(
-                "**The quick dismissal of this is wrong, and worth getting out of the way.** It is "
-                "tempting to say the record was measured on *other* traps, so `L(benchmark | h)` "
-                "cannot depend on your `h`, so the term is flat and nothing happens. That argument "
-                "fails. If your prospect is exchangeable with the record, then your column and "
-                "theirs are draws from one population with a shared, *unknown* parameter — which "
-                "makes them conditionally independent given that parameter and therefore "
-                "**marginally dependent**. The record does move the distribution of `h`. Anyone "
-                "who has fitted a hierarchical model has used exactly this.\n\n"
-                "**So the question is not whether the record is informative. It is which "
-                "population distribution you are entitled to use.**\n\n"
-                "The marginal — all 242 columns pooled — is not it, and the data say so loudly. "
-                "Regress log column on trap height and burial depth and **81 % of the spread "
-                "disappears**: the variance falls from 0.71 to 0.13 in log space. Most of the "
-                "width of that famous distribution is traps being different sizes from each other. "
-                "**You know how big yours is.** For a 350 m closure at 2 050 m:"
-            )
-            st.dataframe(
-                pd.DataFrame({
-                    "": ["the marginal record, pooled", "conditioned on your relief and burial"],
-                    "P90": [38, 151], "P50": [146, 240], "P10": [308, 382],
-                }), hide_index=True, use_container_width=False)
-            st.markdown(
-                "Those are different beliefs, and the pooled one is not a prior for your prospect "
-                "— it re-imports uncertainty about trap size that you have already resolved by "
-                "mapping. It is also not close to exchangeable: the record spans 14 m to 715 m of "
-                "relief.\n\n"
-                "**This tool therefore always conditions before it compares.** Every benchmark on "
-                "this tab is evaluated at your own relief and burial depth, never pooled. That is "
-                "the legitimate content of the base-rate argument, and it is applied.\n\n"
-                "**What survives the conditioning is a statement about mechanisms**, and that is "
-                "where it belongs. Residual variance of 0.13 in log space is seal, charge and "
-                "fault behaviour in comparable rocks — a shared parameter your prospect genuinely "
-                "is exchangeable with. The censoring-corrected fit in §3 estimates it, and it sets "
-                "the prior for **one limit**: the top-seal capacity, with its own weight on tab 3.0 → "
-                "Retention. The competition then runs as before, so the controlling-limit "
-                "bookkeeping survives intact.\n\n"
-                "**Three reasons this stays a stated weight rather than a multiplication:**\n\n"
-                "- **Double-counting.** Your relief already enters the model as the spill limit, "
-                "and your burial already sets the seal calculator's temperature. Multiplying in a "
-                "distribution that also encodes relief counts your own geometry twice — the same "
-                "failure as the base-rate rule in §9, which counts the play twice.\n"
-                "- **Their columns are not capacities.** Each is `min(capacity, their trap "
-                "height)`, and §3 shows nearly half are censored at spill. Even at your relief, the "
-                "upper tail is shaped by *their* geometry.\n"
-                "- **Every trap in the record had hydrocarbons in it.** The benchmark is "
-                "conditional on success, so it can inform where a contact sits and can never "
-                "inform the chance of having one.\n\n"
-                "**What could be a likelihood without any of this.** Something observed on *this* "
-                "prospect whose probability depends on where the contact is: a seismic amplitude, "
-                "an offset penetration, a pressure point. That is why tab 5.0 is an unqualified "
-                "update and this section is a weight you set, defaulting to zero."
-            )
+        # **The argument moved to a document on 5 Sep 2026.** It is six hundred words of
+        # pure reasoning with no figure and no computed number in it, which is the exact
+        # shape of a thing that belongs in `docs/` rather than between a slider and the
+        # chart it drives. What stays is the conclusion, which is what a reader at this
+        # slider actually needs, and a pointer for the reader who wants to argue with it.
+        st.caption(
+            "**A weight, not a Bayesian update.** Your model is already built out of relief and"
+            " burial — the spill point *is* the relief — so multiplying in a record conditioned"
+            " on both would count your own geometry twice. Two priors combine by weighting, which"
+            " is why this is a slider starting at zero. Tab 8.0 → *Weight, not Bayes*."
+        )
 
         bench_draw = _samples_for(bench_source, (round(own_relief, 1),), float(burial))
 
@@ -1454,79 +1405,17 @@ What follows is a disagreement about **one estimator**, not about the data.
                 "it."
             )
 
-            with st.expander("**A note on combining a base rate with a prospect estimate** — "
-                             "and one arithmetic to avoid"):
-                st.markdown(
-                    "Milkov (2017) is right about the problem, and the paper is worth reading: "
-                    "explorers do under-use population frequencies, and a portfolio that ignores "
-                    "them drifts. Nothing below disputes that.\n\n"
-                    "**The difficulty is in the arithmetic usually attached to it.** The "
-                    "combination rule takes the base rate `b` and the prospect's own PoS `q` and "
-                    "multiplies their odds:"
-                )
-                st.latex(r"P_{\mathrm{updated}} = \frac{b\,q}{b\,q + (1-b)(1-q)}")
-                st.markdown(
-                    "**That rule is symmetric.** Feed it a base rate of 0.2 and a prospect PoS of "
-                    "0.9 and it returns 69.2 %; feed it 0.9 and 0.2 and it returns 69.2 % again. "
-                    "It cannot tell which input is the population and which is the prospect — and "
-                    "**a Bayesian update is never symmetric between a prior and its evidence.** "
-                    "That symmetry is the diagnostic: what the formula performs is a *fusion of "
-                    "two opinions*, not an update of one by the other.\n\n"
-                    "**The sharpest way to see it is to ask what happens when there is nothing to "
-                    "learn.** Suppose the assessor's own PoS already *equals* the base rate. The "
-                    "two agree, no new information exists, and any coherent update must return the "
-                    "number unchanged. This rule does not:"
-                )
-                st.dataframe(
-                    pd.DataFrame({
-                        "b = q": [0.2, 0.4, 0.5, 0.6, 0.8],
-                        "the rule returns": [0.059, 0.308, 0.500, 0.692, 0.941],
-                    }).style.format({"b = q": "{:.1f}", "the rule returns": "{:.3f}"}),
-                    hide_index=True, use_container_width=False)
-                st.markdown(
-                    "An explorer who has done exactly what the paper asks — looked the base rate "
-                    "up and matched it — is told to revise **0.8 to 0.94**. Only `b = 0.5` "
-                    "survives, and only because the expression collapses to `P = q` there.\n\n"
-                    "Two further consequences follow, and both cut against the paper's own "
-                    "purpose:\n\n"
-                    "- **A confident assessor erases the base rate entirely.** At `q = 1` the "
-                    "result is 1 whatever `b` is; at `q = 0` it is 0. The base rate has no "
-                    "influence exactly where over-confidence needs restraining.\n"
-                    "- **It double-counts whenever the assessor already used base-rate "
-                    "knowledge** — which is the behaviour the paper is asking for.\n\n"
-                    "**Where the arithmetic comes from, which makes the error a precise one.** In "
-                    "odds the rule is `posterior odds = prior odds × b/(1−b)` — the odds form of "
-                    "Bayes with the likelihood ratio set to `b/(1−b)`. That is exactly a Fagan "
-                    "nomogram, the standard diagnostic device, for a test whose sensitivity and "
-                    "specificity are both `b`. The nomogram is sound; **the base rate has been "
-                    "entered on the axis meant for the accuracy of a test rather than the axis "
-                    "meant for the prior.** And in Bayes the base rate *is* the prior — which is "
-                    "the whole reason base-rate neglect is a fallacy, and what the cognitive "
-                    "literature the paper cites is about. Putting it on the likelihood axis while "
-                    "*also* supplying a separate prior counts the play twice and leaves the "
-                    "prospect's own evidence nowhere to enter.\n\n"
-                    "**Why this section stops where it does.** Combining a base rate with a "
-                    "prospect estimate needs a stated weight and a defence of it, and no rule that "
-                    "hides the weight inside an identity can supply one. So the two are shown side "
-                    "by side above and not merged. Where this tool *does* combine them — the "
-                    "shrinkage on the top-seal limit in §7 — the weight is a slider you set, "
-                    "the result always lies between the two, and agreement is a fixed point.\n\n"
-                    "*Sourcing. The rule above is Figure 10 of Milkov (2017) and the paragraph "
-                    "introducing it on p. 1915, which offers Bayes' theorem \"directly\" with "
-                    "\"the historical success rate\" as the conditional probability. The figure's "
-                    "own worked example — an initial PoS of 0.3 and a base rate of 0.6 giving "
-                    "\"approximately 0.39\" — reproduces to 0.3913 under this expression, which is "
-                    "how the rule is identified. It also matches a spreadsheet implementation "
-                    "exactly, 99 of 99 rows to machine precision. Applied to the paper's own case "
-                    "— Lundin's assessed average of 0.26 against an NCS base rate of 0.52 — it "
-                    "returns 0.276.*\n\n"
-                    "*None of this touches the paper's finding. Base-rate neglect is real, the "
-                    "Lundin record demonstrates it, and the recommendation to learn the base rates "
-                    "and check portfolio outcomes against them stands on its own. Schofield "
-                    "(GEOAdvisors) raises a separate objection about the choice of reference class "
-                    "— pooling the mature North Sea with the emerging Barents — and does not "
-                    "reach Figure 10.*"
-                )
+            # Seven hundred words of argument about somebody else's arithmetic, with a
+            # sourcing paragraph and a fixed-point table, and nothing on this page depends
+            # on it. Moved to `docs/BASE_RATE_NEGLECT.md` on 5 Sep 2026. The sentence that
+            # governs what the reader does next stays here.
+            st.caption(
+                "**Side by side, not merged.** The rule usually attached to base-rate neglect is"
+                " **symmetric** — swap its two inputs and it returns the same answer, which no"
+                " Bayesian update does — and it moves the number even when the two already agree."
+                " Tab 8.0 → *Base rates* has the derivation. **None of it touches Milkov\u2019s"
+                " finding**, which stands on its own."
+            )
 
     theme.heading(TAB, "10 · What we are and are not claiming")
     left, right = st.columns(2)

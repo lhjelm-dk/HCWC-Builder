@@ -672,45 +672,18 @@ with tab8:
 
     theme.heading(8, "1 · Can a base rate be a likelihood?")
     st.markdown("**Short answer: no.** A base rate is a *prior* over column height, and this tool already has one — multiplying it in would count the same belief twice. A DHI can be a likelihood because it is an observation *of this prospect*.")
-    with st.expander("**The argument in full** — why a prior and a likelihood are the same kind of object, and what that settles"):
-        st.markdown(
-            """
-    The benchmark on tab 6.0 gives a probability distribution over column height. So does the model on
-    tab 4.0. Bayes' rule multiplies a prior by a likelihood — so why can the DHI be a likelihood and the
-    statistics not?
-
-    **Because a prior and a likelihood are the same kind of object.** Both are functions of the unknown;
-    `p(h)` and `L(h)` have the same type signature. A likelihood is not a *kind of distribution*, it is
-    a **kind of use** — and the question is never *is this a probability?* but **probability of what,
-    given what?**
-
-    To act as a likelihood, something must be `P(data | h)` where the data is a thing **you observed on
-    this prospect**.
-
-    ##### You can get a real likelihood out of the benchmark
-
-    Here it is, honestly built. The dataset carries the joint behaviour of column, relief and burial
-    across the discoveries. You measured your prospect's relief and burial depth. So
-
-    ```
-    L(h) = P(your relief, your burial | column = h)
-    ```
-
-    is a genuine likelihood, and there is nothing wrong with it. Multiply it by a prior on `h` and a
-    proper posterior comes out.
-
-    ##### The problem is what you multiply it by
-
-    With a *neutral* prior you recover the benchmark's own conditional prediction — correct, and simply
-    the benchmark reached by a longer road. With **your model** as the prior you have conditioned on
-    relief and burial **twice**, because your model was built out of them: your spill point *is* the
-    relief, and the seal calculator takes its temperature from the burial depth. There is no fact in the
-    benchmark's conditioning set that your model has not already used.
-
-    **So the test is not "is this a probability?" It is: does this data carry something my model has not
-    already used?**
-    """
-        )
+    # Moved to `docs/LIKELIHOOD_OR_PRIOR.md` on 5 Sep 2026. Tab 8.0 is the reference tab and
+    # this is reference material -- but a thousand words between the heading and the worked
+    # table below it made the *worked* part, which is the part that convinces, unreachable
+    # without scrolling past an essay. Same argument, one click away, next to its siblings.
+    st.markdown(
+        "**Because a prior and a likelihood are the same kind of object** — both are functions of"
+        " the unknown. A likelihood is a *use*, not a kind of distribution, and to act as one the"
+        " data must be something **you observed on this prospect**.\n\n"
+        "**So the test is not ‘is this a probability?’ but ‘does this data carry something my"
+        " model has not already used?’** The argument is in → *Prior or likelihood?* below; the"
+        " table shows what getting it wrong does to a real prospect."
+    )
 
     _t8_limits = st.session_state.get("limit_set")
     _t8_spill = ([i for i, nm in enumerate(_t8_limits.names) if "spill" in nm.lower()]
@@ -797,53 +770,12 @@ with tab8:
             f"certain.** The arithmetic is telling you the two are not independent evidence."
         )
 
-    with st.expander("**Where a genuine likelihood *does* live in that dataset** — the outcomes, and what they can be a likelihood *for*"):
-        st.markdown(
-            """
-    ##### Where a genuine likelihood *does* live in that dataset
-
-    The **outcomes**. Two hundred and forty-two drilled results are real observations and they are new —
-    your model has never seen them. But they are observations of *other prospects*, so they cannot be a
-    likelihood for your column.
-
-    They can be a likelihood for something you and those 242 share: **the parameters of the
-    seal-capacity relationship**. Compaction closes pore throats the same way on your prospect as on
-    theirs. So the honest chain has two steps, and only the first is Bayes:
-
-    ```
-    242 outcomes  ──►  the shared parameters      genuine Bayesian updating
-    shared parameters  ──►  your prospect         shrinkage, with a stated weight
-    ```
-
-    That is empirical Bayes, and it is what the seal limit on tab 3.0 offers under *Pull this toward the
-    NCS record*. **The reason that one is defensible and a direct update is not** is not a matter of
-    taste: it updates something your prospect and the population genuinely share, rather than trying to
-    update your prospect with somebody else's answers.
-
-    ##### And the case where the benchmark *is* a prior
-
-    After you drill. Then `p(h | relief, burial)` from the record is a perfectly good prior, your
-    measured column is the data, and Bayes applies with nothing awkward about it. The asymmetry only
-    exists before the well, because before the well there is no observation of *this* prospect's column
-    at all — which is the reason you are building a distribution for it.
-
-    ##### The same test, applied three times in this tool
-
-    | | is it a likelihood? | why |
-    |---|---|---|
-    | **a DHI pick** | **yes** | a flat spot at 2,250 m really is more likely if the contact is near 2,250 m |
-    | **a base rate** | no | those discoveries were what they were before your prospect was mapped |
-    | **a prospect's own POS** | no | it is already a posterior — someone's probability, formed with their own prior |
-
-    The third row is the one that catches published work. Multiplying a base rate's odds by a prospect
-    PoS gives a rule that is **symmetric** — it returns the same answer if you swap them — and a
-    Bayesian update is never symmetric between a prior and its evidence. Tab 6.0 §9 works that one
-    through.
-
-    **That is one argument.** The documents below are the rest of them, and the record of what was
-    checked to arrive at them.
-    """
-        )
+    st.markdown(
+        "**One thing in that dataset *is* a genuine likelihood** — not the distribution, the"
+        " **outcomes**. They cannot inform your column, but they can inform what you and those 242"
+        " share: the parameters of the seal-capacity relationship. That is empirical Bayes, and it"
+        " is the seal limit\u2019s *Pull this toward the NCS record* on tab 3.0."
+    )
 
     theme.heading(8, "2 · Documents")
     # `NEXT_PLAN.md` is deliberately NOT listed. It is a development document -- what is built,
@@ -851,18 +783,25 @@ with tab8:
     # author is unsure about, which is not the same as learning what the tool does. It stays in
     # the repo for whoever works on this next.
     st.markdown(
-        "Four different kinds of thing, and it is worth knowing which one you have opened. **The "
-        "article** is the argument written for people who do not use the tool. **Benchmark "
-        "sources** is a negative result — what was searched for and not found. **Three reviews** "
-        "ask whether the published methods this app leans on actually say what it claims they "
-        "say, and two of them conclude *not entirely*. **DHI alignment** is a working note on a "
-        "design decision. **References** is the bibliography, with every DOI checked."
+        "Five different kinds of thing, and it is worth knowing which one you have opened. **The "
+        "article** is the argument written for people who do not use the tool. **Three notes on "
+        "evidence** — *Prior or likelihood?*, *Weight, not Bayes*, *Base rates* — are the "
+        "reasoning behind three places where this tool refuses to multiply something in; each is "
+        "referenced from the tab that refuses. **Benchmark sources** is a negative result — what "
+        "was searched for and not found. **Three reviews** ask whether the published methods this "
+        "app leans on actually say what it claims they say, and two of them conclude *not "
+        "entirely*. **DHI alignment** is a working note on a design decision, and **References** "
+        "is the bibliography with every DOI checked."
     )
     doc = st.radio(
         "Document",
-        ["The article", "Benchmark sources", "Beha et al. (2012)",
+        ["The article", "Prior or likelihood?", "Weight, not Bayes", "Base rates",
+         "Benchmark sources", "Beha et al. (2012)",
          "Seal capacity", "Lowry et al. (2005)", "DHI alignment", "References"],
         captions=["the argument, for a general reader",
+                  "why a base rate is not evidence — §1 above, in full",
+                  "why tab 6.0 §8 weights rather than multiplies",
+                  "the symmetric rule, and why it cannot be Bayes",
                   "is there a second public dataset? — no",
                   "review · the paper behind the tab 1.0 rule",
                   "review · is the capillary maths right?",
@@ -871,6 +810,9 @@ with tab8:
                   "bibliography, DOIs validated"],
         horizontal=True, label_visibility="collapsed")
     path = {"The article": "ARTICLE.md",
+            "Prior or likelihood?": "LIKELIHOOD_OR_PRIOR.md",
+            "Weight, not Bayes": "WEIGHT_NOT_BAYES.md",
+            "Base rates": "BASE_RATE_NEGLECT.md",
             "Benchmark sources": "BENCHMARK_SOURCES.md",
             "Beha et al. (2012)": "BEHA_2012_REVIEW.md",
             "Seal capacity": "SEAL_CAPACITY_REVIEW.md",

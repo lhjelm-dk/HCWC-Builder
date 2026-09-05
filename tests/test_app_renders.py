@@ -1540,8 +1540,11 @@ class TestThePageIsNotAnEssay:
     This test is a budget, not a rule about prose. It fails when the page grows back.
     """
 
-    #: Measured 5 Sep 2026 at 7,802 words, with a little room to move. Raising this is a decision,
-    #: not a fix: if a block has to be added, something else folds.
+    #: Measured 5 Sep 2026: 10,111 words before the fold, 7,802 after it, and 8,039 after the
+    #: docs split put four folded essays back on the page as visible summaries. That last move is a
+    #: deliberate trade -- a conclusion at the point of use beats a bare expander label -- and it is
+    #: why the budget has room in it. Raising it is a decision, not a fix: if a block has to be
+    #: added, something else folds or moves to `docs/`.
     BODY_BUDGET = 8_400
 
     #: No single block a reader cannot click past should run past this. The worst was 412.
@@ -1655,3 +1658,74 @@ class TestThePageIsNotAnEssay:
                 if match and len(match.group(1).split()) < 3:
                     bad.append(f"{path.name}:{line} {match.group(1)!r}")
         assert not bad, f"expander labels too short to judge: {bad}"
+
+
+class TestTheArgumentsLiveInDocuments:
+    """The docs split, 5 Sep 2026. Three essays that were pure reasoning — no figure, no computed
+    number — moved out of the tabs into `docs/`, rendered by the tab 8.0 viewer and referenced from
+    the tab that refuses to do the thing they argue against.
+
+    **The viewer fails silently by design.** A missing file gets *"not found in this checkout"*
+    rather than an exception, which is right for a deployment without the docs folder and wrong as
+    the only check that a registered document exists.
+    """
+
+    DOCS = {
+        "Prior or likelihood?": ("LIKELIHOOD_OR_PRIOR.md", "the same kind of object"),
+        "Weight, not Bayes": ("WEIGHT_NOT_BAYES.md", "81 % of the spread disappears"),
+        "Base rates": ("BASE_RATE_NEGLECT.md", "That rule is symmetric"),
+    }
+
+    def test_every_registered_document_exists(self):
+        """Including the ones that were already there — the check costs nothing and the failure
+        mode is a radio option that silently shows an apology."""
+        import pathlib
+        import re
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        source = (root / "app.py").read_text(encoding="utf-8")
+        named = set(re.findall(r'"([A-Z_]+\.md|[A-Za-z_]+\.md)"', source))
+        assert named, "no documents are registered at all"
+        missing = sorted(name for name in named if not (root / "docs" / name).exists())
+        assert not missing, f"registered but absent from docs/: {missing}"
+
+    def test_the_moved_arguments_are_reachable_and_intact(self):
+        at = _run()
+        radios = [r for r in at.get("radio") if "The article" in list(r.options)]
+        assert radios, "the tab 8.0 document picker is gone"
+        picker = radios[0]
+        for label, (_, phrase) in self.DOCS.items():
+            assert label in picker.options, f"{label} is not offered on tab 8.0"
+            rendered = picker.set_value(label).run()
+            _no_exception(rendered, f"opening {label!r}")
+            blob = "\n".join(str(m.value) for m in rendered.get("markdown"))
+            assert phrase in blob, f"{label} did not render its own text"
+            assert "not found in this checkout" not in blob
+            picker = [r for r in rendered.get("radio") if "The article" in list(r.options)][0]
+
+    def test_the_tabs_still_state_the_conclusion_and_say_where_to_read_it(self):
+        """A pointer with no conclusion is worse than the essay: the reader at the slider has to
+        leave the page to find out whether it matters to them."""
+        at = _run()
+        blob = "\n".join(str(e.value) for kind in ("markdown", "caption", "info", "warning")
+                          for e in at.get(kind))
+        for conclusion, pointer in (
+            ("would count your own geometry twice", "*Weight, not Bayes*"),
+            ("swap its two inputs and it returns the same answer", "*Base rates*"),
+            ("does this data carry something my model has not already used",
+             "*Prior or likelihood?*"),
+        ):
+            assert conclusion in blob, f"the conclusion went with the essay: {conclusion!r}"
+            assert pointer in blob, f"nothing points at {pointer}"
+
+    def test_no_moved_essay_is_still_duplicated_in_a_tab(self):
+        """The split has to be a move, not a copy — two versions of one argument drift."""
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        sources = "\n".join(p.read_text(encoding="utf-8") for p in
+                             [root / "app.py"] + sorted((root / "hcwc" / "ui").glob("*.py")))
+        for phrase in ("Anyone who has fitted a hierarchical model",
+                       "reproduces to 0.3913 under this expression",
+                       "the benchmark reached by a longer road"):
+            assert phrase not in sources, f"still in the tabs as well as in docs/: {phrase!r}"
