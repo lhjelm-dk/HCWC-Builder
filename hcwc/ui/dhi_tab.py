@@ -371,23 +371,25 @@ def render(n: Numbering | None = None) -> None:
 
     # ------------------------------------------------------------------ strength channel
     theme.heading(TAB, sub=n.sub, text="2 · DHI strength — the amplitude channel")
-    st.markdown(
-        """
-**A DHI carries two independent kinds of evidence, and this is the second one.** §1 recorded
-*where* the anomaly terminates; §§3–4 turn that geometry into a likelihood. This section is about
-its **character** instead: how bright, how consistent with the expected fluid response, how
-convincing as an amplitude. §5 combines the two.
+    st.markdown("**A DHI carries two independent kinds of evidence, and this is the second one.** §1 recorded *where* the anomaly terminates; this section is about its **character** — how bright, how consistent with the expected fluid response. §5 combines the two.")
+    with st.expander("**How the strength model is built** — two curves on one axis, and the ratio of their heights"):
+        st.markdown(
+            """
+    **A DHI carries two independent kinds of evidence, and this is the second one.** §1 recorded
+    *where* the anomaly terminates; §§3–4 turn that geometry into a likelihood. This section is about
+    its **character** instead: how bright, how consistent with the expected fluid response, how
+    convincing as an amplitude. §5 combines the two.
 
-The construction is E-POS's, adapted from the custom R tool. Draw how a hydrocarbon-bearing
-prospect tends to look on a common strength axis, draw how a non-hydrocarbon one looks, then read
-off where *this* prospect sits. The likelihood ratio is the ratio of the two curve heights at that
-reading, `R = pdf_HC(s) / pdf_NoHC(s)`.
+    The construction is E-POS's, adapted from the custom R tool. Draw how a hydrocarbon-bearing
+    prospect tends to look on a common strength axis, draw how a non-hydrocarbon one looks, then read
+    off where *this* prospect sits. The likelihood ratio is the ratio of the two curve heights at that
+    reading, `R = pdf_HC(s) / pdf_NoHC(s)`.
 
-**The axis has no units and does not need any.** R depends only on the *relative* heights of the
-two curves where you read them, so −100 to 100 is a canvas, not a measurement. What carries meaning
-is where your prospect sits relative to the two populations you drew.
-"""
-    )
+    **The axis has no units and does not need any.** R depends only on the *relative* heights of the
+    two curves where you read them, so −100 to 100 is a canvas, not a measurement. What carries meaning
+    is where your prospect sits relative to the two populations you drew.
+    """
+        )
 
     strength = st.slider(
         "DHI strength", -100.0, 100.0, OPENING_STRENGTH, 1.0, key="dhi_in_strength",

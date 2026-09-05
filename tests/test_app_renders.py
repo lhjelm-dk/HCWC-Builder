@@ -1521,3 +1521,137 @@ class TestTheFullReportCarriesTheTables:
             {"Figure 9.1": (object(), "a figure that cannot render")}, tables=tables)
         assert missing and "Figure 9.1" in missing[0]
         assert "<b>Table 3.2</b>" in html
+
+
+class TestThePageIsNotAnEssay:
+    """Lars, 5 Sep 2026: *"I think there is too much text. could some of it be hidden, reduced or
+    simplified."* Measured before touching anything: **16,573 words on arrival**, of which 6,462
+    were figure and table captions and **10,111 were body prose you met without clicking**.
+
+    The app was carrying a paper inside a tool. The argument — the censoring derivation, why-not-
+    Bayes, the base-rate essay — is read once, or when someone challenges you, and it was sitting
+    in front of the controls. Nine blocks went into expanders with a line of lead prose left
+    outside, so the page still says what was folded rather than presenting a bare clickable label.
+
+    **Captions were left visible on purpose.** On 28 Aug Lars removed a Full/Brief control because
+    *"a caption that can be half-read is a caption whose second half nobody reads, and the second
+    half is where the caveats are."* That still holds; the three longest were shortened instead.
+
+    This test is a budget, not a rule about prose. It fails when the page grows back.
+    """
+
+    #: Measured 5 Sep 2026 at 7,802 words, with a little room to move. Raising this is a decision,
+    #: not a fix: if a block has to be added, something else folds.
+    BODY_BUDGET = 8_400
+
+    #: No single block a reader cannot click past should run past this. The worst was 412.
+    LONGEST_BLOCK = 250
+
+    @staticmethod
+    def _visible():
+        """Words of on-arrival prose per module, from the source, skipping expander bodies.
+
+        Read off the AST rather than the rendered page because `AppTest` renders expander contents
+        like anything else — it cannot see that they are folded, which is the whole point of them.
+        """
+        import ast
+        import collections
+        import pathlib
+        import re
+
+        TEXT = {"markdown", "info", "warning", "write", "latex", "caption", "error", "success"}
+        EXHIBIT = {"plot", "table", "markdown_table"}
+        CAPTIONS = {"caption"} | EXHIBIT
+
+        def words(s):
+            return len(re.findall(r"\S+", re.sub(r"<[^>]+>", " ", s)))
+
+        def literal(node):
+            total = sum(words(x.value) for x in ast.walk(node)
+                        if isinstance(x, ast.Constant) and isinstance(x.value, str))
+            return total - sum(
+                sum(words(x.value) for x in ast.walk(kw)
+                    if isinstance(x, ast.Constant) and isinstance(x.value, str))
+                for kw in getattr(node, "keywords", []) if kw.arg == "help")
+
+        class Walk(ast.NodeVisitor):
+            def __init__(self):
+                self.depth = 0
+                self.body = collections.Counter()
+                self.blocks = []
+
+            def visit_With(self, node):
+                folded = any(
+                    isinstance(i.context_expr, ast.Call)
+                    and getattr(i.context_expr.func, "attr", None) == "expander"
+                    for i in node.items)
+                self.depth += folded
+                self.generic_visit(node)
+                self.depth -= folded
+
+            def visit_Call(self, node):
+                name = getattr(node.func, "attr", None)
+                if name in TEXT | EXHIBIT and not self.depth:
+                    n = literal(node)
+                    if name not in CAPTIONS:
+                        self.body[name] += n
+                        self.blocks.append((n, name, node.lineno))
+                self.generic_visit(node)
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        out, blocks = {}, []
+        for path in [root / "app.py"] + sorted((root / "hcwc" / "ui").glob("*.py")):
+            walk = Walk()
+            walk.visit(ast.parse(path.read_text(encoding="utf-8")))
+            out[path.name] = sum(walk.body.values())
+            blocks += [(n, path.name, line) for n, _, line in walk.blocks]
+        return out, blocks
+
+    def test_the_body_prose_stays_within_budget(self):
+        per_module, _ = self._visible()
+        total = sum(per_module.values())
+        worst = sorted(per_module.items(), key=lambda kv: -kv[1])[:4]
+        assert total <= self.BODY_BUDGET, (
+            f"{total:,} words of on-arrival body prose, budget {self.BODY_BUDGET:,}. "
+            f"Heaviest: {worst}. Fold something into an expander rather than raising the budget.")
+
+    def test_no_single_block_is_a_chapter(self):
+        """A 400-word `st.info` is not a callout. The reader cannot click past it, so it has to
+        earn every word or move behind a fold."""
+        _, blocks = self._visible()
+        over = sorted((b for b in blocks if b[0] > self.LONGEST_BLOCK), reverse=True)
+        assert not over, (
+            "blocks a reader cannot click past, longer than "
+            f"{self.LONGEST_BLOCK} words: "
+            + ", ".join(f"{name}:{line} ({n} words)" for n, name, line in over))
+
+    def test_the_folded_blocks_still_render(self):
+        """Folding is a display change and must not lose a word. `AppTest` renders expander
+        contents, so anything that vanished would show up as a missing phrase."""
+        at = _run()
+        _no_exception(at, "the folded pages")
+        blob = "\n".join(str(e.value) for kind in ("markdown", "caption", "info", "warning")
+                          for e in at.get(kind))
+        for phrase in (
+            "Beha et al. (2012)",                       # tab 1.0 §2, folded
+            "the third is the one people skip",         # tab 1.0 §3, folded
+            "a prior and a likelihood are the same kind of object",   # tab 8.0 §1, folded
+            "in the absence of direct hydrocarbon",     # tab 6.0 §7, folded
+            "The censored MLE crossing is a prediction",  # tab 6.0 §2, folded
+        ):
+            assert phrase in blob, f"folding lost: {phrase!r}"
+
+    def test_every_fold_says_what_is_inside_it(self):
+        """A bare label is worse than the text: the reader cannot tell whether it matters. Every
+        expander opened by this work names its own conclusion."""
+        import pathlib
+        import re
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        bad = []
+        for path in [root / "app.py"] + sorted((root / "hcwc" / "ui").glob("*.py")):
+            for line, text in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                match = re.search(r"st\.expander\(\s*[\"'](.+?)[\"']", text)
+                if match and len(match.group(1).split()) < 3:
+                    bad.append(f"{path.name}:{line} {match.group(1)!r}")
+        assert not bad, f"expander labels too short to judge: {bad}"

@@ -142,66 +142,78 @@ page is already filled in for a real prospect.
         )
 
     theme.heading(1, "2 · The rule the whole tool rests on")
-    st.markdown(
-        """
-**A probability of success is not a probability of anything until you say what counts as success.**
+    st.markdown("**A probability of success is not a probability of anything until you say what counts as success.** Name the smallest accumulation that would make the well a discovery; in this tool naming that volume names a depth, and that depth is the **assessment minimum** on tab 2.0.")
+    with st.expander("**Why that rule, and what it rules out** — POS as a reading of the curve, and the error Beha et al. (2012) is written about"):
+        st.markdown(
+            """
+    **A probability of success is not a probability of anything until you say what counts as success.**
 
-So say it. Name the smallest accumulation that would make the well a discovery — a cup of oil, a
-sustained test rate, a commercial threshold; the tool does not care which, only that it is stated.
-That single decision is the risk criterion, and everything else is downstream of it.
+    So say it. Name the smallest accumulation that would make the well a discovery — a cup of oil, a
+    sustained test rate, a commercial threshold; the tool does not care which, only that it is stated.
+    That single decision is the risk criterion, and everything else is downstream of it.
 
-**In this tool, naming that volume names a depth.** The smallest volume that counts is the volume
-above some contact, so choosing it fixes how far down the hydrocarbons must reach — a column height
-below the apex, or equivalently a depth in metres TVDSS. That number is the **assessment minimum**
-on tab 2.0, and it is not a detail of the run settings. It is the definition of success.
+    **In this tool, naming that volume names a depth.** The smallest volume that counts is the volume
+    above some contact, so choosing it fixes how far down the hydrocarbons must reach — a column height
+    below the apex, or equivalently a depth in metres TVDSS. That number is the **assessment minimum**
+    on tab 2.0, and it is not a detail of the run settings. It is the definition of success.
 
-**Risk and volume are then one statement, not two.** POS is `F(h_min)` — the exceedance curve read
-at that depth — so the chance and the volume it refers to come off the same object and cannot drift
-apart. Move the minimum and both move together. Quote a chance from one threshold beside a volume
-from another and you have said something incoherent, which is easy to do when POS arrives as a
-scalar from one tool and volume as a distribution from another.
+    **Risk and volume are then one statement, not two.** POS is `F(h_min)` — the exceedance curve read
+    at that depth — so the chance and the volume it refers to come off the same object and cannot drift
+    apart. Move the minimum and both move together. Quote a chance from one threshold beside a volume
+    from another and you have said something incoherent, which is easy to do when POS arrives as a
+    scalar from one tool and volume as a distribution from another.
 
-**What this rules out, and it is the common error.** A trapping element that fails *below* the crest
-does not reduce the chance of finding hydrocarbons at the well — it reduces the chance of a *deeper
-contact*. Folding fault seal, top seal capacity or spill into the chance chain therefore understates
-POS and, because the volume is conditioned on that chance, **overstates volume**. Beha et al. (2012)
-is written about exactly this. Here those mechanisms are limits on tab 3.0, where they move the
-contact; only whether an element works *at the crest* belongs in the chance on tab 2.0.
-"""
-    )
+    **What this rules out, and it is the common error.** A trapping element that fails *below* the crest
+    does not reduce the chance of finding hydrocarbons at the well — it reduces the chance of a *deeper
+    contact*. Folding fault seal, top seal capacity or spill into the chance chain therefore understates
+    POS and, because the volume is conditioned on that chance, **overstates volume**. Beha et al. (2012)
+    is written about exactly this. Here those mechanisms are limits on tab 3.0, where they move the
+    contact; only whether an element works *at the crest* belongs in the chance on tab 2.0.
+    """
+        )
 
     theme.heading(1, "3 · Where to start")
+    # A heading over a bare fold says nothing, so the line that matters stays outside it. This one
+    # is not a summary of what is folded — the box at the top of the tab already lists the four
+    # steps — it is the single claim the long version exists to make.
     st.markdown(
-        """
-Eight tabs is a lot to meet cold. There are only four steps, and the third is the one people skip
-— so it now sits on the same screen as the second, where skipping it takes effort.
-
-**1 · Describe the prospect — tab 2.0.** Apex, spill point, burial depth, the four element chances
-from E-POS, and whether it has a DHI. **Set the assessment minimum**: it is the definition of
-success, not a run setting, and nothing downstream means anything without it. Tab 4.0 will refuse to
-show you a chance until you have.
-
-**2 · Say what could stop the column — tab 3.0.** Twelve mechanisms grouped by risk element. Do not
-elicit them carefully yet. Leave the defaults, switch off the ones this prospect does not have, and
-move on.
-
-**3 · Elicit only what matters — tab 3.0 §1, without leaving the tab.** The ranking at the top of tab
-3.0 says which limit is actually setting the contact, and it updates as you edit. **That
-ranking is the point of the whole tool.** Most limits turn out not to move the answer, and the ones
-that do are usually not the ones you would have spent the afternoon on — so spend it on the top two
-or three and leave the rest rough. Tab 4.0 §4.1.3 has the fuller version: the same ranking restricted to
-realisations worth drilling, and why the two differ.
-
-**4 · Read the answer, and check it — tabs 4.0 and 6.0.** The exceedance curve is the output; the
-chance is a *reading* of it at your minimum. Tab 6.0 §8 then says whether your distribution is
-optimistic or pessimistic against 242 NCS discoveries at your own structural relief.
-
-*If this is a DHI prospect, tab 5.0 carries the update across four sub-tabs — the walkthrough first,
-then what you saw, then the same two readings tab 4.0 gives. Tab 4.0 stays purely geological.*
-
-**Not sure where to begin?** Tab 2.0 → *Save or load this prospect* → **Load the worked example**.
-"""
+        "**Step three is the one people skip, and it is the point of the whole tool.** The ranking "
+        "at the top of tab 3.0 says which limit is actually setting the contact and updates as you "
+        "edit; most limits turn out not to move the answer, so elicit the top two or three "
+        "carefully and leave the rest rough."
     )
+    with st.expander("**The four steps in full** — what to set on each tab, and the one people skip"):
+        st.markdown(
+            """
+    Eight tabs is a lot to meet cold. There are only four steps, and the third is the one people skip
+    — so it now sits on the same screen as the second, where skipping it takes effort.
+
+    **1 · Describe the prospect — tab 2.0.** Apex, spill point, burial depth, the four element chances
+    from E-POS, and whether it has a DHI. **Set the assessment minimum**: it is the definition of
+    success, not a run setting, and nothing downstream means anything without it. Tab 4.0 will refuse to
+    show you a chance until you have.
+
+    **2 · Say what could stop the column — tab 3.0.** Twelve mechanisms grouped by risk element. Do not
+    elicit them carefully yet. Leave the defaults, switch off the ones this prospect does not have, and
+    move on.
+
+    **3 · Elicit only what matters — tab 3.0 §1, without leaving the tab.** The ranking at the top of tab
+    3.0 says which limit is actually setting the contact, and it updates as you edit. **That
+    ranking is the point of the whole tool.** Most limits turn out not to move the answer, and the ones
+    that do are usually not the ones you would have spent the afternoon on — so spend it on the top two
+    or three and leave the rest rough. Tab 4.0 §4.1.3 has the fuller version: the same ranking restricted to
+    realisations worth drilling, and why the two differ.
+
+    **4 · Read the answer, and check it — tabs 4.0 and 6.0.** The exceedance curve is the output; the
+    chance is a *reading* of it at your minimum. Tab 6.0 §8 then says whether your distribution is
+    optimistic or pessimistic against 242 NCS discoveries at your own structural relief.
+
+    *If this is a DHI prospect, tab 5.0 carries the update across four sub-tabs — the walkthrough first,
+    then what you saw, then the same two readings tab 4.0 gives. Tab 4.0 stays purely geological.*
+
+    **Not sure where to begin?** Tab 2.0 → *Save or load this prospect* → **Load the worked example**.
+    """
+        )
 
     with st.expander(f"**{theme.section_label(1, '4 · How it is arranged')}**",
                      expanded=False):
@@ -659,44 +671,46 @@ with tab8:
     )
 
     theme.heading(8, "1 · Can a base rate be a likelihood?")
-    st.markdown(
-        """
-The benchmark on tab 6.0 gives a probability distribution over column height. So does the model on
-tab 4.0. Bayes' rule multiplies a prior by a likelihood — so why can the DHI be a likelihood and the
-statistics not?
+    st.markdown("**Short answer: no.** A base rate is a *prior* over column height, and this tool already has one — multiplying it in would count the same belief twice. A DHI can be a likelihood because it is an observation *of this prospect*.")
+    with st.expander("**The argument in full** — why a prior and a likelihood are the same kind of object, and what that settles"):
+        st.markdown(
+            """
+    The benchmark on tab 6.0 gives a probability distribution over column height. So does the model on
+    tab 4.0. Bayes' rule multiplies a prior by a likelihood — so why can the DHI be a likelihood and the
+    statistics not?
 
-**Because a prior and a likelihood are the same kind of object.** Both are functions of the unknown;
-`p(h)` and `L(h)` have the same type signature. A likelihood is not a *kind of distribution*, it is
-a **kind of use** — and the question is never *is this a probability?* but **probability of what,
-given what?**
+    **Because a prior and a likelihood are the same kind of object.** Both are functions of the unknown;
+    `p(h)` and `L(h)` have the same type signature. A likelihood is not a *kind of distribution*, it is
+    a **kind of use** — and the question is never *is this a probability?* but **probability of what,
+    given what?**
 
-To act as a likelihood, something must be `P(data | h)` where the data is a thing **you observed on
-this prospect**.
+    To act as a likelihood, something must be `P(data | h)` where the data is a thing **you observed on
+    this prospect**.
 
-##### You can get a real likelihood out of the benchmark
+    ##### You can get a real likelihood out of the benchmark
 
-Here it is, honestly built. The dataset carries the joint behaviour of column, relief and burial
-across the discoveries. You measured your prospect's relief and burial depth. So
+    Here it is, honestly built. The dataset carries the joint behaviour of column, relief and burial
+    across the discoveries. You measured your prospect's relief and burial depth. So
 
-```
-L(h) = P(your relief, your burial | column = h)
-```
+    ```
+    L(h) = P(your relief, your burial | column = h)
+    ```
 
-is a genuine likelihood, and there is nothing wrong with it. Multiply it by a prior on `h` and a
-proper posterior comes out.
+    is a genuine likelihood, and there is nothing wrong with it. Multiply it by a prior on `h` and a
+    proper posterior comes out.
 
-##### The problem is what you multiply it by
+    ##### The problem is what you multiply it by
 
-With a *neutral* prior you recover the benchmark's own conditional prediction — correct, and simply
-the benchmark reached by a longer road. With **your model** as the prior you have conditioned on
-relief and burial **twice**, because your model was built out of them: your spill point *is* the
-relief, and the seal calculator takes its temperature from the burial depth. There is no fact in the
-benchmark's conditioning set that your model has not already used.
+    With a *neutral* prior you recover the benchmark's own conditional prediction — correct, and simply
+    the benchmark reached by a longer road. With **your model** as the prior you have conditioned on
+    relief and burial **twice**, because your model was built out of them: your spill point *is* the
+    relief, and the seal calculator takes its temperature from the burial depth. There is no fact in the
+    benchmark's conditioning set that your model has not already used.
 
-**So the test is not "is this a probability?" It is: does this data carry something my model has not
-already used?**
-"""
-    )
+    **So the test is not "is this a probability?" It is: does this data carry something my model has not
+    already used?**
+    """
+        )
 
     _t8_limits = st.session_state.get("limit_set")
     _t8_spill = ([i for i, nm in enumerate(_t8_limits.names) if "spill" in nm.lower()]
@@ -783,52 +797,53 @@ already used?**
             f"certain.** The arithmetic is telling you the two are not independent evidence."
         )
 
-    st.markdown(
-        """
-##### Where a genuine likelihood *does* live in that dataset
+    with st.expander("**Where a genuine likelihood *does* live in that dataset** — the outcomes, and what they can be a likelihood *for*"):
+        st.markdown(
+            """
+    ##### Where a genuine likelihood *does* live in that dataset
 
-The **outcomes**. Two hundred and forty-two drilled results are real observations and they are new —
-your model has never seen them. But they are observations of *other prospects*, so they cannot be a
-likelihood for your column.
+    The **outcomes**. Two hundred and forty-two drilled results are real observations and they are new —
+    your model has never seen them. But they are observations of *other prospects*, so they cannot be a
+    likelihood for your column.
 
-They can be a likelihood for something you and those 242 share: **the parameters of the
-seal-capacity relationship**. Compaction closes pore throats the same way on your prospect as on
-theirs. So the honest chain has two steps, and only the first is Bayes:
+    They can be a likelihood for something you and those 242 share: **the parameters of the
+    seal-capacity relationship**. Compaction closes pore throats the same way on your prospect as on
+    theirs. So the honest chain has two steps, and only the first is Bayes:
 
-```
-242 outcomes  ──►  the shared parameters      genuine Bayesian updating
-shared parameters  ──►  your prospect         shrinkage, with a stated weight
-```
+    ```
+    242 outcomes  ──►  the shared parameters      genuine Bayesian updating
+    shared parameters  ──►  your prospect         shrinkage, with a stated weight
+    ```
 
-That is empirical Bayes, and it is what the seal limit on tab 3.0 offers under *Pull this toward the
-NCS record*. **The reason that one is defensible and a direct update is not** is not a matter of
-taste: it updates something your prospect and the population genuinely share, rather than trying to
-update your prospect with somebody else's answers.
+    That is empirical Bayes, and it is what the seal limit on tab 3.0 offers under *Pull this toward the
+    NCS record*. **The reason that one is defensible and a direct update is not** is not a matter of
+    taste: it updates something your prospect and the population genuinely share, rather than trying to
+    update your prospect with somebody else's answers.
 
-##### And the case where the benchmark *is* a prior
+    ##### And the case where the benchmark *is* a prior
 
-After you drill. Then `p(h | relief, burial)` from the record is a perfectly good prior, your
-measured column is the data, and Bayes applies with nothing awkward about it. The asymmetry only
-exists before the well, because before the well there is no observation of *this* prospect's column
-at all — which is the reason you are building a distribution for it.
+    After you drill. Then `p(h | relief, burial)` from the record is a perfectly good prior, your
+    measured column is the data, and Bayes applies with nothing awkward about it. The asymmetry only
+    exists before the well, because before the well there is no observation of *this* prospect's column
+    at all — which is the reason you are building a distribution for it.
 
-##### The same test, applied three times in this tool
+    ##### The same test, applied three times in this tool
 
-| | is it a likelihood? | why |
-|---|---|---|
-| **a DHI pick** | **yes** | a flat spot at 2,250 m really is more likely if the contact is near 2,250 m |
-| **a base rate** | no | those discoveries were what they were before your prospect was mapped |
-| **a prospect's own POS** | no | it is already a posterior — someone's probability, formed with their own prior |
+    | | is it a likelihood? | why |
+    |---|---|---|
+    | **a DHI pick** | **yes** | a flat spot at 2,250 m really is more likely if the contact is near 2,250 m |
+    | **a base rate** | no | those discoveries were what they were before your prospect was mapped |
+    | **a prospect's own POS** | no | it is already a posterior — someone's probability, formed with their own prior |
 
-The third row is the one that catches published work. Multiplying a base rate's odds by a prospect
-PoS gives a rule that is **symmetric** — it returns the same answer if you swap them — and a
-Bayesian update is never symmetric between a prior and its evidence. Tab 6.0 §9 works that one
-through.
+    The third row is the one that catches published work. Multiplying a base rate's odds by a prospect
+    PoS gives a rule that is **symmetric** — it returns the same answer if you swap them — and a
+    Bayesian update is never symmetric between a prior and its evidence. Tab 6.0 §9 works that one
+    through.
 
-**That is one argument.** The documents below are the rest of them, and the record of what was
-checked to arrive at them.
-"""
-    )
+    **That is one argument.** The documents below are the rest of them, and the record of what was
+    checked to arrive at them.
+    """
+        )
 
     theme.heading(8, "2 · Documents")
     # `NEXT_PLAN.md` is deliberately NOT listed. It is a development document -- what is built,

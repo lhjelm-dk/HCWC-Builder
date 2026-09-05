@@ -364,19 +364,16 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      "statistics\"; the per-element curves built from it are, as far as I can "
                      "find, unpublished."
                      + (("\n\n**Bin height carries the contact distribution here**, which is why "
-                         f"*{GIVEN}* and *Geological* differ visibly: the evidence moves "
-                         "which depths are reached, by up to ten points, far more than it moves "
-                         "the mechanism mix at any one depth."
+                         f"*{GIVEN}* and *Geological* differ visibly: the evidence moves which "
+                         "depths are reached far more than it moves the mechanism mix at any one "
+                         "depth."
                          if scaled else
-                         f"\n\n**In this view *{GIVEN}* and *Geological* are "
-                         f"indistinguishable — they differ by {_within_bin_move(result, edges, weights):.1%} "
-                         "at most — and that is a property of the evidence, not a broken control.** "
-                         "Normalising each bin against itself conditions on contact depth, and the "
-                         "detection function sits at its ceiling for every column in every "
-                         "occupied bin, so with the depth fixed the amplitude has nothing left to "
-                         "discriminate on. It moves *which depths are reached*, not *what stops "
-                         "the column once you are at one*. **Tick the box above** to see the "
-                         "half it does move.")
+                         f"\n\n**{GIVEN} and Geological look identical here — by "
+                         f"{_within_bin_move(result, edges, weights):.1%} at most — and that is a "
+                         "property of the evidence, not a broken control.** Normalising each bin "
+                         "against itself conditions on contact depth, and the evidence moves "
+                         "*which depths are reached*, not *what stops the column once you are at "
+                         "one*. **Tick the box above** to see the half it does move.")
                         if given_dhi else ""))
 
     # ------------------------------------------------------------------ 3 · ranking
@@ -581,19 +578,16 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
            "spotting overlap and worse for reading a probability. **Histogram** is the same "
            "unsmoothed, for when a kernel would invent a shape the samples do not have. "
            "**Points** shows the sample itself."
-           + ("\n\n**Three groups, left to right, and they are three different kinds of thing.** "
-              "*Competing limits* are the mechanisms. *The amplitude alone* is not one of them — it "
-              "is the evidence they are being judged against, drawn hollow — a dotted edge, open "
-              "bars, open markers — because it is a **likelihood, not a count of realisations**: "
-              "read its shape, which is the factor the geology is multiplied by at each depth, and "
-              "not its area. In **Points** its markers are drawn *from* that shape rather than "
-              "observed, since a likelihood has no realisations behind it. *Result* carries both "
-              "answers, "
+           + ("\n\n**Three groups, and they are three kinds of thing.** *Competing limits* are the "
+              "mechanisms. *The evidence alone* is not one of them, and is drawn hollow because it "
+              "is a **likelihood, not a count of realisations** — read its shape, not its area. "
+              "*Result* carries both answers, "
               + theme.basis_tag(theme.GEOLOGICAL) + " and " + theme.basis_tag(theme.GIVEN_DHI)
               + ", so the middle group is visibly what turns the first into the second.\n\n"
-                "In **Points** the updated lane is an importance *resample* of the same "
-                "realisations, so a realisation the amplitude favours appears more than once — "
-                "that repetition is the update." if given_dhi else ""))
+                "**Points** is the exception: the evidence lane's markers are drawn *from* its "
+                "shape rather than observed, and the updated result lane is an importance "
+                "*resample*, so a favoured realisation appears more than once."
+              if given_dhi else ""))
 
     # ------------------------------------------------------------------ 6 · trust
     # Geological only. The panel audits the run -- realisation counts, seed
