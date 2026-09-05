@@ -166,34 +166,135 @@ prospect.
 
 ## A DHI is evidence to be weighed, not a contact to be substituted
 
-The common treatment of a possible flat event is a scenario switch: *if* the DHI is valid, the
-contact is at the flat spot; otherwise the geological contact stands. That is honest, and it moves
-the contact **without moving the chance**.
+If one section of this is worth your time, it is this one. It is the piece I have not seen
+demonstrated anywhere, and it is where the geologist and the geophysicist finally have the same
+conversation.
 
-But it discards information. The order that uses it is:
+### The failure mode, which you will recognise
 
-1. **Build the geological distribution first.** The DHI never edits it.
-2. **State the depth of the interpreted flat event and its uncertainty** — pick error *plus* depth
-   conversion, and the second is usually the larger.
-3. **State how detectable a column of a given height would be.** A thin column produces no anomaly;
-   a thick one usually does. This detection function is what makes an *absent* anomaly usable
-   evidence rather than a special case, since the likelihood becomes `1 − D(h)`.
-4. **Update the distribution**, and therefore the depth-dependent chance, rather than replacing it.
+A team quotes **POS = 0.85 because the DHI is strong**, and pairs it with the DHI-case volume.
 
-The geometric channel **is** a Bayesian likelihood update: the engine's realisations are draws from
-the prior, so weighting each by `L(seismic | h)` and normalising is self-normalised importance
-sampling, with the controlling-mechanism bookkeeping surviving intact.
+The 0.85 was computed as a *presence* probability — the chance there is an accumulation of at least
+the minimum size. The volume is the *large*-case volume, the bright conformable one the amplitude is
+actually arguing for. **A chance for one event, a volume for another**, multiplied together and
+booked. It is not a DHI problem; it is a threshold-labelling problem that the DHI makes acute,
+because the DHI is the one piece of evidence that speaks loudly about the large case.
 
-**Combining the two evidence channels is not Bayes, and I will not pretend it is.** Multiplying the
-amplitude's geometry and its character as independent evidence would assume something false. So the
+### The reframe that dissolves it
+
+Everything the model produces is one function:
+
+```
+F(h) = P(column height ≥ h)          h measured below the apex
+```
+
+And **every "POS" in the workflow is `F` read somewhere**:
+
+| Quantity | Is just |
+|---|---|
+| Geological POS at the risking criterion | `F(h_min)` |
+| POS at the well's reservoir entry depth | `F(z_entry − apex)` |
+| Probability the DHI-indicated case is real | `F(h_DHI)` |
+| Probability of filling to spill | `F(h_spill)` |
+
+`F` decreases, so `F(h_min) ≥ F(h_DHI)` **always**. There is no combination step and nothing to
+reconcile — those numbers were never competing. They are two points on one curve, and the only sin
+is quoting one without saying which `h` it was read at. Once you see that, the DHI stops being a
+special case and becomes what it always was: **evidence that reshapes the curve.**
+
+### What the geophysicist has to supply — two numbers, both already known
+
+1. **The depth of the interpreted flat event, and its uncertainty.** Pick error *plus* depth
+   conversion, and the second is usually the larger. Nobody has to invent this.
+2. **How detectable a column of a given height would be** — the detection function `D(h)`. A thin
+   column produces no mappable anomaly; a thick one usually does. Every seismic interpreter already
+   holds an opinion about where that threshold sits on their data.
+
+That is the entire elicitation. No new risk numbers, no re-running the geological model.
+
+### Why the machinery is clean rather than clever
+
+The engine already drew ten thousand realisations from the geological distribution. Those
+realisations **are** draws from the prior. So weighting each one by `L(seismic | h)` and
+renormalising is not an approximation of a Bayesian update — it *is* one, by self-normalised
+importance sampling. Posterior ∝ prior × likelihood, with no re-run and no re-elicitation.
+
+And because the weights attach to realisations rather than to a curve, **the controlling-mechanism
+bookkeeping survives the update.** You can still ask which limit set the contact — and now ask it
+*given the DHI*, which is a question the scenario switch cannot answer at all.
+
+**The detection function is what makes an absent anomaly usable.** If a column of that height should
+have been bright and is not, the likelihood is `1 − D(h)`. Absence stops being an awkward special
+case and becomes evidence in the same machinery — and on the worked prospect it is *severe*: prospect
+POS falls from **40.8 % to 6.6 %.** Most workflows have nowhere to put that observation.
+
+### What it actually does to the answer
+
+On the shipped worked prospect, a **mild** amplitude — strength 5 on a −100 to 100 scale, barely
+above neutral:
+
+| | geological | given the DHI |
+|---|---|---|
+| Prospect POS | 40.8 % | **46.7 %** |
+| Contact P50 | 2,186 m | **2,241 m** |
+| P90–P10 spread | 140 m | **118 m** |
+
+Two things to notice. The contact moves 55 m deeper — that is a lot of volume. And **the spread
+narrows**: the evidence does not merely shift the answer, it sharpens it, which is what evidence is
+supposed to do and what a scenario switch cannot do at all.
+
+Push the strength to 40 and POS goes to **82.5 %**. Say the anomaly is absent and it goes to
+**6.6 %**. That is the range one seismic opinion is worth, made explicit instead of argued about.
+
+**And the effect on risk against depth is not a scale factor.** This is the part I would put in
+front of a geophysicist:
+
+```
+chance of reaching a contact at    geological    given the DHI
+2,100 m                               40.3 %         46.5 %
+2,200 m                               14.8 %         32.8 %      more than doubled
+2,300 m                                1.6 %          0.9 %      lower
+```
+
+The amplitude does not lift the whole curve. It **reshapes** it — pushing probability toward the
+depths the flat event supports and taking it away from the depths it argues against. A single POS
+multiplier cannot express that, and a scenario switch cannot either.
+
+### Where I stop, and say so
+
+**A neutral observation must do nothing, and here it does exactly nothing.** At strength 0 the
+likelihood ratio is 1.000 and POS is 40.8 % before and 40.8 % after. That sounds trivial. It is easy
+to get wrong, and getting it wrong means a DHI that says nothing quietly improves your prospect.
+
+**Combining the two evidence channels is not Bayes, and I will not pretend it is.** The amplitude's
+*geometry* — where it terminates — and its *character* — how bright, how conformable — are not
+independent evidence, so multiplying their likelihood ratios would assume something false. The
 implementation interpolates between the product and the stronger single channel, with the dependence
-exposed as a number you set. That is probabilistic evidence weighting with a stated assumption, and
-it is labelled as such in the tool.
+exposed as a number you set. Probabilistic evidence weighting with a stated assumption, labelled as
+such.
 
-The likelihoods are **elicited, not calibrated** — the detection function and the pick sigma are
-modelling choices, and a posterior is only as defensible as they are. So the tool plots what the
-answer is most sensitive to. When a typed seismic assumption moves the contact further than the
-geology does, that is a finding about your assumptions, not about the prospect.
+**The likelihoods are elicited, not calibrated.** So the tool reports the effective sample size
+behind every update — 2,799 of 10,000 realisations on the worked case — and plots what the answer is
+most sensitive to. When a typed seismic assumption moves the contact further than the geology does,
+that is a finding about your assumptions, not about the prospect.
+
+For scale, the one published measurement I know of: Kjønsberg et al. (2010) inverted prestack AVO by
+Markov chain Monte Carlo at three locations offshore Norway and reported prior and posterior
+hydrocarbon probabilities. The implied likelihood ratio at the prospect centre was **29** — and that
+location was subsequently drilled and found gas in two layers. A careful inversion on good data buys
+about a factor of thirty. It is worth knowing what the ceiling looks like before you type a number
+into a slider.
+
+### Why I think this is new
+
+**Hood recommends the scenario switch** — merge late, never blend into the input distribution — and
+he is right that it is honest. It moves the contact without moving the chance. But it discards
+information: it cannot use an *absent* anomaly, it cannot narrow the distribution, it cannot tell you
+which mechanism set the contact given the DHI, and it gives you no depth-dependent risk at all.
+
+The likelihood formulation over column height — detection function times pick likelihood, reweighting
+the realisations, with the argmin bookkeeping intact — I have not found demonstrated in the
+literature. *If it has been, I would like the reference.*
 
 ## If you carry a portfolio rather than a prospect
 
@@ -290,6 +391,9 @@ illustrate how faults influence buoyant fluid entrapment. *Petroleum Geoscience*
 
 Hood, K. C. (2024). *Hydrocarbon Column Heights*, Parts 1 and 2. Rose & Associates, from Hood
 (2019).
+
+Kjønsberg, H., Hauge, R., Kolbjørnsen, O. & Buland, A. (2010). Bayesian Monte Carlo method for
+seismic predrill prospect assessment. *Geophysics* **75**(5), O9–O19.
 
 Lowry, D. C., Suttill, R. J. & Taylor, R. J. (2005). Advances in risking exploration prospects.
 *APPEA Journal* **45**(1), 143–158.

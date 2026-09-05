@@ -1143,6 +1143,16 @@ class TestTheBasisIsNamedForTheEvidenceInIt:
 
     @staticmethod
     def _phrases(at):
+        """The basis **labels** on the page — the banners and chips, not prose about them.
+
+        Case-sensitive on the upper-case form on purpose. `basis_tag` and `basis_banner` are the
+        only things that emit `GIVEN THE DHI`, and they are the authoritative labels this test
+        exists to protect. A lower-case scan swept up any sentence that *discusses* the basis —
+        which broke the moment the article on tab 8.0 grew a section explaining what "given the
+        DHI" means. Series names and headings carry the lower-case form and are covered by
+        `TestEveryResultExhibitDeclaresItsBasis`, which reads captions specifically rather than
+        every string on the page.
+        """
         import json
 
         texts = [str(m.value) for m in
@@ -1153,10 +1163,9 @@ class TestTheBasisIsNamedForTheEvidenceInIt:
                     texts.append(str(trace["name"]))
         found = set()
         for text in texts:
-            low = text.lower()
-            for phrase in ("given the dhi + well", "given the well", "given the dhi"):
-                if phrase in low:
-                    found.add(phrase)
+            for phrase in ("GIVEN THE DHI + WELL", "GIVEN THE WELL", "GIVEN THE DHI"):
+                if phrase in text:
+                    found.add(phrase.lower())
                     break
         return found
 
