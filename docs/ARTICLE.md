@@ -243,8 +243,9 @@ Two things to notice. The contact moves 55 m deeper — that is a lot of volume.
 narrows**: the evidence does not merely shift the answer, it sharpens it, which is what evidence is
 supposed to do and what a scenario switch cannot do at all.
 
-Push the strength to 40 and POS goes to **82.5 %**. Say the anomaly is absent and it goes to
-**6.6 %**. That is the range one seismic opinion is worth, made explicit instead of argued about.
+Say instead that the anomaly is **absent** where a column of that height should have produced one,
+and POS falls to **6.6 %**. Between those two readings sits the range one seismic opinion is worth —
+made explicit and written down, instead of argued about in a meeting.
 
 **And the effect on risk against depth is not a scale factor.** This is the part I would put in
 front of a geophysicist:
@@ -260,23 +261,103 @@ The amplitude does not lift the whole curve. It **reshapes** it — pushing prob
 depths the flat event supports and taking it away from the depths it argues against. A single POS
 multiplier cannot express that, and a scenario switch cannot either.
 
+### The two channels do different jobs
+
+Worth separating, because they are usually run together and then argued about as one thing.
+
+The **character** of the anomaly — how bright, how conformable, how consistent with the expected
+fluid response — is an argument about *whether hydrocarbons are there*. It moves the **chance**.
+
+The **geometry** — where the event terminates down-dip — is an argument about *how far down they
+go*. It moves the **depth**.
+
+You can see them come apart. Set the character to neutral and leave the pick where it is:
+
+| | prospect POS | contact P50 |
+|---|---|---|
+| geological | 40.8 % | 2,186 m |
+| neutral character, pick stated | **40.8 %** | **2,239 m** |
+
+The chance does not move at all — a neutral observation is worth nothing and is worth exactly
+nothing here — while the contact moves 53 m deeper, because the interpreter still said where the
+event was. A workflow that collapses a DHI into one "DHI factor" cannot do that, and a team arguing
+about a single number is usually arguing about two different things at once.
+
+### When the seismic should override the geology — and how you know it has
+
+This is the question worth being precise about, because the honest answer is *yes, and it should.*
+
+The model never edits the geological distribution. It reweights realisations. But **reweighting can
+amount to replacement**, and when the geophysics is genuinely informative that is the correct
+outcome — a strong, well-imaged, conformable flat spot at a picked depth is better evidence about
+where the contact sits than any elicited seal capacity. The model should let it win.
+
+It does, and you can watch it happen:
+
+| what the interpreter says | prospect POS | contact P50 | effective sample size |
+|---|---|---|---|
+| geological only | 40.8 % | 2,186 m | 10,000 |
+| mild, σ = 30 m | 46.7 % | 2,219 m | 6,463 |
+| moderate, σ = 10 m | 46.7 % | 2,241 m | 2,799 |
+| strong, σ = 5 m | 82.5 % | 2,249 m | **657** |
+| very strong, σ = 3 m | **97.0 %** | 2,250 m | **312** |
+
+**The last column is the honest accounting, and it is the point of this section.** The effective
+sample size says how many of the ten thousand geological realisations the posterior actually rests
+on. At 312 the amplitude has very nearly replaced the geology — the answer is now the seismic
+interpretation with a little geological texture around it.
+
+That is not a bug. It is what strong evidence *is*. But it is a thing you should have to see rather
+than discover afterwards, so the number is on the page next to the result. **If your ESS has
+collapsed, your prospect is a seismic interpretation.** Sometimes that is exactly right. It should
+never be a surprise.
+
+### And when it should not override, it cannot
+
+The reverse case is where the machinery earns its keep.
+
+Put the pick somewhere the geology says is nearly impossible — 2,400 m, below the spill point, with
+a confident 5 m uncertainty — and a naive substitution would drag the contact there and report a
+much larger prospect. This does not:
+
+| | prospect POS | contact P50 |
+|---|---|---|
+| wild pick at 2,400 m, σ = 5 m | 46.7 % | **2,187 m** |
+
+The answer stays geological. Because the likelihood carries a floor — `L ≥ 1 − p_valid`, where
+`p_valid` is the chance the picked event really is the contact — an interpretation the model finds
+implausible cannot rule the geology out. It concludes *that is probably not a contact* rather than
+*the contact is at 2,400 m*. A flat event can be lithology, a diagenetic front, fizz gas read as
+pay, or a processing artefact, and the floor is where that lives.
+
+This is Cromwell's rule, and it is not decorative: even at the sharpest setting above, the
+least-favoured realisation still keeps a five-thousandth of the best one's weight. **Nothing is ever
+ruled out by one seismic interpretation.**
+
+### The one thing it may never override
+
+A fluid indicator senses whether a reservoir exists and, more weakly, what fluid fills it. It does
+**not** know which of charge, closure, reservoir or retention failed.
+
+So the amplitude may move the total chance and may move the contact — and it may not re-attribute
+risk between elements. If your element chances came from a charge argument, a bright spot does not
+retrospectively make the charge argument better. The tool enforces this: the element chances are set
+once, on the prospect tab, and nothing on the DHI tab can edit them.
+
+That constraint is E-POS's, and it is the difference between using evidence and laundering it.
+
 ### Where I stop, and say so
 
-**A neutral observation must do nothing, and here it does exactly nothing.** At strength 0 the
-likelihood ratio is 1.000 and POS is 40.8 % before and 40.8 % after. That sounds trivial. It is easy
-to get wrong, and getting it wrong means a DHI that says nothing quietly improves your prospect.
+**Combining the two channels is not Bayes, and I will not pretend it is.** Geometry and character
+are not independent evidence — a bright anomaly is more likely to have a mappable termination — so
+multiplying their likelihood ratios would assume something false. The implementation interpolates
+between the product and the stronger single channel, with the dependence exposed as a number you
+set. Probabilistic evidence weighting with a stated assumption, labelled as such in the tool.
 
-**Combining the two evidence channels is not Bayes, and I will not pretend it is.** The amplitude's
-*geometry* — where it terminates — and its *character* — how bright, how conformable — are not
-independent evidence, so multiplying their likelihood ratios would assume something false. The
-implementation interpolates between the product and the stronger single channel, with the dependence
-exposed as a number you set. Probabilistic evidence weighting with a stated assumption, labelled as
-such.
-
-**The likelihoods are elicited, not calibrated.** So the tool reports the effective sample size
-behind every update — 2,799 of 10,000 realisations on the worked case — and plots what the answer is
-most sensitive to. When a typed seismic assumption moves the contact further than the geology does,
-that is a finding about your assumptions, not about the prospect.
+**The likelihoods are elicited, not calibrated.** The detection function and the pick σ are
+modelling choices, and a posterior is only as defensible as they are. So the tool also plots what the
+answer is most sensitive to: when a typed seismic assumption moves the contact further than the
+geology does, that is a finding about your assumptions, not about the prospect.
 
 For scale, the one published measurement I know of: Kjønsberg et al. (2010) inverted prestack AVO by
 Markov chain Monte Carlo at three locations offshore Norway and reported prior and posterior
