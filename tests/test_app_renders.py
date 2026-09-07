@@ -1849,6 +1849,44 @@ class TestThePaperAgreesWithTheAppItDescribes:
             assert hasattr(module, name), f"scripts/paper_figures.py lost {name}"
         assert module.HMIN == 120.0
 
+    def test_no_maths_crosses_a_line_break(self):
+        """The formatting bug Lars caught on 7 Sep 2026, made into a failing test.
+
+        A `$...$` or `$$...$$` that opens on one line and closes on the next is unterminated to
+        a Markdown renderer, which then swallows everything after it until the next `$`. One
+        wrapped equation in section 2 turned the rest of that section and all of section 3 into
+        red LaTeX source on tab 8.0. Nothing raised; the page just quietly stopped being a paper.
+
+        Every other document in `docs/` is checked too -- the reviews carry maths as well, and
+        the failure looks identical there.
+        """
+        import pathlib
+
+        DOLLAR = chr(36)
+
+        root = pathlib.Path(self._root())
+        problems = []
+        for path in sorted((root / "docs").glob("*.md")):
+            lines = path.read_text(encoding="utf-8").split("\n")
+            open_display = None
+            for number, line in enumerate(lines, 1):
+                display = line.count(DOLLAR + DOLLAR)
+                if open_display is None:
+                    if display == 1:
+                        open_display = number
+                elif display >= 1:
+                    problems.append(f"{path.name}: display maths spans lines "
+                                    f"{open_display}-{number}")
+                    open_display = None
+                if open_display is None and line.replace(DOLLAR + DOLLAR, "").count(DOLLAR) % 2:
+                    problems.append(f"{path.name}:{number} inline maths does not close on "
+                                    f"its own line")
+            if open_display is not None:
+                problems.append(f"{path.name}:{open_display} display maths never closes")
+        assert not problems, (
+            "maths crossing a line break renders as red source and eats what follows:\n  "
+            + "\n  ".join(problems))
+
     def test_the_article_tab_renders_the_figures_rather_than_the_markdown(self):
         """`st.markdown` cannot resolve a relative image path, so the images would render broken
         rather than raise. The app splits them out; this is the check that it still does."""

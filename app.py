@@ -55,6 +55,14 @@ def _render_with_figures(text: str, base: Path) -> None:
     Split on whole lines rather than by regular expression: an image line in this document is
     always alone on its line, and a pattern with four escaped brackets in it is the kind of thing
     that survives review and then quietly matches nothing.
+
+    **It also breaks at every top-level heading, which is damage control rather than layout.**
+    A ``$...$`` or ``$$...$$`` that opens on one line and closes on the next is an unterminated
+    expression to a Markdown renderer, and it swallows everything after it until the next ``$``.
+    Lars found exactly that on 7 Sep 2026: one wrapped equation in section 2 turned the rest of
+    that section and all of section 3 into red LaTeX source. The wrapping is fixed and
+    `TestThePaperAgreesWithTheAppItDescribes` now refuses a document that reintroduces it, but
+    rendering section by section means the next one costs a section rather than the paper.
     """
     buffer: list[str] = []
 
@@ -74,8 +82,10 @@ def _render_with_figures(text: str, base: Path) -> None:
                 st.image(str(target), use_container_width=True)
             else:
                 st.caption(f"`{src}` not found — run `scripts/paper_figures.py`.")
-        else:
-            buffer.append(line)
+            continue
+        if stripped.startswith("## "):
+            flush()
+        buffer.append(line)
     flush()
 
 

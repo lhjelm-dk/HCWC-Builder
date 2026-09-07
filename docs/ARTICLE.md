@@ -119,8 +119,7 @@ fault or lateral seal, and $H_\text{mech}$ that associated with mechanical top-s
 
 The resulting column height is
 
-$$H = \min\left(H_\text{charge},\; H_\text{spill},\; H_\text{seal},\; H_\text{continuity},\;
-H_\text{fault},\; H_\text{mech},\;\ldots\right)$$
+$$H = \min\left(H_\text{charge},\, H_\text{spill},\, H_\text{seal},\, H_\text{continuity},\, H_\text{fault},\, H_\text{mech},\, \ldots\right)$$
 
 Only mechanisms **active** in that particular realisation enter the minimum. Each mechanism
 therefore carries two separate uncertainties: whether it is present at all, and — given that it is
@@ -145,8 +144,9 @@ when the apex pick moves. A **mapped surface** — spill point, juxtaposition wi
 naturally stated as a depth. Forcing both into one convention makes the elicitation awkward in both
 directions; the conversion from depth to column height uses the apex drawn in the same realisation.
 
-That conversion is also where a known bias enters, and §7 returns to it: $H = z_\text{limit} -
-z_\text{apex}$ subtracts two picks from the same depth-converted surface.
+That conversion is also where a known bias enters, and §7 returns to it:
+$H = z_\text{limit} - z_\text{apex}$ subtracts two picks from the same depth-converted
+surface.
 
 ### 3.1 · Structural spill
 
@@ -262,8 +262,8 @@ has no contact to distribute, so every probability the engine returns is conditi
 The survival function provides one common representation of several quantities that are usually
 treated separately.
 
-**Hydrocarbon–water contact.** If the apex is at $z_\text{apex}$, then $z_\text{HCWC} =
-z_\text{apex} + H$.
+**Hydrocarbon–water contact.** If the apex is at $z_\text{apex}$, then
+$z_\text{HCWC} = z_\text{apex} + H$.
 
 **Probability of reaching a given depth.** For a reservoir entry depth $z$, the chance the column
 reaches it is $P(G)\,F(z - z_\text{apex})$.
@@ -424,8 +424,9 @@ ones that carry the volume. Both readings come from the same array.
 
 > **Figure 3.** One curve, read in three places. The solid curve is $F(h)$, conditional on the
 > elements working; the dashed curve is $P(G)F(h)$, the prospect POS. At the 120 m assessment
-> minimum, $F = 60.7\%$ and POS $= 24.8\%$. At the DHI-indicated column, $F = 14.4\%$ and POS $=
-> 5.9\%$. Because $F$ decreases, $F(h_\min) \geq F(h_\text{DHI})$ always — the two numbers were
+> minimum, $F = 60.7\%$ and POS $= 24.8\%$. At the DHI-indicated column,
+> $F = 14.4\%$ and POS $= 5.9\%$. Because $F$ decreases,
+> $F(h_\min) \geq F(h_\text{DHI})$ always — the two numbers were
 > never competing, and quoting one without stating the $h$ it was read at is the error the
 > construction removes.
 
@@ -685,8 +686,7 @@ There is no defensible general answer. The implementation therefore interpolates
 product of the two ratios and the stronger of the two alone, with the degree of dependence exposed
 as an explicit modelling choice rather than buried:
 
-$$\log R_\text{combined} = (1 - d)\left(\log R_\text{geom} + \log R_\text{char}\right) +
-d \cdot \log R_\text{stronger}$$
+$$\log R_\text{combined} = (1 - d)\left(\log R_\text{geom} + \log R_\text{char}\right) + d \cdot \log R_\text{stronger}$$
 
 At $d = 0$ the channels are independent and multiply; at $d = 1$ the weaker channel is ignored
 entirely. Neither end is defensible in general, which is the argument for exposing $d$ rather than
