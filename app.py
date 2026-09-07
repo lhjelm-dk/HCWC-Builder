@@ -711,185 +711,198 @@ with tab7:
 # --------------------------------------------------------------------------- 8.0 Theory & Guide
 with tab8:
     st.markdown(
-        "**The reasoning this tool rests on, and the record of what was checked.** Everything "
-        "here is meant to be argued with — the sections are the arguments, the documents are the "
-        "working, and both name what they assume rather than hiding it.\n\n"
-        "The first section is one worked example of the question the rest of the app has to keep "
-        "answering correctly: **what may be treated as evidence, and what may not.** Get that "
-        "wrong and every number downstream is confident and misleading."
+        "**The reasoning this tool rests on, the paper that sets it out, and the sources.** "
+        "Everything here is meant to be argued with: the theory notes are the working behind three "
+        "places where this tool refuses to multiply something in, and each is referenced from the "
+        "tab that refuses."
     )
 
-    theme.heading(8, "1 · Can a base rate be a likelihood?")
-    st.markdown("**Short answer: no.** A base rate is a *prior* over column height, and this tool already has one — multiplying it in would count the same belief twice. A DHI can be a likelihood because it is an observation *of this prospect*.")
-    # Moved to `docs/LIKELIHOOD_OR_PRIOR.md` on 5 Sep 2026. Tab 8.0 is the reference tab and
-    # this is reference material -- but a thousand words between the heading and the worked
-    # table below it made the *worked* part, which is the part that convinces, unreachable
-    # without scrolling past an essay. Same argument, one click away, next to its siblings.
+    theme.heading(8, "1 · Theory")
+    # Five notes, one picker. Until 7 Sep 2026 this section also carried five *paper reviews* --
+    # whether Beha, Hood, Monigle, Lowry and the seal-capacity literature say what this app claims
+    # they say. Lars's call was that a user does not want to browse those. They are kept in
+    # `docs/` and indexed in `docs/NEXT_PLAN.md`, which is the internal document by design; the
+    # bibliography in section 3 names them where they bear on a citation.
     st.markdown(
-        "**Because a prior and a likelihood are the same kind of object** — both are functions of"
-        " the unknown. A likelihood is a *use*, not a kind of distribution, and to act as one the"
-        " data must be something **you observed on this prospect**.\n\n"
-        "**So the test is not ‘is this a probability?’ but ‘does this data carry something my"
-        " model has not already used?’** The argument is in → *Prior or likelihood?* below; the"
-        " table shows what getting it wrong does to a real prospect."
+        "**Three notes on what may be treated as evidence**, each written against a specific "
+        "mistake this tool declines to make: → *Prior or likelihood?*, → *Weight, not Bayes*, "
+        "→ *Base rates*. **DHI alignment** is a working note on how POS and the DHI update fit "
+        "together, and **Benchmark sources** is a negative result — what was searched for and not "
+        "found."
     )
 
-    _t8_limits = st.session_state.get("limit_set")
-    _t8_spill = ([i for i, nm in enumerate(_t8_limits.names) if "spill" in nm.lower()]
-                 if _t8_limits is not None else [])
-    # `_t8_mine` is the success cases, and an assessment minimum above every achievable column
-    # leaves it empty -- the same emptiness tab 6.0 guards, reached by a different route. Checked
-    # here rather than at each `np.percentile` below, because none of the four rows means anything
-    # without it.
-    _t8_have_successes = True
-    if _t8_limits is not None and _t8_spill:
-        _t8_probe = engine_run.current(_t8_limits)
-        _t8_have_successes = bool(_t8_probe.above_minimum.any())
-        if not _t8_have_successes:
-            st.info(
-                "**No realisation reaches the assessment minimum**, so there is no column "
-                "distribution to fuse with the benchmark. Lower the minimum on tab 2.0."
-            )
-    if _t8_limits is not None and _t8_spill and _t8_have_successes:
-        _t8_result = engine_run.current(_t8_limits)
-        _t8_relief = float(np.median(_t8_result.sampled_m[:, _t8_spill[0]]))
-        # `or` would take the fallback for a burial of zero, because zero is falsy -- a typed 0
-        # silently became 2500 m. Only a genuinely absent value should fall back.
-        _t8_stored = st.session_state.get("burial_depth")
-        _t8_burial = float(_t8_stored if _t8_stored is not None else 2500.0)
-        _t8_mine = _t8_result.column_m[_t8_result.above_minimum]
-
-        _t8_fit = benchmarks._capacity_fit()
-        _t8_bench = np.minimum(
-            np.exp(np.random.default_rng(11).normal(
-                _t8_fit.intercept + _t8_fit.slope * np.log(_t8_burial), _t8_fit.sigma, 60_000)),
-            _t8_relief)
-        _t8_fused = benchmarks.shrink_toward(_t8_mine, _t8_bench, 0.5)
-
-        # Histogram densities rather than a KDE: the point is the *width* of the product, which a
-        # coarse density carries perfectly well, and it costs nothing on every rerun of this tab.
-        _t8_edges = np.linspace(0.0, _t8_relief * 1.02, 220)
-        _t8_mid = 0.5 * (_t8_edges[:-1] + _t8_edges[1:])
-
-        def _t8_density(sample):
-            # Normalised by hand rather than with `density=True`, which divides by the total and
-            # hands back NaNs when that total is zero. A non-empty sample can still put nothing in
-            # these bins: the axis runs to the structural relief, and at a high assessment minimum
-            # every surviving column sits at or beyond it. NaNs there would read as a distribution
-            # rather than as an empty one, and `_t8_pct` below already knows what to do with zeros.
-            counts, _ = np.histogram(sample, bins=_t8_edges)
-            total = float(counts.sum())
-            if total <= 0:
-                return np.zeros(counts.size, dtype=float)
-            return counts / np.diff(_t8_edges) / total
-
-        def _t8_pct(density, p):
-            cumulative = np.cumsum(density)
-            if cumulative[-1] <= 0:
-                return float("nan")
-            return float(np.interp(p / 100.0, cumulative / cumulative[-1], _t8_mid))
-
-        _t8_dm, _t8_db = _t8_density(_t8_mine), _t8_density(_t8_bench)
-        _t8_product = _t8_dm * _t8_db
-        _t8_rows = [
-            ("your model", _t8_pct(_t8_dm, 10), _t8_pct(_t8_dm, 50), _t8_pct(_t8_dm, 90)),
-            ("the benchmark at your relief", _t8_pct(_t8_db, 10), _t8_pct(_t8_db, 50),
-             _t8_pct(_t8_db, 90)),
-            ("the two fused, weight 0.5 — what tab 6.0 draws",
-             float(np.percentile(_t8_fused, 10)), float(np.percentile(_t8_fused, 50)),
-             float(np.percentile(_t8_fused, 90))),
-            ("multiplied as if the benchmark were a likelihood",
-             _t8_pct(_t8_product, 10), _t8_pct(_t8_product, 50), _t8_pct(_t8_product, 90)),
-        ]
-        st.dataframe(
-            pd.DataFrame([
-                {"": name, "P10": f"{p10:,.0f} m", "P50": f"{p50:,.0f} m",
-                 "P90": f"{p90:,.0f} m", "P10–P90 spread": f"{p90 - p10:,.0f} m"}
-                for name, p10, p50, p90 in _t8_rows]),
-            hide_index=True, use_container_width=True, key="t8_likelihood_table")
-        st.caption(
-            f"**Computed from the prospect in front of you** — relief {_t8_relief:,.0f} m, burial "
-            f"{_t8_burial:,.0f} m — so it can be checked rather than believed.\n\n"
-            f"**Read the last row against the first two.** Multiplying two densities always "
-            f"sharpens, and that is *correct* when two independent instruments measure the same "
-            f"thing. Here it produces a spread of "
-            f"**{_t8_rows[3][3] - _t8_rows[3][1]:,.0f} m** — tighter than your own model's "
-            f"{_t8_rows[0][3] - _t8_rows[0][1]:,.0f} m, after consulting a source whose own spread "
-            f"is {_t8_rows[1][3] - _t8_rows[1][1]:,.0f} m. **Adding a vaguer opinion made you more "
-            f"certain.** The arithmetic is telling you the two are not independent evidence."
-        )
-
-    st.markdown(
-        "**One thing in that dataset *is* a genuine likelihood** — not the distribution, the"
-        " **outcomes**. They cannot inform your column, but they can inform what you and those 242"
-        " share: the parameters of the seal-capacity relationship. That is empirical Bayes, and it"
-        " is the seal limit\u2019s *Pull this toward the NCS record* on tab 3.0."
-    )
-
-    theme.heading(8, "2 · Documents")
-    # `NEXT_PLAN.md` is deliberately NOT listed. It is a development document -- what is built,
-    # what is not, what was decided and why -- and a user reading it learns which parts the
-    # author is unsure about, which is not the same as learning what the tool does. It stays in
-    # the repo for whoever works on this next.
-    st.markdown(
-        "Five different kinds of thing, and it is worth knowing which one you have opened. **The "
-        "article** is the argument written for people who do not use the tool. **Three notes on "
-        "evidence** — *Prior or likelihood?*, *Weight, not Bayes*, *Base rates* — are the "
-        "reasoning behind three places where this tool refuses to multiply something in; each is "
-        "referenced from the tab that refuses. **Benchmark sources** is a negative result — what "
-        "was searched for and not found. **Three reviews** ask whether the published methods this "
-        "app leans on actually say what it claims they say, and two of them conclude *not "
-        "entirely*. **DHI alignment** is a working note on a design decision, and **References** "
-        "is the bibliography with every DOI checked."
-    )
-    doc = st.radio(
-        "Document",
-        ["The article", "Prior or likelihood?", "Weight, not Bayes", "Base rates",
-         "Benchmark sources", "Beha et al. (2012)", "Hood (2019)",
-         "Monigle et al. (2025)",
-         "Seal capacity", "Lowry et al. (2005)", "DHI alignment", "References"],
-        captions=["the paper — competing limits and DHI evidence",
-                  "why a base rate is not evidence — §1 above, in full",
+    _theory = st.radio(
+        "Theory note",
+        ["Prior or likelihood?", "Weight, not Bayes", "Base rates",
+         "DHI alignment", "Benchmark sources"],
+        captions=["why a base rate is not evidence",
                   "why tab 6.0 §8 weights rather than multiplies",
                   "the symmetric rule, and why it cannot be Bayes",
-                  "is there a second public dataset? — no",
-                  "review · the paper behind the tab 1.0 rule",
-                  "review · the deck the engine is built on",
-                  "review · the closest published work on the DHI half",
-                  "review · is the capillary maths right?",
-                  "review · what it settles and what it does not",
                   "working note · POS and the DHI update",
-                  "bibliography, DOIs validated"],
-        horizontal=True, label_visibility="collapsed")
-    path = {"The article": "ARTICLE.md",
-            "Prior or likelihood?": "LIKELIHOOD_OR_PRIOR.md",
-            "Weight, not Bayes": "WEIGHT_NOT_BAYES.md",
-            "Base rates": "BASE_RATE_NEGLECT.md",
-            "Benchmark sources": "BENCHMARK_SOURCES.md",
-            "Beha et al. (2012)": "BEHA_2012_REVIEW.md",
-            "Hood (2019)": "HOOD_2019_REVIEW.md",
-            "Monigle et al. (2025)": "MONIGLE_2025_REVIEW.md",
-            "Seal capacity": "SEAL_CAPACITY_REVIEW.md",
-            "Lowry et al. (2005)": "LOWRY_2005_REVIEW.md",
-            "DHI alignment": "DHI_alignment.md", "References": "REFERENCES.md"}[doc]
-    target = DOCS / path
-    if target.exists():
-        _text = target.read_text(encoding="utf-8")
-        if doc == "The article":
-            st.info(
-                "**Every number below is computed, not typed in.** The worked prospect is this "
-                "app's own default read at a 120 m assessment minimum, the calibration figures "
-                "come from the shipped NCS table, and the five figures are regenerated from the "
-                "engine by `scripts/paper_figures.py`. Change an input and they move."
-            )
-            with st.expander("**Copy the source** — Markdown, for a manuscript or a document"):
-                st.caption(
-                    "Written for a journal rather than a post: numbered sections, an abstract, "
-                    "figure captions and LaTeX maths. A submission would want the equations "
-                    "rebuilt in the publisher's template and the figures taken from "
-                    "`docs/figures/` at 200 dpi."
-                )
-                st.code(_text, language="markdown")
-        _render_with_figures(_text, DOCS)
+                  "is there a second public dataset? — no"],
+        horizontal=True, label_visibility="collapsed", key="theory_doc")
+    _theory_path = {"Prior or likelihood?": "LIKELIHOOD_OR_PRIOR.md",
+                    "Weight, not Bayes": "WEIGHT_NOT_BAYES.md",
+                    "Base rates": "BASE_RATE_NEGLECT.md",
+                    "DHI alignment": "DHI_alignment.md",
+                    "Benchmark sources": "BENCHMARK_SOURCES.md"}[_theory]
+    _theory_target = DOCS / _theory_path
+    if _theory_target.exists():
+        _render_with_figures(_theory_target.read_text(encoding="utf-8"), DOCS)
     else:
-        st.info(f"`docs/{path}` not found in this checkout.")
+        st.info(f"`docs/{_theory_path}` not found in this checkout.")
+
+    # The worked example that used to be section 1 in full, on arrival, above everything else.
+    # It is one illustration of one of the five notes above and it now sits where an illustration
+    # belongs -- behind its own summary, after the note it illustrates.
+    with st.expander("**Worked: what multiplying a base rate in would do to this prospect** "
+                     "— it makes you *more* certain after consulting a vaguer source"):
+        st.markdown(
+            "**A base rate is a *prior* over column height, and this tool already has one** — "
+            "multiplying it in would count the same belief twice. A DHI can be a likelihood "
+            "because it is an observation *of this prospect*.\n\n"
+            "**Because a prior and a likelihood are the same kind of object** — both are "
+            "functions of the unknown. A likelihood is a *use*, not a kind of distribution, and "
+            "to act as one the data must be something **you observed on this prospect**.\n\n"
+            "**So the test is not ‘is this a probability?’ but ‘does this data carry something my "
+            "model has not already used?’** The argument is in → *Prior or likelihood?* above; "
+            "the table below shows what getting it wrong does to a real prospect."
+        )
+        _t8_limits = st.session_state.get("limit_set")
+        _t8_spill = ([i for i, nm in enumerate(_t8_limits.names) if "spill" in nm.lower()]
+                     if _t8_limits is not None else [])
+        # `_t8_mine` is the success cases, and an assessment minimum above every achievable column
+        # leaves it empty -- the same emptiness tab 6.0 guards, reached by a different route. Checked
+        # here rather than at each `np.percentile` below, because none of the four rows means anything
+        # without it.
+        _t8_have_successes = True
+        if _t8_limits is not None and _t8_spill:
+            _t8_probe = engine_run.current(_t8_limits)
+            _t8_have_successes = bool(_t8_probe.above_minimum.any())
+            if not _t8_have_successes:
+                st.info(
+                    "**No realisation reaches the assessment minimum**, so there is no column "
+                    "distribution to fuse with the benchmark. Lower the minimum on tab 2.0."
+                )
+        if _t8_limits is not None and _t8_spill and _t8_have_successes:
+            _t8_result = engine_run.current(_t8_limits)
+            _t8_relief = float(np.median(_t8_result.sampled_m[:, _t8_spill[0]]))
+            # `or` would take the fallback for a burial of zero, because zero is falsy -- a typed 0
+            # silently became 2500 m. Only a genuinely absent value should fall back.
+            _t8_stored = st.session_state.get("burial_depth")
+            _t8_burial = float(_t8_stored if _t8_stored is not None else 2500.0)
+            _t8_mine = _t8_result.column_m[_t8_result.above_minimum]
+
+            _t8_fit = benchmarks._capacity_fit()
+            _t8_bench = np.minimum(
+                np.exp(np.random.default_rng(11).normal(
+                    _t8_fit.intercept + _t8_fit.slope * np.log(_t8_burial), _t8_fit.sigma, 60_000)),
+                _t8_relief)
+            _t8_fused = benchmarks.shrink_toward(_t8_mine, _t8_bench, 0.5)
+
+            # Histogram densities rather than a KDE: the point is the *width* of the product, which a
+            # coarse density carries perfectly well, and it costs nothing on every rerun of this tab.
+            _t8_edges = np.linspace(0.0, _t8_relief * 1.02, 220)
+            _t8_mid = 0.5 * (_t8_edges[:-1] + _t8_edges[1:])
+
+            def _t8_density(sample):
+                # Normalised by hand rather than with `density=True`, which divides by the total and
+                # hands back NaNs when that total is zero. A non-empty sample can still put nothing in
+                # these bins: the axis runs to the structural relief, and at a high assessment minimum
+                # every surviving column sits at or beyond it. NaNs there would read as a distribution
+                # rather than as an empty one, and `_t8_pct` below already knows what to do with zeros.
+                counts, _ = np.histogram(sample, bins=_t8_edges)
+                total = float(counts.sum())
+                if total <= 0:
+                    return np.zeros(counts.size, dtype=float)
+                return counts / np.diff(_t8_edges) / total
+
+            def _t8_pct(density, p):
+                cumulative = np.cumsum(density)
+                if cumulative[-1] <= 0:
+                    return float("nan")
+                return float(np.interp(p / 100.0, cumulative / cumulative[-1], _t8_mid))
+
+            _t8_dm, _t8_db = _t8_density(_t8_mine), _t8_density(_t8_bench)
+            _t8_product = _t8_dm * _t8_db
+            _t8_rows = [
+                ("your model", _t8_pct(_t8_dm, 10), _t8_pct(_t8_dm, 50), _t8_pct(_t8_dm, 90)),
+                ("the benchmark at your relief", _t8_pct(_t8_db, 10), _t8_pct(_t8_db, 50),
+                 _t8_pct(_t8_db, 90)),
+                ("the two fused, weight 0.5 — what tab 6.0 draws",
+                 float(np.percentile(_t8_fused, 10)), float(np.percentile(_t8_fused, 50)),
+                 float(np.percentile(_t8_fused, 90))),
+                ("multiplied as if the benchmark were a likelihood",
+                 _t8_pct(_t8_product, 10), _t8_pct(_t8_product, 50), _t8_pct(_t8_product, 90)),
+            ]
+            st.dataframe(
+                pd.DataFrame([
+                    {"": name, "P10": f"{p10:,.0f} m", "P50": f"{p50:,.0f} m",
+                     "P90": f"{p90:,.0f} m", "P10–P90 spread": f"{p90 - p10:,.0f} m"}
+                    for name, p10, p50, p90 in _t8_rows]),
+                hide_index=True, use_container_width=True, key="t8_likelihood_table")
+            st.caption(
+                f"**Computed from the prospect in front of you** — relief {_t8_relief:,.0f} m, burial "
+                f"{_t8_burial:,.0f} m — so it can be checked rather than believed.\n\n"
+                f"**Read the last row against the first two.** Multiplying two densities always "
+                f"sharpens, and that is *correct* when two independent instruments measure the same "
+                f"thing. Here it produces a spread of "
+                f"**{_t8_rows[3][3] - _t8_rows[3][1]:,.0f} m** — tighter than your own model's "
+                f"{_t8_rows[0][3] - _t8_rows[0][1]:,.0f} m, after consulting a source whose own spread "
+                f"is {_t8_rows[1][3] - _t8_rows[1][1]:,.0f} m. **Adding a vaguer opinion made you more "
+                f"certain.** The arithmetic is telling you the two are not independent evidence."
+            )
+
+        st.markdown(
+            "**One thing in that dataset *is* a genuine likelihood** — not the distribution, the"
+            " **outcomes**. They cannot inform your column, but they can inform what you and those 242"
+            " share: the parameters of the seal-capacity relationship. That is empirical Bayes, and it"
+            " is the seal limit\u2019s *Pull this toward the NCS record* on tab 3.0."
+        )
+
+
+        st.markdown(
+            "**One thing in that dataset *is* a genuine likelihood** — not the distribution, the "
+            "**outcomes**. They cannot inform your column, but they can inform what you and those "
+            "242 share: the parameters of the seal-capacity relationship. That is empirical "
+            "Bayes, and it is the seal limit\u2019s *Pull this toward the NCS record* on tab 3.0."
+        )
+
+    theme.heading(8, "2 · The paper")
+    st.markdown(
+        "The method written up for a journal rather than for this screen: competing limits, the "
+        "survival function every POS is read from, and the likelihood formulation of DHI "
+        "evidence. It is the document to hand someone who does not use the tool."
+    )
+    _paper = DOCS / "ARTICLE.md"
+    if _paper.exists():
+        _paper_text = _paper.read_text(encoding="utf-8")
+        st.info(
+            "**Every number below is computed, not typed in.** The worked prospect is this "
+            "app's own default read at a 120 m assessment minimum, the calibration figures "
+            "come from the shipped NCS table, and the five figures are regenerated from the "
+            "engine by `scripts/paper_figures.py`. Change an input and they move."
+        )
+        with st.expander("**Copy the source** — Markdown, for a manuscript or a document"):
+            st.caption(
+                "Written for a journal rather than a post: numbered sections, an abstract, "
+                "figure captions and LaTeX maths. A submission would want the equations "
+                "rebuilt in the publisher's template and the figures taken from "
+                "`docs/figures/` at 200 dpi."
+            )
+            st.code(_paper_text, language="markdown")
+        _render_with_figures(_paper_text, DOCS)
+    else:
+        st.info("`docs/ARTICLE.md` not found in this checkout.")
+
+    theme.heading(8, "3 · References")
+    st.markdown(
+        "Every source this tool leans on, with each DOI checked and each entry saying what was "
+        "taken from it. Open access is marked, because a claim you cannot go and read is a claim "
+        "you have to take on trust."
+    )
+    _refs = DOCS / "REFERENCES.md"
+    if _refs.exists():
+        _render_with_figures(_refs.read_text(encoding="utf-8"), DOCS)
+    else:
+        st.info("`docs/REFERENCES.md` not found in this checkout.")

@@ -38,6 +38,28 @@ Its cheap sibling — commodity scenarios from realisation proportions, Hood's s
 
 ---
 
+## A3 · The paper reviews, kept off the screen
+
+Lars's call on 7 Sep 2026, restructuring tab 8.0: a user browsing the theory tab does not want
+five documents auditing other people's papers. They are **not deleted** — they are the working
+behind several of the app's design decisions, and each one changed something. They are indexed
+here because `NEXT_PLAN.md` is the internal document by design and is deliberately not offered in
+the app.
+
+| | What it settles |
+|---|---|
+| `BEHA_2012_REVIEW.md` | The closest published precedent to the engine, and what can still be claimed as new. Scenario enumeration, not min-of-samples — the distinction the paper's §1.1 draws. |
+| `HOOD_2019_REVIEW.md` | The source deck the engine is built on, read in full rather than through the Rose blog. Truncating vs terminating; fill-to-spill as an output. One real gap found: capillary-controlled two-phase columns, planned in `PLAN_DUAL_PHASE_SEAL.md`. |
+| `MONIGLE_2025_REVIEW.md` | The closest published work to the DHI half. Supplies the empirically calibrated contact weight `min(2 x DHI score, 0.95)` — the external referent the strength axis lacked — and the open question of whether `R_CAP = 50` should come down. |
+| `LOWRY_2005_REVIEW.md` | What the paper behind the DHI update settles and what it does not. |
+| `SEAL_CAPACITY_REVIEW.md` | Whether the capillary maths in `hcwc/core/seals.py` is right, including the two unit traps. |
+
+`tests/test_app_renders.py::TestTheArgumentsLiveInDocuments::test_the_paper_reviews_are_kept_but_not_shown`
+enforces all three halves of this: each file still exists, none is registered in `app.py`, and
+each is named above.
+
+---
+
 ## B · Open questions, not open work
 
 **The Lowry (2005) PDF.** `docs/LOWRY_2005_REVIEW.md` is written from the abstract because the full

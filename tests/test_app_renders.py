@@ -1698,19 +1698,60 @@ class TestTheArgumentsLiveInDocuments:
         missing = sorted(name for name in named if not (root / "docs" / name).exists())
         assert not missing, f"registered but absent from docs/: {missing}"
 
+    #: Tab 8.0 was restructured on 7 Sep 2026 into Theory / The paper / References. The article
+    #: left the picker for a section of its own, so this finds the picker by a note that is
+    #: still in it.
+    PICKER_MARK = "Prior or likelihood?"
+
+    def _picker(self, at):
+        radios = [r for r in at.get("radio") if self.PICKER_MARK in list(r.options)]
+        assert radios, "the tab 8.1 theory picker is gone"
+        return radios[0]
+
     def test_the_moved_arguments_are_reachable_and_intact(self):
         at = _run()
-        radios = [r for r in at.get("radio") if "The article" in list(r.options)]
-        assert radios, "the tab 8.0 document picker is gone"
-        picker = radios[0]
+        picker = self._picker(at)
         for label, (_, phrase) in self.DOCS.items():
-            assert label in picker.options, f"{label} is not offered on tab 8.0"
+            assert label in picker.options, f"{label} is not offered on tab 8.1"
             rendered = picker.set_value(label).run()
             _no_exception(rendered, f"opening {label!r}")
             blob = "\n".join(str(m.value) for m in rendered.get("markdown"))
             assert phrase in blob, f"{label} did not render its own text"
             assert "not found in this checkout" not in blob
-            picker = [r for r in rendered.get("radio") if "The article" in list(r.options)][0]
+            picker = self._picker(rendered)
+
+    def test_the_paper_has_its_own_section_rather_than_a_picker_entry(self):
+        """Lars's restructure, 7 Sep 2026. The article is the thing you hand to someone who does
+        not use the tool; burying it as one radio option among a dozen made it a footnote."""
+        at = _run()
+        blob = "\n".join(str(m.value) for m in at.get("markdown"))
+        assert "competing geological limits and DHI evidence" in blob, (
+            "the paper no longer renders on arrival")
+        assert self.PICKER_MARK in list(self._picker(at).options)
+        assert "The article" not in list(self._picker(at).options), (
+            "the paper is back in the theory picker")
+
+    def test_the_paper_reviews_are_kept_but_not_shown(self):
+        """*Don't delete them, keep them internally* \u2014 Lars, 7 Sep 2026. A user browsing the
+        theory tab does not want five documents auditing other people's papers; whoever works on
+        this repo next very much does.
+        """
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        reviews = ["BEHA_2012_REVIEW.md", "HOOD_2019_REVIEW.md", "MONIGLE_2025_REVIEW.md",
+                   "LOWRY_2005_REVIEW.md", "SEAL_CAPACITY_REVIEW.md"]
+        missing = [n for n in reviews if not (root / "docs" / n).exists()]
+        assert not missing, f"a review was deleted rather than kept: {missing}"
+
+        source = (root / "app.py").read_text(encoding="utf-8")
+        surfaced = [n for n in reviews if f'"{n}"' in source]
+        assert not surfaced, f"a review is back on screen: {surfaced}"
+
+        index = (root / "docs" / "NEXT_PLAN.md").read_text(encoding="utf-8")
+        unindexed = [n for n in reviews if n not in index]
+        assert not unindexed, (
+            "kept but unfindable \u2014 index them in docs/NEXT_PLAN.md: " + str(unindexed))
 
     def test_the_tabs_still_state_the_conclusion_and_say_where_to_read_it(self):
         """A pointer with no conclusion is worse than the essay: the reader at the slider has to
