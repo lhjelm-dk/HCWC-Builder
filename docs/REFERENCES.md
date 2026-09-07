@@ -12,6 +12,17 @@ situation this project is in.
 
 ## Method — how to represent column height
 
+**Monigle, P.W., Hedayati, T.S. & Goulding, F.J. (2025)** · *Integrated and improved direct
+hydrocarbon indicators: a step forward in petroleum risk discrimination.* AAPG Bulletin
+**109**(5), 617–636. doi:[10.1306/04042524030](https://doi.org/10.1306/04042524030)
+🟢 **Gold Open Access, CC-BY.**
+> **The closest published work to the DHI half of this tool**, from ExxonMobil, with Ken Hood
+> among the editors. Bayesian integration of a DHI score with a geological prior by the same
+> Simm & Bacon update this app uses; absence of an expected anomaly as negative evidence; and
+> an **empirically calibrated contact weight** — `w = min(2 x DHI score, 0.95)` — from 400+
+> drilled DHI prospects. That 0.95 is the external referent the strength axis lacked; see
+> `docs/MONIGLE_2025_REVIEW.md`. Also states the element-attribution rule as policy.
+
 **Hood, K.C. (2024)** · *Hydrocarbon Column Heights, Part 1* and *Part 2*. Rose & Associates blog,
 7 May 2024, from Hood (2019), Risk Coordinators Workshop #17, Houston. Released by ExxonMobil.
 🟢 **Free** · https://www.roseassoc.com/hydrocarbon-column-heights-part-1/ ·

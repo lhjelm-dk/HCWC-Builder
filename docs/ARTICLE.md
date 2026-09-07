@@ -96,10 +96,16 @@ Four things in what follows do appear to be new, and are offered as the contribu
 4. **A likelihood formulation of DHI evidence over column height** — a detection function multiplied
    by a pick likelihood, reweighting the geological realisations with the argmin bookkeeping intact
    (§§9–15). Hood's own recommendation is the scenario switch, which is honest but discards
-   information: it cannot use an absent anomaly, cannot narrow the distribution, cannot report
-   which mechanism controlled the contact given the DHI, and yields no depth-dependent risk. The
-   likelihood form does all four. If it has been demonstrated elsewhere, the reference would be
-   welcome.
+   information: it cannot narrow the distribution, cannot report which mechanism controlled the
+   contact given the DHI, and yields no depth-dependent risk.
+
+   The claim needs one boundary drawn around it. Monigle *et al.* (2025) integrate a DHI score with
+   a geological prior by exactly the Bayesian update used here for the character channel, and they
+   use an absent anomaly as negative evidence — so neither the update nor the treatment of absence
+   is new. What does not appear in that work, or any other located, is the likelihood defined
+   **over column height**, which is what makes the evidence reshape the contact distribution and
+   the depth-dependent risk rather than only the chance. If that has been demonstrated elsewhere,
+   the reference would be welcome.
 
 ---
 
@@ -550,8 +556,19 @@ largest at small $h$. No special handling is required — absence enters the sam
 presence.
 
 On the worked prospect the effect is severe: prospect POS falls from **25.0 % to 3.2 %**, and the
-contact P50 moves 40 m shallower. Most workflows have nowhere to put that observation, and in
-practice it is either argued about qualitatively or quietly dropped.
+contact P50 moves 40 m shallower.
+
+**This part is no longer novel, and the distinction that survives is narrower.** Monigle *et al.*
+(2025) treat an absent anomaly as a negative line of evidence within ExxonMobil's integrated
+chance-of-success framework, and report a prospect carried from a geological 46 % to an integrated
+8 % on that basis. Their own assessment is that the practice "is not consistently applied in
+industry", which is the right level of confidence for the general claim.
+
+What differs is the **axis** the absence acts on. They apply it to the *chance*, through a Bayesian
+update of the prospect COS. Because the likelihood here is defined over column height, absence also
+reshapes the *contact distribution*: short columns become relatively more probable, since they are
+the ones that would not have shown. The chance-axis route is published; the column-height route is
+what is offered here.
 
 Two cautions. The likelihood ratio for an absent anomaly compares the chance of seeing nothing
 given an accumulation against the chance of seeing nothing given a barren trap; the denominator is
@@ -642,6 +659,11 @@ The seismic update may therefore move the total chance and may move the contact,
 re-attribute risk between elements. If the element chances came from a charge argument, a bright
 spot does not retrospectively improve the charge argument. In the implementation the element
 chances are set once, and nothing in the DHI workflow can edit them.
+
+This is published practice rather than a local convention. Monigle *et al.* (2025) state it as
+policy: geological risking must remain independent of the DHI attributes, and "the presence of a
+DHI does not increase the chance of adequacy of source presence; the adequacy of source is
+determined by considering the geologic factors alone."
 
 This is also the practical guard against double counting. A DHI should not be read simultaneously
 as independent evidence for charge, reservoir presence, seal quality and contact depth. The update
@@ -839,6 +861,10 @@ Hood, K. C. (2024). *Hydrocarbon column heights*, Parts 1 and 2. Rose & Associat
 
 Kjønsberg, H., Hauge, R., Kolbjørnsen, O. & Buland, A. (2010). Bayesian Monte Carlo method for
 seismic predrill prospect assessment. *Geophysics* **75**(2), O9–O19.
+
+Monigle, P. W., Hedayati, T. S. & Goulding, F. J. (2025). Integrated and improved direct
+hydrocarbon indicators: A step forward in petroleum risk discrimination. *AAPG Bulletin*
+**109**(5), 617–636. doi:10.1306/04042524030.
 
 Schowalter, T. T. (1979). Mechanics of secondary hydrocarbon migration and entrapment. *AAPG
 Bulletin* **63**(5), 723–760.

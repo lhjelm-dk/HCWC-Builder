@@ -836,6 +836,7 @@ with tab8:
         "Document",
         ["The article", "Prior or likelihood?", "Weight, not Bayes", "Base rates",
          "Benchmark sources", "Beha et al. (2012)", "Hood (2019)",
+         "Monigle et al. (2025)",
          "Seal capacity", "Lowry et al. (2005)", "DHI alignment", "References"],
         captions=["the paper — competing limits and DHI evidence",
                   "why a base rate is not evidence — §1 above, in full",
@@ -844,6 +845,7 @@ with tab8:
                   "is there a second public dataset? — no",
                   "review · the paper behind the tab 1.0 rule",
                   "review · the deck the engine is built on",
+                  "review · the closest published work on the DHI half",
                   "review · is the capillary maths right?",
                   "review · what it settles and what it does not",
                   "working note · POS and the DHI update",
@@ -856,6 +858,7 @@ with tab8:
             "Benchmark sources": "BENCHMARK_SOURCES.md",
             "Beha et al. (2012)": "BEHA_2012_REVIEW.md",
             "Hood (2019)": "HOOD_2019_REVIEW.md",
+            "Monigle et al. (2025)": "MONIGLE_2025_REVIEW.md",
             "Seal capacity": "SEAL_CAPACITY_REVIEW.md",
             "Lowry et al. (2005)": "LOWRY_2005_REVIEW.md",
             "DHI alignment": "DHI_alignment.md", "References": "REFERENCES.md"}[doc]
