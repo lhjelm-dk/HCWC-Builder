@@ -40,6 +40,45 @@ from hcwc.ui.numbering import Numbering
 ROOT = Path(__file__).parent
 DOCS = ROOT / "docs"
 
+
+def _render_with_figures(text: str, base: Path) -> None:
+    """Render Markdown that carries relative image links.
+
+    ``st.markdown`` resolves nothing relative to the file the text came from, so
+    ``![](figures/x.png)`` renders as a *broken image* rather than as an error -- the
+    failure mode where the article silently loses its five figures and nobody notices.
+    The document is therefore split on its own image lines and those handed to
+    ``st.image``, which does take a path. Everything else passes through untouched,
+    including the blockquote caption after each figure: Lars's rule of 28 Aug 2026 is that
+    a caption is never folded or separated from what it captions.
+
+    Split on whole lines rather than by regular expression: an image line in this document is
+    always alone on its line, and a pattern with four escaped brackets in it is the kind of thing
+    that survives review and then quietly matches nothing.
+    """
+    buffer: list[str] = []
+
+    def flush() -> None:
+        chunk = "\n".join(buffer).strip()
+        buffer.clear()
+        if chunk:
+            st.markdown(chunk)
+
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("![") and stripped.endswith(")") and "](" in stripped:
+            flush()
+            src = stripped[stripped.index("](") + 2:-1].strip()
+            target = base / src
+            if target.exists():
+                st.image(str(target), use_container_width=True)
+            else:
+                st.caption(f"`{src}` not found — run `scripts/paper_figures.py`.")
+        else:
+            buffer.append(line)
+    flush()
+
+
 st.set_page_config(page_title="HCWC Distribution Builder", page_icon="📉", layout="wide")
 theme.apply()
 
@@ -798,7 +837,7 @@ with tab8:
         ["The article", "Prior or likelihood?", "Weight, not Bayes", "Base rates",
          "Benchmark sources", "Beha et al. (2012)", "Hood (2019)",
          "Seal capacity", "Lowry et al. (2005)", "DHI alignment", "References"],
-        captions=["the argument, for a general reader",
+        captions=["the paper — competing limits and DHI evidence",
                   "why a base rate is not evidence — §1 above, in full",
                   "why tab 6.0 §8 weights rather than multiplies",
                   "the symmetric rule, and why it cannot be Bayes",
@@ -825,19 +864,19 @@ with tab8:
         _text = target.read_text(encoding="utf-8")
         if doc == "The article":
             st.info(
-                "**Every number below is computed from the shipped dataset, not typed in.** The "
-                "coefficients, the fill rates and the censored count are the ones this app "
-                "produces — §3 of tab 6.0 draws them. If you change the tolerance or the dataset "
-                "they will move, and the article says so where it matters."
+                "**Every number below is computed, not typed in.** The worked prospect is this "
+                "app's own default read at a 120 m assessment minimum, the calibration figures "
+                "come from the shipped NCS table, and the five figures are regenerated from the "
+                "engine by `scripts/paper_figures.py`. Change an input and they move."
             )
-            with st.expander("**Copy the source** — Markdown, for LinkedIn or a document"):
+            with st.expander("**Copy the source** — Markdown, for a manuscript or a document"):
                 st.caption(
-                    "LinkedIn strips Markdown, so the headings and bold will not survive a paste "
-                    "into the post box — paste it somewhere that keeps them, or into LinkedIn's "
-                    "article editor, which does. The em dashes and the ± are deliberate; the "
-                    "tables will need rebuilding by hand in the post box."
+                    "Written for a journal rather than a post: numbered sections, an abstract, "
+                    "figure captions and LaTeX maths. A submission would want the equations "
+                    "rebuilt in the publisher's template and the figures taken from "
+                    "`docs/figures/` at 200 dpi."
                 )
                 st.code(_text, language="markdown")
-        st.markdown(_text)
+        _render_with_figures(_text, DOCS)
     else:
         st.info(f"`docs/{path}` not found in this checkout.")

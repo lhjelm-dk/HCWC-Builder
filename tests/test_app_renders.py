@@ -1779,3 +1779,81 @@ class TestTheKnownGapIsNamedWhereItWouldBeLookedFor:
         start = source.index("Two phases in one closure")
         block = source[start:start + 2500]
         assert "not implemented" in block, "the note describes a feature without saying it is absent"
+
+
+class TestThePaperAgreesWithTheAppItDescribes:
+    """`docs/ARTICLE.md` became a paper on 7 Sep 2026, with five figures generated from the
+    engine and a worked prospect read at a 120 m assessment minimum.
+
+    A paper whose numbers have drifted from the tool is worse than no paper, and the drift is
+    silent -- nothing in a Markdown file fails when the code underneath it changes. These tests
+    are the alarm.
+    """
+
+    ARTICLE = "docs/ARTICLE.md"
+    FIGURES = ("fig1_competing_limits.png", "fig2_controlling_mechanism.png",
+               "fig3_survival_curve.png", "fig4_dhi_update.png",
+               "fig5_truncate_vs_terminate.png")
+
+    @staticmethod
+    def _root():
+        import pathlib
+        return pathlib.Path(__file__).resolve().parent.parent
+
+    def _text(self):
+        return (self._root() / self.ARTICLE).read_text(encoding="utf-8")
+
+    def test_every_figure_it_references_exists(self):
+        """The app renders images through `st.image`, which shows a caption rather than raising
+        when a file is missing -- so a deleted figure would degrade quietly."""
+        text = self._text()
+        for name in self.FIGURES:
+            assert f"figures/{name}" in text, f"the paper no longer references {name}"
+            assert (self._root() / "docs" / "figures" / name).exists(), \
+                f"docs/figures/{name} is missing -- run scripts/paper_figures.py"
+
+    def test_the_worked_prospect_is_reproducible(self):
+        """The prospect definition ships beside the figures, so the numbers can be re-derived."""
+        import json
+        path = self._root() / "docs" / "figures" / "prospect.json"
+        assert path.exists(), "the prospect the figures were drawn from was not written out"
+        spec = json.loads(path.read_text(encoding="utf-8"))
+        assert spec["min_column_m"] == 120.0, (
+            "the figures were generated at a different assessment minimum than the paper states")
+        assert spec["limits"], "the saved prospect has no limits"
+
+    def test_pos_is_never_stated_without_the_element_term(self):
+        """The error this paper was rewritten to remove: POS = F(h_min), dropping P(G).
+
+        On the shipped prospect P(G) = 0.408 and F(120 m) = 0.61, so quoting the conditional term
+        alone overstates the prospect by a factor of 2.5. The identity has to appear, and the
+        bare form must not.
+        """
+        text = self._text()
+        assert "P(G) \\times F(h_\\min)" in text or "P(G) \\times F(h_" in text, (
+            "the paper no longer states POS = P(G) x F(h_min)")
+        for wrong in ("POS = F(h_", "POS=F(h_"):
+            assert wrong not in text, f"the conditional term is being quoted as the POS: {wrong!r}"
+
+    def test_the_figures_script_still_runs_against_the_current_engine(self):
+        """Import-level check only -- generating five figures is too slow for the suite, but a
+        renamed core function would break the script silently until someone regenerated."""
+        import importlib.util
+        import pathlib
+        path = pathlib.Path(self._root()) / "scripts" / "paper_figures.py"
+        spec = importlib.util.spec_from_file_location("paper_figures", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        for name in ("figure_1_competing_limits", "figure_5_truncate_vs_terminate",
+                     "from_the_app", "HMIN"):
+            assert hasattr(module, name), f"scripts/paper_figures.py lost {name}"
+        assert module.HMIN == 120.0
+
+    def test_the_article_tab_renders_the_figures_rather_than_the_markdown(self):
+        """`st.markdown` cannot resolve a relative image path, so the images would render broken
+        rather than raise. The app splits them out; this is the check that it still does."""
+        import pathlib
+        source = (pathlib.Path(self._root()) / "app.py").read_text(encoding="utf-8")
+        assert "_render_with_figures" in source, (
+            "the article is being passed straight to st.markdown, which cannot load its figures")
+        assert "st.image(str(target)" in source
