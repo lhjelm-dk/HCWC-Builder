@@ -266,6 +266,32 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
             f"capacity rather than overstating it — but it is still not a fluid."
         )
 
+    # Hood (2019) slide 18 wants a GOC and an OWC both set by capillary capacity, and this
+    # calculator holds one fluid at a time. Flagged rather than silently absent, because an
+    # assessor on a two-phase prospect will come here looking for it and the honest answer is
+    # "run the phases separately, and here is why that is not the same thing". The plan is
+    # written; see docs/PLAN_DUAL_PHASE_SEAL.md.
+    with st.expander("**Two phases in one closure?** — what this calculator will not do"):
+        st.markdown(
+            "This holds **one fluid at a time**. On a prospect with a gas cap over an oil leg, run "
+            "the two as separate cases — which is Hood's own advice, and what tab 3.0 tells you to "
+            "do if the charge and seal calculators disagree about the phase.\n\n"
+            "**It is not the same as a two-phase answer, and not conservatively so.** A single "
+            "seal sees gas at the crest and oil on the flanks between the two contacts, so the "
+            "gas cap is rated at the gas entry pressure while the oil leg below is rated at the "
+            "oil one. The oil leg is unchanged by the gas above it, and the gas cap sits on top "
+            "of it — so the *total* column a two-phase trap can hold is **taller than either "
+            "single-phase answer**, not somewhere between them.\n\n"
+            "On these shipped defaults that is roughly 150 m of oil under 130 m of gas against "
+            "150 m pure oil or 183 m pure gas. Spill and every other limit still apply on top, so "
+            "the effect only shows on a closure tall enough to let it.\n\n"
+            "Two-phase capacity is **not implemented**: the numbers above are what the physics in "
+            "`hcwc/core/seals.py` gives when the two constraints are written out, not something "
+            "this tool computes for you. `docs/PLAN_DUAL_PHASE_SEAL.md` is the plan. The "
+            "charge-driven route to a gas–oil contact exists in `hcwc.core.charge` "
+            "(`mixed_separate`, `mixed_joint`) and is not wired to any control either."
+        )
+
     net = st.toggle("Subtract the reservoir's own entry pressure", value=True, key=f"{key}_net",
                     help="The physically complete form — hydrocarbon already occupies the "
                          "reservoir pores, so only the *difference* must be overcome.")

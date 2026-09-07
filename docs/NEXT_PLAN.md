@@ -30,6 +30,14 @@ What follows is not a list of gaps in that. It is a list of things that would ma
 
 ---
 
+## A2 · Planned in detail, not started
+
+**Capillary-controlled two-phase columns** — the one real gap the Hood (2019) review found (`docs/HOOD_2019_REVIEW.md`). The app has no seal-capacity route to a gas–oil contact, and the charge-driven route exists in `hcwc.core.charge` but is wired to no widget. Fully planned in **`docs/PLAN_DUAL_PHASE_SEAL.md`**, including the one thing to settle first: the derivation gives a 45 % gas cap on this app's own interfacial-tension correlations where Hood quotes 20 %, and the disagreement is entirely in oil–water tension.
+
+Its cheap sibling — commodity scenarios from realisation proportions, Hood's slide 19 — needs no new physics and should go first.
+
+---
+
 ## B · Open questions, not open work
 
 **The Lowry (2005) PDF.** `docs/LOWRY_2005_REVIEW.md` is written from the abstract because the full

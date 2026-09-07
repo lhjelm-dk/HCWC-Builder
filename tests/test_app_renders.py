@@ -1738,3 +1738,44 @@ class TestTheArgumentsLiveInDocuments:
                        "reproduces to 0.3913 under this expression",
                        "the benchmark reached by a longer road"):
             assert phrase not in sources, f"still in the tabs as well as in docs/: {phrase!r}"
+
+
+class TestTheKnownGapIsNamedWhereItWouldBeLookedFor:
+    """The Hood (2019) review, 7 Sep 2026, found one real gap: no seal-capacity route to a
+    gas-oil contact. Lars's call was to note it in the app and plan it rather than build it.
+
+    A planned gap is only honest while the note and the plan agree. These tests are what makes
+    deleting one and forgetting the other a failure rather than a silent lie on screen.
+    """
+
+    def test_the_seal_calculator_says_it_holds_one_fluid(self):
+        """The assessor on a two-phase prospect goes to the seal calculator, not to docs/."""
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        source = (root / "hcwc" / "ui" / "sources.py").read_text(encoding="utf-8")
+        assert "Two phases in one closure" in source, (
+            "the seal calculator no longer says it holds one fluid at a time")
+        assert "PLAN_DUAL_PHASE_SEAL.md" in source, (
+            "the note names no plan, so the gap reads as an omission rather than a decision")
+
+    def test_the_plan_it_points_at_exists(self):
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        plan = root / "docs" / "PLAN_DUAL_PHASE_SEAL.md"
+        assert plan.exists(), "the app points at a plan that is not in the checkout"
+        text = plan.read_text(encoding="utf-8")
+        assert "**Not started.**" in text, (
+            "the plan no longer says it is unstarted -- if the work began, the app note is stale")
+
+    def test_the_note_does_not_claim_the_feature_exists(self):
+        """The failure mode this guards is a note that describes the physics so well the reader
+        goes looking for the control. It has to say *not implemented* in those words."""
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        source = (root / "hcwc" / "ui" / "sources.py").read_text(encoding="utf-8")
+        start = source.index("Two phases in one closure")
+        block = source[start:start + 2500]
+        assert "not implemented" in block, "the note describes a feature without saying it is absent"
