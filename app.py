@@ -24,6 +24,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 from hcwc.core import charge as ch
 from hcwc.core import trust
@@ -358,9 +359,24 @@ page is already filled in for a real prospect.
     elements to seal at once — is the principle in a sentence. Grant (2020) publishes the
     controlling-limit diagnostic as "column height control statistics"; Lowry et al. (2005) had
     chance against column height two decades ago. What is new here is the continuous, correlated
-    form of it, and the censoring correction on tab 6.0 — see tab 8.0 → *Beha et al. (2012)* and
-    *The article*.
+    form of it, and the censoring correction on tab 6.0 — set out in full in the paper on
+    tab 8.0.
     """
+        )
+
+    st.divider()
+    _left, _mid, _right = st.columns([1, 2, 1])
+    with _mid:
+        st.caption(
+            "**This tool is free and open source, and it stays that way.** If it saved you an "
+            "afternoon or changed a number you were about to quote, you can buy me a coffee."
+        )
+        components.html(
+            "<iframe id='kofiframe' "
+            "src='https://ko-fi.com/lhjelm/?hidefeed=true&widget=true&embed=true&preview=true' "
+            "style='border:none;width:100%;padding:4px;background:#f9f9f9;' "
+            "height='712' title='lhjelm'></iframe>",
+            height=740,
         )
 
 # --------------------------------------------------------------------------- 2.0 Prospect
