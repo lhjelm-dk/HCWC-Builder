@@ -95,7 +95,7 @@ def render_charge(key: str, n_trials: int, seed: int,
     f1, f2, f3 = st.columns(3)
     mean = f1.number_input(
         "Charge mean (10⁶ Sm³)", 0.0, 500_000.0,
-        80.0 if case == "Pure oil" else 39600.0, 1.0, key=f"{key}_mean",
+        120.0 if case == "Pure oil" else 39600.0, 1.0, key=f"{key}_mean",
         help="What the basin model says arrived in this closure, at **surface** conditions. This "
              "is the volume charged, not the volume trapped — how much of it the structure can "
              "hold is what the calculation below works out.")

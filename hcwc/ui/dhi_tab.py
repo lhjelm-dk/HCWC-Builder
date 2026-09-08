@@ -522,16 +522,22 @@ def render(n: Numbering | None = None) -> None:
     s1.metric("R from strength", f"{r_strength:.2f}", band, delta_color="off")
     s2.metric("DHI volume weight", f"{dhi_core.volume_weight(r_strength):.3f}",
               "R / (R + 1)", delta_color="off")
+    # Worked from OPENING_STRENGTH rather than typed. The caption below used to quote a
+    # default of 7 and the 37.5 % that follows from it; the slider moved to 5 on 6 Sep and
+    # the prose did not. Same defect as the pooled curve's label, found by the same sweep.
+    _opening_r = dhi_core.StrengthModel().r_at(OPENING_STRENGTH)
+    _opening_shift = dhi_core.simm_update(0.30, _opening_r)
     st.caption(
         f"**{band} — {band_note}** Simm's caution is worth repeating: for a *single* line of "
         f"fluid-indicator evidence an honest R rarely exceeds about 3 either way, and anything past "
         f"10 should send you back to the two curves rather than into the volumetrics.\n\n"
         f"**Never read the band alone \u2014 read it against what it does to the prior, in \u00a75.** They "
-        f"can disagree in a way that misleads: at the default reading of 7 the band is "
-        f"*Negligible*, and yet a 30 % prior becomes **37.5 %**, a 7.5-point move from a slider "
-        f"nobody touched. The band grades the strength of the *evidence*; the shift also depends "
-        f"on where the prior already sat, and it is largest for the mid priors most prospects "
-        f"have.\n\n"
+        f"can disagree in a way that misleads: at the opening reading of "
+        f"{OPENING_STRENGTH:.0f} the band is *{dhi_core.strength_bands(_opening_r)[0]}*, and yet "
+        f"a 30 % prior becomes **{_opening_shift:.1%}**, a "
+        f"{(_opening_shift - 0.30) * 100:.1f}-point move from a slider nobody touched. The band "
+        f"grades the strength of the *evidence*; the shift also depends on where the prior "
+        f"already sat, and it is largest for the mid priors most prospects have.\n\n"
         f"**The volume weight is not a POS.** It is `R / (R + 1)` — the weight the amplitude "
         f"evidence alone would carry against an even prior. Quoting it as a chance of success is "
         f"the error the name invites, and it is a common one."
