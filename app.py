@@ -378,6 +378,14 @@ page is already filled in for a real prospect.
             "height='712' title='lhjelm'></iframe>",
             height=740,
         )
+        # The embed is the most-blocked kind of third-party frame there is: uBlock Origin and
+        # Firefox's strict tracking protection both drop ko-fi widgets, and the viewer then sees
+        # an empty box with no way to tell whether it is broken or still loading. The link is the
+        # part that always works, so it sits beside the embed rather than instead of it.
+        st.caption(
+            "Not showing? Some ad blockers and Firefox's strict mode drop embedded widgets \u2014 "
+            "[ko-fi.com/lhjelm](https://ko-fi.com/lhjelm) works either way."
+        )
 
 # --------------------------------------------------------------------------- 2.0 Prospect
 with tab2:
