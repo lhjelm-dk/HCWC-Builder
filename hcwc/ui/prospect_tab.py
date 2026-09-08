@@ -112,7 +112,7 @@ def render() -> None:
                                 limit_set=st.session_state.get("limit_set")),
             file_name=f"{str(st.session_state.get('prospect_name', 'prospect')).replace(' ', '_')}"
                       f".hcwc.json",
-            mime="application/json", use_container_width=True)
+            mime="application/json", width="stretch")
         loaded = s2.file_uploader("Load a saved prospect", type=["json"], key="prospect_upload")
 
         example = _EXAMPLE
@@ -125,7 +125,7 @@ def render() -> None:
                 "typed — which is the fastest way to see what the seal calculator does. Three "
                 "limits share control of the contact, so tab 4.0's ranking has something to say."
             )
-            if st.button("Load the worked example", use_container_width=True,
+            if st.button("Load the worked example", width="stretch",
                          key="load_example"):
                 try:
                     st.session_state["_pending_load"] = prospect_io.read(

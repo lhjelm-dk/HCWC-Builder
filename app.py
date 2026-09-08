@@ -79,7 +79,7 @@ def _render_with_figures(text: str, base: Path) -> None:
             src = stripped[stripped.index("](") + 2:-1].strip()
             target = base / src
             if target.exists():
-                st.image(str(target), use_container_width=True)
+                st.image(str(target), width="stretch")
             else:
                 st.caption(f"`{src}` not found — run `scripts/paper_figures.py`.")
             continue
@@ -180,7 +180,7 @@ page is already filled in for a real prospect.
     theme.heading(1, "1 · What can set a hydrocarbon–water contact")
     concept_png = ROOT / "reference" / "concept.png"
     if concept_png.exists():
-        st.image(str(concept_png), use_container_width=True)
+        st.image(str(concept_png), width="stretch")
         st.caption(
             "**Every mechanism that can stop the column, on one section, with its distribution "
             "where it acts.** Charge migrates in from below, follows the top reservoir up-dip under "
@@ -681,13 +681,13 @@ with tab7:
         d1, d2 = st.columns(2)
         d1.download_button("Download the one-page summary (HTML)", _html,
                            f"{_name.replace(' ', '_')}_HCWC_summary.html", "text/html",
-                           use_container_width=True)
+                           width="stretch")
         # The working record: the same summary, then every figure drawn this run with the caption
         # shown beside it in the app. Built on demand rather than every rerun -- it renders each
         # figure through kaleido, which is about a second apiece.
         if d2.button("Build the full report (with every figure and table)",
                      key="build_full_report",
-                     use_container_width=True):
+                     width="stretch"):
             _full, _missing = report.build_full(
                 result,
                 report.Provenance(prospect=_name, basis=basis,
@@ -861,7 +861,7 @@ with tab8:
                     {"": name, "P10": f"{p10:,.0f} m", "P50": f"{p50:,.0f} m",
                      "P90": f"{p90:,.0f} m", "P10–P90 spread": f"{p90 - p10:,.0f} m"}
                     for name, p10, p50, p90 in _t8_rows]),
-                hide_index=True, use_container_width=True, key="t8_likelihood_table")
+                hide_index=True, width="stretch", key="t8_likelihood_table")
             st.caption(
                 f"**Computed from the prospect in front of you** — relief {_t8_relief:,.0f} m, burial "
                 f"{_t8_burial:,.0f} m — so it can be checked rather than believed.\n\n"

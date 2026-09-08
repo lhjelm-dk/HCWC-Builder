@@ -184,7 +184,7 @@ class Numbering:
         """
         return self._label(kind)
 
-    def plot(self, fig, caption: str, *, use_container_width: bool = True,
+    def plot(self, fig, caption: str, *, width: str = "stretch",
              optional: bool = False, basis: str | None = INHERIT) -> str:
         """Render a Plotly figure with a numbered caption beneath it. Returns the label.
 
@@ -196,7 +196,7 @@ class Numbering:
         makes the number we already compute the right key.
         """
         label = self.optional("Figure") if optional else self._label("Figure")
-        st.plotly_chart(fig, use_container_width=use_container_width, key=label,
+        st.plotly_chart(fig, width=width, key=label,
                         config=_plotly_config(label))
         # Kept so the Export tab can render every figure without each tab publishing its own.
         basis = self.basis if basis == INHERIT else basis
@@ -214,7 +214,7 @@ class Numbering:
         Keyed by its label for the same reason as :meth:`plot`.
         """
         label = self.optional("Table") if optional else self._label("Table")
-        st.dataframe(data, hide_index=hide_index, use_container_width=True, key=label, **kwargs)
+        st.dataframe(data, hide_index=hide_index, width="stretch", key=label, **kwargs)
         basis = self.basis if basis == INHERIT else basis
         stored = caption if not basis else f"{theme_tag(basis)} &nbsp; {caption}"
         st.session_state.setdefault(TABLES_KEY, {})[label] = (data, stored, hide_index)

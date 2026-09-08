@@ -419,7 +419,7 @@ def render(n: Numbering | None = None) -> None:
                  "Odds": "32.3", "Implied R": "28.7"},
                 {"Location": "C — outskirts", "P(hydrocarbon)": "0.44",
                  "Odds": "0.79", "Implied R": "0.70"},
-            ]), hide_index=True, use_container_width=True)
+            ]), hide_index=True, width="stretch")
         st.markdown(
             "**Three things to take from it.**\n\n"
             "**The scale is plausible.** The strongest amplitude in a careful, prestack, "

@@ -278,7 +278,7 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
              "Rank correlation": 0.7},
         ])
     rows = st.data_editor(
-        st.session_state[CORR_KEY], num_rows="dynamic", use_container_width=True,
+        st.session_state[CORR_KEY], num_rows="dynamic", width="stretch",
         column_config={
             "Limit A": st.column_config.SelectboxColumn(options=list(choices), width="medium"),
             "Limit B": st.column_config.SelectboxColumn(options=list(choices), width="medium"),

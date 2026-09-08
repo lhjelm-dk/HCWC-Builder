@@ -146,7 +146,7 @@ def render_charge(key: str, n_trials: int, seed: int,
     fig.update_layout(xaxis_title="Realisations", yaxis_title="Depth (m TVDSS)",
                       yaxis=dict(autorange="reversed"), height=320, margin=dict(t=10),
                       showlegend=False)
-    st.plotly_chart(fig, use_container_width=True, key=f"{key}_charge_fig")
+    st.plotly_chart(fig, width="stretch", key=f"{key}_charge_fig")
     st.caption(
         f"Over the {finite.size:,} realisations in which charge bound the column. The other "
         f"{result.fraction_not_limiting:.0%} are carried as `P(active)`, not as a contact at the "
@@ -393,7 +393,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     fig.update_xaxes(title_text="Column the seal can hold (m)")
     fig.update_yaxes(title_text="Realisations", secondary_y=False)
     fig.update_yaxes(title_text="P(capacity at least this)", range=[0, 1.02], secondary_y=True)
-    st.plotly_chart(fig, use_container_width=True, key=f"{key}_seal_fig")
+    st.plotly_chart(fig, width="stretch", key=f"{key}_seal_fig")
     st.caption(
         "⚠ **Check the units on any capacity you compare this against.** Interfacial "
         "tension is quoted in dyne/cm and the conversion to N/m is `× 1e-3`; a stray "
@@ -418,7 +418,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         st.plotly_chart(
             calibration_figure(float(np.mean(rho_w)), float(np.mean(rho_hc)),
                                st.session_state.get("burial_depth"), capacity),
-            use_container_width=True, key=f"{key}_calib")
+            width="stretch", key=f"{key}_calib")
     if thickness:
         st.caption(
             f"**The limit is the capacity plus the reservoir thickness.** This seal holds "
@@ -730,7 +730,7 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
             key="charge_ad_thickness", disabled=method != THICKNESS,
             help="The vertical gross thickness of the reservoir slab. The base surface is the top "
                  "shifted down by this, so above the crest plus this depth there is no base yet.")
-        if st.button("Reset to the shipped example", use_container_width=True,
+        if st.button("Reset to the shipped example", width="stretch",
                      key="charge_ad_reset"):
             try:
                 st.session_state[AREA_DEPTH_ROWS] = _seed_rows()
@@ -756,7 +756,7 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
         [] if method == THICKNESS else ["Base area (km²)"])
     edited = st.data_editor(
         st.session_state[AREA_DEPTH_ROWS], key="charge_ad_editor", num_rows="dynamic",
-        use_container_width=True, height=280,
+        width="stretch", height=280,
         column_order=columns,
         column_config={c: st.column_config.NumberColumn(c, format="%.3f") for c in columns})
     st.session_state[AREA_DEPTH_ROWS] = edited
@@ -789,7 +789,7 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
                     showgrid=False),
         yaxis=dict(title="Depth (m TVDSS)", autorange="reversed"),
         height=430, margin=dict(t=44), legend=dict(orientation="h", y=-0.22))
-    st.plotly_chart(fig, use_container_width=True, key="area_depth_charge")
+    st.plotly_chart(fig, width="stretch", key="area_depth_charge")
     st.caption(
         f"**Two readings on one depth axis.** Solid lines are area against depth, on the bottom "
         f"axis; the dashed line is the rock volume accumulated from the apex down, on the top "
@@ -971,7 +971,7 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
 
     st.plotly_chart(_pressure_depth_figure(crest, np.mean(p_pore), np.mean(s_hmin),
                                            float(np.mean(rho_w)), float(np.mean(rho_hc)), median),
-                    use_container_width=True, key=f"{key}_pd_fig")
+                    width="stretch", key=f"{key}_pd_fig")
     st.caption(
         "**The P50 realisation as a pressure–depth plot**, the frame this mechanism is read in "
         "(Grant 2020, fig. 5c). The aquifer runs through the crest pressure at the water gradient. "

@@ -270,7 +270,7 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
     for col, (label, value) in zip(metrics, stats.items()):
         col.metric(label, f"{value:,.0f}")
     st.plotly_chart(_figure(samples, colour, limit.unit_label),
-                    use_container_width=True, key=f"{key}_fig")
+                    width="stretch", key=f"{key}_fig")
     st.caption(
         f"**{limit.unit_label}.** Percentiles are exceedance: **P90 is the shallow end** — the "
         f"value 90 % of realisations come out deeper than — matching the export and every other "
