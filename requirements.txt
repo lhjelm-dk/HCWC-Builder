@@ -9,7 +9,9 @@ numpy>=2.1
 pandas>=2.2
 scipy>=1.14
 plotly>=5.24
-streamlit>=1.40
+# 1.56 is the floor because `st.iframe` first appears there; it replaces
+# `st.components.v1.html`, whose stated removal date has already passed.
+streamlit>=1.56
 openpyxl>=3.1
 # Server-side figure rendering for the 'every figure as PNG' export on tab 7. The
 # per-figure camera button needs nothing -- it renders in the browser -- so a

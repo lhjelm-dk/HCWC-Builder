@@ -24,7 +24,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 from hcwc.core import charge as ch
 from hcwc.core import trust
@@ -371,13 +370,11 @@ page is already filled in for a real prospect.
             "**This tool is free and open source, and it stays that way.** If it saved you an "
             "afternoon or changed a number you were about to quote, you can buy me a coffee."
         )
-        components.html(
-            "<iframe id='kofiframe' "
-            "src='https://ko-fi.com/lhjelm/?hidefeed=true&widget=true&embed=true&preview=true' "
-            "style='border:none;width:100%;padding:4px;background:#f9f9f9;' "
-            "height='712' title='lhjelm'></iframe>",
-            height=740,
-        )
+        # `st.iframe` rather than `components.html`, which is deprecated with a removal
+        # date of 2026-06-01 that has already passed. It takes the URL directly, so the
+        # widget is no longer a frame inside a frame.
+        st.iframe("https://ko-fi.com/lhjelm/?hidefeed=true&widget=true&embed=true&preview=true",
+                  height=712)
         # The embed is the most-blocked kind of third-party frame there is: uBlock Origin and
         # Firefox's strict tracking protection both drop ko-fi widgets, and the viewer then sees
         # an empty box with no way to tell whether it is broken or still loading. The link is the
