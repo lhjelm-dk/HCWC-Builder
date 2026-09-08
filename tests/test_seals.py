@@ -370,3 +370,192 @@ class TestSampledCapacity:
         assert p90 == pytest.approx(35, abs=3)
         assert p50 == pytest.approx(67, abs=4)
         assert p10 == pytest.approx(160, abs=12)
+
+
+# --------------------------------------------------------------------------- Grant (2020) eq. 8
+#
+# The capillary path above gets two whole classes about its unit traps, because both fail upward
+# and produce plausible-looking capacities. The mechanical path had none: four tests on tab 3.0
+# checked that its calculator renders and is off by default, and nothing anywhere checked that it
+# returns the right number. Same class of unit-sensitive physics, held to a lower standard.
+
+#: The shipped `MechanicalSealInputs` midpoints, so the assertions below are against the case a
+#: user actually meets rather than a contrived one.
+S_HMIN, P_PORE = 315.0, 220.0
+MECH_RHO_W, MECH_RHO_HC = 1.05, 0.775
+
+
+class TestTheFractureHeadroom:
+    """`S_Hmin - P_p`, Grant's equation 7, with the tensile strength folded into `S_Hmin`."""
+
+    def test_it_is_the_difference(self):
+        assert seals.fracture_headroom_bar(S_HMIN, P_PORE) == pytest.approx(95.0)
+
+    def test_it_is_signed_rather_than_clipped(self):
+        """The sign is the finding. A trap already at its fracture pressure with no hydrocarbon in
+        it is a failed trap, not a short column, and `mechanical_column_m` is what decides how to
+        say so -- this function must not hide the distinction by clipping first."""
+        assert seals.fracture_headroom_bar(200.0, 220.0) == pytest.approx(-20.0)
+
+    def test_it_is_vectorised(self):
+        got = seals.fracture_headroom_bar([315.0, 200.0], [220.0, 220.0])
+        assert got == pytest.approx([95.0, -20.0])
+
+
+class TestTheBarPerMetreConversion:
+    """The unit trap on this path, and it fails *downward* -- which is why it needs pinning.
+
+    A density contrast in g/cm3 is not a pressure gradient. Dividing the headroom by the contrast
+    directly, without `BAR_PER_M_PER_G_CM3`, gives a column **10.2x too short**: 345 m where the
+    answer is 3 523 m. The capillary traps fail upward and shout; this one fails quietly in the
+    conservative direction, and an assessor would simply believe the smaller number.
+    """
+
+    def test_the_constant_is_the_gradient_of_unit_density(self):
+        """1 g/cm3 under standard gravity is 9806.65 Pa/m, and a bar is 1e5 Pa."""
+        assert seals.BAR_PER_M_PER_G_CM3 == pytest.approx(0.0980665)
+        assert seals.BAR_PER_M_PER_G_CM3 * 1e5 / 1000.0 == pytest.approx(9.80665)
+
+    def test_this_module_carries_two_values_of_gravity_and_they_disagree(self):
+        """Found by writing this file, 8 Sep 2026. Pinned rather than fixed.
+
+        `seals.G` is 9.81 and is commented *Standard gravity*; it drives the capillary path.
+        `BAR_PER_M_PER_G_CM3` is 0.0980665, which implies **9.80665** -- the actual standard
+        value -- and it drives the mechanical path. So one module computes two limits under two
+        gravities, and the one labelled *standard* is the rounded one.
+
+        The size of it is 0.034 %: 1.2 m on the 3 523 m mechanical column, and 0.017 m on the
+        49 m capillary one. Immaterial to any answer this tool gives.
+
+        It is asserted rather than corrected because unifying them is a decision with a cost.
+        `G = 9.81` is what the original workbook used, and several tests above are parity checks
+        against that sheet's cached numbers; changing it moves every capillary capacity in the
+        app by 0.03 % for no gain in accuracy that any seal elicitation could notice. If it is
+        ever unified, this test is what will say so out loud.
+        """
+        implied_by_the_mechanical_path = seals.BAR_PER_M_PER_G_CM3 * 1e5 / 1000.0
+        assert seals.G == 9.81
+        assert implied_by_the_mechanical_path == pytest.approx(9.80665)
+        assert seals.G != pytest.approx(implied_by_the_mechanical_path, rel=1e-6)
+        disagreement = abs(seals.G - implied_by_the_mechanical_path) / seals.G
+        assert disagreement < 0.001, "the two gravities have drifted further apart"
+
+    def test_equivalent_mud_weight_is_the_same_number_under_another_name(self):
+        assert seals.EMW_PER_BAR_PER_M == seals.BAR_PER_M_PER_G_CM3
+
+    def test_omitting_it_is_10_2x_too_short(self):
+        wrong = (S_HMIN - P_PORE) / (MECH_RHO_W - MECH_RHO_HC)
+        got = float(seals.mechanical_column_m(S_HMIN, P_PORE, MECH_RHO_W, MECH_RHO_HC))
+        assert wrong == pytest.approx(345.45, abs=0.01)
+        assert got / wrong == pytest.approx(1.0 / seals.BAR_PER_M_PER_G_CM3, rel=1e-9)
+
+
+class TestTheMechanicalColumn:
+    """Grant (2020) eq. 8: `H = (S_Hmin - P_p) / (grad_w - grad_h)`."""
+
+    def test_it_matches_the_hand_computed_case(self):
+        expected = (S_HMIN - P_PORE) / ((MECH_RHO_W - MECH_RHO_HC)
+                                        * seals.BAR_PER_M_PER_G_CM3)
+        got = float(seals.mechanical_column_m(S_HMIN, P_PORE, MECH_RHO_W, MECH_RHO_HC))
+        assert got == pytest.approx(expected, rel=1e-12)
+        assert got == pytest.approx(3522.66, abs=0.01)
+
+    def test_one_bar_of_headroom_per_tenth_of_contrast_is_10197_m(self):
+        """A round anchor independent of the shipped defaults: the reciprocal of the constant,
+        times ten. If the conversion is ever rewritten, this is the number that moves."""
+        assert float(seals.mechanical_column_m(100.0, 0.0, 1.0, 0.9)) == pytest.approx(
+            10197.16, abs=0.01)
+
+    def test_a_normally_pressured_trap_gets_a_column_no_closure_can_reach(self):
+        """The finding the tab reports rather than a defect: at these pressures the mechanism is
+        correct and irrelevant, because 3.5 km of column is not a limit any real closure meets."""
+        got = float(seals.mechanical_column_m(S_HMIN, P_PORE, MECH_RHO_W, MECH_RHO_HC))
+        assert got > 3000.0
+
+    def test_spent_headroom_is_no_column_rather_than_a_negative_one(self):
+        """A negative column competing in the engine's `min` would win every realisation and
+        report a contact above the crest."""
+        assert float(seals.mechanical_column_m(200.0, 220.0, 1.05, 0.8)) == 0.0
+        assert float(seals.mechanical_column_m(220.0, 220.0, 1.05, 0.8)) == 0.0
+
+    def test_no_buoyancy_is_nan_rather_than_infinity(self):
+        """Equal densities divide by zero. `inf` would be a limit that never bites, which is the
+        wrong answer for inputs that describe nothing buoyant at all."""
+        assert math.isnan(float(seals.mechanical_column_m(315.0, 220.0, 0.8, 0.8)))
+        assert math.isnan(float(seals.mechanical_column_m(315.0, 220.0, 0.8, 1.05)))
+
+    def test_more_headroom_holds_more_column(self):
+        low = float(seals.mechanical_column_m(300.0, 220.0, 1.05, 0.8))
+        high = float(seals.mechanical_column_m(340.0, 220.0, 1.05, 0.8))
+        assert high > low
+
+    def test_a_lighter_hydrocarbon_holds_less(self):
+        """Gas is more buoyant than oil, so it reaches the fracture pressure in fewer metres --
+        the same direction as the capillary path, for an unrelated reason."""
+        oil = float(seals.mechanical_column_m(S_HMIN, P_PORE, 1.05, 0.80))
+        gas = float(seals.mechanical_column_m(S_HMIN, P_PORE, 1.05, 0.25))
+        assert gas < oil
+
+    def test_it_is_vectorised_elementwise(self):
+        got = seals.mechanical_column_m([315.0, 200.0], [220.0, 220.0],
+                                        [1.05, 1.05], [0.775, 0.8])
+        assert got[0] == pytest.approx(3522.66, abs=0.01)
+        assert got[1] == 0.0
+
+
+class TestMechanicalSealInputs:
+    """The three refusals, each of which describes a prospect rather than a typo."""
+
+    def test_the_shipped_defaults_are_usable(self):
+        got = seals.sample_mechanical_column_m(seals.MechanicalSealInputs(), 500, seed=1)
+        assert np.isfinite(got).all()
+        assert (got > 0).all()
+
+    def test_a_reversed_range_is_refused(self):
+        with pytest.raises(ValueError, match="high value"):
+            seals.MechanicalSealInputs(s_hmin_bar=(330.0, 300.0))
+
+    def test_overlapping_densities_are_refused(self):
+        with pytest.raises(ValueError, match="nothing buoyant"):
+            seals.MechanicalSealInputs(water_density_g_cm3=(0.80, 0.90),
+                                       hc_density_g_cm3=(0.85, 0.95))
+
+    def test_a_trap_already_at_its_fracture_pressure_is_refused(self):
+        """Not a short column -- a Retention failure, and the message has to say which."""
+        with pytest.raises(ValueError, match="trap failure rather than a column limit"):
+            seals.MechanicalSealInputs(s_hmin_bar=(200.0, 210.0),
+                                       pore_pressure_bar=(215.0, 225.0))
+
+
+class TestSampledMechanicalColumn:
+    def test_it_is_reproducible(self):
+        a = seals.sample_mechanical_column_m(seals.MechanicalSealInputs(), 200, seed=7)
+        b = seals.sample_mechanical_column_m(seals.MechanicalSealInputs(), 200, seed=7)
+        assert np.array_equal(a, b)
+
+    def test_a_different_seed_gives_a_different_sample(self):
+        a = seals.sample_mechanical_column_m(seals.MechanicalSealInputs(), 200, seed=7)
+        b = seals.sample_mechanical_column_m(seals.MechanicalSealInputs(), 200, seed=8)
+        assert not np.array_equal(a, b)
+
+    def test_every_draw_lies_between_the_extremes_the_ranges_allow(self):
+        """The sampler draws each input independently, so the tightest possible column pairs the
+        least headroom with the largest contrast, and the widest does the reverse."""
+        inputs = seals.MechanicalSealInputs()
+        tightest = float(seals.mechanical_column_m(
+            inputs.s_hmin_bar[0], inputs.pore_pressure_bar[1],
+            inputs.water_density_g_cm3[1], inputs.hc_density_g_cm3[0]))
+        widest = float(seals.mechanical_column_m(
+            inputs.s_hmin_bar[1], inputs.pore_pressure_bar[0],
+            inputs.water_density_g_cm3[0], inputs.hc_density_g_cm3[1]))
+        got = seals.sample_mechanical_column_m(inputs, 2000, seed=11)
+        assert got.min() >= tightest - 1e-9
+        assert got.max() <= widest + 1e-9
+
+    def test_a_degenerate_range_is_a_constant(self):
+        inputs = seals.MechanicalSealInputs(s_hmin_bar=(315.0, 315.0),
+                                            pore_pressure_bar=(220.0, 220.0),
+                                            water_density_g_cm3=(1.05, 1.05),
+                                            hc_density_g_cm3=(0.775, 0.775))
+        got = seals.sample_mechanical_column_m(inputs, 50, seed=3)
+        assert got == pytest.approx(3522.66, abs=0.01)
