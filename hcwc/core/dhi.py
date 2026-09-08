@@ -708,13 +708,39 @@ def combination_exceedance(result: EngineResult, detection: DetectionFunction,
 
     ``POOLED`` — the prior multiplied by the pick likelihood alone. This is what "combine the two
     distributions" produces if you do it by multiplying, and it is **the same arithmetic as the
-    Bayesian update with the detection function left out**. That omission is the whole difference:
-    it conditions on having seen an anomaly without accounting for the fact that seeing one was
-    more likely when the column is tall, so it inherits a selection effect it cannot see.
+    Bayesian update with the detection function left out**. It conditions on having seen an
+    anomaly without accounting for the fact that seeing one was more likely when the column is
+    tall, so it inherits a selection effect it cannot see.
+
+    **It drops two terms, not one, and the smaller one used to have the label.** ``POOLED`` is
+    ``norm.pdf(residual)`` with nothing under it, so it omits the detection function *and*
+    Cromwell's floor ``L >= 1 - p_valid``. Decomposed on the shipped prospect at its own
+    ``p_valid`` of 0.56, in maximum exceedance difference:
+
+    ==========================================  ======
+    the floor alone (holding ``D(h)`` flat)      0.223
+    the detection function alone                 0.013
+    both together, which is what ``POOLED`` is   0.236
+    ==========================================  ======
+
+    So the floor is most of it. That is Cromwell's rule doing visible work: without it a confident
+    pick is allowed to drive realisations it dislikes to nearly zero weight, and the pooled curve
+    is what that looks like.
+
+    The detection function's own contribution depends on how much room the floor leaves it. At
+    ``p_valid = 1`` -- no floor -- the two agree to five decimal places even though ``D(h)`` varies
+    from 0.34 to 0.90 across the columns in play, because a 15 m pick concentrates the posterior
+    into a band across which it is near enough constant to cancel. ``D(h)`` becomes decisive on
+    **absence**, where there is no pick to carry the update and ``1 - D(h)`` is the entire
+    likelihood, and when the **detection midpoint falls inside the columns the pick favours** --
+    move ``h50_m`` to 250 m and the two part by 0.45. See
+    ``tests/test_dhi.py::TestPooledIsBayesWithTheDetectionFunctionRemoved``.
 
     ``BAYES`` — prior x D(h) x pick likelihood. The detection function is what turns "I saw it"
     into evidence about the column rather than about your own attention, and it is what lets an
-    *absent* anomaly be evidence at all.
+    *absent* anomaly be evidence at all. Note the direction, which is easy to invert: if only a
+    tall column could have been detected, then having seen one is evidence the column is tall, so
+    accounting for detectability *raises* the curve rather than discounting it.
     """
     h = np.atleast_1d(np.asarray(columns_m, dtype=float))
     above = result.column_m[None, :] >= h[:, None]

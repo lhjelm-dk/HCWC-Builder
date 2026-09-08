@@ -111,6 +111,35 @@ def _resample(values: np.ndarray, weights: np.ndarray, n: int) -> np.ndarray:
         rng.choice(values.size, size=n, replace=True, p=np.asarray(weights, float) / total)]
 
 
+def _pooled_note(gap: float | None, floor_part: float | None) -> str:
+    """What the *pooled* curve is actually missing, split into its two halves.
+
+    `POOLED` is the pick likelihood with nothing under it, so it drops **both** the detection
+    function and Cromwell\u2019s floor. Measured 8 Sep 2026 on the shipped prospect the floor is
+    most of it -- 0.223 of a 0.236 gap -- and the curve was labelled after the other one. The
+    split is recomputed here rather than quoted, because it moves with `p_valid`: at
+    `p_valid = 1` there is no floor and the two curves coincide almost exactly.
+    """
+    if gap is None:
+        return ""
+    if gap < 0.005:
+        return ("\n\n**The comparison curves, and why one of them is hiding.** Dropping the floor "
+                "and the detection function moves this curve by less than half a percent -- the "
+                "dashed line is underneath the solid one. With `p_valid` near 1 there is almost no "
+                "floor to drop, and your pick is far sharper than `D(h)`, so across the columns "
+                "the pick favours the detection function is near constant and cancels.")
+    detail = ""
+    if floor_part is not None:
+        detail = (f" Of that, **{floor_part:.1%}** is Cromwell\u2019s floor and "
+                  f"**{max(gap - floor_part, 0.0):.1%}** the detection function.")
+    return (f"\n\n**What the pooled curve drops, and what each part is worth.** It is the pick "
+            f"likelihood with nothing under it, so it omits *both* the floor `L \u2265 1 \u2212 "
+            f"p_valid` and the detection function. Together they move this curve by up to "
+            f"**{gap:.1%}**.{detail} The floor is usually the larger half, and that is Cromwell\u2019s "
+            f"rule doing visible work: without it a confident pick drives the realisations it "
+            f"dislikes to nearly zero weight, and the dashed line is what that looks like.")
+
+
 def render(n: Numbering | None = None) -> None:
     # See the note in `results_tab.render`: one sequence per top-level tab, shared by its sub-tabs.
     n = n or Numbering(TAB)
@@ -752,9 +781,11 @@ def render(n: Numbering | None = None) -> None:
     with t1:
         show_all = st.toggle(
             "Show what dropping a term would give", value=False, key="combo_all_5",
-            help="Two comparisons, not two alternatives: the pooled curve is this update with the "
-                 "detection function left out, and the scenario switch is a mixture, which can "
-                 "widen the answer but never sharpen it and cannot move the chance at all.")
+            help="Two comparisons, not two alternatives: the pooled curve is this update with "
+                 "the detection function left out, and the scenario switch is a mixture, which "
+                 "can widen the answer but never sharpen it and cannot move the chance at all. "
+                 "The pooled curve drops two things -- Cromwell\u2019s floor and the detection "
+                 "function -- and the caption below says how much each is worth here.")
     with t2:
         # The curves are cumulative, and a cumulative curve hides where the mass actually is: two
         # very different contact distributions can trace nearly the same exceedance. Drawn behind
@@ -814,6 +845,9 @@ def render(n: Numbering | None = None) -> None:
     fig.add_scatter(x=updated, y=depths, mode="lines", name=theme.evidence_basis(),
                     line=dict(color=POSTERIOR, width=3.4))
 
+    # Kept so the caption can report it. See `_pooled_note`.
+    pooled_gap = None
+    floor_part = None
     if show_all and seen:
         for method, dash in ((dhi_core.POOLED, "dash"), (dhi_core.SCENARIO, "dot")):
             curve = _anchored(
@@ -821,8 +855,22 @@ def render(n: Numbering | None = None) -> None:
                 float(dhi_core.combination_exceedance(
                     result, detection, observation, np.array([h_min]), method=method)[0]),
                 combined.posterior_pos)
+            if method == dhi_core.POOLED:
+                pooled_gap = float(np.abs(np.asarray(curve) - np.asarray(updated)).max())
+                # The same comparison with the detection function held flat, so the caption can
+                # say how much of the gap is the floor rather than asserting a split that moves
+                # with p_valid.
+                _flat = dhi_core.DetectionFunction(h50_m=1e-6, steepness_m=1e-6, ceiling=1.0)
+                _flat_curve = _anchored(
+                    dhi_core.combination_exceedance(result, _flat, observation, hs,
+                                                    method=dhi_core.BAYES),
+                    float(dhi_core.combination_exceedance(
+                        result, _flat, observation, np.array([h_min]),
+                        method=dhi_core.BAYES)[0]),
+                    combined.posterior_pos)
+                floor_part = float(np.abs(np.asarray(curve) - np.asarray(_flat_curve)).max())
             fig.add_scatter(x=curve, y=depths, mode="lines", opacity=0.65,
-                            name={dhi_core.POOLED: "…with the detection function dropped",
+                            name={dhi_core.POOLED: "…with the floor and D(h) dropped",
                                   dhi_core.SCENARIO: "…as a scenario switch (a mixture)"}[method],
                             line=dict(color=POSTERIOR, width=2.0, dash=dash))
 
@@ -888,7 +936,8 @@ def render(n: Numbering | None = None) -> None:
                 "where that changes. The open circle is the posterior median: it lands on the "
                 "pick, because an amplitude termination is an estimate of the contact and not a "
                 "floor under it — which is why the reading there is about half the one at your "
-                "assessment minimum.")
+                "assessment minimum."
+                + _pooled_note(pooled_gap, floor_part))
 
     n.table(
         pd.DataFrame(rows),

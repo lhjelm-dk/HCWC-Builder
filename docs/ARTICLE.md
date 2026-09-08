@@ -518,29 +518,39 @@ No new risk numbers are required, and the geological model is not re-run.
 It would be easy to read the above as though both inputs matter equally everywhere. They do not,
 and it is worth being specific about when the second one earns the effort.
 
-For a **seen** anomaly on the worked prospect, the detection function is very nearly inert.
-Removing it entirely — updating on the pick alone — changes the exceedance curve by less than
-$10^{-4}$, even though $D(h)$ genuinely varies from 0.34 to 0.90 across the columns in play. The
-reason is that the pick is much sharper than the detection function: a 15 m pick uncertainty
-concentrates the posterior into a narrow band of columns, and across that band $D(h)$ is near
-enough constant to cancel in the normalisation.
+For a **seen** anomaly, the detection function does much less than its prominence suggests. On the
+worked prospect, holding everything else fixed, replacing $D(h)$ with a constant moves the
+exceedance curve by under **2 %** — even though $D(h)$ genuinely varies from 0.34 to 0.90 across
+the columns in play. The reason is that the pick is much sharper than the detection function: a
+15 m pick uncertainty concentrates the posterior into a narrow band of columns, and across that
+band $D(h)$ is near enough constant to cancel in the normalisation. With a pick treated as certain
+the two agree to five decimal places.
 
-It becomes decisive in two circumstances, and both are recognisable in advance.
+**The likelihood floor does far more.** Dropping $L \geq 1 - p_\text{valid}$ instead moves the
+same curve by about **30 %** — more than an order of magnitude beyond the detection function. That
+comparison is worth stating because the intuition runs the other way: the detection function is
+the novel-looking term, and the floor looks like a safety rail. On any prospect where the
+interpreter is less than certain the picked event is a contact, the floor is the term doing the
+work, and §14.1 is why.
+
+The detection function becomes decisive in two circumstances, and both are recognisable in
+advance.
 
 **When the anomaly is absent.** There is then no pick to carry the update, and $1 - D(h)$ is the
 entire likelihood. Section 12 is that case.
 
-**When the detection threshold falls inside the range of columns the pick favours.** The
-shipped prospect has a P50 column of 151 m against a detection midpoint of 25 m, so every column
-under discussion is comfortably detectable and the function has nothing to discriminate. Move that
+**When the detection threshold falls inside the range of columns the pick favours.** The shipped
+prospect has a P50 column of 151 m against a detection midpoint of 25 m, so every column under
+discussion is comfortably detectable and the function has nothing to discriminate. Move that
 midpoint to 250 m — a thin, poorly imaged reservoir where only an unusually tall column would show
-— and the same two calculations part company by 0.45 in exceedance. The direction is the one worth
-holding on to: if only a tall column could have been seen, then having seen one is evidence that
-the column is tall, so accounting for detectability *raises* the answer rather than discounting it.
+— and it becomes the dominant term. The direction is the one worth holding on to: if only a tall
+column could have been seen, then having seen one is evidence that the column is tall, so
+accounting for detectability *raises* the answer rather than discounting it.
 
 The practical reading: on a thick, well-imaged prospect with a confident pick, do not spend an
 afternoon on $D(h)$ — the answer will not notice. On a thin prospect near the limit of resolution,
-or on any prospect where the anomaly is absent, it is the input that decides the result.
+or on any prospect where the anomaly is absent, it is the input that decides the result. And in
+every case, check what you have told the model about $p_\text{valid}$ first.
 
 ---
 
