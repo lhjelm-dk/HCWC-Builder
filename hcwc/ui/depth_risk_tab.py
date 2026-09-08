@@ -29,6 +29,13 @@ DECLINE_INTERVAL_M = 50.0
 TAB_DHI = 5
 
 
+#: Where the entry-depth control opens, m TVDSS. A depth rather than a percentile of the
+#: run: Lars's worked well enters here, and a percentile moves under you whenever the limits
+#: change. Clamped into the decomposition's own depth range, which a shallow prospect can
+#: sit entirely above.
+DEFAULT_ENTRY_DEPTH_M = 2230.0
+
+
 def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None) -> None:
     """The per-element decomposition, geological or DHI-updated.
 
@@ -335,10 +342,28 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
 
     # ------------------------------------------------------------------ allocation comparison
     theme.heading(tab, sub=n.sub, text="4 · Derived against allocated, at a well")
-    z_entry = st.slider("Well reservoir entry depth (m TVDSS)",
-                        float(d.depths_m[0]), float(d.depths_m[-1]),
-                        float(np.percentile(result.contact_m, 40)), 5.0,
-                        key=f"z_entry_{tab}")
+    # A slider to explore with and a box to type into, because a well plan gives you a number
+    # rather than a position on a track. They share a value through two callbacks rather than one
+    # key: Streamlit refuses to bind two widgets to the same key, and letting them drift is worse
+    # than the four lines it costs to keep them together.
+    _lo, _hi = float(d.depths_m[0]), float(d.depths_m[-1])
+    _sld, _num = f"z_entry_{tab}", f"z_entry_num_{tab}"
+    _opening = min(max(DEFAULT_ENTRY_DEPTH_M, _lo), _hi)
+    for _k in (_sld, _num):
+        st.session_state.setdefault(_k, _opening)
+
+    def _from_slider(sld=_sld, num=_num):
+        st.session_state[num] = st.session_state[sld]
+
+    def _from_number(sld=_sld, num=_num):
+        st.session_state[sld] = st.session_state[num]
+
+    _c1, _c2 = st.columns([3, 1])
+    z_entry = _c1.slider("Well reservoir entry depth (m TVDSS)", _lo, _hi, step=5.0,
+                         key=_sld, on_change=_from_slider)
+    _c2.number_input("or type it", _lo, _hi, step=5.0, key=_num, on_change=_from_number,
+                     help="The same value as the slider. Typed to the metre when the well plan "
+                          "gives you one; the slider rounds to 5 m.")
     comp = dc.allocation_comparison(d, pos, z_entry)
     # **Both bases, side by side, when there is a posterior to compare against.** Lars, 4 Sep 2026:
     # this table was the DHI-updated allocation on tab 5.0 and the geological one on tab 4.0, drawn
@@ -375,8 +400,41 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                f"one number by a rule and reproduces P_well = {comp['allocated::P_well']:.3f} "
                f"whatever rule is chosen. The derived columns carry information about which element "
                f"actually binds at this depth, so they can — and do — disagree."))
+    # `P_well` is what this section computes, and it was a cell in the table above -- quieter
+    # than the allocation rule beside it. Given the treatment tab 2.0 gives `P(G)`, and paired
+    # with the two readings it is most often confused with: the prospect POS, which asks whether
+    # there is a commercial column anywhere, and `r`, which is only the depth term.
+    _overlay = st.session_state.get("dhi_overlay") or {}
+    _pairs = [(theme.GEOLOGICAL, comp_geo or comp, _overlay.get("prior_pos"))]
+    if comp_geo is not None:
+        _pairs.append((theme.evidence_basis(), comp, _overlay.get("posterior_pos")))
+
+    _accent = theme.accent(tab)
+    for _col, (_label, _table, _prospect) in zip(st.columns(len(_pairs)), _pairs):
+        _p_well = _table["allocated::P_well"]
+        _bits = [f"prospect POS {_prospect:.1%}" if _prospect is not None else None,
+                 f"r = {_table['r_location']:.3f}"]
+        _under = " &nbsp;·&nbsp; ".join(b for b in _bits if b)
+        _col.markdown(
+            f"<div style='margin:0.6rem 0 0.2rem;padding:0.55rem 0.9rem;"
+            f"border-left:5px solid {_accent};background:{theme.rgba(_accent, 0.10)};"
+            f"border-radius:0 5px 5px 0'>"
+            f"<span style='font-size:0.82rem;letter-spacing:0.05em;text-transform:uppercase;"
+            f"color:{theme.shade_hex(_accent, -0.45)};font-weight:700'>"
+            f"P(well) &nbsp;{_label}</span>"
+            f"<div style='font-size:2rem;font-weight:700;line-height:1.15;"
+            f"color:{theme.shade_hex(_accent, -0.5)}'>{_p_well:.1%}</div>"
+            f"<span style='font-size:0.85rem;opacity:0.8'>{_under}</span></div>",
+            unsafe_allow_html=True)
+
     st.caption(
-        "Reservoir has no derived value here because no limit in this model is reservoir-"
+        f"**Three readings, and they answer three questions.** `P(well)` is the chance this "
+        f"*well*, entering at {z_entry:,.0f} m, finds hydrocarbon — the prospect chance times the "
+        f"chance the contact lies below that depth. The **prospect POS** above it asks whether "
+        f"there is a commercial column *anywhere*, and is therefore always the larger. `r` is only "
+        f"the depth term, and carries no element risk at all: quoting it as a chance of success "
+        f"overstates the well by `1 / P(G)`.\n\n"
+        "Reservoir has no derived value in the table because no limit in this model is reservoir-"
         "controlled; add an R2 pinchout limit on tab 3.0 to give it one. Its effectiveness decline "
         "(§1) is separate and applies either way."
     )
