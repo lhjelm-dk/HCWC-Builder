@@ -74,7 +74,7 @@ def stats_row(samples: np.ndarray) -> dict[str, float]:
     return out
 
 
-def _defaults(lo: float, hi: float) -> dict[str, float]:
+def _defaults(lo: float, hi: float, mode: float | None = None) -> dict[str, float]:
     """Sensible starting parameters spanning ``lo`` to ``hi``, for every parameter any form takes.
 
     One dict covering all forms, so switching distribution never blanks the inputs or throws — an
@@ -90,8 +90,13 @@ def _defaults(lo: float, hi: float) -> dict[str, float]:
     for the same reason.
     """
     span = hi - lo
+    # An explicit mode wins where a spec states one. Everything derived from the mode moves with
+    # it -- the mean stays offset, for the BetaSubj reason above -- so a stated mode does not
+    # leave a mean sitting on the wrong side of it.
+    peak = lo + 0.40 * span if mode is None else float(mode)
+    mean = peak + 0.05 * span
     return {"minimum": lo, "maximum": hi,
-            "mode": lo + 0.40 * span, "mean": lo + 0.45 * span, "value": lo + 0.5 * span,
+            "mode": peak, "mean": mean, "value": lo + 0.5 * span,
             "alpha1": 2.0, "alpha2": 2.0,
             "x1": lo + 0.1 * span, "x2": lo + 0.9 * span}
 
@@ -170,7 +175,8 @@ def _figure(samples: np.ndarray, colour: str, unit: str) -> go.Figure:
 
 def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
            default_form: str = "pert", span: tuple[float, float] = (50.0, 300.0),
-           default_p_active: float = 1.0, n_preview: int = 20_000,
+           default_p_active: float = 1.0, default_mode: float | None = None,
+           n_preview: int = 20_000,
            colour: str | None = None, help_text: str = "", default_source: str = "Typed",
            computed=None) -> Limit | None:
     """Render one limit's inputs and return the :class:`Limit`, or ``None`` if it is switched off.
@@ -235,7 +241,7 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
                             format_func=lambda f: FORMS[f][0])
 
         lo, hi = span
-        base = _defaults(lo, hi)
+        base = _defaults(lo, hi, default_mode)
         cols = st.columns(len(FORMS[form][1]))
         params: dict[str, float] = {}
         for col, (param_key, label) in zip(cols, FORMS[form][1]):

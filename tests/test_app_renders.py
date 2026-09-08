@@ -278,6 +278,12 @@ def test_the_decline_default_follows_the_spill_point():
     assert (got["r1_full_4"], got["r1_none_4"]) == (2550.0, 2600.0)
 
 
+#: The top-seal capillary block opens *Typed* since 8 Sep 2026, so anything that reads the
+#: seal calculator -- or reads it through the base seal's *Same as the top seal* shortcut --
+#: has to switch the source on first. Named once so the next default change moves one line.
+TOP_SEAL_COMPUTED = {"lim_Top seal (capillary)_src": "seal"}
+
+
 @pytest.mark.parametrize("thickness", [0.0, 50.0, 120.0])
 def test_the_base_seal_sits_a_reservoir_thickness_below_the_top_seal(thickness):
     """Same shale, same capacity — different place.
@@ -292,7 +298,9 @@ def test_the_base_seal_sits_a_reservoir_thickness_below_the_top_seal(thickness):
     from hcwc.ui import run as engine_run
 
     key = "lim_Base seal (capillary)"
-    at = _run(**{f"{key}_src": "seal_as_top", f"{key}_pa": 1.0, f"{key}_thickness": thickness})
+    at = _run(**TOP_SEAL_COMPUTED,
+              **{f"{key}_src": "seal_as_top", f"{key}_pa": 1.0,
+                 f"{key}_thickness": thickness})
     _no_exception(at, f"the base seal at {thickness:g} m thickness")
     limits = at.session_state["limit_set"]
     result = engine_run.current(limits)
@@ -305,7 +313,7 @@ def test_the_base_seal_sits_a_reservoir_thickness_below_the_top_seal(thickness):
 
 def test_the_reservoir_thickness_defaults_to_fifty_metres():
     key = "lim_Base seal (capillary)"
-    at = _run(**{f"{key}_src": "seal_as_top", f"{key}_pa": 1.0})
+    at = _run(**TOP_SEAL_COMPUTED, **{f"{key}_src": "seal_as_top", f"{key}_pa": 1.0})
     got = [w.value for w in at.number_input if w.key == f"{key}_thickness"]
     assert got == [50.0]
 
@@ -319,7 +327,8 @@ def test_both_routes_to_the_base_seal_put_it_in_the_same_place(source):
     from hcwc.ui import run as engine_run
 
     key = "lim_Base seal (capillary)"
-    at = _run(**{f"{key}_src": source, f"{key}_pa": 1.0, f"{key}_thickness": 50.0})
+    at = _run(**TOP_SEAL_COMPUTED,
+              **{f"{key}_src": source, f"{key}_pa": 1.0, f"{key}_thickness": 50.0})
     _no_exception(at, f"the base seal via {source}")
     limits = at.session_state["limit_set"]
     result = engine_run.current(limits)
@@ -478,7 +487,7 @@ class TestTheSealDensitiesAreInSitu:
     KEY = "lim_Top seal (capillary)"
 
     def test_the_help_says_which_conditions(self):
-        at = _run()
+        at = _run(**TOP_SEAL_COMPUTED)
         rho = [w for w in at.slider if w.key == f"{self.KEY}_rh"]
         assert rho, "the HC density slider is missing"
         assert "reservoir pressure and temperature" in (rho[0].help or "")
@@ -491,14 +500,17 @@ class TestTheSealDensitiesAreInSitu:
         ("Oil", (0.15, 0.35), True),
     ])
     def test_a_fluid_and_a_density_that_disagree_are_flagged(self, fluid, rho, should_warn):
-        at = _run(**{f"{self.KEY}_fluid": fluid, f"{self.KEY}_rh": rho})
+        at = _run(**TOP_SEAL_COMPUTED,
+                  **{f"{self.KEY}_fluid": fluid, f"{self.KEY}_rh": rho})
         _no_exception(at, f"{fluid} at {rho}")
         fired = any("density against" in w.value for w in at.warning)
         assert fired is should_warn
 
     def test_the_shipped_capacity_matches_the_elicited_ranges(self):
-        """Pins the defaults to the numbers Lars actually wants: 79 / 148 / 433 m."""
-        at = _run()
+        """Pins the calculator's own defaults: 79 / 148 / 433 m. The block no longer opens
+        on it -- the capillary limit is typed at PERT(100, 250, 500) since 8 Sep -- but the
+        calculator is still what the *Computed* source runs."""
+        at = _run(**TOP_SEAL_COMPUTED)
         got = [m.value for m in at.metric if m.label.endswith("capacity")]
         assert got == ["79 m", "148 m", "433 m"], got
 

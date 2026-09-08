@@ -55,6 +55,11 @@ class LimitSpec:
     p_active: float = 1.0
     form: str = "pert"
     help: str = ""
+    #: An explicit PERT mode, where the 40 %-of-span default is not the one wanted.
+    #: `None` leaves it derived. **Declared after `help` on purpose**: dataclass field
+    #: order is the positional signature, and every spec below passes `help`
+    #: positionally, so a field inserted above it silently re-binds them all.
+    mode: float | None = None
     #: Calculators this limit may be computed from, in the order they are offered. A tuple
     #: rather than one name because the base seal offers both its own calculator and a
     #: *same as the top seal* shortcut, and duplicating six sliders to say "the same" is
@@ -102,18 +107,20 @@ SPECS: tuple[LimitSpec, ...] = (
               "A second fault, or a second segment of the same one. **Off by default** — most "
               "structures are bounded by one fault worth modelling, and a second one left on "
               "quietly shortens every column. Give it a `P(active)` if this prospect has one."),
-    LimitSpec("Top seal (capillary)", Group.RETENTION, COLUMN, (60.0, 250.0), 1.0, "pert",
-              "The column the top seal can hold against buoyancy. Use the calculator to derive it "
-              "from pore-throat radius and the density contrast rather than typing a number — "
-              "`P_c` goes as `1/r`, so the spread on radius dominates everything else.",
-              computed=("seal",), expanded=True, opens_on="seal"),
+    LimitSpec("Top seal (capillary)", Group.RETENTION, COLUMN, (100.0, 500.0), 1.0, "pert",
+              "The column the top seal can hold against buoyancy. Opens typed, at a range wide "
+              "enough to admit a seal that outlives the closure — the *Computed* source derives "
+              "it from pore-throat radius and the density contrast instead, and is worth using: "
+              "`P_c` goes as `1/r`, and freezing the radius removes three quarters of the spread "
+              "this calculator produces.",
+              mode=250.0, computed=("seal",), expanded=True),
     LimitSpec("Base seal (capillary)", Group.RETENTION, COLUMN, (80.0, 280.0), 0.0, "pert",
               "The same physics below the reservoir, and the same calculator — or take the top "
               "seal's inputs wholesale with *Same as the top seal*, which is the honest default "
               "when one shale unit wraps the reservoir. Usually correlated with the top seal "
               "either way; see the Correlations sub-tab.",
               computed=("seal", "seal_as_top")),
-    LimitSpec("Top seal (continuity)", Group.RETENTION, COLUMN, (100.0, 350.0), 0.5, "pert",
+    LimitSpec("Top seal (continuity)", Group.RETENTION, COLUMN, (100.0, 350.0), 0.3, "pert",
               "Not capillary failure but a hole in the seal: a sand-filled channel, an erosional "
               "window, a breaching fault tip."),
     LimitSpec("Base seal (continuity)", Group.RETENTION, COLUMN, (120.0, 380.0), 0.0, "pert",
@@ -211,6 +218,7 @@ def _render_group(group: Group, n_trials: int, seed: int) -> list[Limit]:
             limit = limit_block.render(
                 spec.name, spec.group, key=f"lim_{spec.name}", default_kind=spec.kind,
                 default_form=spec.form, span=_span_for(spec), default_p_active=spec.p_active,
+                default_mode=spec.mode,
                 colour=colour, help_text=spec.help,
                 default_source=spec.opens_on or "Typed",
                 computed={name: (lambda key, fn=COMPUTED[name]: fn(key, n_trials, seed))
