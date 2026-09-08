@@ -844,3 +844,194 @@ class TestTheOtherRatiosWereCheckedToo:
             seen_at.append(dhi.update(result, detection, DhiObservation(seen=False)).r_dhi)
         assert len(seen_at) >= 2
         assert all(v == pytest.approx(1.0 - detection.ceiling, abs=0.01) for v in seen_at)
+
+
+# --------------------------------------------------------------------------- the three combinations
+#
+# `combination_exceedance` is the argument for offering three methods rather than one: if they
+# agreed, the tab would be a lecture. Until 8 Sep 2026 nothing asserted that they disagree, or in
+# which direction. The tab rendered without raising and that was the whole of its coverage.
+
+
+class TestTheThreeCombinations:
+    """SCENARIO mixes, POOLED multiplies without the detection function, BAYES is the update."""
+
+    HS = np.array([50.0, 100.0, 150.0, 200.0, 250.0])
+
+    def _setup(self, *, seen: bool = True, sigma: float = 15.0, p_valid: float = 0.8):
+        result = run(min_column_m=100.0)
+        detection = DetectionFunction()
+        apex = float(np.median(result.apex_m))
+        observation = DhiObservation(seen=seen, contact_m=apex + 200.0 if seen else None,
+                                     pick_sigma_m=sigma, p_valid=p_valid)
+        return result, detection, observation
+
+    def _curve(self, method, **kw):
+        result, detection, observation = self._setup(**kw)
+        return dhi.combination_exceedance(result, detection, observation, self.HS, method=method)
+
+    def test_every_method_returns_a_valid_exceedance_curve(self):
+        for method in dhi.COMBINATIONS:
+            got = self._curve(method)
+            assert got.shape == self.HS.shape
+            assert np.all((got >= 0.0) & (got <= 1.0)), method
+            assert np.all(np.diff(got) <= 1e-12), f"{method} is not monotone decreasing"
+
+    def test_the_three_do_not_agree(self):
+        """The reason all three are offered. If this ever passes trivially, the tab is arguing
+        about a distinction that no longer exists."""
+        curves = {m: self._curve(m) for m in dhi.COMBINATIONS}
+        assert not np.allclose(curves[dhi.SCENARIO], curves[dhi.BAYES], atol=0.01)
+        assert not np.allclose(curves[dhi.POOLED], curves[dhi.BAYES], atol=0.01)
+
+    def test_an_unknown_method_is_refused_by_name(self):
+        result, detection, observation = self._setup()
+        with pytest.raises(ValueError, match="method must be one of"):
+            dhi.combination_exceedance(result, detection, observation, self.HS, method="blend")
+
+    def test_a_scalar_depth_still_returns_an_array(self):
+        result, detection, observation = self._setup()
+        got = dhi.combination_exceedance(result, detection, observation, 150.0)
+        assert got.shape == (1,)
+
+
+class TestTheScenarioSwitchIsAMixture:
+    """Hood's rule: merge late, as a branch. It moves the contact and cannot sharpen."""
+
+    HS = TestTheThreeCombinations.HS
+
+    def test_the_observation_refuses_a_p_valid_of_zero(self):
+        """Found writing this file: the two entry points disagree on purpose. An *observation*
+        cannot carry p_valid = 0 -- an event you picked is never certainly not a contact, and a
+        zero would put a hard zero in the likelihood that no later evidence could revive. The
+        scenario switch's override does accept 0, because there it means "show me the branch
+        without the DHI" rather than a claim about the anomaly."""
+        with pytest.raises(ValueError, match=r"must lie in \(0, 1\]"):
+            DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=10.0, p_valid=0.0)
+
+    def test_p_valid_zero_returns_the_geology_untouched(self):
+        result = run(min_column_m=100.0)
+        observation = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=10.0, p_valid=0.5)
+        got = dhi.combination_exceedance(result, DetectionFunction(), observation, self.HS,
+                                         method=dhi.SCENARIO, p_valid=0.0)
+        geological = np.array([float((result.column_m >= h).mean()) for h in self.HS])
+        assert got == pytest.approx(geological)
+
+    def test_it_interpolates_linearly_between_the_two_branches(self):
+        """A mixture, not an update: the answer at p_valid = 0.5 is the average of the ends."""
+        result = run(min_column_m=100.0)
+        det = DetectionFunction()
+
+        obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=10.0, p_valid=0.5)
+
+        def at(p):
+            return dhi.combination_exceedance(result, det, obs, self.HS,
+                                              method=dhi.SCENARIO, p_valid=p)
+
+        assert at(0.5) == pytest.approx(0.5 * (at(0.0) + at(1.0)), abs=1e-9)
+
+    def test_an_out_of_range_p_valid_is_refused(self):
+        result = run(min_column_m=100.0)
+        obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=10.0)
+        with pytest.raises(ValueError, match="must be in"):
+            dhi.combination_exceedance(result, DetectionFunction(), obs, self.HS,
+                                       method=dhi.SCENARIO, p_valid=1.4)
+
+    def test_an_explicit_p_valid_overrides_the_observation(self):
+        """The override exists so the tab can sweep the parameter; the default must be the
+        observation's own value, which is the bug this argument replaced -- a constant 0.655
+        sitting a section away from an update running on a derived number."""
+        result = run(min_column_m=100.0)
+        det = DetectionFunction()
+        obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=10.0, p_valid=0.9)
+        from_obs = dhi.combination_exceedance(result, det, obs, self.HS, method=dhi.SCENARIO)
+        overridden = dhi.combination_exceedance(result, det, obs, self.HS,
+                                                method=dhi.SCENARIO, p_valid=0.9)
+        assert from_obs == pytest.approx(overridden)
+
+    def test_an_absent_anomaly_leaves_the_scenario_switch_with_nothing_to_say(self):
+        """It has no branch for absence -- which is one of the things the likelihood form can do
+        and this cannot, and the article says so."""
+        result = run(min_column_m=100.0)
+        got = dhi.combination_exceedance(result, DetectionFunction(),
+                                         DhiObservation(seen=False), self.HS,
+                                         method=dhi.SCENARIO)
+        geological = np.array([float((result.column_m >= h).mean()) for h in self.HS])
+        assert got == pytest.approx(geological)
+
+
+class TestPooledIsBayesWithTheDetectionFunctionRemoved:
+    """The whole difference between the two, stated as arithmetic."""
+
+    HS = TestTheThreeCombinations.HS
+
+    OBS = dict(seen=True, contact_m=2250.0, pick_sigma_m=15.0, p_valid=1.0)
+
+    def test_a_saturated_detection_function_collapses_bayes_onto_pooled(self):
+        """A D(h) that is constant over the columns in play cancels in the normalisation, so the
+        two coincide. That is the arithmetic the rest of this class is measured against."""
+        result = run(min_column_m=100.0)
+        obs = DhiObservation(**self.OBS)
+        flat = DetectionFunction(h50_m=1e-6, steepness_m=1e-6, ceiling=1.0)
+        pooled = dhi.combination_exceedance(result, flat, obs, self.HS, method=dhi.POOLED)
+        bayes = dhi.combination_exceedance(result, flat, obs, self.HS, method=dhi.BAYES)
+        assert bayes == pytest.approx(pooled, abs=1e-6)
+
+    def test_the_shipped_detection_function_does_not_separate_them_on_a_seen_anomaly(self):
+        """Measured 8 Sep 2026, and not what the tab's framing would lead you to expect.
+
+        At the default `h50_m = 25`, D(h) does vary across this prospect's columns -- 0.34 to
+        0.90 -- and the two methods still agree to **five decimal places**. The pick is far
+        sharper than the detection function: a 15 m sigma concentrates the weight into a narrow
+        band of columns, and across that band D(h) is near enough constant to cancel.
+
+        So for a *seen* anomaly on a thick-column prospect the detection function is very nearly
+        inert, and POOLED's "selection effect it cannot see" is real in principle and about
+        1e-5 in size. The place D(h) earns its keep is the next two tests.
+        """
+        result = run(min_column_m=100.0)
+        obs = DhiObservation(**self.OBS)
+        det = DetectionFunction()
+        pooled = dhi.combination_exceedance(result, det, obs, self.HS, method=dhi.POOLED)
+        bayes = dhi.combination_exceedance(result, det, obs, self.HS, method=dhi.BAYES)
+        assert np.abs(pooled - bayes).max() < 1e-4
+
+    def test_it_separates_them_when_it_varies_where_the_pick_puts_the_weight(self):
+        """D(h) only counts where the posterior has mass. Move the detection threshold into the
+        column range the pick favours and the two part company by 0.4 in exceedance."""
+        result = run(min_column_m=100.0)
+        obs = DhiObservation(**self.OBS)
+        steep = DetectionFunction(h50_m=250.0, steepness_m=8.0)
+        pooled = dhi.combination_exceedance(result, steep, obs, self.HS, method=dhi.POOLED)
+        bayes = dhi.combination_exceedance(result, steep, obs, self.HS, method=dhi.BAYES)
+        assert np.abs(pooled - bayes).max() > 0.3
+        # The direction, which is the whole point of D(h) and is easy to get backwards. A high
+        # h50 means only a *tall* column would have been detectable, so having seen an anomaly
+        # is evidence the column is tall, and BAYES must sit above POOLED. Pooling cannot know
+        # this: it conditions on the pick alone and never asks what it would have taken to see.
+        assert np.all(bayes >= pooled - 1e-9)
+
+    def test_pooled_ignores_an_absent_anomaly_and_bayes_does_not(self):
+        """Absence is evidence only through D(h); without it there is nothing to condition on."""
+        result = run(min_column_m=100.0)
+        det = DetectionFunction()
+        absent = DhiObservation(seen=False)
+        geological = np.array([float((result.column_m >= h).mean()) for h in self.HS])
+        pooled = dhi.combination_exceedance(result, det, absent, self.HS, method=dhi.POOLED)
+        bayes = dhi.combination_exceedance(result, det, absent, self.HS, method=dhi.BAYES)
+        assert pooled == pytest.approx(geological)
+        assert np.all(bayes <= geological + 1e-9)
+        assert not np.allclose(bayes, geological, atol=1e-3)
+
+
+class TestBayesMatchesTheUpdateItIsCompared:
+    def test_it_reproduces_the_posterior_exceedance_exactly(self):
+        """`combination_exceedance(BAYES)` and `update().exceedance()` are two routes to one
+        number, shown on the same tab. They must not drift."""
+        result = run(min_column_m=100.0)
+        det = DetectionFunction()
+        obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=15.0, p_valid=0.85)
+        hs = TestTheThreeCombinations.HS
+        direct = dhi.update(result, det, obs).exceedance(hs)
+        combined = dhi.combination_exceedance(result, det, obs, hs, method=dhi.BAYES)
+        assert combined == pytest.approx(direct, rel=1e-12)
