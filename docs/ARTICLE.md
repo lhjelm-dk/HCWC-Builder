@@ -513,6 +513,35 @@ than a monotone one. The function is therefore exposed as an input.
 
 No new risk numbers are required, and the geological model is not re-run.
 
+### 10.2 · When the detection function is worth arguing about
+
+It would be easy to read the above as though both inputs matter equally everywhere. They do not,
+and it is worth being specific about when the second one earns the effort.
+
+For a **seen** anomaly on the worked prospect, the detection function is very nearly inert.
+Removing it entirely — updating on the pick alone — changes the exceedance curve by less than
+$10^{-4}$, even though $D(h)$ genuinely varies from 0.34 to 0.90 across the columns in play. The
+reason is that the pick is much sharper than the detection function: a 15 m pick uncertainty
+concentrates the posterior into a narrow band of columns, and across that band $D(h)$ is near
+enough constant to cancel in the normalisation.
+
+It becomes decisive in two circumstances, and both are recognisable in advance.
+
+**When the anomaly is absent.** There is then no pick to carry the update, and $1 - D(h)$ is the
+entire likelihood. Section 12 is that case.
+
+**When the detection threshold falls inside the range of columns the pick favours.** The
+shipped prospect has a P50 column of 151 m against a detection midpoint of 25 m, so every column
+under discussion is comfortably detectable and the function has nothing to discriminate. Move that
+midpoint to 250 m — a thin, poorly imaged reservoir where only an unusually tall column would show
+— and the same two calculations part company by 0.45 in exceedance. The direction is the one worth
+holding on to: if only a tall column could have been seen, then having seen one is evidence that
+the column is tall, so accounting for detectability *raises* the answer rather than discounting it.
+
+The practical reading: on a thick, well-imaged prospect with a confident pick, do not spend an
+afternoon on $D(h)$ — the answer will not notice. On a thin prospect near the limit of resolution,
+or on any prospect where the anomaly is absent, it is the input that decides the result.
+
 ---
 
 ## 11 · Evidence reshapes the distribution rather than scaling it
