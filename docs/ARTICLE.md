@@ -82,7 +82,7 @@ single input distribution produces results that correspond to no geology. Grant 
 "column height control statistics" from Monte Carlo trap models. The engine described in §§2–4 is
 that construction, and no novelty is claimed for it.
 
-Four things in what follows do appear to be new, and are offered as the contribution:
+Five things in what follows do appear to be new, and are offered as the contribution:
 
 1. **Per-element probability of success as a function of depth**, derived from the group-level
    minima rather than allocated by judgement, with a built-in identity test that the factorised
@@ -106,6 +106,12 @@ Four things in what follows do appear to be new, and are offered as the contribu
    **over column height**, which is what makes the evidence reshape the contact distribution and
    the depth-dependent risk rather than only the chance. If that has been demonstrated elsewhere,
    the reference would be welcome.
+
+5. **A coherence constraint on the seismic validity term** (§10.2, §14.1). Not a new idea — it is
+   Bayes, plus the observation that a hydrocarbon–water contact requires hydrocarbons — but it does
+   not appear to be enforced anywhere, and the natural expression for that term violates it at
+   every value it can take. Stating it costs nothing and rules out a family of confident wrong
+   answers.
 
 ---
 
@@ -505,21 +511,60 @@ distribution. Anything that reshapes the curve moves every number read from it.
 
 ### 10.1 · What the geophysicist has to supply
 
-Two quantities, both already held as opinions:
+Three quantities, all already held as opinions:
 
-1. **The depth of the interpreted event and its uncertainty.**
-2. **A detection function $D(h)$** — the chance a column of height $h$ produces a mappable anomaly.
+1. **The depth of the interpreted event and its uncertainty.** Pick error plus depth conversion,
+   and the second is usually the larger.
+2. **Whether the picked event is the contact at all** — written $c$ below, and the subject of
+   §10.2. A flat event can be lithology, a diagenetic front, fizz gas read as pay, or a
+   processing artefact.
+3. **A detection function $D(h)$** — the chance a column of height $h$ produces a mappable anomaly.
    Near zero below tuning thickness, rising through the resolution limit, then flat below one. The
    ceiling is deliberately below unity: even a thick column can fail to show, and a detection
    function reaching certainty would make an absent anomaly infinitely strong evidence.
 
-The logistic form used here is a modelling choice, not physics. A Class III sand can become *less*
+The logistic form of $D(h)$ is a modelling choice, not physics. A Class III sand can become *less*
 visible when very thick as the top and base responses separate, which is a humped function rather
 than a monotone one. The function is therefore exposed as an input.
 
 No new risk numbers are required, and the geological model is not re-run.
 
-### 10.2 · When the detection function is worth arguing about
+### 10.2 · The second question is not the first one restated
+
+It is tempting to derive (2) from the amplitude. If the anomaly is bright and conformable, surely
+the event bounding it is likely to be the contact? The temptation is worth resisting, and the
+reason is a split that Monigle *et al.* (2025) draw explicitly.
+
+Their five DHI attributes fall into two groups. **Body attributes** — anomaly strength, lateral
+amplitude contrast — argue about whether hydrocarbons are present. **Contact attributes** — fit to
+structure, amplitude terminations, presence of a fluid contact reflection — argue about whether the
+picked event is the base of the column. The first group is what a strength or DHI-quality score
+grades. The second is $c$.
+
+They are positively dependent, because both improve with impedance contrast and data quality. They
+are not the same judgement, and either can be good while the other is poor:
+
+| | |
+|---|---|
+| bright, high-contrast body with a ragged, non-conformable termination | high R, low $c$ |
+| dim body with a flat, conformable event that cuts structure | low R, high $c$ |
+
+That second row is the case worth protecting. A conformable flat spot on a low-contrast reservoir
+is an excellent contact indicator with an unremarkable amplitude, and any mapping from the
+amplitude to $c$ makes it unsayable.
+
+**The mapping to avoid is the obvious one.** Setting $p_\text{valid} = R/(R+1)$ looks like a
+natural conversion of a likelihood ratio to a probability. It is identically the posterior from an
+*even* prior — so it assumes a 50 % chance of hydrocarbons before the seismic and discards the
+geological risk. On the worked prospect that put $p_\text{valid}$ above its own ceiling at every
+DHI strength: 0.500 against a ceiling of 0.408 at neutral character, 0.873 against 0.825 at strong.
+Every value impossible, from an expression that looks like arithmetic.
+
+The coherent form separates the two questions and multiplies them, as §14.1 sets out. What the
+amplitude can honestly do for $c$ is flag disagreement — the two rows above are unusual enough to
+be worth stating in a report — rather than supply the number.
+
+### 10.3 · When the detection function is worth arguing about
 
 It would be easy to read the above as though both inputs matter equally everywhere. They do not,
 and it is worth being specific about when the second one earns the effort.
@@ -676,16 +721,17 @@ possibility lives. It is Cromwell's rule made operational: a bounded pick shape 
 assign probability zero below its deepest bound, and no later evidence can revive a zero.
 
 **$p_\text{valid}$ is bounded, and the bound is not optional.** A *hydrocarbon*–water contact
-requires hydrocarbons, so
+requires hydrocarbons, so it is the product of the two questions of §10.1:
 
-$$p_\text{valid} = \underbrace{P(G \mid \text{amplitude})}_{\text{ceiling}} \times P(\text{event is the contact} \mid \text{hydrocarbons})$$
+$$p_\text{valid} = \underbrace{P(G \mid \text{amplitude})}_{\text{ceiling}} \times \underbrace{c}_{\text{the geophysical judgement}}$$
 
-The second factor is the only part a geophysicist can supply without borrowing the geologist's
-number, and it is what the implementation asks for. The ceiling matters because it is easy to
-violate: the natural-looking mapping $p_\text{valid} = R/(R+1)$ is identically the posterior from
-an *even* prior, so it assumes a 50 % chance of hydrocarbons and discards the geological risk
-entirely. On the worked prospect that put $p_\text{valid}$ above its own ceiling at every DHI
-strength — 0.500 against 0.408 at neutral. Base-rate neglect is easier to commit than to notice.
+The ceiling is the geological prior updated by the amplitude alone — the character channel and
+not the combined ratio, since the geometry ratio depends on $p_\text{valid}$ and taking it here
+would close a loop. §10.2 is why the obvious alternative is wrong; on the worked prospect it
+put $p_\text{valid}$ above this ceiling at every DHI strength.
+
+With $c = 0.70$ and a mild anomaly the floor sits at $1 - 0.327 = 0.673$, so **two thirds of the** 
+**weight on every realisation is untouchable by the pick**, however sharply it is drawn.
 
 Its behaviour under a pick the geology considers implausible is instructive. Holding the character
 strong (strength 40) and the pick sharp ($\sigma = 5$ m) and moving the picked contact progressively
