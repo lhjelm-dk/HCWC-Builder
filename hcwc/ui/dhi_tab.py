@@ -521,13 +521,32 @@ def render(n: Numbering | None = None) -> None:
     n.plot(figs, f"The two-curve strength model, read at **{strength:,.0f}**. R is the ratio of the "
                  f"two marked heights — which is why the units on the axis never matter.")
 
-    # Two metrics, not three. "POS on strength alone" needs the prior, which is not computed until
-    # the channels are combined -- and a chance is a result rather than an input, so it belongs
-    # there and not here. It moved with the reorder rather than being dropped.
-    s1, s2 = st.columns(2)
-    s1.metric("R from strength", f"{r_strength:.2f}", band, delta_color="off")
-    s2.metric("DHI volume weight", f"{dhi_core.volume_weight(r_strength):.3f}",
+    # "POS on strength alone" is deliberately absent: it needs the prior, which is not computed
+    # until the channels are combined, and a chance is a result rather than an input.
+    #
+    # The two likelihoods are here because Lars asked where P(DHI | G) was and the answer was
+    # nowhere -- R arrived as a number with no visible parts, which is most of why it is hard to
+    # argue with. They are the heights of the two dots in the figure above, divided by the curves'
+    # common peak: both cases carry the same sd, so one peak serves both, the numbers land in
+    # [0, 1] and their ratio is still exactly R.
+    _peak = float(hc.pdf(hc.mean))
+    _l_hc = float(hc.pdf(strength)) / _peak
+    _l_no = float(no_hc.pdf(strength)) / _peak
+    s1, s2, s3, s4 = st.columns(4)
+    s1.metric("L(DHI | G)", f"{_l_hc:.3f}", "if hydrocarbons", delta_color="off")
+    s2.metric("L(DHI | not G)", f"{_l_no:.3f}", "if not", delta_color="off")
+    s3.metric("R from strength", f"{r_strength:.2f}", band, delta_color="off")
+    s4.metric("DHI volume weight", f"{dhi_core.volume_weight(r_strength):.3f}",
               "R / (R + 1)", delta_color="off")
+    st.caption(
+        f"**The first two are the two dots in the figure above**, scaled by the curves' shared "
+        f"peak so they can be compared: *how typical is a reading of {strength:,.0f} for a "
+        f"prospect that works, and for one that does not.* Their ratio is R exactly "
+        f"({_l_hc:.3f} / {_l_no:.3f} = {r_strength:.2f}).\n\n"
+        f"**They are likelihoods, not probabilities.** Densities on an axis whose units carry no "
+        f"meaning — which is the point: only the ratio survives the arbitrary scale, and that is "
+        f"why R is the thing the model uses. Neither number is *the chance the DHI is right*."
+    )
     # Worked from OPENING_STRENGTH rather than typed. The caption below used to quote a
     # default of 7 and the 37.5 % that follows from it; the slider moved to 5 on 6 Sep and
     # the prose did not. Same defect as the pooled curve's label, found by the same sweep.
