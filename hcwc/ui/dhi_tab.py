@@ -48,7 +48,10 @@ OPENING_STRENGTH = 5.0
 #: Deliberately a round number and not `R/(R+1)` at the opening strength, because it is a
 #: judgement about the *event* and the two must be answered separately. See the p_valid
 #: block in `render` for what went wrong when it was derived.
-DEFAULT_P_VALID = 0.50
+#: `P(the picked event is the contact | there is hydrocarbon)` — the conditional factor the
+#: geophysicist supplies. `p_valid` is this times the amplitude-updated `P(G)`, so the two
+#: judgements stay separate and the product cannot exceed the chance of any hydrocarbon.
+DEFAULT_CONTACT_GIVEN_HC = 0.70
 
 
 def well_control() -> well_core.WellControl | None:
@@ -596,42 +599,55 @@ def render(n: Numbering | None = None) -> None:
             "Override it when that is the case — and if you are overriding often, the mapping "
             "is wrong and worth telling me about."
         )
-        # **This is asked, not derived.** Until 9 Sep 2026 it defaulted to `R/(R+1)`, so the
-        # strength slider set it silently -- and at strength 0 that means p_valid = 0.5, a 2:1
-        # swing from an observation the assessor has just graded as carrying no fluid
-        # information. The amplitude and the event are two judgements; this one is now made
-        # here, with the amplitude's opinion offered rather than applied.
-        use_derived = st.checkbox(
-            f"Use the amplitude's suggestion ({derived_p_valid:.2f}) instead",
-            value=False, key="dhi_in_pvalid_from_strength",
-            help="Ties p_valid back to the DHI strength as `R / (R + 1)`. Reasonable when the "
-                 "anomaly's geometry is about as convincing as its amplitude, and wrong in both "
-                 "directions when it is not — a dim but conformable flat spot, or a bright blob "
-                 "that follows no structure.")
-        stated = st.slider(
-            "p_valid — the chance the picked event is a fluid contact", 0.05, 0.99,
-            DEFAULT_P_VALID, 0.01, key="dhi_in_pvalid", disabled=use_derived,
-            help="A judgement about the *event*, not the amplitude: is this flat thing a contact, "
-                 "or lithology, a diagenetic front, fizz, or a processing artefact? 1.0 is "
-                 "deliberately unreachable — it would say the pick is certainly the contact, and "
-                 "certainty cannot be argued with.")
-        p_valid = derived_p_valid if use_derived else stated
+        # **Bounded, not free.** A hydrocarbon-water contact needs hydrocarbons, so
+        #
+        #     p_valid = P(G | amplitude) x P(this event is the contact | hydrocarbons present)
+        #
+        # and the first factor is a ceiling the user cannot be allowed to exceed. It used to be
+        # ignored: p_valid = R/(R+1) is identically simm_update(0.5, R), the posterior from an
+        # *even* prior, so the mapping assumed P(hydrocarbons) = 0.5 and dropped the geological
+        # risk -- base-rate neglect, committed by the tool that documents it.
+        #
+        # The ceiling uses the **character channel only**. The geometry ratio depends on p_valid,
+        # so using the combined one here would close a loop.
+        _elements = st.session_state.get("element_pos") or {}
+        _p_g = float(np.prod([float(v) for v in _elements.values()])) if _elements else 1.0
+        ceiling = dhi_core.simm_update(_p_g, r_strength)
 
-        # The case that prompted the change: a neutral or negative amplitude paired with a
-        # confident pick. It is not wrong -- a dim conformable flat spot is exactly that -- but
-        # it is worth having said out loud, because it is also what an assessor produces when
-        # they meant "I have no DHI" and left the pick where it was.
-        if seen and r_strength <= 1.0 and p_valid > 0.35:
-            st.warning(
-                f"**You have told the model two different things.** The amplitude is graded "
-                f"neutral or worse (R = {r_strength:.2f}), yet the pick is credited with "
-                f"p_valid = {p_valid:.2f} — so the contact distribution is still being "
-                f"concentrated around {contact:,.0f} m on the strength of an event whose "
-                f"character argues nothing.\n\n"
-                f"That is a real prospect when the flat spot is dim but geometrically convincing. "
-                f"If instead you meant *there is no usable DHI here*, drop p_valid toward 0.05 — "
-                f"the update then leaves the geological distribution where it was."
-            )
+        st.markdown(
+            f"**The ceiling is {ceiling:.3f}.** That is `P(G)` = {_p_g:.3f} from tab 2.0, updated "
+            f"by the amplitude alone (R = {r_strength:.2f}). The picked event cannot be a "
+            f"*hydrocarbon*–water contact more often than there is hydrocarbon to make one, so "
+            f"what is asked for below is the **conditional** factor — the only part a "
+            f"geophysicist can answer without borrowing the geologist's number."
+        )
+        contact_given_hc = st.slider(
+            "Given there IS hydrocarbon, is the picked event the contact?",
+            0.05, 1.0, DEFAULT_CONTACT_GIVEN_HC, 0.01, key="dhi_in_contact_given_hc",
+            help="A question about the *event*, not the amplitude and not the charge: granted "
+                 "there is a column here, is this flat thing its base — rather than lithology, a "
+                 "diagenetic front, fizz, or a processing artefact? Conformance, flatness and "
+                 "whether it cuts structure are what answer it.")
+        p_valid = float(np.clip(ceiling * contact_given_hc, 0.01, 0.99))
+        st.metric("p_valid", f"{p_valid:.3f}",
+                  f"{ceiling:.3f} × {contact_given_hc:.2f}", delta_color="off")
+
+        # The override stays, because a coherence rule is a model and models are wrong sometimes.
+        # It is off by default and says what it is switching off.
+        if st.checkbox("Set p_valid directly instead", value=False, key="dhi_in_pvalid_manual",
+                       help="Bypasses the ceiling. Only defensible if you think the element "
+                            "chances on tab 2.0 are wrong, in which case fix those instead."):
+            p_valid = st.slider("p_valid", 0.01, 0.99, float(round(p_valid, 2)), 0.01,
+                                key="dhi_in_pvalid",
+                                help="1.0 is deliberately unreachable: it would say the pick is "
+                                     "certainly the contact, and certainty cannot be argued with.")
+            if p_valid > ceiling + 1e-9:
+                st.warning(
+                    f"**That is above the ceiling.** You are saying the picked event is the "
+                    f"hydrocarbon–water contact with probability {p_valid:.2f}, while the "
+                    f"elements and the amplitude together put the chance of *any* hydrocarbon at "
+                    f"{ceiling:.2f}. One of the two is wrong, and this tab cannot tell you which."
+                )
 
     # ------------------------------------------------------------------ combining
     theme.heading(TAB, sub=n.sub, text="3 · Detection function D(h)")
