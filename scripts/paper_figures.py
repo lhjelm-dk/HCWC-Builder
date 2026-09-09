@@ -45,6 +45,10 @@ OUT = ROOT / "docs" / "figures"
 HMIN = 120.0
 #: The picked flat-event depth the article's DHI section uses, m TVDSS.
 PICK_M = 2250.0
+#: `P(the picked event is the contact | there is hydrocarbon)`, the app's own default.
+#: `p_valid` is this times a ceiling of `P(G)` updated by the amplitude -- never `R/(R+1)`,
+#: which exceeded that ceiling at every strength. See `hcwc/ui/dhi_tab.py`.
+CONTACT_GIVEN_HC = 0.70
 #: The app's own default. Figures are drawn at the count a reader would
 #: reproduce, not at a smoother one.
 N = 10_000
@@ -259,6 +263,16 @@ def figure_3_survival(result: engine.EngineResult, p_g: float) -> None:
 
 
 # --------------------------------------------------------------------------- 4
+def _p_valid(p_g: float, r_strength: float) -> float:
+    """The app's construction: a ceiling of `P(G)` updated by the amplitude, times `c`.
+
+    The ceiling uses the character channel alone. The geometry ratio depends on `p_valid`, so
+    taking the combined ratio here would close a loop -- the same reason the tab does it this way.
+    """
+    ceiling = dhi_core.simm_update(p_g, r_strength)
+    return float(np.clip(ceiling * CONTACT_GIVEN_HC, 0.01, 0.99))
+
+
 def figure_4_dhi_update(result: engine.EngineResult, p_g: float) -> None:
     """Prior against posterior, with the effective sample size as the honest accounting.
 
@@ -300,7 +314,7 @@ def figure_4_dhi_update(result: engine.EngineResult, p_g: float) -> None:
         r_strength = strengths.r_at(strength)
         post = dhi_core.update(result, detection, dhi_core.DhiObservation(
             seen=True, contact_m=PICK_M, pick_sigma_m=sigma,
-            p_valid=dhi_core.volume_weight(r_strength)))
+            p_valid=_p_valid(p_g, r_strength)))
         y, pos = curve(post, r_strength)
         ax.plot(grid + apex, y, color=POST_C, lw=1.5, alpha=0.42 + 0.29 * k, zorder=4)
         tags.append((y[0], f"{tag} — {pos:.0%}   "

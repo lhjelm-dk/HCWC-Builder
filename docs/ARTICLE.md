@@ -30,8 +30,8 @@ DHI case for the geological distribution, seismic observations are expressed as 
 functions over column height and used to reweight the geological realisations — a self-normalised
 importance-sampling implementation of Bayes' rule that requires no re-simulation and leaves the
 controlling-mechanism bookkeeping intact. On the worked prospect, a mild amplitude anomaly raises
-prospect POS from 25.0 % to 52 %, an absent anomaly where one was expected lowers it to 3.2 %, and
-the effective sample size behind the update — 10,000 realisations reduced to 3,849, or to 657 for a
+prospect POS from 40.3 % to 56.8 %, an absent anomaly where one was expected lowers it to 6.3 %, and
+the effective sample size behind the update — 10,000 realisations reduced to 6,856, or to 1,823 for a
 strongly stated interpretation — measures how far the seismic evidence has displaced the geology.
 
 An open-source implementation makes the workflow available for practical prospect evaluation
@@ -385,7 +385,7 @@ default, so a reader can reproduce them.
 > **Figure 1.** (a) Forty consecutive realisations. Each coloured dot is one limit's sampled depth
 > in that realisation; the ringed dot is the minimum, which controls it. Note that no limit wins
 > consistently, and that the winner changes from realisation to realisation as the sampled depths
-> reorder. (b) The HCWC distribution those minima make: P90 2,127 m, P50 2,186 m, P10 2,267 m. The
+> reorder. (b) The HCWC distribution those minima make: P90 2,190 m, P50 2,247 m, P10 2,324 m. The
 > shape is an output; nothing about it was elicited. Panel (a) is clipped for legibility — a few
 > capillary capacities sample well below the plotted range.
 
@@ -394,27 +394,27 @@ Reading the geological result:
 | | |
 |---|---:|
 | $P(G)$, element product | 0.408 |
-| $F(h_\min)$ at 120 m | 0.612 |
-| **Prospect POS** | **25.0 %** |
-| HCWC P90 / P50 / P10 | 2,127 / 2,186 / 2,267 m |
-| P(filled to spill) | 0.5 % |
+| $F(h_\min)$ at 120 m | 0.986 |
+| **Prospect POS** | **40.3 %** |
+| HCWC P90 / P50 / P10 | 2,190 / 2,247 / 2,324 m |
+| P(filled to spill) | 3.4 % |
 
 The fill-to-spill probability is a derived number, not an input: it is the share of realisations in
 which the spill point provided the minimum.
 
 ![Controlling mechanism](figures/fig2_controlling_mechanism.png)
 
-> **Figure 2.** (a) The controlling-limit histogram: top-seal capillary capacity controls 59.8 % of
-> realisations, charge 14.2 %, fault leakage 11.0 %, seal continuity 10.2 %, fault geometry 3.1 %,
-> preservation 1.2 % and spill 0.5 %. (b) The same information as a function of depth. The
+> **Figure 2.** (a) The controlling-limit histogram: top-seal capillary capacity controls 33.3 % of
+> realisations, fault leakage 23.1 %, seal continuity 15.1 %, fault geometry 12.7 %, charge 7.7 %,
+> preservation 4.6 % and spill 3.4 %. (b) The same information as a function of depth. The
 > controlling share is **not constant down the structure**: shallow contacts are almost entirely
-> seal-controlled, while below about 2,250 m fault geometry and finally spill take over. This is
-> the diagnostic that a distribution alone cannot provide.
+> seal-controlled, while deeper ones pass to fault geometry and finally to spill. This is the
+> diagnostic that a distribution alone cannot provide.
 
 The mechanism diagnostic changes what sensitivity analysis is for. The conventional question is
 *which input is uncertain?* The useful question is *which uncertain mechanism actually controls the
-result?* Here, refining the fault-geometry model would move very little, because fault geometry
-controls 3.1 % of realisations; refining the seal-capacity elicitation would move a great deal.
+result?* Here, refining the preservation model would move very little, because it controls 4.6 % of
+realisations; refining the seal-capacity elicitation would move a great deal.
 
 At the same time, a mechanism with a small overall share is not necessarily unimportant: Figure 2b
 shows fault geometry controlling a large fraction of the *deep* realisations, which are exactly the
@@ -424,8 +424,8 @@ ones that carry the volume. Both readings come from the same array.
 
 > **Figure 3.** One curve, read in three places. The solid curve is $F(h)$, conditional on the
 > elements working; the dashed curve is $P(G)F(h)$, the prospect POS. At the 120 m assessment
-> minimum, $F = 60.7\%$ and POS $= 24.8\%$. At the DHI-indicated column,
-> $F = 14.4\%$ and POS $= 5.9\%$. Because $F$ decreases,
+> minimum, $F = 98.6\%$ and POS $= 40.3\%$. At the DHI-indicated column,
+> $F = 48.1\%$ and POS $= 19.6\%$. Because $F$ decreases,
 > $F(h_\min) \geq F(h_\text{DHI})$ always — the two numbers were
 > never competing, and quoting one without stating the $h$ it was read at is the error the
 > construction removes.
@@ -482,15 +482,21 @@ prospect, with the pick deliberately vague ($\sigma = 200$ m) so that geometry s
 
 | | prospect POS | contact P50 | P90–P10 | ESS |
 |---|---:|---:|---:|---:|
-| geological prior | 25.0 % | 2,207 m | 105 m | 10,000 |
-| character only — strength 40, $\sigma$ 200 m | **70.6 %** | **2,207 m** | 104 m | 9,952 |
-| geometry only — strength 0, $\sigma$ 5 m | 45.1 % | **2,248 m** | 69 m | 1,883 |
-| both — strength 40, $\sigma$ 5 m | 90.6 % | 2,249 m | 16 m | 657 |
+| geological prior | 40.3 % | 2,247 m | 132 m | 10,000 |
+| character only — strength 40, $\sigma$ 200 m | **82.5 %** | **2,247 m** | 130 m | 9,997 |
+| geometry only — strength 0, $\sigma$ 5 m | 51.5 % | 2,250 m | **112 m** | 4,255 |
+| both — strength 40, $\sigma$ 5 m | 88.8 % | 2,250 m | **75 m** | 1,823 |
 
-**Character moves the chance and leaves the depth alone**: POS rises from 25.0 % to 70.6 % while
-the P50 contact does not move at all and the spread is unchanged. **Geometry moves the depth**, by
-41 m, and narrows the distribution from 105 m to 69 m — and through the depth it also moves POS,
-because POS is a reading of the same curve.
+**Character moves the chance and leaves the depth alone**: POS rises from 40.3 % to 82.5 % while
+the P50 contact does not move at all, the spread is unchanged, and the effective sample size stays
+at essentially all 10,000 realisations — nothing has been reweighted.
+
+**Geometry reshapes the distribution.** On this prospect it barely moves the median, because the
+pick at 2,250 m happens to sit almost exactly on the geological P50 of 2,247 m; there is nothing
+for it to shift. What it does instead is *narrow* — 132 m to 112 m — and that narrowing is itself
+what raises POS from 40.3 % to 51.5 %, because POS is a reading of the same curve. On a prospect
+whose pick sat away from the prior median it would move the median too. That the two effects
+separate here is a property of this example, not of the method.
 
 That last point is worth stating plainly, because it is where an intuitive account would go wrong.
 The two channels are not "one affects POS, the other affects depth". Character acts on the chance
@@ -520,14 +526,14 @@ and it is worth being specific about when the second one earns the effort.
 
 For a **seen** anomaly, the detection function does much less than its prominence suggests. On the
 worked prospect, holding everything else fixed, replacing $D(h)$ with a constant moves the
-exceedance curve by under **2 %** — even though $D(h)$ genuinely varies from 0.34 to 0.90 across
-the columns in play. The reason is that the pick is much sharper than the detection function: a
-15 m pick uncertainty concentrates the posterior into a narrow band of columns, and across that
-band $D(h)$ is near enough constant to cancel in the normalisation. With a pick treated as certain
-the two agree to five decimal places.
+exceedance curve by about **1 %** — even though $D(h)$ does vary, from 0.76 to 0.90, across the
+columns in play. The reason is that the pick is much sharper than the detection function: a 15 m
+pick uncertainty concentrates the posterior into a narrow band of columns, and across that band
+$D(h)$ is near enough constant to cancel in the normalisation. With a pick treated as certain the
+two agree to five decimal places.
 
 **The likelihood floor does far more.** Dropping $L \geq 1 - p_\text{valid}$ instead moves the
-same curve by about **30 %** — more than an order of magnitude beyond the detection function. That
+same curve by about **20 %** — more than an order of magnitude beyond the detection function. That
 comparison is worth stating because the intuition runs the other way: the detection function is
 the novel-looking term, and the floor looks like a safety rail. On any prospect where the
 interpreter is less than certain the picked event is a contact, the floor is the term doing the
@@ -540,10 +546,10 @@ advance.
 entire likelihood. Section 12 is that case.
 
 **When the detection threshold falls inside the range of columns the pick favours.** The shipped
-prospect has a P50 column of 151 m against a detection midpoint of 25 m, so every column under
+prospect has a P50 column of 197 m against a detection midpoint of 25 m, so every column under
 discussion is comfortably detectable and the function has nothing to discriminate. Move that
 midpoint to 250 m — a thin, poorly imaged reservoir where only an unusually tall column would show
-— and it becomes the dominant term. The direction is the one worth holding on to: if only a tall
+— and it becomes the dominant term, worth about 36 % of exceedance. The direction is the one worth holding on to: if only a tall
 column could have been seen, then having seen one is evidence that the column is tall, so
 accounting for detectability *raises* the answer rather than discounting it.
 
@@ -565,24 +571,24 @@ multiplicative correction to POS. It changes the *shape* of the column-height di
 > observations at a picked contact of 2,250 m. The curves do not merely lift: each develops a step
 > at the pick, because the evidence moves probability toward the depths the interpreted event
 > supports and away from those it argues against. (b) The effective sample size behind each update.
-> A strongly stated interpretation leaves 657 of 10,000 realisations carrying the answer.
+> A strongly stated interpretation leaves 1,823 of 10,000 realisations carrying the answer.
 
 Read as depth-dependent risk, on the worked prospect with a mild anomaly:
 
 | chance the contact reaches | geological | given the DHI |
 |---|---:|---:|
-| 2,150 m | 74.8 % | 88.3 % |
-| 2,200 m | 36.0 % | **70.2 %** |
-| 2,250 m | 14.6 % | 31.5 % |
-| 2,300 m | 3.9 % | **1.8 %** |
+| 2,150 m | 99.7 % | 99.8 % |
+| 2,200 m | 77.1 % | **86.7 %** |
+| 2,250 m | 48.1 % | 50.6 % |
+| 2,300 m | 18.8 % | **10.9 %** |
 
-The chance at 2,200 m nearly doubles while the chance at 2,300 m falls by half. **A single POS
+The chance at 2,200 m rises by ten points while the chance at 2,300 m falls by eight. **A single POS
 multiplier cannot express that**, and neither can a scenario switch: both would move
 $P(\text{success})$ without specifying how $P(H \geq h)$ changes as a function of $h$. A likelihood
 defined on column height does both, and this is the direct connection between seismic
 interpretation and depth-dependent prospect risk.
 
-The distribution also **narrows** — from a 105 m P90–P10 spread to 16 m at the strong setting.
+The distribution also **narrows** — from a 132 m P90–P10 spread to 75 m at the strong setting.
 Evidence is supposed to sharpen an estimate as well as move it, and a scenario switch, which mixes
 two branches, can only broaden.
 
@@ -595,8 +601,8 @@ have produced a mappable anomaly and none is present, the likelihood is $1 - D(h
 largest at small $h$. No special handling is required — absence enters the same machinery as
 presence.
 
-On the worked prospect the effect is severe: prospect POS falls from **25.0 % to 3.2 %**, and the
-contact P50 moves 40 m shallower.
+On the worked prospect the effect is severe: prospect POS falls from **40.3 % to 6.3 %** — a
+factor of six — on an observation that costs nothing to make.
 
 **This part is no longer novel, and the distinction that survives is narrower.** Monigle *et al.*
 (2025) treat an absent anomaly as a negative line of evidence within ExxonMobil's integrated
@@ -641,15 +647,19 @@ which reports how many of the original realisations the posterior effectively re
 
 | interpretation | prospect POS | contact P50 | ESS |
 |---|---:|---:|---:|
-| geological prior | 25.0 % | 2,207 m | 10,000 |
-| mild — strength 5, $\sigma$ 15 m | 52 % | 2,244 m | 3,849 |
-| moderate — strength 20, $\sigma$ 10 m | 72 % | 2,248 m | 1,834 |
-| strong — strength 40, $\sigma$ 5 m | 91 % | 2,249 m | **657** |
-| absent where one was expected | 3.2 % | 2,207 m | 8,674 |
+| geological prior | 40.3 % | 2,247 m | 10,000 |
+| mild — strength 5, $\sigma$ 15 m | 56.8 % | 2,251 m | 6,856 |
+| moderate — strength 20, $\sigma$ 10 m | 72.4 % | 2,250 m | 4,267 |
+| strong — strength 40, $\sigma$ 5 m | 88.8 % | 2,250 m | **1,823** |
+| absent where one was expected | 6.3 % | 2,247 m | 9,995 |
 
 A low ESS does not mean the interpretation is wrong. It means the posterior depends heavily on it.
-At 657 the answer is substantially a seismic interpretation with geological texture around it, and
-should be presented as such. The number belongs beside the result, not in an appendix.
+At 1,823 the answer rests on under a fifth of the geological realisations, and should be presented
+as such. The number belongs beside the result, not in an appendix.
+
+Note the absent case: ESS stays at essentially 10,000 while POS collapses to 6.3 %. Absence acts
+almost entirely through the chance rather than by reweighting, because $1 - D(h)$ varies little
+across columns that are all comfortably detectable.
 
 ---
 
@@ -665,29 +675,42 @@ diagenetic front, fizz gas read as pay, or a processing artefact, and the floor 
 possibility lives. It is Cromwell's rule made operational: a bounded pick shape would otherwise
 assign probability zero below its deepest bound, and no later evidence can revive a zero.
 
+**$p_\text{valid}$ is bounded, and the bound is not optional.** A *hydrocarbon*–water contact
+requires hydrocarbons, so
+
+$$p_\text{valid} = \underbrace{P(G \mid \text{amplitude})}_{\text{ceiling}} \times P(\text{event is the contact} \mid \text{hydrocarbons})$$
+
+The second factor is the only part a geophysicist can supply without borrowing the geologist's
+number, and it is what the implementation asks for. The ceiling matters because it is easy to
+violate: the natural-looking mapping $p_\text{valid} = R/(R+1)$ is identically the posterior from
+an *even* prior, so it assumes a 50 % chance of hydrocarbons and discards the geological risk
+entirely. On the worked prospect that put $p_\text{valid}$ above its own ceiling at every DHI
+strength — 0.500 against 0.408 at neutral. Base-rate neglect is easier to commit than to notice.
+
 Its behaviour under a pick the geology considers implausible is instructive. Holding the character
 strong (strength 40) and the pick sharp ($\sigma = 5$ m) and moving the picked contact progressively
 deeper:
 
 | picked contact | prospect POS | contact P50 | ESS |
 |---|---:|---:|---:|
-| 2,250 m — well supported | 90.6 % | 2,249 m | 657 |
-| 2,300 m | 84.6 % | 2,299 m | 399 |
-| 2,350 m | 75.2 % | 2,279 m | 373 |
-| 2,400 m | 70.9 % | 2,214 m | 1,072 |
-| 2,500 m — beyond all support | 69.5 % | **2,207 m** | **10,000** |
+| 2,250 m — well supported | 88.8 % | 2,250 m | 1,823 |
+| 2,300 m | 89.0 % | 2,298 m | 1,799 |
+| 2,350 m | 85.5 % | 2,300 m | 1,605 |
+| 2,400 m | 82.7 % | 2,255 m | 4,364 |
+| 2,500 m — beyond all support | 82.2 % | **2,247 m** | **10,000** |
 
-The contact follows the pick while the geological model supports it, then **detaches**. At 2,400 m
-the posterior median has fallen back toward the prior; at 2,500 m it is the prior exactly, and the
-effective sample size has returned to 10,000 — the likelihood has become flat, so the reweighting
-does nothing. The model has concluded *that is probably not a contact* rather than *the contact is
-at 2,500 m*.
+The contact follows the pick while the geological model supports it, then **detaches**. At 2,350 m
+the posterior median has already stopped keeping up, at 2,400 m it has fallen back toward the
+prior, and at 2,500 m it is the prior exactly with the effective sample size returned to 10,000 —
+the likelihood has become flat, so the reweighting does nothing. The model has concluded *that is
+probably not a contact* rather than *the contact is at 2,500 m*.
 
 Note that the ESS is **not monotone**: it falls as the evidence sharpens against the prior, then
-rises again as the floor takes over. That non-monotonicity is the tell, and it is why ESS should be
-read alongside the answer rather than as a quality score. Note also that POS stays elevated at
-69.5 %, which is correct — the character channel still reports a bright anomaly, and a bright
-anomaly is evidence for hydrocarbons even when the interpreter has mislocated the contact.
+rises again as the floor takes over — 1,605 at 2,350 m, back to 10,000 at 2,500 m. That
+non-monotonicity is the tell, and it is why ESS should be read alongside the answer rather than as
+a quality score. Note also that POS stays elevated at 82.2 %, which is correct — the character
+channel still reports a bright anomaly, and a bright anomaly is evidence for hydrocarbons even when
+the interpreter has mislocated the contact.
 
 ### 14.2 · Attribution between risk elements
 
