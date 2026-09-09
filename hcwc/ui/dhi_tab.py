@@ -688,6 +688,56 @@ def render(n: Numbering | None = None) -> None:
         f"the floor that keeps the geological distribution in play whatever the pick says."
     )
 
+    # The plane both numbers live in, shaded by the p_valid they make. Drawn rather than
+    # argued because "R does not set c" is a claim about a two-dimensional space, and a reader
+    # who can see the space stops expecting a line through it.
+    _r_axis = np.logspace(np.log10(dhi_core.R_FLOOR), np.log10(dhi_core.R_CAP), 90)
+    _c_axis = np.linspace(0.05, 1.0, 80)
+    _surface = np.array([[float(np.clip(dhi_core.simm_update(_p_g, rr) * cc, 0.01, 0.99))
+                          for rr in _r_axis] for cc in _c_axis])
+    figq = go.Figure(go.Contour(
+        x=np.log10(_r_axis), y=_c_axis, z=_surface, colorscale="Blues",
+        contours=dict(start=0.05, end=0.95, size=0.05, showlabels=True,
+                      labelfont=dict(size=9, color="#333")),
+        colorbar=dict(title="p_valid", thickness=12), zmin=0.0, zmax=1.0,
+        hovertemplate="R %{customdata:.2f}<br>c %{y:.2f}<br>p_valid %{z:.3f}<extra></extra>",
+        customdata=np.tile(_r_axis, (len(_c_axis), 1))))
+    for _x in (np.log10(1 / 1.5), np.log10(1.5)):
+        figq.add_vline(x=_x, line=dict(color="#888", width=1, dash="dot"))
+    for _y in (0.40, 0.75):
+        figq.add_hline(y=_y, line=dict(color="#888", width=1, dash="dot"))
+    for _x, _y, _txt in (
+            (np.log10(dhi_core.R_CAP) * 0.72, 0.93, "bright<br>and convincing"),
+            (np.log10(dhi_core.R_FLOOR) * 0.72, 0.93, "dim but<br>convincing"),
+            (np.log10(dhi_core.R_CAP) * 0.72, 0.14, "bright but<br>unconvincing"),
+            (np.log10(dhi_core.R_FLOOR) * 0.72, 0.14, "neither")):
+        # A backing box on each: the top-right corner sits on the darkest shading, where
+        # grey text is unreadable, and the bottom-right one lands on a contour label.
+        figq.add_annotation(x=_x, y=_y, text=_txt, showarrow=False, align="center",
+                            font=dict(size=10, color="#333"),
+                            bgcolor="rgba(255,255,255,0.82)", borderpad=3)
+    figq.add_scatter(x=[np.log10(max(r_strength, dhi_core.R_FLOOR))], y=[contact_given_hc],
+                     mode="markers+text", marker=dict(color=POSTERIOR, size=15,
+                                                      symbol="diamond",
+                                                      line=dict(color="white", width=2)),
+                     text=["  this prospect"], textposition="middle right",
+                     textfont=dict(size=11, color=POSTERIOR), showlegend=False,
+                     hovertemplate=f"R {r_strength:.2f}<br>c {contact_given_hc:.2f}"
+                                   f"<br>p_valid {p_valid:.3f}<extra></extra>")
+    _ticks = [0.02, 0.1, 0.5, 1, 2, 10, 50]
+    figq.update_xaxes(title_text="R from the amplitude  (log scale)",
+                      tickvals=[np.log10(v) for v in _ticks],
+                      ticktext=[str(v) for v in _ticks])
+    figq.update_yaxes(title_text="c — is the picked event the contact?", range=[0.05, 1.0])
+    figq.update_layout(height=380, margin=dict(t=20, b=10))
+    n.plot(figq,
+           "**The two questions are a plane, not a line.** The shading is `p_valid` — the "
+           "amplitude sets a ceiling and *c* takes a fraction of it — so moving right raises what "
+           "is available and moving up spends more of it. The dotted lines mark where the app "
+           "starts calling the two answers inconsistent: the **off-diagonal corners are real "
+           "prospects**, and a mapping from R to *c* would collapse this plane onto its diagonal "
+           "and make them unsayable.")
+
     if _inert:
         st.warning(
             f"**This slider cannot move the prospect POS at the moment, and that is not a fault "
