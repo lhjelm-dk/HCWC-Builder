@@ -700,7 +700,36 @@ def render(n: Numbering | None = None) -> None:
             f"assessment minimum on tab 2.0 to a column you would actually call a discovery."
         )
 
+    # R informs c by flagging disagreement, not by setting it. Any f(R) -> c is the mapping
+    # removed on 9 Sep wearing a different name -- and the natural-looking f is R/(R+1), which
+    # *is* that mapping. What R can honestly do is say when the two channels are telling
+    # different stories, because those are the cases worth a sentence in the report.
+    _amp_strong, _amp_weak = r_strength >= 1.5, r_strength <= 1 / 1.5
+    _evt_strong, _evt_weak = contact_given_hc >= 0.75, contact_given_hc <= 0.40
+    if _amp_strong and _evt_weak:
+        st.info(
+            f"**Bright body, unconvincing event.** The amplitude argues for hydrocarbons "
+            f"(R = {r_strength:.2f}) while you have graded the pick itself at "
+            f"{contact_given_hc:.2f}. That is a real and common prospect — an anomaly you believe "
+            f"in, bounded by something you do not — and it is worth saying so explicitly, because "
+            f"the two numbers will be read together downstream. Expect the chance to move and the "
+            f"contact to stay roughly where the geology put it."
+        )
+    elif _amp_weak and _evt_strong:
+        st.info(
+            f"**Dim body, convincing event.** The amplitude argues against hydrocarbons "
+            f"(R = {r_strength:.2f}) while the pick is graded at {contact_given_hc:.2f}. Also "
+            f"real — a conformable flat spot on a low-contrast reservoir is a good contact "
+            f"indicator with an unremarkable amplitude — and it is the case the old mapping could "
+            f"not express, because it derived the second number from the first. Expect the "
+            f"contact to sharpen while the chance falls."
+        )
+
     st.caption(
+        "**The amplitude does not set this number, but it does bear on it.** Body attributes and "
+        "contact attributes tend to move together, because both improve with impedance contrast "
+        "and data quality — so an unusual pairing is not wrong, only worth being deliberate "
+        "about. It is flagged above when it occurs.\n\n"
         "**Anchors for the slider above.** These are judgements, not measurements, and the "
         "spacing matters more than the exact value.\n\n"
         "- **0.9 and up** — a flat, conformable event that cuts dipping structure, with a clear "
