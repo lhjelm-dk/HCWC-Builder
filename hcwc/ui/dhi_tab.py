@@ -666,6 +666,14 @@ def render(n: Numbering | None = None) -> None:
     contact_given_hc = suggested_c if use_attributes else stated_c
     p_valid = float(np.clip(ceiling * contact_given_hc, 0.01, 0.99))
 
+    # What the slider is *doing*, and what it cannot do. At a near-zero assessment minimum every
+    # realisation is a success, so `r_dhi` has no failure set to compare against and returns nan:
+    # the depth channel then cannot move POS at all, whatever p_valid says. It still reshapes the
+    # contact distribution, and a reader who moves the slider and sees nothing deserves to be told
+    # which of those is happening rather than left to conclude the control is broken.
+    _clears = float((result.column_m >= h_min).mean())
+    _inert = _clears > 0.995
+
     pv1, pv2 = st.columns([1, 2])
     pv1.metric("p_valid", f"{p_valid:.3f}",
                f"{ceiling:.3f} × {contact_given_hc:.2f}", delta_color="off")
@@ -678,6 +686,32 @@ def render(n: Numbering | None = None) -> None:
         f"A *hydrocarbon*–water contact needs hydrocarbons, so the event cannot be one more "
         f"often than there is hydrocarbon to make it. The remaining **{1 - p_valid:.3f}** is "
         f"the floor that keeps the geological distribution in play whatever the pick says."
+    )
+
+    if _inert:
+        st.warning(
+            f"**This slider cannot move the prospect POS at the moment, and that is not a fault "
+            f"in the slider.** Your assessment minimum is {h_min:,.0f} m, which "
+            f"{_clears:.1%} of realisations clear — so every realisation is already a success and "
+            f"the depth channel has no failures to tell them apart from. `R` from geometry is "
+            f"undefined, and the update falls back to the amplitude alone.\n\n"
+            f"**It is still working.** Move it and watch the *contact distribution* in §5: the "
+            f"spread narrows as `p_valid` rises. To make POS respond as well, raise the "
+            f"assessment minimum on tab 2.0 to a column you would actually call a discovery."
+        )
+
+    st.caption(
+        "**Anchors for the slider above.** These are judgements, not measurements, and the "
+        "spacing matters more than the exact value.\n\n"
+        "- **0.9 and up** — a flat, conformable event that cuts dipping structure, with a clear "
+        "fluid contact reflection. You would defend this in a room.\n"
+        "- **0.6–0.8** — conformable and plausibly a contact, but something is missing: no FCR, "
+        "or terminations you would not call sharp. **The shipped default sits here.**\n"
+        "- **0.3–0.5** — the event is there and flat, and so is a plausible lithological "
+        "explanation. You are picking it because it is the best candidate, not because it "
+        "convinces.\n"
+        "- **Below 0.2** — you would not have picked it if the prospect were not interesting. "
+        "Consider whether you have a DHI at all, or a structural guess wearing one's clothes."
     )
 
     with st.expander("**Why p_valid is bounded, and what happens when it is not** — the "
