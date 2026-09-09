@@ -44,6 +44,12 @@ OBSERVATIONS = (CONFORMING, PARTIAL, ABSENT)
 #: than a neutral one, which is the property the E-POS default was chosen for.
 OPENING_STRENGTH = 5.0
 
+#: Where `p_valid` opens: an even chance that the picked event is a fluid contact.
+#: Deliberately a round number and not `R/(R+1)` at the opening strength, because it is a
+#: judgement about the *event* and the two must be answered separately. See the p_valid
+#: block in `render` for what went wrong when it was derived.
+DEFAULT_P_VALID = 0.50
+
 
 def well_control() -> well_core.WellControl | None:
     """The penetration described on tab 2.0, or ``None``.
@@ -551,8 +557,8 @@ def render(n: Numbering | None = None) -> None:
     # producing it. Same one-frame lag as everything else that crosses a sub-tab boundary.
     st.session_state["dhi_r_strength"] = float(r_strength)
     derived_p_valid = dhi_core.volume_weight(r_strength)
-    with st.expander(f"**Is the picked event really the contact?** "
-                     f"p_valid = {derived_p_valid:.3f}, from the strength above"):
+    with st.expander("**Is the picked event really the contact?** p_valid is asked here, not "
+                     "taken from the amplitude"):
         st.markdown(
             "A flat event can be lithology, a diagenetic front, fizz gas read as pay, or a "
             "processing artefact. **`p_valid` is the chance it is none of those**, and it decides "
@@ -571,16 +577,42 @@ def render(n: Numbering | None = None) -> None:
             "Override it when that is the case — and if you are overriding often, the mapping "
             "is wrong and worth telling me about."
         )
-        if st.checkbox("Set p_valid myself", value=False, key="dhi_in_pvalid_manual",
-                       help="Overrides the value derived from DHI strength above. Use it when the "
-                            "anomaly's *geometry* argues differently from its amplitude — a "
-                            "conformable flat spot, or a bright blob that follows no structure."):
-            p_valid = st.slider("p_valid", 0.05, 0.99, float(round(derived_p_valid, 2)), 0.01,
-                                key="dhi_in_pvalid",
-                                help="1.0 is deliberately unreachable: it would say the pick is "
-                                     "certainly the contact, and certainty cannot be argued with.")
-        else:
-            p_valid = derived_p_valid
+        # **This is asked, not derived.** Until 9 Sep 2026 it defaulted to `R/(R+1)`, so the
+        # strength slider set it silently -- and at strength 0 that means p_valid = 0.5, a 2:1
+        # swing from an observation the assessor has just graded as carrying no fluid
+        # information. The amplitude and the event are two judgements; this one is now made
+        # here, with the amplitude's opinion offered rather than applied.
+        use_derived = st.checkbox(
+            f"Use the amplitude's suggestion ({derived_p_valid:.2f}) instead",
+            value=False, key="dhi_in_pvalid_from_strength",
+            help="Ties p_valid back to the DHI strength as `R / (R + 1)`. Reasonable when the "
+                 "anomaly's geometry is about as convincing as its amplitude, and wrong in both "
+                 "directions when it is not — a dim but conformable flat spot, or a bright blob "
+                 "that follows no structure.")
+        stated = st.slider(
+            "p_valid — the chance the picked event is a fluid contact", 0.05, 0.99,
+            DEFAULT_P_VALID, 0.01, key="dhi_in_pvalid", disabled=use_derived,
+            help="A judgement about the *event*, not the amplitude: is this flat thing a contact, "
+                 "or lithology, a diagenetic front, fizz, or a processing artefact? 1.0 is "
+                 "deliberately unreachable — it would say the pick is certainly the contact, and "
+                 "certainty cannot be argued with.")
+        p_valid = derived_p_valid if use_derived else stated
+
+        # The case that prompted the change: a neutral or negative amplitude paired with a
+        # confident pick. It is not wrong -- a dim conformable flat spot is exactly that -- but
+        # it is worth having said out loud, because it is also what an assessor produces when
+        # they meant "I have no DHI" and left the pick where it was.
+        if seen and r_strength <= 1.0 and p_valid > 0.35:
+            st.warning(
+                f"**You have told the model two different things.** The amplitude is graded "
+                f"neutral or worse (R = {r_strength:.2f}), yet the pick is credited with "
+                f"p_valid = {p_valid:.2f} — so the contact distribution is still being "
+                f"concentrated around {contact:,.0f} m on the strength of an event whose "
+                f"character argues nothing.\n\n"
+                f"That is a real prospect when the flat spot is dim but geometrically convincing. "
+                f"If instead you meant *there is no usable DHI here*, drop p_valid toward 0.05 — "
+                f"the update then leaves the geological distribution where it was."
+            )
 
     # ------------------------------------------------------------------ combining
     theme.heading(TAB, sub=n.sub, text="3 · Detection function D(h)")
