@@ -53,6 +53,33 @@ OPENING_STRENGTH = 5.0
 #: judgements stay separate and the product cannot exceed the chance of any hydrocarbon.
 DEFAULT_CONTACT_GIVEN_HC = 0.70
 
+#: The three **contact** attributes, after Monigle et al. (2025), who separate them from the
+#: *body* attributes that grade the amplitude. These answer whether the picked event is the
+#: base of the column; the strength slider answers whether there is a column. The numbers are
+#: elicited judgements, not a calibration -- which is why the result is offered rather than
+#: applied. Shipped defaults are the middle options and give c = 0.70, so the suggestion
+#: agrees with the slider's own default and applying it moves nothing.
+CONTACT_ATTRIBUTES: dict[str, dict[str, float]] = {
+    "Fit to structure": {
+        "Flat, conformable, cuts dipping structure": 0.95,
+        "Broadly conformable": 0.75,
+        "Ambiguous": 0.45,
+        "Follows stratigraphy, not structure": 0.15,
+    },
+    "Amplitude terminations": {
+        "Sharp, at the picked depth": 0.90,
+        "Moderate": 0.65,
+        "Diffuse or long": 0.35,
+        "No clear termination": 0.15,
+    },
+    "Fluid contact reflection": {
+        "Clear FCR": 0.95,
+        "Weak or possible": 0.70,
+        "Absent, and not expected here": 0.60,
+        "Absent, where one was expected": 0.30,
+    },
+}
+
 
 def well_control() -> well_core.WellControl | None:
     """The penetration described on tab 2.0, or ``None``.
@@ -592,13 +619,51 @@ def render(n: Numbering | None = None) -> None:
     ceiling = dhi_core.simm_update(_p_g, r_strength)
 
     theme.heading(TAB, sub=n.sub, text="3 · Is the picked event the contact?")
-    contact_given_hc = st.slider(
+    # The three contact attributes, combined by geometric mean so that one poor attribute
+    # drags the answer down rather than being averaged away -- an event that does not follow
+    # structure is probably not a contact however sharp its terminations are.
+    picked_levels = {}
+    with st.expander("**Grade the three contact attributes** — they suggest a value for the "
+                     "slider below, and are the half of a DHI the strength axis does not read"):
+        st.markdown(
+            "Monigle *et al.* (2025) separate the five DHI attributes into two groups, and the "
+            "split is the answer to *is `c` related to the strength?* — **body** attributes "
+            "(anomaly strength, lateral contrast) say whether there is hydrocarbon and are what "
+            "the strength slider grades; **contact** attributes say whether the picked event is "
+            "its base. They move together, because both improve with impedance contrast and data "
+            "quality, and neither follows from the other: a dim body can carry a beautifully "
+            "conformable event, and a bright one can terminate raggedly."
+        )
+        cols = st.columns(len(CONTACT_ATTRIBUTES))
+        for col, (attribute, levels) in zip(cols, CONTACT_ATTRIBUTES.items()):
+            picked_levels[attribute] = col.selectbox(
+                attribute, list(levels), index=1,
+                key=f"dhi_in_attr_{attribute.replace(' ', '_').lower()}")
+        scores = [CONTACT_ATTRIBUTES[a][lv] for a, lv in picked_levels.items()]
+        suggested_c = float(np.prod(scores) ** (1.0 / len(scores)))
+        st.caption(
+            f"**Suggested c = {suggested_c:.2f}** — the geometric mean of "
+            f"{', '.join(f'{s:.2f}' for s in scores)}. Geometric rather than arithmetic so that "
+            f"one poor attribute pulls the answer down rather than being averaged away.\n\n"
+            f"**These levels are elicited judgements, not a calibration.** Nothing here is fitted "
+            f"to drilling outcomes, which is why it is a suggestion and not the value."
+        )
+
+    use_attributes = st.checkbox(
+        f"Use the attributes' suggestion (c = {suggested_c:.2f})", value=False,
+        key="dhi_in_c_from_attributes",
+        help="Takes c from the three gradings above instead of the slider. Off by default: the "
+             "combination rule is a heuristic, and a number you chose is easier to defend than "
+             "one a rule chose for you.")
+    stated_c = st.slider(
         "Given there IS hydrocarbon here, is the picked event its base?",
         0.05, 1.0, DEFAULT_CONTACT_GIVEN_HC, 0.01, key="dhi_in_contact_given_hc",
+        disabled=use_attributes,
         help="A question about the *event*, not the amplitude and not the charge: granted "
              "there is a column here, is this flat thing its base — rather than lithology, "
              "a diagenetic front, fizz, or a processing artefact? Conformance, flatness and "
              "whether it cuts structure are what answer it.")
+    contact_given_hc = suggested_c if use_attributes else stated_c
     p_valid = float(np.clip(ceiling * contact_given_hc, 0.01, 0.99))
 
     pv1, pv2 = st.columns([1, 2])
