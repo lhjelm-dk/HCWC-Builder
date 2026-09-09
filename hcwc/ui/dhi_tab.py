@@ -579,8 +579,44 @@ def render(n: Numbering | None = None) -> None:
     # producing it. Same one-frame lag as everything else that crosses a sub-tab boundary.
     st.session_state["dhi_r_strength"] = float(r_strength)
     derived_p_valid = dhi_core.volume_weight(r_strength)
-    with st.expander("**Is the picked event really the contact?** p_valid is asked here, not "
-                     "taken from the amplitude"):
+
+    # **Out of the expander, 9 Sep 2026.** `c` stopped being a footnote the moment p_valid
+    # stopped being derived: it is now the only part of p_valid a person types, and Lars
+    # could not find it. A control nobody can find is a default nobody chose. The reasoning
+    # behind it stays folded below, which is what expanders are for.
+    #
+    # The ceiling uses the **character channel only**. The geometry ratio depends on
+    # p_valid, so using the combined one here would close a loop.
+    _elements = st.session_state.get("element_pos") or {}
+    _p_g = float(np.prod([float(v) for v in _elements.values()])) if _elements else 1.0
+    ceiling = dhi_core.simm_update(_p_g, r_strength)
+
+    theme.heading(TAB, sub=n.sub, text="3 · Is the picked event the contact?")
+    contact_given_hc = st.slider(
+        "Given there IS hydrocarbon here, is the picked event its base?",
+        0.05, 1.0, DEFAULT_CONTACT_GIVEN_HC, 0.01, key="dhi_in_contact_given_hc",
+        help="A question about the *event*, not the amplitude and not the charge: granted "
+             "there is a column here, is this flat thing its base — rather than lithology, "
+             "a diagenetic front, fizz, or a processing artefact? Conformance, flatness and "
+             "whether it cuts structure are what answer it.")
+    p_valid = float(np.clip(ceiling * contact_given_hc, 0.01, 0.99))
+
+    pv1, pv2 = st.columns([1, 2])
+    pv1.metric("p_valid", f"{p_valid:.3f}",
+               f"{ceiling:.3f} × {contact_given_hc:.2f}", delta_color="off")
+    pv2.caption(
+        f"**The one number here you have to supply yourself.** Everything else on this tab "
+        f"is read off a curve or carried from tab 2.0.\n\n"
+        f"`p_valid` is the chance the picked event really is the hydrocarbon–water contact, "
+        f"and it is the slider above times a **ceiling of {ceiling:.3f}** — `P(G)` = "
+        f"{_p_g:.3f} from tab 2.0, updated by the amplitude alone (R = {r_strength:.2f}). "
+        f"A *hydrocarbon*–water contact needs hydrocarbons, so the event cannot be one more "
+        f"often than there is hydrocarbon to make it. The remaining **{1 - p_valid:.3f}** is "
+        f"the floor that keeps the geological distribution in play whatever the pick says."
+    )
+
+    with st.expander("**Why p_valid is bounded, and what happens when it is not** — the "
+                     "mapping this replaced assumed a 50 % chance of hydrocarbons"):
         st.markdown(
             "A flat event can be lithology, a diagenetic front, fizz gas read as pay, or a "
             "processing artefact. **`p_valid` is the chance it is none of those**, and it decides "
@@ -599,58 +635,29 @@ def render(n: Numbering | None = None) -> None:
             "Override it when that is the case — and if you are overriding often, the mapping "
             "is wrong and worth telling me about."
         )
-        # **Bounded, not free.** A hydrocarbon-water contact needs hydrocarbons, so
-        #
-        #     p_valid = P(G | amplitude) x P(this event is the contact | hydrocarbons present)
-        #
-        # and the first factor is a ceiling the user cannot be allowed to exceed. It used to be
-        # ignored: p_valid = R/(R+1) is identically simm_update(0.5, R), the posterior from an
-        # *even* prior, so the mapping assumed P(hydrocarbons) = 0.5 and dropped the geological
-        # risk -- base-rate neglect, committed by the tool that documents it.
-        #
-        # The ceiling uses the **character channel only**. The geometry ratio depends on p_valid,
-        # so using the combined one here would close a loop.
-        _elements = st.session_state.get("element_pos") or {}
-        _p_g = float(np.prod([float(v) for v in _elements.values()])) if _elements else 1.0
-        ceiling = dhi_core.simm_update(_p_g, r_strength)
 
-        st.markdown(
-            f"**The ceiling is {ceiling:.3f}.** That is `P(G)` = {_p_g:.3f} from tab 2.0, updated "
-            f"by the amplitude alone (R = {r_strength:.2f}). The picked event cannot be a "
-            f"*hydrocarbon*–water contact more often than there is hydrocarbon to make one, so "
-            f"what is asked for below is the **conditional** factor — the only part a "
-            f"geophysicist can answer without borrowing the geologist's number."
-        )
-        contact_given_hc = st.slider(
-            "Given there IS hydrocarbon, is the picked event the contact?",
-            0.05, 1.0, DEFAULT_CONTACT_GIVEN_HC, 0.01, key="dhi_in_contact_given_hc",
-            help="A question about the *event*, not the amplitude and not the charge: granted "
-                 "there is a column here, is this flat thing its base — rather than lithology, a "
-                 "diagenetic front, fizz, or a processing artefact? Conformance, flatness and "
-                 "whether it cuts structure are what answer it.")
-        p_valid = float(np.clip(ceiling * contact_given_hc, 0.01, 0.99))
-        st.metric("p_valid", f"{p_valid:.3f}",
-                  f"{ceiling:.3f} × {contact_given_hc:.2f}", delta_color="off")
-
-        # The override stays, because a coherence rule is a model and models are wrong sometimes.
-        # It is off by default and says what it is switching off.
-        if st.checkbox("Set p_valid directly instead", value=False, key="dhi_in_pvalid_manual",
+        # The override stays, because a coherence rule is a model and models are wrong
+        # sometimes. Off by default, and it says what it is switching off.
+        if st.checkbox("Set p_valid directly instead", value=False,
+                       key="dhi_in_pvalid_manual",
                        help="Bypasses the ceiling. Only defensible if you think the element "
                             "chances on tab 2.0 are wrong, in which case fix those instead."):
             p_valid = st.slider("p_valid", 0.01, 0.99, float(round(p_valid, 2)), 0.01,
                                 key="dhi_in_pvalid",
-                                help="1.0 is deliberately unreachable: it would say the pick is "
-                                     "certainly the contact, and certainty cannot be argued with.")
+                                help="1.0 is deliberately unreachable: it would say the pick "
+                                     "is certainly the contact, and certainty cannot be "
+                                     "argued with.")
             if p_valid > ceiling + 1e-9:
                 st.warning(
                     f"**That is above the ceiling.** You are saying the picked event is the "
                     f"hydrocarbon–water contact with probability {p_valid:.2f}, while the "
-                    f"elements and the amplitude together put the chance of *any* hydrocarbon at "
-                    f"{ceiling:.2f}. One of the two is wrong, and this tab cannot tell you which."
+                    f"elements and the amplitude together put the chance of *any* "
+                    f"hydrocarbon at {ceiling:.2f}. One of the two is wrong, and this tab "
+                    f"cannot tell you which."
                 )
 
     # ------------------------------------------------------------------ combining
-    theme.heading(TAB, sub=n.sub, text="3 · Detection function D(h)")
+    theme.heading(TAB, sub=n.sub, text="4 · Detection function D(h)")
     st.markdown(
         "The chance a column of height *h* produces a **detectable** anomaly. Near zero below "
         "tuning thickness, rising through the resolution limit, then flat. It is what makes an "
@@ -686,7 +693,7 @@ def render(n: Numbering | None = None) -> None:
                  "hard-coded for that reason.")
 
     # ------------------------------------------------------------------ the update
-    theme.heading(TAB, sub=n.sub, text="4 · Prospect POS against threshold")
+    theme.heading(TAB, sub=n.sub, text="5 · Prospect POS against threshold")
     observation = DhiObservation(
         seen=seen, contact_m=None if partial or not seen else contact,
         pick_sigma_m=sigma, area_km2=area or None,
@@ -715,7 +722,7 @@ def render(n: Numbering | None = None) -> None:
         except ValueError as exc:
             st.error(str(exc))
             return
-        theme.heading(TAB, sub=n.sub, text="3b · Well control")
+        theme.heading(TAB, sub=n.sub, text="4b · Well control")
         lo, hi = control.bracket()
         bits = []
         if control.hc_down_to_m is not None:
@@ -1019,7 +1026,7 @@ def render(n: Numbering | None = None) -> None:
         "beside it. The answer to *which chance do I quote* is: whichever row your volume was "
         "computed at.")
 
-    theme.heading(TAB, sub=n.sub, text="5 · Combining the two channels")
+    theme.heading(TAB, sub=n.sub, text="6 · Combining the two channels")
     st.markdown(
         """
 Geometry and character are **two aspects of one observation, not two observations.** A bright
@@ -1156,7 +1163,7 @@ So the combination is discounted rather than taken raw.
             "read, and not what a first pass needs."
         )
 
-        theme.heading(TAB, sub=n.sub, text="6 · What is this answer most sensitive to?")
+        theme.heading(TAB, sub=n.sub, text="7 · What is this answer most sensitive to?")
         st.markdown(
             "**Two kinds of input, and the figure keeps them apart because they are argued about "
             "differently.** The geology varies realisation by realisation and is sliced the same way "
