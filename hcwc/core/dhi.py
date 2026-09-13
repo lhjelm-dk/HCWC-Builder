@@ -474,6 +474,116 @@ def update(result: EngineResult, detection: DetectionFunction,
     return DhiPosterior(result=result, weights=w, detection=detection, observation=observation)
 
 
+@dataclass(frozen=True)
+class Outcome:
+    """The two numbers a reader takes off the DHI tab, together.
+
+    Kept as one object because they answer different questions and an input can move one without
+    the other: the amplitude character moves the chance and leaves the contact where the geology
+    put it, while the pick does the reverse. Reporting only one of them is how a control comes to
+    look dead when it is not.
+    """
+    #: ``P(G) x F(h_min)`` updated by the combined ratio -- the prospect chance given the DHI.
+    pos: float
+    #: The posterior median contact, m TVDSS, over the success cases. ``nan`` if there are none.
+    contact_m: float
+
+
+def outcome(result: EngineResult, detection: DetectionFunction, observation: DhiObservation, *,
+            prior_pos: float, r_strength: float, dependence: float = 0.5) -> Outcome:
+    """Run one full state of the tab and report what a reader would see.
+
+    The whole chain in one call -- reweight, read the geometry ratio, combine with the character
+    ratio -- so that :func:`leverage` can vary one input and be sure everything downstream of it
+    moved with it.
+    """
+    post = update(result, detection, observation)
+    combined = CombinedUpdate(prior_pos=prior_pos, r_geometry=float(post.r_dhi),
+                              r_strength=r_strength, dependence=dependence)
+    return Outcome(pos=combined.posterior_pos,
+                   contact_m=float(post.percentiles(50.0)[0]))
+
+
+@dataclass(frozen=True)
+class Leverage:
+    """How far one input moves the answer across the range that was swept.
+
+    ``nan`` in :attr:`pos_points` means the sweep could not be run: fewer than two of the values
+    produced a state the model would enter. That is a finding rather than a failure and is
+    reported as "not measurable" rather than as a zero, because zero is the answer for a control
+    that does nothing and this is not that. ``nan`` in :attr:`contact_m` alone is weaker -- the
+    chance was measurable but there were not two success sets to compare contacts across.
+    """
+    #: Swing in the prospect chance, in **percentage points**.
+    pos_points: float
+    #: Swing in the posterior median contact, in metres.
+    contact_m: float
+    #: The values that produced the extremes, low then high, for a reader who wants to check.
+    at: tuple[float, float] | tuple[None, None] = (None, None)
+    #: The ends of the range that was actually swept.
+    #:
+    #: Reported because it is rarely the widget's own range and a caption that said "across
+    #: its whole range" without it would be overclaiming: the pick sigma box accepts 1 to
+    #: 500 m and is swept over 3 to 120, which is where an interpreter would ever put it,
+    #: and the picked depth is swept over what the geological model considers possible
+    #: rather than over the whole water column.
+    span: tuple[float, float] | tuple[None, None] = (None, None)
+
+    @property
+    def measurable(self) -> bool:
+        return bool(np.isfinite(self.pos_points))
+
+    @property
+    def inert(self) -> bool:
+        """Below what a reader could act on: a tenth of a point and a tenth of a metre.
+
+        Not a tolerance on the arithmetic -- these are exact -- but on the decision. An input that
+        cannot move the chance by a tenth of a point is not an input, whatever else it is.
+        """
+        if not self.measurable:
+            return False
+        moved_depth = np.isfinite(self.contact_m) and abs(self.contact_m) >= 0.1
+        return abs(self.pos_points) < 0.1 and not moved_depth
+
+
+def leverage(build, values) -> Leverage:
+    """Sweep one input over ``values`` and measure the swing, holding everything else fixed.
+
+    ``build(v)`` returns the ``(result, detection, observation, prior_pos, r_strength,
+    dependence)`` the tab would be in with that input at ``v`` -- everything, because an input
+    such as the assessment minimum changes the realisation set and not merely the likelihood, and
+    a sweep that varied only the likelihood would report a smaller number than the truth.
+
+    One-at-a-time, which is the honest reading of a slider: *this* control, from where everything
+    else currently stands. It is not a variance decomposition and does not claim to be -- the
+    tornado in the sensitivity section is the tool for interactions.
+    """
+    tried: list[tuple[float, Outcome]] = []
+    for v in values:
+        try:
+            args = build(v)
+        except (ValueError, ZeroDivisionError):
+            continue
+        try:
+            tried.append((v, outcome(args[0], args[1], args[2], prior_pos=args[3],
+                                     r_strength=args[4], dependence=args[5])))
+        except ValueError:
+            # A state the model refuses -- every realisation ruled out, most often. Skipped rather
+            # than counted as an extreme, because "the chance is zero there" and "the model will
+            # not go there" are different statements and only the first is a leverage.
+            continue
+    usable = [(v, o) for v, o in tried if np.isfinite(o.pos)]
+    if len(usable) < 2:
+        return Leverage(float("nan"), float("nan"))
+    lo = min(usable, key=lambda p: p[1].pos)
+    hi = max(usable, key=lambda p: p[1].pos)
+    contacts = [o.contact_m for _, o in usable if np.isfinite(o.contact_m)]
+    spread = (max(contacts) - min(contacts)) if len(contacts) >= 2 else float("nan")
+    return Leverage(pos_points=100.0 * (hi[1].pos - lo[1].pos), contact_m=spread,
+                    at=(lo[0], hi[0]),
+                    span=(min(v for v, _ in usable), max(v for v, _ in usable)))
+
+
 def scenario_switch(result: EngineResult, p_valid: float, dhi_contact_m: float,
                     pick_sigma_m: float, seed: int | None = None) -> np.ndarray:
     """Formulation A — ``IF(DHI valid, DHI contact, geological contact)``.
@@ -549,8 +659,26 @@ def containment_ok(depths_m: np.ndarray, areas_km2: np.ndarray, apex_m: float,
 #: 2 x Phi^-1(0.99). A P1-to-P99 span is this many standard deviations.
 _P1_P99_Z = 2.0 * 2.3263478740408408
 
-#: Guards from E-POS, so a degenerate ratio cannot blow up the update.
+#: Outer guard from E-POS on the **combined** ratio, so a degenerate ratio cannot blow up the
+#: update. It is deliberately loose: Kjonsberg et al. (2010) measured a combined R of 29 on a
+#: prospect that was subsequently drilled and found gas, so a combination in the tens is earned
+#: rather than absurd, and clipping there would clip real evidence.
 R_FLOOR, R_CAP = 1.0 / 50.0, 50.0
+
+#: The most a **single channel** may claim, either way.
+#:
+#: A different job from :data:`R_CAP`, and it used to be done by the same number. Simm (2016) is
+#: explicit that for one line of fluid-indicator evidence an honest R rarely exceeds about 3, and
+#: that |R| above 10 should send you back to the inputs; :func:`strength_bands` has said so in
+#: words since the strength model was written, while the arithmetic allowed 50. The gap was not
+#: academic. On the shipped prospect the strength slider alone moved the prospect chance from
+#: 1.4 % to 97.2 % -- a 96-point swing from one elicited number on an axis with no external
+#: referent, which is more than every other input on the tab put together.
+#:
+#: Kjonsberg's 29 is not a counter-example: their number carries the amplitude *and* the geometry
+#: through a full prestack inversion, so it is a combined ratio and belongs against ``R_CAP``.
+#: This bound is on each channel going in.
+R_SINGLE_CHANNEL = 10.0
 
 #: E-POS's `DEFAULT_SLIDER`.
 DEFAULT_STRENGTH = 7.0
@@ -592,8 +720,53 @@ class StrengthModel:
         num = float(self.hc.pdf(strength))
         den = float(self.no_hc.pdf(strength))
         if den <= 0.0:
-            return R_CAP if num > 0.0 else 1.0
-        return float(min(max(num / den, R_FLOOR), R_CAP))
+            return R_SINGLE_CHANNEL if num > 0.0 else 1.0
+        return float(min(max(num / den, 1.0 / R_SINGLE_CHANNEL), R_SINGLE_CHANNEL))
+
+    def strength_at(self, r: float) -> float:
+        """The reading that produces likelihood ratio ``r``, or ``nan`` if the curves never do.
+
+        The inverse of :meth:`r_at`, and it exists so the **slider can stop where the evidence
+        stops** rather than run on into a range the cap has flattened. A dead half-slider is worse
+        than a narrow live one: it invites a reading the arithmetic then quietly refuses.
+
+        Analytic where the two cases share a standard deviation, which is the E-POS default and
+        makes ``log R`` linear in the reading.
+
+        Otherwise ``log R`` is a quadratic and reaches any target **twice**. The far root is where
+        the narrower curve has collapsed to nothing: arithmetically the ratio is right, but it lies
+        on the opposite side of the crossing from the population it is meant to favour, so using it
+        as a slider bound would put the supportive end of the axis at a reading that argues
+        against. The first crossing outward from neutral is the one wanted.
+        """
+        if r <= 0.0:
+            return float("nan")
+        m1, s1 = self.hc.mean, self.hc.sd
+        m2, s2 = self.no_hc.mean, self.no_hc.sd
+        target = np.log(r)
+        if abs(s1 - s2) < 1e-9:
+            slope = (m1 - m2) / (s1 * s1)
+            if abs(slope) < 1e-12:
+                return float("nan")
+            return float((target + np.log(s2 / s1)
+                          + (m1 * m1 - m2 * m2) / (2.0 * s1 * s1)) / slope)
+        span = 20.0 * max(s1, s2) + max(abs(m1), abs(m2))
+        grid = np.linspace(-span, span, 20_001)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            curve = np.log(self.hc.pdf(grid)) - np.log(self.no_hc.pdf(grid))
+        ok = np.isfinite(curve)
+        if not ok.any():
+            return float("nan")
+        grid, curve = grid[ok], curve[ok]
+        neutral = grid[int(np.argmin(np.abs(curve)))]
+        side = grid >= neutral if target > 0.0 else grid <= neutral
+        if not side.any():
+            return float("nan")
+        g, c = grid[side], curve[side]
+        if target < 0.0:
+            g, c = g[::-1], c[::-1]
+        reached = np.flatnonzero(np.abs(c) >= abs(target))
+        return float(g[reached[0]] if reached.size else g[-1])
 
 
 def simm_update(prior: float, r: float) -> float:
@@ -658,13 +831,27 @@ class CombinedUpdate:
         if not 0.0 <= self.dependence <= 1.0:
             raise ValueError("dependence must be in [0, 1]")
 
+    @staticmethod
+    def _one_channel(r: float) -> float:
+        """Bound one channel before it is combined.
+
+        The geometry ratio is a *measurement* off the realisations, so :attr:`DhiPosterior.r_dhi`
+        reports it raw -- a reader who is shown 4 000 needs to see 4 000 and be told it is an
+        artefact of a sharp pick against a distant failure set. What must not happen is that the
+        raw value then walks into the combination and is trimmed only by the outer guard, which is
+        five times what one channel is allowed to say. It is bounded here, at the point of use.
+        """
+        return float(min(max(r, 1.0 / R_SINGLE_CHANNEL), R_SINGLE_CHANNEL))
+
     @property
     def r_combined(self) -> float:
         """Geometric interpolation between the product and the stronger single channel."""
         if not np.isfinite(self.r_geometry) or self.r_geometry <= 0:
-            return self.r_strength
-        log_product = np.log(self.r_geometry) + np.log(self.r_strength)
-        log_stronger = max(abs(np.log(self.r_geometry)), abs(np.log(self.r_strength)))
+            return self._one_channel(self.r_strength)
+        log_product = (np.log(self._one_channel(self.r_geometry))
+                       + np.log(self._one_channel(self.r_strength)))
+        log_stronger = max(abs(np.log(self._one_channel(self.r_geometry))),
+                           abs(np.log(self._one_channel(self.r_strength))))
         log_stronger = np.copysign(log_stronger, log_product) if log_product else 0.0
         blended = (1.0 - self.dependence) * log_product + self.dependence * log_stronger
         return float(min(max(np.exp(blended), R_FLOOR), R_CAP))

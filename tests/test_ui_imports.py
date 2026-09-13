@@ -171,10 +171,20 @@ class TestTheDefaultStrengthIsDefensible:
 
     def test_the_cap_is_what_a_huge_geometry_channel_hits(self):
         """The condition the UI warns on: when one channel is astronomical the combination is the
-        guard, not the evidence, and the reader has to be told which they are looking at."""
+        guard, not the evidence, and the reader has to be told which they are looking at.
+
+        What it hits changed on 9 Sep 2026. The runaway channel is clipped to
+        `R_SINGLE_CHANNEL` on the way in rather than being carried to `R_CAP` on the way
+        out, so the combination is that ceiling blended with the honest strength channel
+        and no longer a flat 50. The warning is unchanged and still correct: the number on
+        screen is the guard rather than the evidence.
+        """
         from hcwc.core import dhi
         combined = dhi.CombinedUpdate(prior_pos=0.3, r_geometry=1.5e7, r_strength=1.40)
-        assert combined.r_combined == dhi.R_CAP
+        neutral = dhi.CombinedUpdate(prior_pos=0.3, r_geometry=dhi.R_SINGLE_CHANNEL,
+                                     r_strength=1.40)
+        assert combined.r_combined == pytest.approx(neutral.r_combined)
+        assert dhi.R_SINGLE_CHANNEL < combined.r_combined < dhi.R_CAP
 
 
 class TestBurialDepthDrivesSealTemperature:
