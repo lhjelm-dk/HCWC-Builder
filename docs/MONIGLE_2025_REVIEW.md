@@ -194,6 +194,15 @@ That distinction is real and is the thing to claim. Their own hedge — "not con
 industry (e.g. Nixon *et al.*, 2018)" — is the correct level of confidence for the general
 statement.
 
+*Status, 14 September 2026.* The correction above was made, and the audit of the same day
+narrowed it further. Under the corrected chain (`docs/DHI_alignment.md` §0) absence acts on the
+column-height axis only: the realisations are conditional on G, the character channel is held
+neutral when nothing is seen, and the chance does not move. The 40.3 % → 6.3 % result the article
+quoted came from a within-G ratio applied as a ratio on the prospect, and is withdrawn. The
+chance-axis route Monigle *et al.* use needs a false-positive rate for bright events without
+hydrocarbons, which the strength model does not carry; the article now lists that as a
+limitation (§12, §17).
+
 The same trim applies to §1.1's novelty item 4, which says the scenario switch "cannot use an
 absent anomaly". True of the *scenario switch*, but it now needs to say that the chance-axis route
 is published and that what is offered here is the column-height route.
