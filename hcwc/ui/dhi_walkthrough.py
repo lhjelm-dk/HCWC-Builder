@@ -6,7 +6,7 @@ people — *where did the denominator go* and *what if the thing I picked is not
 never asked out loud.
 
 So this sub-tab is a lesson rather than a control panel. It changes nothing. Every number on it is
-the live one from the prospect next door, because a worked example with your own prospect's numbers
+the live one from the prospect next door, because a worked example on the reader's own numbers
 is the only kind anyone finishes reading.
 
 The order is the formula's order, not the software's:
@@ -43,9 +43,9 @@ def render(n: Numbering | None = None) -> None:
     overlay = st.session_state.get("dhi_overlay")
     if post is None or overlay is None:
         st.info(
-            "**This page runs on your own prospect's numbers, so it needs an observation first.** "
-            "Turn on *This is a DHI prospect* on tab 2.0, then describe the amplitude on sub-tab 2.0. "
-            "Everything here is explanation — nothing on this page changes a result."
+            "This page runs on the current prospect's numbers, so it needs an observation first: "
+            "**This is a DHI prospect** on tab 2.0, then the amplitude on sub-tab 2.0. "
+            "Everything here is explanation; nothing on this page changes a result."
         )
         return
 
@@ -58,27 +58,27 @@ def render(n: Numbering | None = None) -> None:
                        if element_pos else 1.0)
 
     st.markdown(
-        "**Nothing on this page changes anything.** It is the same update the next sub-tab "
-        "performs, taken apart one term at a time, on your numbers.\n\n"
-        "The rule everybody is taught looks like it needs something impossible:"
+        "Nothing on this page changes a result. It is the update the next sub-tab performs, "
+        "taken apart one term at a time, on the current prospect's numbers.\n\n"
+        "The rule as usually taught appears to need something that cannot be estimated:"
     )
     st.latex(r"P(\mathrm{HC} \mid \mathrm{DHI}) = "
              r"\frac{P(\mathrm{DHI} \mid \mathrm{HC}) \; P(\mathrm{HC})}{P(\mathrm{DHI})}")
     st.markdown(
-        "`P(DHI)` is the chance of seeing this amplitude across *all* possible worlds, and nobody "
-        "can estimate that. **§5 shows why you never have to.**")
+        "`P(DHI)` is the chance of seeing this amplitude across all possible worlds. Step 5 "
+        "shows why it is never needed.")
 
     # ------------------------------------------------------------------ 1 · the prior
-    st.markdown("#### Step 1 · P(HC) — what you believed before the seismic")
+    st.markdown("#### Step 1 · P(HC): the state of belief before the seismic")
     st.markdown(
-        "The prior is everything on tabs 2.0 and 3.0 and **nothing else**. It has two parts, and "
-        "keeping them apart is most of the battle:\n\n"
-        f"- **a number** — `P(G) = {element_product:.3f}`, the chance the prospect works at all. "
-        "The product of the element chances on tab 2.0.\n"
-        f"- **a distribution** — `p(h | G)`, how tall the column is *given* it works. The "
+        "The prior is everything on tabs 2.0 and 3.0 and nothing else. It has two parts, and "
+        "they are kept apart throughout:\n\n"
+        f"- a number, `P(G) = {element_product:.3f}`, the chance the prospect works at all: the "
+        "product of the element chances on tab 2.0;\n"
+        f"- a distribution, `p(h | G)`, the column height given that it works: the "
         "competing-limits model on tab 3.0.\n\n"
-        "What people call *the prospect POS* is neither. It is a **reading** of the two together, "
-        "and it cannot be quoted without saying at what column height it was read:"
+        "The prospect POS is neither. It is a reading of the two together, and it cannot be "
+        "quoted without the column height at which it was read:"
     )
     st.latex(r"P(\mathrm{HC}) = P(G) \times P(h \geq h_{\min} \mid G) = "
              rf"{element_product:.3f} \times {prior_pos / max(element_product, 1e-12):.3f} = "
@@ -94,26 +94,26 @@ def render(n: Numbering | None = None) -> None:
     figp.update_layout(xaxis_title="Contact depth (m TVDSS)", yaxis_title="Realisations",
                        height=320, margin=dict(t=20), showlegend=False)
     n.plot(figp,
-           "**The prior, drawn.** This is tab 4.0's answer and it contains no seismic amplitude — "
-           "that is an assumption the model makes and cannot check.\n\n"
-           "⚠ **It is also the assumption most likely to be false in practice.** If the closure was "
-           "mapped with the anomaly on screen — and the apex especially, since it enters the "
-           "likelihood directly as `apex + h` — then the prior already knows about the DHI, and "
-           "multiplying by the DHI likelihood counts the same evidence twice. No amount of correct "
-           "arithmetic downstream survives a prior that has already seen the answer.")
+           "The prior, drawn. This is tab 4.0's answer, and the model assumes it contains no "
+           "seismic amplitude; the assumption cannot be checked here.\n\n"
+           "It is also the assumption most often false in practice. Where the closure was mapped "
+           "with the anomaly on screen, the apex above all, since it enters the likelihood "
+           "directly as `apex + h`, the prior already carries the DHI, and multiplying by the DHI "
+           "likelihood counts the same evidence twice. Correct arithmetic downstream does not "
+           "repair a prior that has already seen the answer.")
 
     # ------------------------------------------------------------------ 2 · the likelihood
-    st.markdown("#### Step 2 · P(DHI | HC) — if it really works, how likely was I to see this?")
+    st.markdown("#### Step 2 · P(DHI | HC): the chance of this observation if the prospect works")
     st.markdown(
-        "The term everyone finds hard, because it runs **backwards** from the question you care "
-        "about. You want to know about the prospect given the seismic; Bayes makes you answer "
-        "about the seismic given the prospect.\n\n"
-        "Two things multiply, and they answer different questions:"
+        "The term is usually found hard because it runs backwards from the question of interest. "
+        "The question is about the prospect given the seismic; Bayes' rule asks about the seismic "
+        "given the prospect.\n\n"
+        "Two factors multiply, and they answer different questions:"
     )
     grid = np.linspace(0.0, float(np.percentile(result.column_m, 99.5)), 400)
     d_curve = detection.at(grid)
     figl = go.Figure()
-    figl.add_scatter(x=grid, y=d_curve, mode="lines", name="D(h) — would I have seen it at all?",
+    figl.add_scatter(x=grid, y=d_curve, mode="lines", name="D(h): would the column show at all?",
                      line=dict(color=PRIOR, width=2.6))
     if observation.is_partial:
         # The bound is a censored pick: the edge lies above the cutoff, to within the same error
@@ -123,7 +123,7 @@ def render(n: Numbering | None = None) -> None:
         h_off = observation.absent_below_m - apex
         bound_curve = _norm.cdf((h_off - grid) / observation.pick_sigma_m)
         figl.add_scatter(x=grid, y=bound_curve, mode="lines",
-                         name="Φ((z_off − z) / σ) — does the edge lie above the cutoff?",
+                         name="Φ((z_off − z) / σ): does the edge lie above the cutoff?",
                          line=dict(color=POSTERIOR, width=2.6))
         product = d_curve * bound_curve
         figl.add_scatter(x=grid, y=product / (float(product.max()) or 1.0), mode="lines",
@@ -132,7 +132,7 @@ def render(n: Numbering | None = None) -> None:
         pick_curve = observation.pick_pdf(apex + grid)
         scale = float(pick_curve.max()) or 1.0
         figl.add_scatter(x=grid, y=pick_curve / scale, mode="lines",
-                         name="Pick(z | apex + h) — would it have stopped there?",
+                         name="Pick(z | apex + h): would it have terminated there?",
                          line=dict(color=POSTERIOR, width=2.6))
         product = d_curve * pick_curve
         figl.add_scatter(x=grid, y=product / (float(product.max()) or 1.0), mode="lines",
@@ -140,15 +140,15 @@ def render(n: Numbering | None = None) -> None:
     figl.update_layout(xaxis_title="Column height h (m)", yaxis_title="Relative likelihood",
                        height=360, margin=dict(t=20), legend=dict(orientation="h", y=-0.24))
     n.plot(figl,
-           "**Two questions, one product.** `D(h)` asks whether a column of that height would have "
-           "shown up at all — it is near zero below tuning thickness and flat above resolution. "
-           "The pick likelihood asks whether, having shown up, it would have terminated where "
-           "yours did.\n\n"
+           "Two questions, one product. `D(h)` asks whether a column of that height would have "
+           "shown at all; it is near zero below tuning thickness and flat above resolution. The "
+           "pick likelihood asks whether, having shown, it would have terminated where the "
+           "observed one did.\n\n"
            "Their product peaks at the column heights that explain the observation best. Curves "
            "are scaled to a common height; only their shapes carry meaning.")
 
     # ------------------------------------------------------------------ 3 · the rival
-    st.markdown("#### Step 3 · P(DHI | no HC) — and if it doesn't work, how likely was I anyway?")
+    st.markdown("#### Step 3 · P(DHI | no HC): the chance of the same observation if it does not")
     # Guarded on `dhi_on` like every other reader of a `dhi_` output. Switching the DHI off clears
     # `dhi_overlay` but leaves this and `dhi_posterior` behind, so an unguarded read is a stale
     # strength waiting for the day this function is called from somewhere that does not return
@@ -156,18 +156,18 @@ def render(n: Numbering | None = None) -> None:
     r_strength = (st.session_state.get("dhi_r_strength")
                   if st.session_state.get("dhi_on") else None)
     st.markdown(
-        "**This is the term geoscientists skip, and it is why bright amplitudes over-persuade.** "
-        "An observation is only evidence to the extent that it is *more* likely under success "
-        "than under failure. An anomaly you would have seen either way tells you nothing, however "
-        "convincing it looks.\n\n"
-        "Your tool answers it in two places, one for each thing the amplitude carries:"
+        "This is the term most often skipped, and the reason bright amplitudes over-persuade. "
+        "An observation is evidence only to the extent that it is more likely under success than "
+        "under failure. An anomaly that would have appeared either way carries no information, "
+        "however convincing it looks.\n\n"
+        "The tool answers it in two places, one for each thing the amplitude carries:"
     )
     rows = [{"Aspect of the observation": "Character: how hydrocarbon-like the amplitude looks",
              "Answered by": "the two-curve strength model, sub-tab 2.0 §2",
              "Updates": "P(G), the chance the elements worked",
              "Gives": f"R = {r_strength:.2f}" if r_strength else "R from strength"},
             {"Aspect of the observation": "Geometry: where the event terminates",
-             "Answered by": "the pick likelihood against a flat rival, §4 below",
+             "Answered by": "the pick likelihood against a flat rival, step 4 below",
              "Updates": "p(h | G), the column given that they worked",
              "Gives": f"floor 1 − p_valid = {1 - observation.p_valid:.2f}"}]
     n.table(pd.DataFrame(rows),
@@ -176,7 +176,7 @@ def render(n: Numbering | None = None) -> None:
             "twice and nothing has to be discounted.")
 
     # ------------------------------------------------------------------ 4 · the two branches
-    st.markdown("#### Step 4 · What if the thing I picked isn't the contact at all?")
+    st.markdown("#### Step 4 · The case where the picked event is not the contact")
     st.markdown(
         "A flat event can be lithology, a diagenetic front, fizz gas read as pay, or a processing "
         "artefact. Writing `V` for *the picked event really is the contact*, the likelihood is two "
@@ -233,35 +233,35 @@ def render(n: Numbering | None = None) -> None:
                            yaxis=dict(autorange="reversed"), height=440, margin=dict(t=20),
                            legend=dict(orientation="h", y=-0.2))
         n.plot(figb,
-               "**The grey dashed line is the geological model, unchanged.** That is branch ¬V — "
-               "if the picked event is not the contact, tab 4.0's answer stands exactly as it was.\n\n"
-               "The mixture never leaves the corridor between the two branches, so it can never "
-               "reach zero while the grey line is above zero. Read that as the guarantee it is: "
-               f"**the depth channel can say at most "
+               "The grey dashed line is the geological model, unchanged. That is branch ¬V: if "
+               "the picked event is not the contact, tab 4.0's answer stands as it was.\n\n"
+               "The mixture never leaves the corridor between the two branches, so it cannot reach "
+               "zero while the grey line is above zero. That is a guarantee: the depth channel "
+               f"can say at most "
                f"{observation.p_valid / max(1 - observation.p_valid, 1e-9):.1f} : 1 against any "
-               "contact depth**, however sharply you draw the pick.")
+               "contact depth, however sharply the pick is drawn.")
 
     # ------------------------------------------------------------------ 5 · the ratio
-    st.markdown("#### Step 5 · R — and where the impossible term went")
+    st.markdown("#### Step 5 · R, and where the intractable term went")
     st.markdown(
-        "Write Bayes' rule twice, once for success and once for failure, and divide one by the "
-        "other. `P(DHI)` is the same in both, so it **cancels**:")
+        "Bayes' rule written twice, once for success and once for failure, and divided one by "
+        "the other. `P(DHI)` is the same in both, so it cancels:")
     st.latex(r"\underbrace{\frac{P(\mathrm{HC} \mid \mathrm{DHI})}"
              r"{P(\mathrm{no\ HC} \mid \mathrm{DHI})}}_{\text{posterior odds}} = "
              r"\underbrace{\frac{P(\mathrm{DHI} \mid \mathrm{HC})}"
              r"{P(\mathrm{DHI} \mid \mathrm{no\ HC})}}_{R} \times "
              r"\underbrace{\frac{P(\mathrm{HC})}{P(\mathrm{no\ HC})}}_{\text{prior odds}}")
     st.markdown(
-        "**That is the whole method.** The only question a DHI ever has to answer is *how much "
-        "more likely was this observation if the prospect works than if it doesn't* — and the "
-        "term nobody could estimate never has to be computed.\n\n"
+        "That is the whole method. The only question a DHI has to answer is how much more "
+        "likely the observation was if the prospect works than if it does not, and the term "
+        "nobody could estimate is never computed.\n\n"
         "It also makes the two extremes legible:\n\n"
-        "- **R = 0** says the observation was flatly impossible under success. Posterior odds "
-        "zero, and no prior survives it — which is why §4 exists.\n"
-        "- **R = ∞** says it was impossible under failure.\n\n"
-        "Neither should ever come out of one seismic interpretation. Your tool caps R at "
-        f"**{dhi_core.R_SINGLE_CHANNEL:.0f}** and floors it at "
-        f"**{1.0 / dhi_core.R_SINGLE_CHANNEL:g}** so that it cannot.")
+        "- R = 0 says the observation was impossible under success. Posterior odds zero, and no "
+        "prior survives it, which is why step 4 exists.\n"
+        "- R = ∞ says it was impossible under failure.\n\n"
+        "Neither should come out of one seismic interpretation. The tool caps R at "
+        f"{dhi_core.R_SINGLE_CHANNEL:.0f} and floors it at "
+        f"{1.0 / dhi_core.R_SINGLE_CHANNEL:g} so that it cannot.")
 
     # ------------------------------------------------------------------ 6 · the arithmetic
     st.markdown("#### Step 6 · The arithmetic, on this prospect")
