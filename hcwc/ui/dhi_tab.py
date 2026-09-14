@@ -176,6 +176,53 @@ def _pooled_note(gap: float | None, floor_part: float | None) -> str:
             f"dislikes to nearly zero weight, and the dashed line is what that looks like.")
 
 
+def _leverage_caption(lv: dhi_core.Leverage) -> str:
+    """One line under a control saying what it is worth, in the units of the decision.
+
+    The audit this came from found the tab explaining hardest where it mattered least: the
+    detection function carried a warning triangle and moved the chance by 0.00 points, while
+    the picked contact depth -- the second most powerful control here -- had a bare number
+    box. A measured swing puts that right without writing more theory, and it teaches the
+    structure better than theory would: a reader who does not think in likelihood ratios can
+    still see which control is load-bearing, and which is switched off and why.
+
+    Three readings, because "no effect" has three causes and only one is a property of the
+    control:
+
+    * a number, when the control moves something;
+    * *inert*, when its whole range is worth less than a tenth of a point and a tenth of a
+      metre -- true of the detection function on any prospect whose columns clear tuning,
+      where ``D(h)`` sits at its ceiling for every realisation and a constant cancels out of
+      a ratio;
+    * *not measurable*, when the sweep met states the model refuses, which is a finding about
+      the prospect rather than about the control.
+    """
+    if not lv.measurable:
+        return ("**Leverage** — not measurable from here: part of this range puts the "
+                "model in a state it refuses, usually a pick the geology rules out entirely.")
+    chance = (f"**{abs(lv.pos_points):.1f} points** of prospect chance"
+              if abs(lv.pos_points) >= 0.05 else "**nothing** of the prospect chance")
+    moves_depth = np.isfinite(lv.contact_m) and abs(lv.contact_m) >= 0.5
+    depth = (f"**{abs(lv.contact_m):.0f} m** of contact depth" if moves_depth
+             else "**nothing** of the contact depth")
+    lo, hi = lv.span
+    # Depths run to four figures and probabilities to two decimals, and `.3g` renders the
+    # first as scientific notation. Pick the format from the magnitude rather than making
+    # every caller pass one.
+    if lo is None:
+        swept = "its range"
+    elif max(abs(lo), abs(hi)) >= 100.0:
+        swept = f"{lo:,.0f} to {hi:,.0f}"
+    else:
+        swept = f"{lo:g} to {hi:g}"
+    if lv.inert:
+        return (f"**No leverage on this prospect** — over {swept} this control changes "
+                f"neither the chance nor the contact. That is a fact about this prospect, "
+                f"not about the control: it can matter on another one.")
+    return (f"**Leverage on this prospect** — swept from {swept}, this control is worth "
+            f"{chance} and {depth}.")
+
+
 def render(n: Numbering | None = None) -> None:
     # See the note in `results_tab.render`: one sequence per top-level tab, shared by its sub-tabs.
     n = n or Numbering(TAB)
@@ -211,10 +258,49 @@ def render(n: Numbering | None = None) -> None:
         _well_only(result, n)
         return
 
+    # Placeholders reserved beside each control and filled at the foot of the input
+    # sections, once every value the sweep needs has been read.
+    _lev: dict[str, object] = {}
+
     theme.basis_banner(
         theme.GIVEN_DHI,
         "Every contact distribution below carries the amplitude evidence. The purely geological "
         "model is on tab 4.0 and is unchanged by anything here.")
+
+    # The geometry channel has a precondition and it belongs here, above the inputs it
+    # governs, not in section 5 where the combination happens. `r_dhi` compares the
+    # likelihood over realisations that clear the assessment minimum with the likelihood over
+    # those that fall short; below `MIN_FAILURES_FOR_R` there is no second group to average
+    # over and the ratio is undefined. On the shipped prospect at a 5 m minimum nothing falls
+    # short, so the channel is off -- and the notice that used to say so sat far down the
+    # page, in the combining block, and blamed a minimum "of zero" that is not what the guard
+    # tests. A user who moved `c` and saw nothing happen had no way to find out why.
+    #
+    # Not the same thing as a dead section: the pick still reweights every realisation, so the
+    # contact distribution still moves. What it cannot do is contribute to the chance. Both
+    # halves are said, because being told "this does nothing" about a control that visibly
+    # does something is its own kind of wrong.
+    _short = int((~result.above_minimum).sum())
+    if _short < dhi_core.MIN_FAILURES_FOR_R:
+        _need = float(np.quantile(result.column_m,
+                                  dhi_core.MIN_FAILURES_FOR_R / max(result.n, 1)))
+        st.warning(
+            f"**The geometry channel is off, so the pick cannot move the chance — only "
+            f"the amplitude character can.** It needs realisations that *fall short* of the "
+            f"assessment minimum to measure against, and at **{h_min:,.0f} m** only "
+            f"**{_short:,} of {result.n:,}** do — below the **"
+            f"{dhi_core.MIN_FAILURES_FOR_R}** needed for a ratio that is a measurement rather "
+            f"than noise.\n\n"
+            f"**What still works.** The picked depth, its width and *c* reweight every "
+            f"realisation, so the contact distribution below is genuinely updated. What is "
+            f"switched off is their contribution to the *chance*: `R, combined` falls back to "
+            f"the strength channel alone.\n\n"
+            f"**To switch it on**, raise the assessment minimum on tab 2.0 to a commercial "
+            f"threshold — about **{_need:,.0f} m** on this prospect is the lowest that "
+            f"gives the ratio a denominator. A physical floor is not a threshold anything "
+            f"fails to clear, and comparing tall columns with short ones is only a question "
+            f"worth asking when a real share of them are short."
+        )
 
     # ------------------------------------------------------------------ observation
     theme.heading(TAB, sub=n.sub, text="1 · What was observed")
@@ -290,11 +376,15 @@ def render(n: Numbering | None = None) -> None:
                  "it might be a gas–oil contact instead. On a two-phase prospect that is a real "
                  "ambiguity the amplitude is poor at resolving — see the note under §2 — and it "
                  "matters, because a GOC picked as an HCWC understates the column.")
+        if seen:
+            _lev["contact"] = o1.empty()
         sigma = o2.number_input(
             "Pick σ (m)", 1.0, 500.0, DEFAULT_SIGMA_M, 1.0, key="dhi_in_sigma",
             help="Flat-spot pick uncertainty **plus depth-conversion error**. The second is "
                  "usually the larger, and it is the same uncertainty that moves the well's entry "
                  "depth — the one place this tool and WellVolPOS genuinely couple.")
+        if seen:
+            _lev["sigma"] = o2.empty()
     else:
         sigma = 20.0
         o1, o2, o3, o4 = st.columns(4)
@@ -456,12 +546,72 @@ def render(n: Numbering | None = None) -> None:
     """
         )
 
+    with st.expander("The two populations (E-POS defaults)"):
+        st.caption(
+            "Each case is a Gaussian given by its 1st and 99th percentiles. Widen a case to say "
+            "that class of prospect is more variable on this axis; move them apart to say the DHI "
+            "separates the two populations well. **Overlapping curves are the honest default** — a "
+            "DHI that cleanly separated hydrocarbon from brine would not need a probability.")
+        h1, h2, h3, h4 = st.columns(4)
+        hc = dhi_core.StrengthCase(
+            h1.number_input("HC, P1", -200.0, 200.0, -50.0, 5.0),
+            h2.number_input("HC, P99", -200.0, 200.0, 100.0, 5.0))
+        no_hc = dhi_core.StrengthCase(
+            h3.number_input("No HC, P1", -200.0, 200.0, -100.0, 5.0),
+            h4.number_input("No HC, P99", -200.0, 200.0, 50.0, 5.0))
+    model = dhi_core.StrengthModel(hc=hc, no_hc=no_hc)
+
+    # The slider stops where the evidence stops. `strength_at` inverts the two curves for the
+    # reading that buys the single-channel ceiling, and that becomes the end of the axis -- so the
+    # cap is visible as the shape of the control rather than as a range that silently does nothing.
+    # Curves that never reach the ceiling (identical populations, or a narrow case nested inside a
+    # broad one, which inverts the two ends) fall back to the old canvas.
+    _ends = sorted(v for v in (model.strength_at(dhi_core.R_SINGLE_CHANNEL),
+                               model.strength_at(1.0 / dhi_core.R_SINGLE_CHANNEL))
+                   if np.isfinite(v))
+    if len(_ends) == 2 and _ends[0] < _ends[1] - 1.0:
+        _s_lo, _s_hi = float(np.floor(_ends[0])), float(np.ceil(_ends[1]))
+        _bounded = True
+    else:
+        _s_lo, _s_hi, _bounded = -100.0, 100.0, False
+    # A widened pair of curves can move the bound inside the reading already stored, and Streamlit
+    # raises rather than clamping when a keyed value falls outside its own slider.
+    _was = st.session_state.get("dhi_in_strength")
+    if _was is not None:
+        st.session_state["dhi_in_strength"] = float(np.clip(_was, _s_lo, _s_hi))
+    _clamped = _was is not None and float(_was) != st.session_state["dhi_in_strength"]
+
     strength = st.slider(
-        "DHI strength", -100.0, 100.0, OPENING_STRENGTH, 1.0, key="dhi_in_strength",
+        "DHI strength", _s_lo, _s_hi, float(np.clip(OPENING_STRENGTH, _s_lo, _s_hi)), 1.0,
+        key="dhi_in_strength",
         help=f"Opens at {OPENING_STRENGTH:.0f} — just above the crossing point, so an assessor who "
              f"moves nothing states a barely-supportive DHI rather than a neutral one. E-POS's own "
              f"default on the same axis is {dhi_core.DEFAULT_STRENGTH:.0f}; this is a shade more "
              f"conservative and the two are otherwise the same scale.")
+    if _clamped:
+        # Moving a saved reading without saying so is how a prospect quietly stops
+        # being the prospect that was saved. Two paths reach here: reopening work
+        # stored before the ceiling existed, and widening the two curves so the same
+        # R now arrives at a lower reading.
+        st.info(
+            f"**Your saved reading of {float(_was):+.0f} was outside the axis and has "
+            f"been moved to {strength:+.0f}.** The curves above put "
+            f"R = {dhi_core.R_SINGLE_CHANNEL:.0f} at {_s_hi:+.0f}, which is as much as one "
+            f"channel may claim, so the old reading was asserting evidence the update will "
+            f"not carry. If you mean to claim more, say it in the two populations "
+            f"instead " + chr(8212) + " draw them further apart, and the same reading buys more."
+        )
+
+    if _bounded:
+        st.caption(
+            f"**The axis ends at R = {dhi_core.R_SINGLE_CHANNEL:.0f} : 1, either way** — "
+            f"{_s_lo:+.0f} to {_s_hi:+.0f} on the curves above. That is Simm's ceiling for a "
+            "*single* line of fluid-indicator evidence, and until 9 Sep 2026 the arithmetic allowed "
+            "five times it: this one slider could move the prospect chance from 1.4 % to 97.2 %, "
+            "more than every other input on this tab combined, from an axis with no external "
+            "referent. A stronger claim has to come from a second channel — §5 combines them — or "
+            "from two populations you are willing to draw further apart.")
+    _lev["strength"] = st.empty()
 
     with st.expander("**What does a real amplitude buy?** — three measured likelihood ratios"):
         st.markdown(
@@ -487,10 +637,14 @@ def render(n: Numbering | None = None) -> None:
             ]), hide_index=True, width="stretch")
         st.markdown(
             "**Three things to take from it.**\n\n"
-            "**The scale is plausible.** The strongest amplitude in a careful, prestack, "
-            "well-calibrated inversion bought a factor of **29**, against this tool's cap of "
-            f"**{dhi_core.R_CAP:.0f}**. Location B was subsequently drilled and gas was found in "
-            "two separate layers, so that R was earned rather than merely asserted.\n\n"
+            "**The scale is plausible, for a combination.** The strongest amplitude in a "
+            "careful, prestack, well-calibrated inversion bought a factor of **29**, against "
+            f"this tool's guard on the *combined* ratio of **{dhi_core.R_CAP:.0f}**. "
+            "Location B was subsequently drilled and gas was found in two separate layers, so "
+            "that R was earned rather than merely asserted. **It is not a licence for the "
+            "slider above**: their number carries the amplitude *and* the geometry, which is "
+            f"why each channel here is bounded separately at "
+            f"**{dhi_core.R_SINGLE_CHANNEL:.0f}**.\n\n"
             "**The evidence is strongly asymmetric.** The best positive was R ≈ 29; the negative "
             "at the outskirts was only R ≈ 0.70 — a factor of 1.4 *against*, where the positive "
             "was a factor of 29 *for*. Absence of an anomaly is much weaker evidence than presence "
@@ -517,20 +671,6 @@ def render(n: Numbering | None = None) -> None:
             "which \u2014 so it is a judgement to make and record, not one to read off the seismic."
         )
 
-    with st.expander("The two populations (E-POS defaults)"):
-        st.caption(
-            "Each case is a Gaussian given by its 1st and 99th percentiles. Widen a case to say "
-            "that class of prospect is more variable on this axis; move them apart to say the DHI "
-            "separates the two populations well. **Overlapping curves are the honest default** — a "
-            "DHI that cleanly separated hydrocarbon from brine would not need a probability.")
-        h1, h2, h3, h4 = st.columns(4)
-        hc = dhi_core.StrengthCase(
-            h1.number_input("HC, P1", -200.0, 200.0, -50.0, 5.0),
-            h2.number_input("HC, P99", -200.0, 200.0, 100.0, 5.0))
-        no_hc = dhi_core.StrengthCase(
-            h3.number_input("No HC, P1", -200.0, 200.0, -100.0, 5.0),
-            h4.number_input("No HC, P99", -200.0, 200.0, 50.0, 5.0))
-    model = dhi_core.StrengthModel(hc=hc, no_hc=no_hc)
     r_strength = model.r_at(strength)
     band, band_note = dhi_core.strength_bands(r_strength)
 
@@ -663,6 +803,7 @@ def render(n: Numbering | None = None) -> None:
              "there is a column here, is this flat thing its base — rather than lithology, "
              "a diagenetic front, fizz, or a processing artefact? Conformance, flatness and "
              "whether it cuts structure are what answer it.")
+    _lev["c"] = st.empty()
     contact_given_hc = suggested_c if use_attributes else stated_c
     p_valid = float(np.clip(ceiling * contact_given_hc, 0.01, 0.99))
 
@@ -793,6 +934,8 @@ def render(n: Numbering | None = None) -> None:
         "Consider whether you have a DHI at all, or a structural guess wearing one's clothes."
     )
 
+    _manual_p_valid = False
+
     with st.expander("**Why p_valid is bounded, and what happens when it is not** — the "
                      "mapping this replaced assumed a 50 % chance of hydrocarbons"):
         st.markdown(
@@ -804,8 +947,8 @@ def render(n: Numbering | None = None) -> None:
             "chance from ever reaching zero, however sharply the pick is drawn:\n\n"
             f"- the depth channel can say at most **{derived_p_valid / (1 - derived_p_valid):.1f} : 1** "
             f"against any contact depth\n"
-            f"- and never more than **{dhi_core.R_CAP:.0f} : 1**, because R is capped — so a "
-            "bounded pick shape is safe to use\n\n"
+            f"- and never more than **{dhi_core.R_SINGLE_CHANNEL:.0f} : 1**, because each "
+            "channel is capped, so a bounded pick shape is safe to use\n\n"
             "**Where this mapping can be wrong.** The strength axis measures how *hydrocarbon-like "
             "the amplitude looks*, not how reliably the event locates a contact. A dim but "
             "geometrically perfect flat spot is an excellent contact indicator and gets an "
@@ -816,10 +959,14 @@ def render(n: Numbering | None = None) -> None:
 
         # The override stays, because a coherence rule is a model and models are wrong
         # sometimes. Off by default, and it says what it is switching off.
-        if st.checkbox("Set p_valid directly instead", value=False,
-                       key="dhi_in_pvalid_manual",
-                       help="Bypasses the ceiling. Only defensible if you think the element "
-                            "chances on tab 2.0 are wrong, in which case fix those instead."):
+        # Recorded, not just acted on: an override cuts both the strength slider and *c* out
+        # of `p_valid`, so the leverage sweep has to know it happened or it would report a
+        # swing on two controls that are no longer connected to anything.
+        _manual_p_valid = st.checkbox(
+            "Set p_valid directly instead", value=False, key="dhi_in_pvalid_manual",
+            help="Bypasses the ceiling. Only defensible if you think the element chances "
+                 "on tab 2.0 are wrong, in which case fix those instead.")
+        if _manual_p_valid:
             p_valid = st.slider("p_valid", 0.01, 0.99, float(round(p_valid, 2)), 0.01,
                                 key="dhi_in_pvalid",
                                 help="1.0 is deliberately unreachable: it would say the pick "
@@ -854,6 +1001,7 @@ def render(n: Numbering | None = None) -> None:
                               help="Below 1 on purpose. A thick column can still fail to show, and "
                                    "a function reaching certainty would make an absent anomaly "
                                    "infinitely strong evidence.")
+    _lev["h50"], _lev["steep"], _lev["det_ceiling"] = d1.empty(), d2.empty(), d3.empty()
     detection = DetectionFunction(h50_m=h50, steepness_m=steep, ceiling=ceiling)
 
     grid = np.linspace(0.0, max(float(result.column_m.max()), h50 * 3), 300)
@@ -975,6 +1123,7 @@ def render(n: Numbering | None = None) -> None:
         help="0 multiplies the two ratios outright, which assumes they are independent evidence. "
              "1 takes the stronger channel and ignores the other, which assumes they say the same "
              "thing. 0.5 is the default because neither end is defensible. §5 explains why.")
+    _lev["dependence"] = st.empty()
 
     # **Nothing was seen, so there is no amplitude to characterise.** The strength slider grades
     # the character of an observed anomaly; with no anomaly it has no subject, and leaving it
@@ -985,6 +1134,50 @@ def render(n: Numbering | None = None) -> None:
         r_geometry=float(post.r_dhi),
         r_strength=r_strength if seen else 1.0,
         dependence=dependence)
+
+    # ---- what each control is worth, into the placeholders reserved beside them -----------
+    # Everything the tab reads is known by this line and not one line earlier, which is why
+    # the captions are placeholders: `dependence` is read below the detection function, and
+    # the detection function is read below the pick. A caption written where its control is
+    # drawn would be quoting the previous rerun.
+    #
+    # `_state` rebuilds the whole tab at one changed value rather than patching the
+    # likelihood, because several of these controls reach further than the likelihood: `c`
+    # and the strength both arrive through `p_valid`, and the manual override cuts both out.
+    # Reconstructing from the same expressions the tab itself used is the only way the swing
+    # reported is the swing a user would get by dragging the control.
+    def _state(**over):
+        _s = over.get("strength", strength)
+        _r = model.r_at(_s) if seen else 1.0
+        _pv = p_valid if _manual_p_valid else float(np.clip(
+            dhi_core.simm_update(_p_g, model.r_at(_s))
+            * over.get("c", contact_given_hc), 0.01, 0.99))
+        _det = DetectionFunction(h50_m=over.get("h50", h50),
+                                 steepness_m=over.get("steep", steep),
+                                 ceiling=over.get("det_ceiling", ceiling))
+        _obs = DhiObservation(
+            seen=seen,
+            contact_m=None if partial or not seen else over.get("contact", contact),
+            pick_sigma_m=over.get("sigma", sigma), area_km2=area or None,
+            pick_shape=shape, shallowest_m=None if partial else shallowest,
+            deepest_m=None if partial else deepest,
+            p_valid=_pv, absent_below_m=absent_below)
+        return (result, _det, _obs, prior_pos, _r, over.get("dependence", dependence))
+
+    _span = (float(result.contact_m.min()), float(result.contact_m.max()))
+    _sweeps = {
+        "strength": (lambda v: _state(strength=v), np.linspace(_s_lo, _s_hi, 9)),
+        "c": (lambda v: _state(c=v), np.linspace(0.05, 1.0, 9)),
+        "dependence": (lambda v: _state(dependence=v), np.linspace(0.0, 1.0, 9)),
+        "sigma": (lambda v: _state(sigma=v), [3.0, 8.0, 15.0, 30.0, 60.0, 120.0]),
+        "contact": (lambda v: _state(contact=v), np.linspace(_span[0], _span[1], 9)),
+        "h50": (lambda v: _state(h50=v), [5.0, 15.0, 25.0, 50.0, 100.0]),
+        "steep": (lambda v: _state(steep=v), [2.0, 5.0, 8.0, 20.0, 50.0]),
+        "det_ceiling": (lambda v: _state(det_ceiling=v), [0.5, 0.7, 0.9, 0.99]),
+    }
+    for _name, _slot in _lev.items():
+        _build, _values = _sweeps[_name]
+        _slot.caption(_leverage_caption(dhi_core.leverage(_build, _values)))
 
 
     if not element_pos:
@@ -1275,9 +1468,10 @@ So the combination is discounted rather than taken raw.
 
     if np.isnan(post.r_dhi):
         st.info(
-            "**The geometry channel is undefined**, because the assessment minimum is zero and "
-            "there is no failure set for R to compare against. The combination has fallen back to "
-            "the strength channel alone. Set a minimum column height on tab 2.0 to use both."
+            f"**The geometry channel is undefined**, so the combination below is the strength "
+            f"channel alone. Fewer than {dhi_core.MIN_FAILURES_FOR_R} realisations fall short "
+            f"of the assessment minimum, leaving R without a denominator — the "
+            f"precondition set out in §1, above the inputs it governs."
         )
     elif post.r_dhi > dhi_core.R_CAP:
         # Found by wiring this section up: the geometry channel is not clipped, and on a sharp pick
@@ -1286,8 +1480,9 @@ So the combination is discounted rather than taken raw.
         # cap as a finding. Say it plainly instead.
         st.warning(
             f"**The geometry channel returned R = {post.r_dhi:,.0f}, and the guard is what you are "
-            f"seeing in `R, combined`, not the evidence.** E-POS clips any single likelihood ratio "
-            f"to {dhi_core.R_CAP:.0f}, and that clip is binding here.\n\n"
+            f"seeing in `R, combined`, not the evidence.** The measurement is reported raw so "
+            f"you can see how far out it is; going into the combination it is clipped to "
+            f"{dhi_core.R_SINGLE_CHANNEL:.0f}, and that clip is binding here.\n\n"
             "A ratio that size says the pick is near-impossible unless the prospect succeeds, which "
             "is an artefact of comparing a sharp pick against a failure set that the pick sits far "
             "away from — not a statement about the seismic. **Simm's caution applies: for a single "

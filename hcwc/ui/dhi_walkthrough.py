@@ -252,7 +252,8 @@ def render(n: Numbering | None = None) -> None:
         "zero, and no prior survives it — which is why §4 exists.\n"
         "- **R = ∞** says it was impossible under failure.\n\n"
         "Neither should ever come out of one seismic interpretation. Your tool caps R at "
-        f"**{dhi_core.R_CAP:.0f}** and floors it at **{dhi_core.R_FLOOR:g}** so that it cannot.")
+        f"**{dhi_core.R_SINGLE_CHANNEL:.0f}** and floors it at "
+        f"**{1.0 / dhi_core.R_SINGLE_CHANNEL:g}** so that it cannot.")
 
     # ------------------------------------------------------------------ 6 · the arithmetic
     st.markdown("#### Step 6 · The arithmetic, on this prospect")

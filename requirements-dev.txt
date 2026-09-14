@@ -2,3 +2,9 @@
 -r requirements.txt
 
 pytest>=8.0
+
+# `scripts/paper_figures.py` draws the article's figures with matplotlib rather than the app's
+# plotly, and `tests/test_app_renders.py` runs that script to prove the paper's numbers still
+# match the app. The app itself never imports it, so it belongs here and not in requirements.txt.
+# CI was red from 3 Sep 2026 for its absence.
+matplotlib>=3.8
