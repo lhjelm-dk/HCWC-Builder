@@ -159,6 +159,33 @@ class TestFactorisedVersusDirect:
         scale = 0.9 * 1.0 * 0.8
         assert np.max(np.abs(gap - scale * d.residual_depth)) < 1e-9
 
+    def test_an_element_with_no_limit_still_carries_its_chance(self):
+        """Audit finding P0-1, 14 Sep 2026.
+
+        The reference prospect has no Reservoir limit. An element with no limit never controls
+        the contact, so its depth curve is one everywhere -- but its element chance is still a
+        factor of the prospect chance. `element_pos_at_depth` used to leave such an element out
+        of the dict, and `factorised_pos` and the derived P(well) then ran without its chance:
+        with P(Reservoir) = 0.6 the derived P(well) was 1 / 0.6 times the allocated one, and the
+        comparison on tab 4.2 was of two different quantities.
+        """
+        d = decompose.decompose(engine.run(reference_prospect(), 20_000))
+        assert Group.RESERVOIR not in d.by_element_depth
+        curves = d.element_pos_at_depth(self.POS)
+        assert Group.RESERVOIR in curves
+        np.testing.assert_allclose(curves[Group.RESERVOIR], 0.6)
+        gap = d.factorised_pos(self.POS) - d.direct_pos(self.POS)
+        scale = 0.9 * 1.0 * 0.6 * 0.8
+        assert np.max(np.abs(gap - scale * d.residual_depth)) < 1e-9
+
+    def test_derived_and_allocated_p_well_agree_when_limits_are_independent(self):
+        """The two columns of the comparison table are the same number up to the residual, and
+        that has to hold with an element chance on an element that has no limit."""
+        d = decompose.decompose(engine.run(reference_prospect(), 20_000))
+        out = decompose.allocation_comparison(d, self.POS, 2230.0)
+        assert out["derived::P_well"] == pytest.approx(out["allocated::P_well"], abs=0.01)
+        assert out["derived::Reservoir"] == pytest.approx(0.6)
+
     def test_element_pos_scales_the_curves(self):
         d = decompose.decompose(engine.run(reference_prospect(), 10_000))
         curves = d.element_pos_at_depth(self.POS)

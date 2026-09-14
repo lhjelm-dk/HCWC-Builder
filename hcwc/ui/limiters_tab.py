@@ -427,7 +427,9 @@ def render() -> None:
 
     with corr_tab:
         if pairs:
-            names = tuple(limit_set.names)
+            # `correlated_names`, not `names`: the apex is a member of the correlated set and a
+            # declared Apex|spill pair raised KeyError here until 14 Sep 2026.
+            names = tuple(limit_set.correlated_names)
             moved = [r for r in correlate.describe(names, correlate.build_matrix(names, pairs))
                      if abs(r[2] - r[3]) > 0.01]
             if moved:

@@ -212,7 +212,10 @@ def correlation_projection(result: EngineResult) -> Check:
     quietly reduced to 0.6 because of what was said about a third limit is a change to the model
     that nobody asked for.
     """
-    names = result.limit_set.names
+    # The apex leads the correlated set, and a pair may name it -- the Apex|spill coupling is
+    # the one the tab recommends. Built from the limit names alone this raised KeyError the
+    # moment that pair was declared, which the audit of 14 Sep 2026 reproduced.
+    names = result.limit_set.correlated_names
     declared = result.limit_set.correlations
     pairs = (correlate.describe(names, correlate.build_matrix(names, declared))
              if declared else [])
