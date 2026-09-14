@@ -1242,7 +1242,7 @@ class TestTheCalibrationComparesBothBases:
         """If they agreed, the extra rows would be clutter. The amplitude moves the model toward
         the record here, which is the finding the comparison exists to surface."""
         frame = self._frames(_run(), "Benchmark", "Basis")[0]
-        by_basis = {b: p for b, p in zip(frame["Basis"], frame["Your P50 is their"])}
+        by_basis = {b: p for b, p in zip(frame["Basis"], frame["This P50 is their"])}
         assert by_basis["geological"] != by_basis["given the DHI"]
 
     def test_the_quantile_figures_take_one_basis_and_the_control_switches_them(self):
@@ -1263,28 +1263,28 @@ class TestTheCalibrationComparesBothBases:
         """*"in 6.12 is the combined just the geological?"* It was. The fusion is a weighted
         quantile average, so it applies to either basis unchanged — drawing it for only one made
         the figure read as though the evidence had been folded in when it had not."""
-        names = self._named_traces(_run(fuse_benchmark=0.4), "your model")
-        assert any("your model — geological" == n for n in names)
-        assert any("your model — given the DHI" == n for n in names)
+        names = self._named_traces(_run(fuse_benchmark=0.4), "this model")
+        assert any("this model, geological" == n for n in names)
+        assert any("this model, given the DHI" == n for n in names)
         assert any(n.startswith("geological + benchmark") for n in names)
         assert any(n.startswith("given the DHI + benchmark") for n in names)
 
     def test_the_fusion_draws_no_combined_curve_at_zero_weight(self):
         """At weight zero the combination *is* your model, and a second identical curve under a
         different name would invite reading it as a result."""
-        names = self._named_traces(_run(fuse_benchmark=0.0), "your model")
+        names = self._named_traces(_run(fuse_benchmark=0.0), "this model")
         assert not any("benchmark, weight" in n for n in names)
 
     def test_the_base_rate_gets_a_bar_for_each_basis(self):
         """*"in 6.13 maybe a bar for the |dhi?"*"""
         names = self._named_traces(_run(), "base rate")
-        assert "your model · geological" in names
-        assert "your model · given the DHI" in names
+        assert "this model · geological" in names
+        assert "this model · given the DHI" in names
 
     def test_the_base_rate_table_carries_both(self):
         frames = self._frames(_run(), "Trap fill", "given the DHI")
         assert frames, "table 6.14 has no updated column"
-        assert "Your model · given the DHI" in frames[0].columns
+        assert "This model · given the DHI" in frames[0].columns
 
     def test_a_prospect_with_no_evidence_shows_only_the_geological_one(self):
         """The whole apparatus collapses to what it was when there is nothing to compare against,
@@ -1292,7 +1292,7 @@ class TestTheCalibrationComparesBothBases:
         at = _run(dhi_toggle=False)
         _no_exception(at, "calibration with no evidence")
         assert set(self._frames(at, "Benchmark", "Basis")[0]["Basis"]) == {"geological"}
-        assert self._named_traces(at, "base rate") == ["your model · geological",
+        assert self._named_traces(at, "base rate") == ["this model · geological",
                                                        "NCS base rate (n = 23)"]
 
     def test_the_updated_columns_are_resampled_rather_than_apex_subtracted(self):
@@ -1664,7 +1664,7 @@ class TestThePageIsNotAnEssay:
             # when tab 1 moved to the report tone. The claim that section exists to make is
             # the one pinned now.
             "the elicitation effort belongs on the top two or three",
-            "a prior and a likelihood are the same kind of object",   # tab 8.0 §1, folded
+            "A prior and a likelihood are the same kind of object",   # tab 8.0 §1, folded
             "in the absence of direct hydrocarbon",     # tab 6.0 §7, folded
             "The censored MLE crossing is a prediction",  # tab 6.0 §2, folded
         ):
@@ -1698,8 +1698,8 @@ class TestTheArgumentsLiveInDocuments:
 
     DOCS = {
         "Prior or likelihood?": ("LIKELIHOOD_OR_PRIOR.md", "the same kind of object"),
-        "Weight, not Bayes": ("WEIGHT_NOT_BAYES.md", "81 % of the spread disappears"),
-        "Base rates": ("BASE_RATE_NEGLECT.md", "That rule is symmetric"),
+        "Weight, not Bayes": ("WEIGHT_NOT_BAYES.md", "removes 81 % of the spread"),
+        "Base rates": ("BASE_RATE_NEGLECT.md", "The rule is symmetric"),
     }
 
     def test_every_registered_document_exists(self):
@@ -1777,9 +1777,9 @@ class TestTheArgumentsLiveInDocuments:
         blob = "\n".join(str(e.value) for kind in ("markdown", "caption", "info", "warning")
                           for e in at.get(kind))
         for conclusion, pointer in (
-            ("would count your own geometry twice", "*Weight, not Bayes*"),
-            ("swap its two inputs and it returns the same answer", "*Base rates*"),
-            ("does this data carry something my model has not already used",
+            ("would count the geometry twice", "*Weight, not Bayes*"),
+            ("returning the same answer when its two inputs are swapped", "*Base rates*"),
+            ("whether it carries something the model has not already used",
              "*Prior or likelihood?*"),
         ):
             assert conclusion in blob, f"the conclusion went with the essay: {conclusion!r}"

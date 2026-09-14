@@ -33,7 +33,7 @@ Italics are for the titles of theory notes and papers. Never bold a phrase to ma
 **Numbers stay.** A measured value beside a control is content, not rhetoric — keep it, state it
 plainly, and give the unit.
 
-Rewrite status: tabs 1–5 done (tab 5 includes the walkthrough sub-tab and the well-only path). Tabs 6–8 to follow.
+Rewrite status: all eight tabs done, including the tab 8.1 theory notes. `docs/DHI_alignment.md` keeps its voice: it is a signed, dated working note.
 
 ## Structure, 15 Sep 2026
 
