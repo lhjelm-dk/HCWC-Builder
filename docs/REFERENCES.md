@@ -30,8 +30,8 @@ https://www.roseassoc.com/hydrocarbon-column-heights-part-2/
 > The method this tool implements: build background column height and geometric limits as
 > *separate* distributions and take the minimum per realisation. Part 1 shows why merging them into
 > one weighted input distribution "produces non-geologic and erroneous results" — apparent volume
-> can *increase* when you add a leak. Part 1 also gives the assessment-minimum rule: link it to a
-> **minimum column height**, not a minimum volume, because only that connects to seal capacity.
+> can increase when a leak is added. Part 1 also gives the assessment-minimum rule: link it to a
+> minimum column height, not a minimum volume, because only that connects to seal capacity.
 
 **Grant, N.T. (2020)** · *Using Monte Carlo models to predict hydrocarbon column heights and to
 illustrate how faults influence buoyant fluid entrapment.* Petroleum Geoscience **27**(2),
@@ -219,7 +219,7 @@ petroleum-specific reference exists, which is the gap this project fills.
 by schema inspection. Contacts *are* stated in the free-text `wellbore_history` narratives and are
 recoverable by text mining at perhaps 50–70% coverage.
 
-FactPages CSV export pattern (the `IpAddress`/`CultureCode` pair is **mandatory** or you get HTTP 500):
+FactPages CSV export pattern (the `IpAddress`/`CultureCode` pair is mandatory; without it the server returns HTTP 500):
 
 ```
 https://factpages.sodir.no/public?/Factpages/external/tableview/<REPORT>&rs:Command=Render&rc:Toolbar=false&rc:Parameters=f&IpAddress=not_used&CultureCode=en&rs:Format=CSV&Top100=false

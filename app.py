@@ -420,14 +420,13 @@ with tab7:
     n8 = Numbering(7)
     theme.heading(7, "1 · 101-percentile export")
     st.markdown(
-        "The **GeoX 101-fractile** format: two columns, `Percentile` and `Value`, running "
-        "**P100 → P0** in the **exceedance** "
-        "convention — P100 is the *shallowest* contact. Getting that backwards would invert every "
-        "contact GeoX imports without raising an error anywhere, so it is asserted in the test "
-        "suite.\n\n"
-        "**Also the planned hand-off to [SCOPE-HC](https://scope-hc.streamlit.app)** — the same "
-        "table is what it should read to take its contact distribution from here rather than from "
-        "a typed three-point estimate."
+        "The GeoX 101-fractile format: two columns, `Percentile` and `Value`, running P100 → P0 "
+        "in the exceedance convention, so P100 is the shallowest contact. Reversed, every contact "
+        "GeoX imports would invert without an error anywhere, so the convention is asserted in "
+        "the test suite.\n\n"
+        "The same table is the planned hand-off to [SCOPE-HC](https://scope-hc.streamlit.app), "
+        "which would then take its contact distribution from here rather than from a typed "
+        "three-point estimate."
     )
     e1, e2 = st.columns([2, 1])
     _overlay = st.session_state.get("dhi_overlay")
@@ -438,28 +437,28 @@ with tab7:
         # so. A pre-selected answer would reintroduce exactly that, one click further away.
         basis = e1.radio("Which distribution?", ["— choose —", theme.GEOLOGICAL, theme.GIVEN_DHI],
                          horizontal=True, key="export_basis",
-                         help="They are different distributions and the numbers alone cannot tell "
-                              "you which you have. The choice goes in the filename and in the "
+                         help="They are different distributions and the numbers alone do not say "
+                              "which is which. The choice goes in the filename and in the "
                               "provenance line inside the file.")
     else:
         basis = theme.GEOLOGICAL
-        e1.markdown(f"**Basis** &nbsp; {theme.basis_tag(theme.GEOLOGICAL)} &nbsp; "
+        e1.markdown(f"Basis &nbsp; {theme.basis_tag(theme.GEOLOGICAL)} &nbsp; "
                     f"<span style='opacity:.7'>no DHI on this prospect</span>",
                     unsafe_allow_html=True)
     mode = e2.radio("Tail treatment", ["truncate", "raw"], horizontal=True,
-                    help="P0 and P100 from a Monte Carlo are the sample minimum and maximum — the "
+                    help="P0 and P100 from a Monte Carlo are the sample minimum and maximum, the "
                          "least stable statistics in the run. Truncating at P0.5/P99.5 estimates "
-                         "the endpoints from ~50 realisations instead of one.")
+                         "the endpoints from about 50 realisations instead of one.")
 
     limit_set = st.session_state.get("limit_set")
     if limit_set is None:
-        st.info("Define the limits on tab 3.0 first.")
+        st.info("The export needs the limits on tab 3.0.")
     elif basis == "— choose —":
         st.warning(
-            "**This prospect has a DHI, so there are two contact distributions and they are not "
-            "interchangeable.** Choose which one to export. Nothing is offered by default on "
-            "purpose: a bare table of contact depths looks identical either way, and the wrong one "
-            "in a volumetrics package is an error nothing downstream can catch."
+            "This prospect has a DHI, so there are two contact distributions and they are not "
+            "interchangeable. The export waits for a choice. Nothing is offered by default: a "
+            "bare table of contact depths looks identical either way, and the wrong one in a "
+            "volumetrics package is an error nothing downstream can catch."
         )
     else:
         result = engine_run.current(limit_set)
@@ -478,11 +477,11 @@ with tab7:
         # ------------------------------------------------------------- WellVolPOS
         theme.heading(7, "2 · To WellVolPOS")
         st.markdown(
-            "Two files, because they are two different things. The **trial table** is one row per "
+            "Two files, because they are two different things. The trial table is one row per "
             "realisation in WellVolPOS's canonical column names and units, so its importer maps "
-            "every column with nothing to configure. The **element curves** are not per-trial data "
-            "at all — they are the chance-versus-depth curve per risk element from tab 4.0, the "
-            "thing WellVolPOS cannot compute for itself because it never sees the competing limits."
+            "every column with nothing to configure. The element curves are not per-trial data; "
+            "they are the chance-against-depth curve per risk element from tab 4.0, which "
+            "WellVolPOS cannot compute for itself because it never sees the competing limits."
         )
 
         try:
@@ -497,7 +496,7 @@ with tab7:
         trials = wvp.trial_table(result, area_table)
         w1, w2 = st.columns(2)
         w1.metric("Trials exported", f"{len(trials):,}",
-                  f"of {result.n:,} — successes only", delta_color="off")
+                  f"of {result.n:,}, successes only", delta_color="off")
         w2.metric("Columns WellVolPOS reads", f"{len(trials.columns)}",
                   "mapped with no configuration", delta_color="off")
         n8.table(trials.head(12), "The first twelve rows. Column names and units are "
@@ -507,21 +506,20 @@ with tab7:
                            "hcwc_trials.csv", "text/csv")
 
         st.warning(
-            "**This is deliberately a partial trial set, and WellVolPOS will say so.** It requires "
+            "This is a partial trial set, and WellVolPOS says so on import. It requires "
             "`resource` in MMboe, and this tool cannot produce one: a resource needs net-to-gross, "
             "porosity, saturation, a formation volume factor and a recovery factor, none of which "
             "is a contact-depth question.\n\n"
-            "Writing a made-up column to get past the importer would be the worst available "
-            "outcome — every number downstream would then be computed from fiction and nothing "
-            "would look broken. **Join the resource on from "
-            "[SCOPE-HC](https://scope-hc.streamlit.app), which does the volumetrics**, and keep "
-            "the trial order: row *n* here is row *n* there only if both were run on the same "
-            "seed and trial count."
+            "A made-up column written to get past the importer would compute every number "
+            "downstream from fiction with nothing looking broken. The resource joins on from "
+            "[SCOPE-HC](https://scope-hc.streamlit.app), which does the volumetrics, in trial "
+            "order: row n here is row n there only where both were run on the same seed and "
+            "trial count."
         )
 
         element_pos = st.session_state.get("element_pos")
         if element_pos is None:
-            st.info("Set the element risk on tab 2.0 to enable the element-curve export.")
+            st.info("The element-curve export needs the element risk on tab 2.0.")
         else:
             curves = wvp.element_curve_table(dc.decompose(result), element_pos)
             n8.table(curves.iloc[::20], "Chance against depth, one column per element, plus the "
@@ -536,17 +534,16 @@ with tab7:
         theme.heading(7, "3 · Every figure, as images")
         _figs = st.session_state.get(numbering.FIGURES_KEY) or {}
         st.markdown(
-            f"**{len(_figs)} figures were drawn on this run**, and each is exported under its own "
-            f"number — `Figure_4-3.png`, not `newplot.png`. Rendered at 1600 px and 2× device "
+            f"{len(_figs)} figures were drawn on this run, and each is exported under its own "
+            f"number: `Figure_4-3.png`, not `newplot.png`. Rendered at 1600 px and 2× device "
             f"scale, which is enough for a slide or a printed page.\n\n"
-            f"**The camera button on any figure does one at a time**, in the browser, at the same "
-            f"resolution and with the same filename. Use that when you want a single chart; use "
-            f"this when you want the set."
+            f"The camera button on any figure does one at a time, in the browser, at the same "
+            f"resolution and with the same filename. This button does the set."
         )
         if not _figs:
-            st.info("No figures yet — visit the tabs you want, then come back. Only figures that "
-                    "actually rendered this run can be exported, because a stale one would be "
-                    "worse than a missing one.")
+            st.info("No figures yet. Only figures that rendered this run can be exported, since "
+                    "a stale one would be worse than a missing one; they appear as their tabs "
+                    "are visited.")
         elif st.button("Render every figure to PNG", key="render_figures"):
             import io as _io
             import zipfile as _zipfile
@@ -568,17 +565,16 @@ with tab7:
             if _failed:
                 # Named rather than swallowed: a zip that is quietly short of what was asked for is
                 # the kind of thing nobody notices until the figure is missing from the report.
-                st.warning("**These would not render**, and are not in the archive:\n\n"
+                st.warning("These would not render, and are not in the archive:\n\n"
                            + "\n".join(f"- {x}" for x in _failed))
             st.download_button(
                 f"Download {len(_figs) - len(_failed)} figures (.zip)", _buffer.getvalue(),
                 f"{str(st.session_state.get('prospect_name', 'prospect')).replace(' ', '_')}"
                 f"_figures.zip", "application/zip", key="download_figures")
         st.caption(
-            "**Server-side rendering, via kaleido.** It is the one thing the browser cannot do — a "
-            "page cannot zip twelve charts — and it is why kaleido is in `requirements.txt`. If "
-            "this fails on a deployment, the camera button on each figure still works, because it "
-            "never leaves the browser."
+            "Server-side rendering, via kaleido. A page cannot zip twelve charts, which is why "
+            "kaleido is in `requirements.txt`. Where this fails on a deployment, the camera "
+            "button on each figure still works, because it never leaves the browser."
         )
 
         # ------------------------------------------------------------- one page
@@ -588,16 +584,16 @@ with tab7:
         st.markdown(
             f"Everything above is a CSV, and a CSV does not travel. This is the inputs, the "
             f"answer, the controlling-limit diagnostic, the trust checks and the provenance on "
-            f"**one sheet** — open it and print to PDF.\n\n"
+            f"one sheet, printable to PDF from the browser.\n\n"
             f"It carries `Prospect POS = P(G) × P(column ≥ h | G)` = "
-            f"**{_p_g:.3f} × {result.pos:.3f} = {_p_g * result.pos:.3f}** and both terms "
+            f"{_p_g:.3f} × {result.pos:.3f} = {_p_g * result.pos:.3f} and both terms "
             f"separately, because the conditional term alone is {1 / _p_g if _p_g else 0:.1f}× the "
-            f"prospect chance and reads exactly like it."
+            f"prospect chance and reads like it."
         )
         if not _elements:
-            st.warning("**No element risk is set on tab 2.0, so `P(G)` is 1.0 and the page will say "
-                       "so in red.** Set the four element chances before this goes to anyone: "
-                       "without them the prospect POS on the sheet is the column term alone.")
+            st.warning("No element risk is set on tab 2.0, so `P(G)` is 1.0 and the page says so "
+                       "in red. Without the four element chances the prospect POS on the sheet is "
+                       "the column term alone.")
         _checks = trust.review(result, posterior=(st.session_state.get("dhi_posterior")
                                                   if st.session_state.get("dhi_on") else None))
         _name = st.session_state.get("prospect_name") or limit_set.name or "prospect"
@@ -611,7 +607,7 @@ with tab7:
             colours=results_tab.limit_colours(limit_set),
             note=st.session_state.get("report_note", ""))
         st.text_area("A note for the sheet (optional)", key="report_note", height=68,
-                     placeholder="One or two sentences — the seal argument, the analogue, "
+                     placeholder="One or two sentences: the seal argument, the analogue, "
                                  "whatever a reader will ask about first.")
         d1, d2 = st.columns(2)
         d1.download_button("Download the one-page summary (HTML)", _html,
@@ -635,42 +631,36 @@ with tab7:
                 colours=results_tab.limit_colours(limit_set),
                 note=st.session_state.get("report_note", ""))
             if _missing:
-                st.warning("**These figures would not render** and are absent from the report "
+                st.warning("These figures would not render and are absent from the report "
                            "rather than substituted:\n\n"
                            + "\n".join(f"- {x}" for x in _missing))
             st.download_button("Download the full report (HTML)", _full,
                                f"{_name.replace(' ', '_')}_HCWC_report.html", "text/html",
                                key="download_full_report")
         st.caption(
-            "**Two documents, two moments.** The **one-pager** is what you hand across a table: one "
-            "sheet, two charts drawn at report size, every number on it one somebody will quote. "
-            "The **full report** is the working record — the same summary followed by every figure "
-            "*and every table* the app drew, interleaved in number order, each with the caption "
-            "that says what it means and what it cannot tell you. Nobody reads that end to end; it "
-            "exists so a number quoted six months from now can be traced to the exhibit it came "
-            "from, and so a reviewer can disagree with a specific chart rather than with the "
-            "tool.\n\n"
-            "**The tables were missing from it until 4 Sep 2026.** Figures were registered as they "
-            "were drawn and tables were not, so the limits as entered, the group minima, the "
-            "allocation comparison and the whole benchmark section were absent from a document "
-            "called *the full report*.\n\n"
-            "Figures embed as **vector SVG** — a few kilobytes each, sharp at any zoom, which "
+            "Two documents, two moments. The one-pager is what is handed across a table: one "
+            "sheet, two charts drawn at report size, every number on it one that will be quoted. "
+            "The full report is the working record: the same summary followed by every figure "
+            "and every table the app drew, interleaved in number order, each with the caption "
+            "that says what it means and what it cannot tell. It exists so a number quoted six "
+            "months from now can be traced to the exhibit it came from, and so a reviewer can "
+            "disagree with a specific chart rather than with the tool.\n\n"
+            "Figures embed as vector SVG, a few kilobytes each and sharp at any zoom, which "
             "matters because the arguments about a column-height distribution happen in the tails."
         )
         st.caption(
-            "**HTML rather than PDF, on purpose.** A PDF would need a rendering engine this app "
-            "cannot rely on having; the browser already has one, and its print dialogue makes a "
-            "better PDF than any library would. The file is self-contained — no stylesheet, no "
-            "font, no script — so it survives being emailed, and the figures are vector, so they "
-            "print at the printer's resolution rather than the screenshot's.")
+            "HTML rather than PDF. A PDF would need a rendering engine the app cannot rely on "
+            "having; the browser has one, and its print dialogue makes a better PDF than a "
+            "library would. The file is self-contained, with no stylesheet, font or script, so it "
+            "survives being emailed, and the figures are vector, so they print at the printer's "
+            "resolution rather than the screenshot's.")
 
 # --------------------------------------------------------------------------- 8.0 Theory & Guide
 with tab8:
     st.markdown(
-        "**The reasoning this tool rests on, the paper that sets it out, and the sources.** "
-        "Everything here is meant to be argued with: the theory notes are the working behind three "
-        "places where this tool refuses to multiply something in, and each is referenced from the "
-        "tab that refuses."
+        "The reasoning the tool rests on, the paper that sets it out, and the sources. The "
+        "theory notes are the working behind three places where the tool declines to multiply "
+        "something in, and each is referenced from the tab that declines."
     )
 
     theme.heading(8, "1 · Theory")
@@ -697,7 +687,7 @@ with tab8:
                   "why tab 6.0 §8 weights rather than multiplies",
                   "the symmetric rule, and why it cannot be Bayes",
                   "working note · POS and the DHI update",
-                  "is there a second public dataset? — no"],
+                  "whether a second public dataset exists"],
         horizontal=True, label_visibility="collapsed", key="theory_doc")
     _theory_path = {"Competing limits": "COMPETING_LIMITS.md",
                     "Prior or likelihood?": "LIKELIHOOD_OR_PRIOR.md",
@@ -714,18 +704,18 @@ with tab8:
     # The worked example that used to be section 1 in full, on arrival, above everything else.
     # It is one illustration of one of the five notes above and it now sits where an illustration
     # belongs -- behind its own summary, after the note it illustrates.
-    with st.expander("**Worked: what multiplying a base rate in would do to this prospect** "
-                     "— it makes you *more* certain after consulting a vaguer source"):
+    with st.expander("Worked: what multiplying a base rate in would do to this prospect"):
         st.markdown(
-            "**A base rate is a *prior* over column height, and this tool already has one** — "
-            "multiplying it in would count the same belief twice. A DHI can be a likelihood "
-            "because it is an observation *of this prospect*.\n\n"
-            "**Because a prior and a likelihood are the same kind of object** — both are "
-            "functions of the unknown. A likelihood is a *use*, not a kind of distribution, and "
-            "to act as one the data must be something **you observed on this prospect**.\n\n"
-            "**So the test is not ‘is this a probability?’ but ‘does this data carry something my "
-            "model has not already used?’** The argument is in → *Prior or likelihood?* above; "
-            "the table below shows what getting it wrong does to a real prospect."
+            "A base rate is a prior over column height, and the tool already has one, so "
+            "multiplying it in counts the same belief twice. A DHI can be a likelihood because "
+            "it is an observation of this prospect.\n\n"
+            "A prior and a likelihood are the same kind of object, both functions of the unknown. "
+            "A likelihood is a use rather than a kind of distribution, and to act as one the data "
+            "must have been observed on this prospect.\n\n"
+            "The test is therefore not whether the data is a probability but whether it carries "
+            "something the model has not already used. The argument is in *Prior or "
+            "likelihood?* above; the table below shows what getting it wrong does to a real "
+            "prospect."
         )
         _t8_limits = st.session_state.get("limit_set")
         _t8_spill = ([i for i, nm in enumerate(_t8_limits.names) if "spill" in nm.lower()]
@@ -740,8 +730,9 @@ with tab8:
             _t8_have_successes = bool(_t8_probe.above_minimum.any())
             if not _t8_have_successes:
                 st.info(
-                    "**No realisation reaches the assessment minimum**, so there is no column "
-                    "distribution to fuse with the benchmark. Lower the minimum on tab 2.0."
+                    "No realisation reaches the assessment minimum, so there is no column "
+                    "distribution to fuse with the benchmark. A lower minimum on tab 2.0 "
+                    "restores one."
                 )
         if _t8_limits is not None and _t8_spill and _t8_have_successes:
             _t8_result = engine_run.current(_t8_limits)
@@ -785,10 +776,10 @@ with tab8:
             _t8_dm, _t8_db = _t8_density(_t8_mine), _t8_density(_t8_bench)
             _t8_product = _t8_dm * _t8_db
             _t8_rows = [
-                ("your model", _t8_pct(_t8_dm, 10), _t8_pct(_t8_dm, 50), _t8_pct(_t8_dm, 90)),
-                ("the benchmark at your relief", _t8_pct(_t8_db, 10), _t8_pct(_t8_db, 50),
+                ("this model", _t8_pct(_t8_dm, 10), _t8_pct(_t8_dm, 50), _t8_pct(_t8_dm, 90)),
+                ("the benchmark at this relief", _t8_pct(_t8_db, 10), _t8_pct(_t8_db, 50),
                  _t8_pct(_t8_db, 90)),
-                ("the two fused, weight 0.5 — what tab 6.0 draws",
+                ("the two fused, weight 0.5, as tab 6.0 draws",
                  float(np.percentile(_t8_fused, 10)), float(np.percentile(_t8_fused, 50)),
                  float(np.percentile(_t8_fused, 90))),
                 ("multiplied as if the benchmark were a likelihood",
@@ -801,48 +792,40 @@ with tab8:
                     for name, p10, p50, p90 in _t8_rows]),
                 hide_index=True, width="stretch", key="t8_likelihood_table")
             st.caption(
-                f"**Computed from the prospect in front of you** — relief {_t8_relief:,.0f} m, burial "
-                f"{_t8_burial:,.0f} m — so it can be checked rather than believed.\n\n"
-                f"**Read the last row against the first two.** Multiplying two densities always "
-                f"sharpens, and that is *correct* when two independent instruments measure the same "
-                f"thing. Here it produces a spread of "
-                f"**{_t8_rows[3][3] - _t8_rows[3][1]:,.0f} m** — tighter than your own model's "
-                f"{_t8_rows[0][3] - _t8_rows[0][1]:,.0f} m, after consulting a source whose own spread "
-                f"is {_t8_rows[1][3] - _t8_rows[1][1]:,.0f} m. **Adding a vaguer opinion made you more "
-                f"certain.** The arithmetic is telling you the two are not independent evidence."
+                f"Computed from the current prospect, relief {_t8_relief:,.0f} m and burial "
+                f"{_t8_burial:,.0f} m, so it can be checked rather than believed.\n\n"
+                f"The last row reads against the first two. Multiplying two densities always "
+                f"sharpens, which is correct when two independent instruments measure the same "
+                f"thing. Here it produces a spread of {_t8_rows[3][3] - _t8_rows[3][1]:,.0f} m, "
+                f"tighter than the model's own {_t8_rows[0][3] - _t8_rows[0][1]:,.0f} m, after "
+                f"consulting a source whose own spread is "
+                f"{_t8_rows[1][3] - _t8_rows[1][1]:,.0f} m. A vaguer opinion has increased the "
+                f"certainty, which says the two are not independent evidence."
             )
 
         st.markdown(
-            "**One thing in that dataset *is* a genuine likelihood** — not the distribution, the"
-            " **outcomes**. They cannot inform your column, but they can inform what you and those 242"
-            " share: the parameters of the seal-capacity relationship. That is empirical Bayes, and it"
-            " is the seal limit\u2019s *Pull this toward the NCS record* on tab 3.0."
-        )
-
-
-        st.markdown(
-            "**One thing in that dataset *is* a genuine likelihood** — not the distribution, the "
-            "**outcomes**. They cannot inform your column, but they can inform what you and those "
-            "242 share: the parameters of the seal-capacity relationship. That is empirical "
-            "Bayes, and it is the seal limit\u2019s *Pull this toward the NCS record* on tab 3.0."
+            "One thing in that dataset is a likelihood: not the distribution, the outcomes. They "
+            "cannot inform this column, but they can inform what this prospect and those 242 "
+            "share, the parameters of the seal-capacity relationship. That is empirical Bayes, "
+            "and it is the seal limit\u2019s **Pull this toward the NCS record** on tab 3.0."
         )
 
     theme.heading(8, "2 · The paper")
     st.markdown(
         "The method written up for a journal rather than for this screen: competing limits, the "
         "survival function every POS is read from, and the likelihood formulation of DHI "
-        "evidence. It is the document to hand someone who does not use the tool."
+        "evidence. It is the document for a reader who does not use the tool."
     )
     _paper = DOCS / "ARTICLE.md"
     if _paper.exists():
         _paper_text = _paper.read_text(encoding="utf-8")
         st.info(
-            "**Every number below is computed, not typed in.** The worked prospect is this "
-            "app's own default read at a 120 m assessment minimum, the calibration figures "
-            "come from the shipped NCS table, and the five figures are regenerated from the "
-            "engine by `scripts/paper_figures.py`. Change an input and they move."
+            "Every number below is computed rather than typed. The worked prospect is the app's "
+            "own default read at a 120 m assessment minimum, the calibration figures come from "
+            "the shipped NCS table, and the five figures are regenerated from the engine by "
+            "`scripts/paper_figures.py`."
         )
-        with st.expander("**Copy the source** — Markdown, for a manuscript or a document"):
+        with st.expander("The source: Markdown, for a manuscript or a document"):
             st.caption(
                 "Written for a journal rather than a post: numbered sections, an abstract, "
                 "figure captions and LaTeX maths. A submission would want the equations "
@@ -856,9 +839,9 @@ with tab8:
 
     theme.heading(8, "3 · References")
     st.markdown(
-        "Every source this tool leans on, with each DOI checked and each entry saying what was "
-        "taken from it. Open access is marked, because a claim you cannot go and read is a claim "
-        "you have to take on trust."
+        "Every source the tool leans on, with each DOI checked and each entry saying what was "
+        "taken from it. Open access is marked, because a claim that cannot be read is a claim "
+        "taken on trust."
     )
     _refs = DOCS / "REFERENCES.md"
     if _refs.exists():
