@@ -33,7 +33,7 @@ Italics are for the titles of theory notes and papers. Never bold a phrase to ma
 **Numbers stay.** A measured value beside a control is content, not rhetoric — keep it, state it
 plainly, and give the unit.
 
-Rewrite status: tabs 1–4 done. Tab 5: sections 1, 3, 4, 5, 5b and 6 done; 2, 3b, 3c and the diagnostics still carry the old voice. Tabs 6–8 to follow.
+Rewrite status: tabs 1–5 done (tab 5 includes the walkthrough sub-tab and the well-only path). Tabs 6–8 to follow.
 
 ## Structure, 15 Sep 2026
 
