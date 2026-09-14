@@ -168,22 +168,21 @@ def _render_import() -> None:
     """
     from hcwc.io import datasets
 
-    with st.expander("**Load your own dataset** — raw discoveries, fitted here, never stored",
+    with st.expander("Load a dataset: raw discoveries, fitted here, never stored",
                      expanded=st.session_state.get("imported_dataset") is None):
         st.markdown(
-            "**One row per discovery, two columns required:** a closure height and a hydrocarbon "
-            "column height, in metres. The reader accepts the usual spellings — `trap_height_m`, "
+            "One row per discovery, two columns required: a closure height and a hydrocarbon "
+            "column height, in metres. The reader accepts the usual spellings: `trap_height_m`, "
             "`closure_height`, `relief_m` for the first; `hc_column_m`, `column_height`, "
             "`hcwc_height` for the second.\n\n"
-            "**Worth adding if you have them.** `burial_depth_m` makes the fit a two-predictor "
-            "model rather than a one-predictor one; `apex_depth_m` stands in for it if you do "
-            "not. `filled_to_spill` is used directly if present and derived at "
-            f"{datasets.FILLED_RULE:.0%} of the closure if not — and **that flag is what the "
-            "whole correction turns on**, because a filled trap measures the closure rather than "
-            "the seal.\n\n"
-            "**Why raw rows rather than a fitted curve.** The censoring correction runs here, on "
-            "your data. Handing the tool someone else's fitted shape would give you their answer "
-            "to their question; handing it your discoveries gives you the finding on yours."
+            "Optional columns. `burial_depth_m` makes the fit a two-predictor model rather than "
+            "a one-predictor one; `apex_depth_m` stands in for it where absent. "
+            "`filled_to_spill` is used directly if present and derived at "
+            f"{datasets.FILLED_RULE:.0%} of the closure if not. That flag is what the correction "
+            "turns on, because a filled trap measures the closure rather than the seal.\n\n"
+            "Raw rows rather than a fitted curve, because the censoring correction runs here. A "
+            "fitted shape from elsewhere carries its author's answer to their question; the "
+            "discoveries themselves carry the finding on these."
         )
         c1, c2 = st.columns(2)
         name = c1.text_input("Name it", key="import_name", placeholder="e.g. internal fields, 2026")
@@ -193,7 +192,7 @@ def _render_import() -> None:
             "Dataset (.csv)", type=["csv"], key="import_upload",
             help="One row per discovery, with a closure height and a hydrocarbon column height "
                  "under any of the spellings the reader accepts. Comma-separated, up to 10 000 "
-                 "rows. Nothing you import is written to disk or sent anywhere — it lives in this "
+                 "rows. Nothing imported is written to disk or sent anywhere; it lives in this "
                  "browser session only.")
 
         if upload is not None:
@@ -203,16 +202,16 @@ def _render_import() -> None:
                                            source=source)
             except datasets.DatasetError as exc:
                 st.session_state.pop("imported_dataset", None)
-                st.error(f"**That file cannot be read as a column-height dataset.** {exc}")
+                st.error(f"The file cannot be read as a column-height dataset. {exc}")
             else:
                 st.session_state["imported_dataset"] = loaded
                 st.success(
-                    f"**{loaded.name}** — {len(loaded.usable):,} usable rows of {loaded.n:,}, "
+                    f"{loaded.name}: {len(loaded.usable):,} usable rows of {loaded.n:,}, "
                     f"{loaded.censored_fraction:.0%} filled to spill, fitted on "
                     + (" and ".join(x.replace("_", " ") for x in loaded.predictors)) + ".")
                 if loaded.notes:
-                    st.warning("**What the reader had to assume.** Every one of these is a "
-                               "decision it made on your behalf:\n\n"
+                    st.warning("Assumptions the reader made. Each is a decision taken without "
+                               "being asked:\n\n"
                                + "\n\n".join(f"- {note}" for note in loaded.notes))
         elif st.session_state.get("imported_dataset") is not None:
             if st.button("Forget the loaded dataset", key="forget_import"):
@@ -225,21 +224,20 @@ def render() -> None:
     h, c, z, filled = _load()
     fit, naive = _fit()
 
-    st.subheader("The empirical basis, and how it should be analysed")
+    st.subheader("The empirical basis, and how it is analysed")
     st.markdown(
         """
-**Start with the credit, because it is owed.** Edmundson et al. (2021) assembled 242 measured
-discoveries across the Norwegian Continental Shelf — every one needing an apex and a spill point
-picked from depth-converted top-reservoir maps — and then **published the raw table openly under
-CC-BY 4.0**. That is rare, and everything on this tab is possible only because they did it. The
-dataset is a genuine contribution and nothing below detracts from it.
+Edmundson et al. (2021) assembled 242 measured discoveries across the Norwegian Continental
+Shelf, each needing an apex and a spill point picked from depth-converted top-reservoir maps, and
+published the raw table under CC-BY 4.0. That is rare, and everything on this tab is possible
+because they did it.
 
-What follows is a disagreement about **one estimator**, not about the data.
+What follows differs from the published analysis in one estimator, not in the data.
 
-> **A note on names.** Edmundson measures *trap height*; this tool calls the same quantity
-> *closure height*, and its risk element *Closure*, matching E-POS. Apex to spill, one measurement,
-> two names. Their term is kept whenever their data or their figures are being quoted, so that the
-> numbers here can be checked against the paper without translation.
+> A note on names. Edmundson measures trap height; this tool calls the same quantity closure
+> height, and its risk element Closure, matching E-POS. Apex to spill, one measurement, two names.
+> Their term is kept wherever their data or figures are quoted, so the numbers here can be checked
+> against the paper without translation.
 """
     )
 
@@ -259,13 +257,13 @@ What follows is a disagreement about **one estimator**, not about the data.
     )
 
     # ------------------------------------------------------------------ the prospect
-    theme.heading(TAB, "2 · Your prospect against the population")
+    theme.heading(TAB, "2 · The prospect against the population")
     st.markdown(
-        "Enter the closure height and burial depth and the panels below place the prospect in the "
-        "population. The orange distribution is **what the NCS data predicts for a closure of these "
-        "dimensions** — seal capacity drawn from the censoring-corrected fit, then capped at the "
-        "closure, which is the same `min(S, H)` the geology applies. It is the empirical prior the "
-        "engine's output will be compared against."
+        "The closure height and burial depth place the prospect in the population. The orange "
+        "distribution is what the NCS data predicts for a closure of these dimensions: seal "
+        "capacity drawn from the censoring-corrected fit, then capped at the closure, which is the "
+        "same `min(S, H)` the geology applies. It is the empirical prior the engine's output is "
+        "compared against."
     )
     ca, cb, cc = st.columns([1, 1, 2])
     closure = ca.number_input("Closure height (m)", 20.0, 1500.0, 350.0, 10.0,
@@ -274,7 +272,7 @@ What follows is a disagreement about **one estimator**, not about the data.
     burial = cb.number_input("Burial depth (m)", 200.0, 6000.0, 2050.0, 50.0,
                              help="Overburden thickness to the reservoir. Needed because the "
                                   "corrected fit finds burial depth to be a much stronger control "
-                                  "than the published analysis reported — see Table 6.4.")
+                                  "than the published analysis reported; see Table 6.4.")
     prior = _empirical_prior(closure, burial)
     # **On by arrival.** Lars, 4 Sep 2026. The empirical prior on its own is a statement about the
     # NCS record; the comparison is the reason anyone is on this tab, and a toggle defaulting off
@@ -284,7 +282,7 @@ What follows is a disagreement about **one estimator**, not about the data.
         help="Adds the geological contact distribution from tab 4.0, and the DHI-updated one from "
              "tab 5.0 where there is one, as violins next to the empirical prior. All three are "
              "column height in metres and all three are success cases only, so they are directly "
-             "comparable — and they are compared against the discoveries the fit was made on "
+             "comparable, and they are compared against the discoveries the fit was made on "
              "rather than against each other in the abstract.")
     cc.metric("Empirical prior, P50 column",
               f"{np.percentile(prior, 50):.0f} m",
@@ -335,15 +333,13 @@ What follows is a disagreement about **one estimator**, not about the data.
                        yaxis_title="Hydrocarbon column height (m)", height=560,
                        legend=dict(orientation="h", y=-0.16), margin=dict(t=20))
     n.plot(figA, "Column height against closure height, after Edmundson et al. Fig. 6A. Red "
-                 "diamonds lie on the 1:1 line **by definition, not by physics** — they record the "
-                 "closure, not the seal. The censored fit sits below the OLS line because it "
-                 "estimates seal capacity rather than the observed column. Both `r` values are "
-                 "correlations with the observed column; the MLE's is computed over the "
-                 "**uncensored** discoveries only, since those are the ones it is trying to "
-                 "predict.\n\n"
-                 "**Both lines rise above the 1:1 at the left-hand end, and no data point ever "
-                 "can.** That is not a plotting error, and it means something different for each "
-                 "line — the note directly below works through it.")
+                 "diamonds lie on the 1:1 line by definition: they record the closure, not the "
+                 "seal. The censored fit sits below the OLS line because it estimates seal "
+                 "capacity rather than the observed column. Both `r` values are correlations with "
+                 "the observed column; the MLE's is computed over the uncensored discoveries "
+                 "only, since those are the ones it predicts.\n\n"
+                 "Both lines rise above the 1:1 at the left-hand end, where no data point can. "
+                 "It means something different for each line; the note below works through it.")
 
     # Computed, not typed. These were hard-coded as "63 %", "35 %" and "144 m" inside an f-string
     # whose crossing was already being calculated a line above -- so the prose could drift away from
@@ -353,42 +349,40 @@ What follows is a disagreement about **one estimator**, not about the data.
                              * np.log(float(np.median(z))))
                       ** (1.0 / (1.0 - fit.coefficients["trap_height"])))
     below, above = h < mle_cross, h >= mle_cross
-    with st.expander("**Both lines cross the 1:1 line, and it means opposite things** — why one crossing is a prediction and the other is an artefact"):
+    with st.expander("Both lines cross the 1:1 line, and the two crossings mean different things"):
         st.info(
-            f"**Both lines cross the 1:1, and it means opposite things.**\n\n"
-            f"**The censored MLE crossing is a prediction, and it holds.** It estimates *seal "
-            f"capacity*, which is allowed to exceed the closure — that is precisely what filling to "
-            f"spill is. Above the 1:1 line the model is saying *this closure will fill*. It crosses at "
-            f"**{mle_cross:.0f} m**, and in the data **{filled[below].mean():.0%} of closures below "
-            f"that filled to spill against {filled[above].mean():.0%} above** — so the crossing lands "
-            f"where the filling behaviour actually changes.\n\n"
-            f"**The published OLS crossing is a defect.** It is fitted to the *observed column*, which "
-            f"cannot exceed the closure by construction, so below **{ols_cross:.0f} m** it predicts "
-            f"something the data cannot contain — and **{int((h < ols_cross).sum())} of {h.size} "
-            f"discoveries ({(h < ols_cross).mean():.0%})** sit there. Its intercept is "
-            f"**{intercept:+.0f} m**, which says a closure of zero height holds {intercept:.0f} m of "
+            f"The censored MLE crossing is a prediction. The line estimates seal capacity, which "
+            f"may exceed the closure; that is what filling to spill is, and above the 1:1 line the "
+            f"model says the closure will fill. It crosses at {mle_cross:.0f} m, and in the data "
+            f"{filled[below].mean():.0%} of closures below that filled to spill against "
+            f"{filled[above].mean():.0%} above, so the crossing lands where the filling behaviour "
+            f"changes.\n\n"
+            f"The published OLS crossing is an artefact. The line is fitted to the observed "
+            f"column, which cannot exceed the closure, so below {ols_cross:.0f} m it predicts "
+            f"something the data cannot contain; {int((h < ols_cross).sum())} of {h.size} "
+            f"discoveries ({(h < ols_cross).mean():.0%}) sit there. Its intercept is "
+            f"{intercept:+.0f} m, which says a closure of zero height holds {intercept:.0f} m of "
             f"column.\n\n"
-            f"This is a *separate* criticism from the censoring one and needs no estimator theory to "
-            f"see: a straight line through data bounded by `c ≤ h` will always do this unless it is "
-            f"forced through the origin with a slope below one. It is kept here exactly as published.\n\n"
-            f"**Would forcing it through the origin fix it? It would fix the bound, and it would still "
-            f"be the wrong model.** Least squares through (0, 0) gives `c = "
-            f"{float(np.sum(h * c) / np.sum(h * h)):.2f} h`, which can never exceed the closure. But a "
-            f"line through the origin says the fill *fraction* is constant, and it is not — in this "
-            f"data the median fill runs "
+            f"This is separate from the censoring point and needs no estimator theory: a straight "
+            f"line through data bounded by `c ≤ h` does this unless it is forced through the origin "
+            f"with a slope below one. It is kept here as published.\n\n"
+            f"Forcing it through the origin fixes the bound and leaves the wrong model. Least "
+            f"squares through (0, 0) gives `c = {float(np.sum(h * c) / np.sum(h * h)):.2f} h`, "
+            f"which cannot exceed the closure, but a line through the origin says the fill "
+            f"fraction is constant, and in this data the median fill runs "
             + ", ".join(
-                f"**{np.median(c[m] / h[m]):.2f}** at {q0:,.0f}–{q1:,.0f} m"
+                f"{np.median(c[m] / h[m]):.2f} at {q0:,.0f}–{q1:,.0f} m"
                 for q0, q1, m in (
                     (qq[i], qq[i + 1], (h >= qq[i]) & (h <= qq[i + 1]))
                     for qq in [np.quantile(h, [0, 0.25, 0.5, 0.75, 1.0])] for i in range(4)))
             + ".\n\n"
-            f"**The real problem is that the observed column is not a function of closure at all.** It "
-            f"is `min(seal capacity, closure)` — a minimum of two things, one of which is the x-axis. "
-            f"No straight line, through the origin or otherwise, can represent a minimum. That is why "
-            f"the censored fit is not a tidied-up regression but a different model: it estimates the "
-            f"*capacity*, and lets the minimum produce the observation. The declining fill fraction "
-            f"above is exactly the signature of capacity growing more slowly than closure — which is "
-            f"the `h^{fit.coefficients['trap_height']:.2f}` in the green line."
+            f"The underlying point is that the observed column is not a function of closure. It is "
+            f"`min(seal capacity, closure)`, a minimum of two things, one of which is the x-axis, "
+            f"and no straight line represents a minimum. The censored fit is therefore a different "
+            f"model rather than a tidied regression: it estimates the capacity and lets the minimum "
+            f"produce the observation. The declining fill fraction above is the signature of "
+            f"capacity growing more slowly than closure, which is the "
+            f"`h^{fit.coefficients['trap_height']:.2f}` in the green line."
         )
 
     # -------- Figure: their Fig 6B equivalent -------------------------------------------
@@ -412,9 +406,9 @@ What follows is a disagreement about **one estimator**, not about the data.
         _overlay_models(figB, burial, 260.0)
     figB.update_layout(xaxis_title="Burial depth (m)", yaxis_title="Hydrocarbon column height (m)",
                        height=560, legend=dict(orientation="h", y=-0.16), margin=dict(t=20))
-    n.plot(figB, "Column height against burial depth, after Edmundson et al. Fig. 6B. **This is "
-                 "the panel where the two analyses disagree most** — the corrected fit is roughly "
-                 "twice as steep, because censoring was suppressing the depth signal.")
+    n.plot(figB, "Column height against burial depth, after Edmundson et al. Fig. 6B. This is "
+                 "the panel where the two analyses disagree most: the corrected fit is roughly "
+                 "twice as steep, because censoring suppressed the depth signal.")
 
     # ------------------------------------------------------------------ the issue
     # Sections 3 to 5 argue for the METHOD rather than about the reader's prospect, and they
@@ -422,32 +416,29 @@ What follows is a disagreement about **one estimator**, not about the data.
     # "here is your prospect against it", which is the line a reader actually wants to walk.
     # Folded rather than moved to a document: they are live figures computed from the data, and
     # a static page would lose the calibration plot and the bias curve, which ARE the evidence.
-    with st.expander("**The case for the correction** — why the published fit is biased, "
-                     "whether ours holds up, and the bias it does not remove", expanded=False):
+    with st.expander("The correction: what the published fit measures, whether the corrected one "
+                     "holds, and the bias it does not remove", expanded=False):
         st.caption(
-            "Three sections of argument, kept because a correction nobody can check is worth "
-            "nothing — and folded because they are about the estimator, not about your "
-            "prospect. Open them when you want to disagree with the method; skip them when you "
-            "want to use it."
+            "Three sections on the estimator rather than on the prospect, kept so the correction "
+            "can be checked and folded so a first pass can go past them."
         )
-        theme.heading(TAB, "3 · Why the published regression measures the wrong thing")
+        theme.heading(TAB, "3 · What the published regression measures")
         st.markdown(
             """
-    The quantity a pre-drill model needs is **seal capacity `S`** — the column the seal *could* hold.
-    What is measured is the column that is *there*, and the two differ by the same identity this whole
-    tool is built on:
+    The quantity a pre-drill model needs is seal capacity `S`, the column the seal could hold. What
+    is measured is the column that is there, and the two differ by the identity the tool is built on:
 
     ```
     observed column  C = min(S, H)          H = closure height
     ```
 
-    * **Underfilled** (`C < H`) — the seal bound the column, so `C = S`. Seal capacity is observed.
-    * **Filled to spill** (`C = H`) — geometry bound it. All that is learned is `S ≥ H`.
-      **The observation is right-censored**; the seal's capacity was never tested.
+    * Underfilled (`C < H`): the seal bound the column, so `C = S`. Seal capacity is observed.
+    * Filled to spill (`C = H`): geometry bound it. All that is learned is `S ≥ H`. The observation
+      is right-censored; the seal's capacity was not tested.
 
-    Hood (2019) states the geology plainly — pools controlled by geometric limits *"document the minimum
-    column that the seal can support but not the upper limit"* — but the statistical consequence has not
-    been carried into the published estimators. **111 of 242 rows, 46 %, are of this kind.**
+    Hood (2019) states the geology: pools controlled by geometric limits "document the minimum column
+    that the seal can support but not the upper limit". The statistical consequence has not been
+    carried into the published estimators. 111 of 242 rows, 46 %, are of this kind.
     """
         )
 
@@ -455,43 +446,42 @@ What follows is a disagreement about **one estimator**, not about the data.
             f"""
     | Log-log elasticity | As published (OLS) | Censoring-corrected (MLE) | |
     |---|---:|---:|---|
-    | **Closure height** | {naive[1]:.3f} | **{fit.coefficients['trap_height']:.3f}** | overstated |
-    | **Burial depth** | {naive[2]:.3f} | **{fit.coefficients['burial_depth']:.3f}** | **understated — roughly doubles** |
+    | Closure height | {naive[1]:.3f} | {fit.coefficients['trap_height']:.3f} | overstated |
+    | Burial depth | {naive[2]:.3f} | {fit.coefficients['burial_depth']:.3f} | understated; roughly doubles |
     """,
-            "Censoring biases the two **in opposite directions**, which is why fitting them one at a "
-            "time cannot reveal it. Closure height and burial depth are essentially uncorrelated here "
-            "(r = 0.085), so this is not confounding. Both terms are significant by likelihood ratio "
-            "(p = 8e-19 and p = 5e-4).",
+            "Censoring biases the two in opposite directions, which is why fitting them one at a "
+            "time does not reveal it. Closure height and burial depth are close to uncorrelated "
+            "here (r = 0.085), so this is not confounding. Both terms are significant by likelihood "
+            "ratio (p = 8e-19 and p = 5e-4).",
         )
 
         st.markdown(
             """
-    **What this does to the paper's conclusions.** The primary finding — closure height matters — stands,
-    but is overstated. The secondary finding, that burial depth is the *weaker* control, does **not**
-    survive: corrected, it roughly doubles. That is the physically expected direction, because seals
-    compact and strengthen with depth. Censoring was hiding the depth signal, because deep closures fill
-    to spill more often and so contribute censored rather than informative observations.
+    For the paper's conclusions: the primary finding, that closure height matters, stands and is
+    overstated. The secondary finding, that burial depth is the weaker control, does not survive;
+    corrected, it roughly doubles. That is the direction physics expects, since seals compact and
+    strengthen with depth. Censoring hid the depth signal because deep closures fill to spill more
+    often and so contribute censored rather than informative observations.
     """
         )
 
         with st.expander("Why not simply drop the filled-to-spill points?"):
             st.markdown(
                 """
-    It is the obvious fix and it does not work. Dropping them trades censoring bias for **truncation
-    bias**: conditioning on `S < H` keeps only low capacity at low closure height, which manufactures
-    the same positive relationship a second way.
+    Dropping them trades censoring bias for truncation bias: conditioning on `S < H` keeps only low
+    capacity at low closure height, which manufactures the same positive relationship a second way.
 
-    Simulated with seal capacity **completely independent** of closure height — zero physics, by
-    construction, 242 points to match:
+    Simulated with seal capacity independent of closure height, no physics by construction, 242
+    points to match:
 
     | Estimator | Slope (truth = 0.000) |
     |---|---:|
     | Naive OLS, all points | 0.580 |
     | OLS after dropping filled-to-spill | 0.543 |
-    | **Censored MLE** | **−0.009** |
+    | Censored MLE | −0.009 |
 
     Only the censored likelihood recovers the truth, at every correlation tested. Asserted in
-    `tests/test_censoring.py`, so if the claim is wrong the suite fails.
+    `tests/test_censoring.py`.
     """
             )
 
@@ -512,36 +502,35 @@ What follows is a disagreement about **one estimator**, not about the data.
         cal.update_layout(barmode="group", yaxis_title="P(filled to spill)", height=380,
                           yaxis_range=[0, 0.8], legend=dict(orientation="h", y=-0.2),
                           margin=dict(t=20), xaxis_title="Closure height")
-        n.plot(cal, "Calibration by closure-height band. The fitted model reproduces the observed fill "
-                    "rate throughout — **this is what validates the parametric form**. The correction "
-                    "is not buying a better story at the cost of fit.")
+        n.plot(cal, "Calibration by closure-height band. The fitted model reproduces the observed "
+                    "fill rate throughout, which is what validates the parametric form.")
 
         st.warning(
-            f"""**A correction to an earlier draft of this tab.** It previously claimed the model's 39 %
-    fill rate *at* 250 m matched Graham et al.'s independent global 40 %, and called that a cross-check.
-    It was not one — Graham states a population **average** over closures *below* 250 m, not the value
-    at 250 m. Compared properly the NCS gives **{filled[h < 250].mean():.0%}** against Graham's 40 %.
-    That gap is a **real regional difference**, not a discrepancy: Edmundson et al. note the NCS is
-    charge-rich, so its closures fill more often than the global average — itself a good illustration of
-    Graham's warning against global benchmarks without trap-specific geology."""
+            f"""An earlier draft of this tab claimed the model's 39 % fill rate at 250 m matched Graham
+    et al.'s independent global 40 %. It did not: Graham states a population average over closures
+    below 250 m, not the value at 250 m. Compared on the same basis the NCS gives
+    {filled[h < 250].mean():.0%} against Graham's 40 %. The gap is a regional difference rather than
+    a discrepancy: Edmundson et al. note the NCS is charge-rich, so its closures fill more often
+    than the global average, which is Graham's own warning against global benchmarks without
+    trap-specific geology."""
         )
 
         # ------------------------------------------------------------------ second bias
         theme.heading(TAB, "5 · A second bias, which the correction does not remove")
         st.markdown(
             """
-    The corrected closure-height elasticity is still ~0.70, higher than a rock property should be —
-    seal capacity has no business caring how tall the closure is. The reason is not selection, it is
-    measurement, and it applies to **every** study of this kind:
+    The corrected closure-height elasticity is still about 0.70, higher than a rock property should
+    be, since seal capacity has no reason to depend on how tall the closure is. The reason is
+    measurement rather than selection, and it applies to every study of this kind:
 
     ```
     column  height = contact − apex
     closure height = spill   − apex        ← the same apex pick
     ```
 
-    They **share the apex**. A depth-conversion error moves both in the same direction and manufactures
-    a relationship out of nothing — and no censored estimator can see it, because it is handed the
-    mismeasured numbers. Errors-in-variables sitting on top of censoring, pointing the same way.
+    The two share the apex. A depth-conversion error moves both in the same direction and
+    manufactures a relationship, and a censored estimator cannot see it, because it is handed the
+    mismeasured numbers. It is errors-in-variables on top of censoring, pointing the same way.
     """
         )
         sigmas = (0.0, 10.0, 25.0, 50.0, 75.0, 100.0)
@@ -559,20 +548,20 @@ What follows is a disagreement about **one estimator**, not about the data.
         bias.update_layout(xaxis_title="Apex pick error σ (m)",
                            yaxis_title="Estimated closure-height elasticity", height=400,
                            legend=dict(orientation="h", y=-0.2), margin=dict(t=20))
-        n.plot(bias, f"Spurious elasticity from a shared apex pick, on data with **no true relationship "
-                     f"whatsoever**. At 50 m — 2 % at 2 500 m, ordinary depth conversion — the censored "
-                     f"estimator returns ~0.58. Our own {fit.coefficients['trap_height']:.2f} is "
-                     f"therefore an **upper bound, not an estimate**. The burial-depth result survives "
-                     f"this: the same absolute error is ~25 % of a 200 m closure but ~2 % of a 2 500 m "
-                     f"burial depth.")
+        n.plot(bias, f"Spurious elasticity from a shared apex pick, on data with no true "
+                     f"relationship. At 50 m, 2 % at 2 500 m and ordinary depth conversion, the "
+                     f"censored estimator returns about 0.58. The fitted "
+                     f"{fit.coefficients['trap_height']:.2f} is therefore an upper bound rather than "
+                     f"an estimate. The burial-depth result survives this: the same absolute error is "
+                     f"about 25 % of a 200 m closure and about 2 % of a 2 500 m burial depth.")
 
         # ------------------------------------------------------------------ benchmark families
-    theme.heading(TAB, "6 · The benchmark families, and adding your own")
+    theme.heading(TAB, "6 · The benchmark families")
     imported = st.session_state.get("imported_dataset")
     n.table(
         pd.DataFrame({
             "Benchmark": ["Edmundson (2021) — NCS", "Graham et al. (2015) — global",
-                          imported.name if imported else "your own data"],
+                          imported.name if imported else "imported data"],
             "Size": ["242 discoveries, per-observation", "not stated; parameters only",
                      f"{len(imported.usable):,} usable of {imported.n:,}" if imported
                      else "none loaded"],
@@ -582,51 +571,49 @@ What follows is a disagreement about **one estimator**, not about the data.
             "Status": ["open, CC-BY 4.0", "abstract only — distributions never published",
                        f"source: {imported.source}" if imported else "load one below"],
         }),
-        "Kept separate rather than merged into one 'empirical prior'. They are conditioned "
-        "differently and disagree informatively — the NCS/global gap in §8 is an example, and a "
-        "benchmark that agrees with the others tells you less than one that does not.",
+        "Kept separate rather than merged into one empirical prior. They are conditioned "
+        "differently and disagree informatively; the NCS/global gap in §8 is an example, and a "
+        "benchmark that agrees with the others carries less information than one that does not.",
     )
-    st.markdown("**The measured dataset is Norwegian, and there is no second one.** Picking an apex and a spill point for every field needs 3D seismic and a velocity model, which is why so few studies of this kind exist.")
-    with st.expander("**Why there is only one such dataset** — what a search found, and why the older compilations cannot answer this question"):
+    st.markdown("The measured dataset is Norwegian, and there is no second one. Picking an apex and a spill point for every field needs 3D seismic and a velocity model, which is why few studies of this kind exist.")
+    with st.expander("Why there is one such dataset: what a search found, and why the older compilations cannot answer this question"):
         st.warning(
-            "**The measured dataset is Norwegian, and there is no second one.** A search for a public "
-            "non-NCS dataset relating column height to *closure* height (28 Aug 2026) found none — "
-            "tab 8.0 → *Benchmark sources* records what was checked. Edmundson et al. explain why in "
-            "their own introduction: picking an apex and a spill point for every field needs 3D "
-            "seismic and a velocity model, so *\"few studies of this kind have been carried out "
-            "before\"*. The prior compilations — Gulf of Mexico, Malay Basin — report column-height "
-            "distributions with **no trap geometry**, which cannot answer the question this tab asks."
+            "A search for a public non-NCS dataset relating column height to closure height "
+            "(28 Aug 2026) found none; tab 8.0, Benchmark sources, records what was checked. "
+            "Edmundson et al. give the reason in their introduction: picking an apex and a spill "
+            "point for every field needs 3D seismic and a velocity model, so \"few studies of this "
+            "kind have been carried out before\". The earlier compilations, Gulf of Mexico and "
+            "Malay Basin, report column-height distributions with no trap geometry, which cannot "
+            "answer the question this tab asks."
             "\n\n"
-            "**So a prospect outside the NCS is being compared against Norwegian rock.** Not fatal — "
-            "the physics travels further than the stratigraphy does — but it is a real limitation and "
-            "it belongs in any document that quotes these curves. If you have an in-house trap-fill "
-            "database, loading it below is the only way to get a benchmark conditioned on your own "
-            "basin."
+            "A prospect outside the NCS is therefore compared against Norwegian rock. The physics "
+            "travels further than the stratigraphy, but it is a limitation and belongs in any "
+            "document that quotes these curves. An in-house trap-fill database, loaded below, is "
+            "the only way to a benchmark conditioned on the prospect's own basin."
         )
     _render_import()
 
     # ------------------------------------------------------------------ family curves
-    theme.heading(TAB, "7 · The prior a benchmark actually gives you")
+    theme.heading(TAB, "7 · The prior a benchmark gives")
     st.info(
-        "**Why the x-axis is column height and not structural relief.** Relief is what picks *which "
-        "curve you are on* — it is the family parameter, one curve per value of it, and it labels "
-        "the legend. The axis has to be the thing whose probability is being read, and that is the "
-        "**column**: each curve answers *given a closure of this relief, how likely is a column of "
-        "at least x?*\n\n"
-        "Putting relief on the axis would answer a different question — how column varies with "
-        "relief — and would collapse each curve to a point, which is why the built prospect could "
-        "not be drawn on it. On these axes it can: it has a column distribution, so it has an "
-        "exceedance curve, and it goes on the same axis as the benchmark for its own relief."
+        "The x-axis is column height rather than structural relief. Relief picks the curve: it is "
+        "the family parameter, one curve per value, and it labels the legend. The axis carries the "
+        "quantity whose probability is read, the column, so each curve answers: given a closure of "
+        "this relief, how likely is a column of at least x?\n\n"
+        "Relief on the axis would answer a different question, how column varies with relief, and "
+        "would collapse each curve to a point, so the built prospect could not be drawn on it. On "
+        "these axes it can: it has a column distribution, so it has an exceedance curve, and it "
+        "goes on the same axis as the benchmark for its own relief."
     )
     st.markdown(
-        "A benchmark is only useful as **a curve for a closure of your size**, and the families "
-        "below are what each one delivers. Read one curve as: for a closure of this relief, the "
-        "probability that the column is at least *x* metres.\n\n"
-        "**The vertical drop at the right-hand end of every curve is the point.** It is the "
-        "filled-to-spill probability mass — the share of prospects of that relief whose column is "
-        "set by the closure rather than by the seal. It is a point mass, not a tail, and no smooth "
-        "distribution typed into a volumetrics package has one. Squashing it into a lognormal is "
-        "exactly the error §3 identifies, arriving one step later in the workflow."
+        "A benchmark is useful as a curve for a closure of the prospect's size, and the families "
+        "below are what each one delivers. One curve reads: for a closure of this relief, the "
+        "probability that the column is at least x metres.\n\n"
+        "The vertical drop at the right-hand end of every curve is the filled-to-spill probability "
+        "mass: the share of prospects of that relief whose column is set by the closure rather than "
+        "by the seal. It is a point mass, not a tail, and no smooth distribution typed into a "
+        "volumetrics package has one. Squashing it into a lognormal is the error §3 identifies, "
+        "arriving one step later in the workflow."
     )
 
     options = ["NCS, censoring-corrected", "NCS, as the paper fits it", "Graham et al. (2015)"]
@@ -703,7 +690,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             if matched:
                 drawn = next(iter(matched.values()))
                 fam.add_scatter(x=built_grid, y=_y(_exceedance(drawn, built_grid)), mode="lines",
-                                name=f"benchmark at YOUR relief ({own_relief:,.0f} m)",
+                                name=f"benchmark at this prospect's relief ({own_relief:,.0f} m)",
                                 line=dict(color="#555555", width=3, dash="dash"))
 
         # The DHI-updated distribution, when there is one. Drawn because Lars asked to see both
@@ -720,11 +707,11 @@ What follows is a disagreement about **one estimator**, not about the data.
                 # Same weight and style as the geological curve, different colour. They are two
                 # readings of the same prospect and the question is which is deeper -- a dotted
                 # line reads as provisional or as a construction line, which this is not.
-                mode="lines", name=f"THIS PROSPECT, {theme.evidence_basis()}",
+                mode="lines", name=f"this prospect, {theme.evidence_basis()}",
                 line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI], width=4.5))
 
         fam.add_scatter(x=built_grid, y=_y(_exceedance(column, built_grid)), mode="lines",
-                        name="THIS PROSPECT, geological",
+                        name="this prospect, geological",
                         line=dict(color=PROSPECT, width=4.5))
         fam.add_scatter(x=[float(np.median(column))], y=_y([0.5]), mode="markers",
                         showlegend=False,
@@ -753,30 +740,26 @@ What follows is a disagreement about **one estimator**, not about the data.
         fam.update_yaxes(range=[0, 1.02])
     if probit:
         st.caption(
-            "**Probit, and the x-axis has gone logarithmic with it.** A lognormal column-height "
-            "distribution is a **straight line** on these axes, so curvature is a departure from "
-            "lognormal rather than something to interpret — and the tails, squashed into a few "
-            "pixels on a linear axis, open up. The benchmark families are lognormal capacities "
-            "clipped at the closure, so each one runs straight and then turns over where the "
-            "closure starts binding: **the bend is the fill-to-spill point mass**, and where it "
-            "sits is the most useful thing on this chart."
+            "Probit, with the x-axis logarithmic to match. A lognormal column-height distribution "
+            "is a straight line on these axes, so curvature is a departure from lognormal, and the "
+            "tails, squashed into a few pixels on a linear axis, open up. The benchmark families "
+            "are lognormal capacities clipped at the closure, so each runs straight and then turns "
+            "over where the closure starts binding: the bend is the fill-to-spill point mass."
         )
-    n.plot(fam, ("**Orange is the prospect you built on tab 3.0; the dashed grey beside it is the "
-                 "benchmark at your own structural relief.** Those two are the like-for-like pair "
-                 "— the six coloured curves are the family it sits inside, not its comparators. "
-                 "Read the gap between orange and dashed grey: to the right of it your model is "
-                 "more optimistic than the empirical record for a closure of this size, to the "
-                 "left more pessimistic. **When the prospect has a DHI, its updated curve is drawn "
-                 "in red at the same weight** — two readings of one prospect, and the question is "
-                 "which of them sits deeper. Neither is dotted, because neither is provisional.  "
+    n.plot(fam, ("Orange is the prospect built on tab 3.0; the dashed grey beside it is the "
+                 "benchmark at the same structural relief. Those two are the like-for-like pair; "
+                 "the six coloured curves are the family it sits inside, not its comparators. To "
+                 "the right of the dashed grey the model is more optimistic than the empirical "
+                 "record for a closure of this size, to the left more pessimistic. Where the "
+                 "prospect has a DHI, its updated curve is drawn in red at the same weight: two "
+                 "readings of one prospect, and the question is which sits deeper.  "
                  if limit_set is not None and own_relief else "")
-                + f"Column-height exceedance by closure height — **{source}**"
+                + f"Column-height exceedance by closure height, {source}"
                 + ("" if source == "Graham et al. (2015)"
                    else f", at {burial:,.0f} m burial")
                 + ". Dotted segments are the filled-to-spill point mass, marked at its height. "
-                  "This is the chart shape used as a pre-drill benchmark family across the "
-                  "industry; what is new here is the middle option, which draws the published "
-                  "estimator on the same axes as the corrected one.")
+                  "The chart shape is the pre-drill benchmark family in common use; the middle "
+                  "option draws the published estimator on the same axes as the corrected one.")
 
     rows = []
     for closure in CLOSURE_FAMILY:
@@ -790,80 +773,73 @@ What follows is a disagreement about **one estimator**, not about the data.
             "Fill fraction, P50": f"{np.percentile(drawn, 50) / closure:.0%}",
         })
     n.table(pd.DataFrame(rows),
-            "The same family as numbers. **Fill fraction** is the P50 column as a share of the "
-            "closure, and it is the quantity that must fall as closure height rises — a bigger "
-            "closure is harder to fill. A benchmark on which it stays flat is telling you the "
-            "closure does not bind, which for large closures is not what the data says.")
+            "The same family as numbers. Fill fraction is the P50 column as a share of the "
+            "closure, and it falls as closure height rises, since a bigger closure is harder to "
+            "fill. A benchmark on which it stays flat says the closure does not bind, which for "
+            "large closures is not what the data shows.")
 
     if st.session_state.get("dhi_on") and st.session_state.get("dhi_overlay") is not None:
-        st.markdown("**The geological curve is the like-for-like comparison.** Use the DHI curve to see how far the evidence moved you, not to judge whether you are calibrated — judging a posterior against a record partly selected by other people's amplitudes counts the DHI twice.")
-        with st.expander("**Why the benchmarks cannot be conditioned on a DHI** — Graham's own words, the selection effect in the 242, and the direction of the bias"):
+        st.markdown("The geological curve is the like-for-like comparison. The DHI curve shows how far the evidence moved the prospect, not whether the model is calibrated: judging a posterior against a record partly selected by other people's amplitudes counts the DHI twice.")
+        with st.expander("Why the benchmarks cannot be conditioned on a DHI: Graham's own words, the selection effect in the 242, and the direction of the bias"):
             st.warning(
-                "**Read the DHI-updated curve against these benchmarks with care — they cannot be "
-                "conditioned the same way.**\n\n"
-                "**Graham et al. settle it for their own data**, in their opening sentence: the "
-                "synthesis is for column-height modelling *“in the absence of direct hydrocarbon "
-                "indicators (DHIs) or known fill controls”*. It is explicitly the **no-DHI prior**, "
-                "so judging a DHI-updated distribution against it compares evidence you have with a "
-                "curve built for not having it.\n\n"
-                "**Edmundson's 242 rows carry no DHI flag at all** — there is no such column, and the "
-                "paper does not discuss it. The population is *discoveries*, and a prospect with a "
-                "supportive amplitude is more likely to have been drilled, so DHI-supported wells are "
-                "over-represented among them by selection.\n\n"
-                "**And the bias has a direction this tool can name.** Detectability rises with column "
-                "height — that is the detection function `D(h)` on tab 5.0 — so whatever share of "
-                "these discoveries was DHI-driven is **enriched in large columns**, because short "
-                "columns do not produce mappable anomalies. Comparing your posterior against them "
-                "therefore risks **counting the DHI twice**: once in your own update, and once already "
-                "baked into a population partly selected by other people's DHIs. It will make you look "
-                "*less* optimistic than you are.\n\n"
-                "**The geological curve is the like-for-like comparison.** Use the DHI curve to see how "
-                "far the evidence moved you, not to judge whether you are calibrated."
+                "The benchmarks cannot be conditioned on a DHI the way the posterior is.\n\n"
+                "Graham et al. settle it for their own data in their opening sentence: the "
+                "synthesis is for column-height modelling “in the absence of direct hydrocarbon "
+                "indicators (DHIs) or known fill controls”. It is the no-DHI prior, so a "
+                "DHI-updated distribution judged against it is evidence held compared with a curve "
+                "built for not having it.\n\n"
+                "Edmundson's 242 rows carry no DHI flag; there is no such column, and the paper "
+                "does not discuss it. The population is discoveries, and a prospect with a "
+                "supportive amplitude is more likely to have been drilled, so DHI-supported wells "
+                "are over-represented by selection.\n\n"
+                "The bias has a direction. Detectability rises with column height, which is the "
+                "detection function `D(h)` on tab 5.0, so whatever share of these discoveries was "
+                "DHI-driven is enriched in large columns, because short columns do not produce "
+                "mappable anomalies. A posterior compared against them risks counting the DHI "
+                "twice, once in the update and once in a population partly selected by other "
+                "people's DHIs, and reads as less optimistic than it is.\n\n"
+                "The geological curve is the like-for-like comparison."
             )
 
     if imported is not None and source == imported_label(imported):
         st.info(
-            "**What this series is, precisely.** The C&C and ExxonMobil families are the *same* "
-            "banded model, sharing the same fill-to-spill weight. They differ in exactly one "
-            "thing: the distribution "
-            "drawn when the closure does **not** fill to spill. ExxonMobil draws uniformly between "
-            "a 20 m floor and the relief; C&C draws a strongly top-weighted shape over the same "
+            "What this series is. The C&C and ExxonMobil families are the same banded model, "
+            "sharing the same fill-to-spill weight. They differ in one thing: the distribution "
+            "drawn when the closure does not fill to spill. ExxonMobil draws uniformly between a "
+            "20 m floor and the relief; C&C draws a strongly top-weighted shape over the same "
             "range.\n\n"
-            "So this is not a second dataset. It is one modelling choice, and it is worth seeing "
-            "how much that single choice moves the answer — compare the fill fractions in the "
-            "table above against Graham's. **The parameters are held outside the repository** and "
-            "the series simply does not appear on a machine without them."
+            "It is not a second dataset. It is one modelling choice, and the fill fractions in the "
+            "table above against Graham's show how much that choice moves the answer. The "
+            "parameters are held outside the repository, and the series does not appear on a "
+            "machine without them."
         )
 
     if source == "NCS, as the paper fits it":
-        st.markdown("**This is the published estimator, drawn for comparison, and it should not be used.** Fitted without treating the filled-to-spill discoveries as censored, it reads each closure's own ceiling as evidence about the seal.")
-        with st.expander("**Why it should not be used** — what fitting without censoring does to the family, and which end it goes wrong at"):
+        st.markdown("This is the published estimator, drawn for comparison and not for use. Fitted without treating the filled-to-spill discoveries as censored, it reads each closure's own ceiling as evidence about the seal.")
+        with st.expander("What fitting without censoring does to the family, and at which end it goes wrong"):
             st.warning(
-                "**This is the published estimator, drawn for comparison, and it should not be used.** "
                 "Fitted to observed columns without treating the filled-to-spill discoveries as "
-                "censored, it reads each closure's own ceiling as evidence about the seal, and so "
-                "overstates how strongly closure height controls column height — elasticity 0.880 "
-                "against 0.701 corrected.\n\n"
-                "**The consequence is that the family fans out too far**, and it goes the opposite way "
-                "at the two ends. At 2 500 m burial it under-fills small closures (P50 82 m of a 100 m "
-                "closure, against 100 m corrected; 37 % filling to spill against 59 %) and over-fills "
-                "the largest (514 m of an 800 m closure, against 490 m). A prior built from it is "
-                "pessimistic on exactly the small closures where the spill point is the binding "
-                "control, which is where the censoring it omits does its damage.\n\n"
-                "**The sharpest way to see it needs no simulated data at all.** Ask each fit to "
-                "reproduce the one statistic everybody can check — how often a discovery fills to "
-                "spill. In the 242 discoveries, **45.9 %** do. Draw a column for every discovery at its "
-                "own closure height and burial depth: the corrected fit predicts **47.2 %**, the "
-                "published fit **32.1 %** — both computed exactly rather than simulated, and both "
-                "given the *same* spread so that only the mean function differs. The published "
-                "estimator cannot reproduce the filling "
-                "behaviour of the dataset it was fitted to, and it fails in the direction the omitted "
-                "censoring predicts."
+                "censored, the published estimator reads each closure's own ceiling as evidence "
+                "about the seal, and so overstates how strongly closure height controls column "
+                "height: elasticity 0.880 against 0.701 corrected.\n\n"
+                "The family therefore fans out too far, and goes the opposite way at the two ends. "
+                "At 2 500 m burial it under-fills small closures (P50 82 m of a 100 m closure, "
+                "against 100 m corrected; 37 % filling to spill against 59 %) and over-fills the "
+                "largest (514 m of an 800 m closure, against 490 m). A prior built from it is "
+                "pessimistic on the small closures where the spill point is the binding control, "
+                "which is where the omitted censoring does its damage.\n\n"
+                "The check that needs no simulated data: each fit asked to reproduce how often a "
+                "discovery fills to spill. In the 242 discoveries, 45.9 % do. Drawing a column for "
+                "every discovery at its own closure height and burial depth, the corrected fit "
+                "predicts 47.2 % and the published fit 32.1 %, both computed exactly and both given "
+                "the same spread so that only the mean function differs. The published estimator "
+                "does not reproduce the filling behaviour of the dataset it was fitted to, and it "
+                "fails in the direction the omitted censoring predicts."
             )
 
     # ------------------------------------------------------------------ summary
     # -------- Are we optimistic or pessimistic? ------------------------------------------
-    theme.heading(TAB, "8 · Am I optimistic or pessimistic?")
+    theme.heading(TAB, "8 · Optimistic or pessimistic against the record")
     limit_set_cal = st.session_state.get("limit_set")
     _calibratable = limit_set_cal is not None and bool(own_relief) and own_relief > 0
     built_column = np.asarray([], dtype=float)
@@ -873,8 +849,8 @@ What follows is a disagreement about **one estimator**, not about the data.
         built_column = _built_result.column_m[_built_result.above_minimum]
 
     if not _calibratable:
-        st.info("Build the limits on tab 3.0 and set a spill point on tab 2.0 to calibrate against "
-                "the benchmarks.")
+        st.info("Calibration against the benchmarks needs the limits on tab 3.0 and a spill point "
+                "on tab 2.0.")
     elif built_column.size == 0:
         # Drawn before anything is compared. A minimum above every achievable column leaves nothing
         # to place inside a benchmark, and `np.percentile` of an empty array is an IndexError out of
@@ -882,9 +858,9 @@ What follows is a disagreement about **one estimator**, not about the data.
         # the threshold. It is a real setting, not a silly one: on the worked prospect 300 m still
         # reports POS 0.4 %, and from about 330 m there are no success cases left at all.
         st.info(
-            "**No realisation reaches the assessment minimum**, so there is no column distribution "
-            "to place inside a benchmark. Lower the minimum on tab 2.0 — the prospect still has a "
-            "contact distribution, it simply has no success cases at this threshold."
+            "No realisation reaches the assessment minimum, so there is no column distribution "
+            "to place inside a benchmark. The prospect still has a contact distribution; it has "
+            "no success cases at this threshold. A lower minimum on tab 2.0 restores them."
         )
     else:
         from hcwc.core import calibration
@@ -898,13 +874,12 @@ What follows is a disagreement about **one estimator**, not about the data.
             bases.append((theme.evidence_basis(), updated_column))
 
         st.markdown(
-            f"Every benchmark below is evaluated at **this prospect's own structural relief of "
-            f"{own_relief:,.0f} m** and its {burial:,.0f} m burial depth, so the comparison is "
-            f"like for like rather than against a family your closure is not in.\n\n"
-            f"**The number is the exceedance percentile your median column lands on.** If your P50 "
-            f"is the benchmark's P25, only a quarter of comparable closures reach it and you are "
-            f"optimistic. **Below 50 optimistic, above 50 conservative** — the direction never "
-            f"needs interpreting."
+            f"Every benchmark below is evaluated at this prospect's structural relief of "
+            f"{own_relief:,.0f} m and its {burial:,.0f} m burial depth, so the comparison is like "
+            f"for like rather than against a family the closure is not in.\n\n"
+            f"The number is the exceedance percentile the median column lands on. A P50 at the "
+            f"benchmark's P25 means a quarter of comparable closures reach it, which is optimistic. "
+            f"Below 50 is optimistic, above 50 conservative."
         )
 
         sources = ["NCS, censoring-corrected", "NCS, as the paper fits it",
@@ -939,21 +914,21 @@ What follows is a disagreement about **one estimator**, not about the data.
                      "Their P90": f"{c.bench_p90:,.0f}",
                      "Their P50": f"{c.bench_p50:,.0f}",
                      "Their P10": f"{c.bench_p10:,.0f}",
-                     "Your P50": f"{c.built_p50:,.0f}",
+                     "This P50": f"{c.built_p50:,.0f}",
                      "Ratio": f"{c.ratio:.2f}",
-                     "Your P50 is their": f"P{c.p50_lands_at:.0f}",
+                     "This P50 is their": f"P{c.p50_lands_at:.0f}",
                      "Verdict": c.verdict}
                     for basis, c in all_comparisons]),
                 (f"{theme.basis_tag(theme.GEOLOGICAL)} "
-                 + (f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; **Two rows per benchmark**, one "
-                    f"per basis, because the question *am I optimistic* has a different answer "
-                    f"before and after the evidence and both are worth knowing. "
+                 + (f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; Two rows per benchmark, one "
+                    f"per basis, because the question has a different answer before and after "
+                    f"the evidence. "
                     if len(bases) > 1 else "&nbsp; ")
                  + f"All columns in metres, at "
-                f"{own_relief:,.0f} m relief. **Read the last two columns.** The ratio says how far "
-                f"apart the medians are; the percentile says how unusual your median would be among "
-                f"closures of this size. The spread *between* benchmarks matters too — if you are "
-                f"optimistic against one and in line with another, they disagree more than you do."))
+                f"{own_relief:,.0f} m relief. The ratio says how far apart the medians are; the "
+                f"percentile says how unusual this median would be among closures of this size. "
+                f"The spread between benchmarks matters too: a model optimistic against one and in "
+                f"line with another disagrees with them less than they disagree with each other."))
 
             for c in comparisons:
                 st.markdown(f"- {c.sentence}"
@@ -973,16 +948,15 @@ What follows is a disagreement about **one estimator**, not about the data.
             # exactly the long columns the comparison turns on.
             if len(bases) > 1:
                 st.info(
-                    "**Both rows are worth reading, but only the geological one is a calibration "
-                    "verdict.** The benchmarks cannot be conditioned on a DHI — Graham et al. is "
-                    "explicitly the *no-DHI* prior, and Edmundson's discoveries are partly selected "
-                    "by other people's amplitudes, enriched in long columns because that is what "
-                    "detectability does. Judging your posterior against them **counts the DHI "
-                    "twice** and makes you look less optimistic than you are. §7 above sets this "
-                    "out in full.\n\n"
-                    "**Read the updated row as displacement, not as a score:** how far the evidence "
-                    "moved you, against a fixed backdrop. The distance between the two rows is the "
-                    "honest quantity here."
+                    "Only the geological row is a calibration verdict. The benchmarks cannot be "
+                    "conditioned on a DHI: Graham et al. is the no-DHI prior, and Edmundson's "
+                    "discoveries are partly selected by other people's amplitudes, enriched in "
+                    "long columns because that is what detectability does. A posterior judged "
+                    "against them counts the DHI twice and reads as less optimistic than it is. "
+                    "§7 sets this out.\n\n"
+                    "The updated row reads as displacement rather than as a score: how far the "
+                    "evidence moved the prospect against a fixed backdrop. The distance between "
+                    "the two rows is the quantity to quote."
                 )
 
             # **A selector rather than both at once, and the medium decides it.** Four benchmarks
@@ -996,8 +970,8 @@ What follows is a disagreement about **one estimator**, not about the data.
                     "Draw these two figures on", [b for b, _ in bases], horizontal=True,
                     key="calibration_basis",
                     help="The table above carries both at once. These two read one distribution "
-                         "against the benchmarks, so they take one basis at a time — switch to see "
-                         "whether the evidence moved you across the diagonal.")
+                         "against the benchmarks, so they take one basis at a time; switching "
+                         "shows whether the evidence moved the prospect across the diagonal.")
                 qq_column = dict(bases)[qq_basis]
             qq_comparisons = [c for basis, c in all_comparisons if basis == qq_basis]
             qq_tag = theme.basis_tag(theme.GEOLOGICAL if qq_basis == theme.GEOLOGICAL
@@ -1042,7 +1016,7 @@ What follows is a disagreement about **one estimator**, not about the data.
                                name=f"{c.name} — {share:.0%} in band",
                                line=dict(color=colour, width=2.6),
                                hovertemplate=f"{c.name}<br>benchmark %{{x:,.0f}} m<br>"
-                                             f"yours %{{y:,.0f}} m<extra></extra>")
+                                             f"this prospect %{{y:,.0f}} m<extra></extra>")
                 # P90/P50/P10 marked, so the three numbers anyone quotes can be located on the
                 # curve rather than inferred from its shape.
                 # P50 only. Marking all three turned the middle of the figure into overlapping
@@ -1053,18 +1027,18 @@ What follows is a disagreement about **one estimator**, not about the data.
                                            line=dict(color="white", width=1)),
                                showlegend=False,
                                hovertemplate=f"{c.name} P50<br>benchmark %{{x:,.0f}} m<br>"
-                                             f"yours %{{y:,.0f}} m<extra></extra>")
+                                             f"this prospect %{{y:,.0f}} m<extra></extra>")
 
             # Anchored to the plot area, not to data: a label positioned in data coordinates on an
             # axis whose range depends on the prospect will eventually fall off the edge, and one
             # of them did.
             qq.add_annotation(xref="paper", yref="paper", x=0.03, y=0.05,
-                              text="<b>you predict a TALLER column</b><br>optimistic against the "
-                                   "record", showarrow=False, xanchor="left", yanchor="bottom",
+                              text="<b>taller column than the record</b><br>optimistic",
+                              showarrow=False, xanchor="left", yanchor="bottom",
                               font=dict(size=11, color="#8A2F33"), align="left")
             qq.add_annotation(xref="paper", yref="paper", x=0.97, y=0.95,
-                              text="<b>you predict a SHORTER column</b><br>conservative against "
-                                   "the record", showarrow=False, xanchor="right", yanchor="top",
+                              text="<b>shorter column than the record</b><br>conservative",
+                              showarrow=False, xanchor="right", yanchor="top",
                               font=dict(size=11, color="#2E4C73"), align="right")
 
             qq.update_layout(xaxis_title="Benchmark column at this relief (m)",
@@ -1076,24 +1050,22 @@ What follows is a disagreement about **one estimator**, not about the data.
             # mean "more column" whichever axis it is on. The consequence is that the optimistic
             # zone is the LOWER one, which is why both zones are labelled rather than left to
             # convention.
-            qq.update_yaxes(title_text="Your column (m) — larger downward",
+            qq.update_yaxes(title_text="This prospect's column (m), larger downward",
                             range=[hi, lo], autorange=False)
             n.plot(qq,
-                   f"{qq_tag} &nbsp; **Matched quantiles, yours against "
-                   f"theirs, with agreement as the dashed diagonal and the two zones named.** The "
-                   f"y-axis reads **downward like every other column axis here**, so a taller "
-                   f"predicted column falls into the lower, red zone.\n\n"
-                   f"**The grey corridor is ±{band:.0%}**, and the legend gives the share of each "
-                   f"curve inside it — the number the single percentile cannot: *how much* of the "
-                   f"distribution agrees, not just where its median lands. ±{band:.0%} is chosen "
-                   f"because the four benchmarks disagree with **each other** by more than that at "
-                   f"most reliefs; a tighter band would report you as miscalibrated against a "
-                   f"spread the literature does not resolve.\n\n"
-                   f"**The shape still matters more than the size.** A curve parallel to the "
-                   f"diagonal is uniform bias, which you can correct with one number. A curve that "
-                   f"meets the diagonal in the middle and departs at P10 is disagreement "
-                   f"**in the upside only** — the tail the volume comes from and the tail that "
-                   f"justifies the well.")
+                   f"{qq_tag} &nbsp; Matched quantiles, this prospect against the benchmark, "
+                   f"with agreement as the dashed diagonal and the two zones named. The y-axis "
+                   f"reads downward like every other column axis here, so a taller predicted "
+                   f"column falls into the lower, red zone.\n\n"
+                   f"The grey corridor is ±{band:.0%}, and the legend gives the share of each "
+                   f"curve inside it: how much of the distribution agrees, not only where its "
+                   f"median lands. ±{band:.0%} is chosen because the four benchmarks disagree with "
+                   f"each other by more than that at most reliefs; a tighter band would report a "
+                   f"miscalibration against a spread the literature does not resolve.\n\n"
+                   f"The shape matters more than the size. A curve parallel to the diagonal is "
+                   f"uniform bias, correctable with one number. A curve that meets the diagonal "
+                   f"in the middle and departs at P10 is disagreement in the upside only, the "
+                   f"tail the volume comes from.")
 
             # The same comparison as a ratio, which is the form the question was asked in: *by how
             # much*, and *where*. A Q-Q plot shows two distributions; this shows the one number
@@ -1125,49 +1097,47 @@ What follows is a disagreement about **one estimator**, not about the data.
                                   f"%{{y:.2f}}× the benchmark<extra></extra>")
 
             ratio.add_annotation(xref="paper", yref="paper", x=0.02, y=0.97,
-                                 text="<b>above 1 — you predict more column</b>",
+                                 text="<b>above 1: more column than the record</b>",
                                  showarrow=False, xanchor="left", yanchor="top",
                                  font=dict(size=11, color="#8A2F33"))
             ratio.add_annotation(xref="paper", yref="paper", x=0.02, y=0.03,
-                                 text="<b>below 1 — you predict less</b>", showarrow=False,
+                                 text="<b>below 1: less</b>", showarrow=False,
                                  xanchor="left", yanchor="bottom",
                                  font=dict(size=11, color="#2E4C73"))
             ratio.update_layout(
                 xaxis_title="Exceedance percentile (P99 shallow column → P1 deep column)",
-                yaxis_title="Your column ÷ benchmark column",
+                yaxis_title="This prospect's column ÷ benchmark column",
                 height=430, margin=dict(t=20), legend=dict(orientation="h", y=-0.22))
             ratio.update_yaxes(range=[0, 2.0])
             # Reversed so P99 sits on the left: shallow reads left-to-right into deep, the way
             # P90 / P50 / P10 are read aloud, even though the numbers themselves count down.
             ratio.update_xaxes(autorange="reversed")
             n.plot(ratio, optional=True,
-                   caption=f"{qq_tag} &nbsp; **The same comparison as "
-                           f"one number, at every percentile.** Parity is the dashed line, the grey "
-                           f"band is ±{calibration.CORRIDOR:.0%}, and the shaded halves say which "
-                           f"way you are wrong.\n\n"
-                           f"**The percentiles are exceedance percentiles**, as everywhere else "
-                           f"here: P100 is the shallowest contact and P0 the deepest, so the "
-                           f"shallow end of a column distribution is **P99** and the deep end is "
-                           f"**P1**. The axis is reversed so shallow still reads on the left. "
-                           f"Nothing about the curve changes — this is a label, and it was the "
-                           f"wrong one until 27 Aug 2026.\n\n"
-                           f"**The slope is the finding, not the level.** A flat curve away from 1 "
-                           f"is a uniform bias — one number wrong, correctable in one place. A "
-                           f"curve that *tilts* is a disagreement about **shape**, which no single "
-                           f"correction fixes: it means your distribution and the record disagree "
-                           f"about how quickly column height runs out as you go down the structure.")
+                   caption=f"{qq_tag} &nbsp; The same comparison as one number, at every "
+                           f"percentile. Parity is the dashed line, the grey band is "
+                           f"±{calibration.CORRIDOR:.0%}, and the shaded halves give the "
+                           f"direction of the disagreement.\n\n"
+                           f"The percentiles are exceedance percentiles, as everywhere else here: "
+                           f"P100 is the shallowest contact and P0 the deepest, so the shallow end "
+                           f"of a column distribution is P99 and the deep end is P1. The axis is "
+                           f"reversed so shallow reads on the left.\n\n"
+                           f"The slope is the finding, not the level. A flat curve away from 1 is "
+                           f"a uniform bias, one number correctable in one place. A curve that "
+                           f"tilts is a disagreement about shape, which no single correction "
+                           f"fixes: the distribution and the record disagree about how quickly "
+                           f"column height runs out down the structure.")
 
-        st.markdown("#### Your distribution, the record, and the two combined")
+        st.markdown("#### The model, the record, and the two combined")
         st.markdown(
-            "The comparison above is a number and a shape. This is the three distributions "
-            "themselves, on one axis: **what your limits produced**, **what the record says for a "
-            "closure of your relief**, and **the two pulled together**."
+            "The comparison above is a number and a shape. This is the three distributions on "
+            "one axis: what the limits produced, what the record says for a closure of this "
+            "relief, and the two combined."
         )
 
         fuse_weight = st.slider(
             "Weight on the benchmark", 0.0, 1.0, 0.0, 0.05, key="fuse_benchmark",
-            help="0 is your model untouched; 1 is the benchmark. In between, the two quantile "
-                 "functions are averaged — the same operation the seal limit offers on tab 3.0.")
+            help="0 is the model untouched; 1 is the benchmark. In between, the two quantile "
+                 "functions are averaged, the same operation the seal limit offers on tab 3.0.")
 
         bench_source = st.selectbox(
             "Benchmark to combine with", sources, key="fuse_source",
@@ -1179,10 +1149,10 @@ What follows is a disagreement about **one estimator**, not about the data.
         # chart it drives. What stays is the conclusion, which is what a reader at this
         # slider actually needs, and a pointer for the reader who wants to argue with it.
         st.caption(
-            "**A weight, not a Bayesian update.** Your model is already built out of relief and"
-            " burial — the spill point *is* the relief — so multiplying in a record conditioned"
-            " on both would count your own geometry twice. Two priors combine by weighting, which"
-            " is why this is a slider starting at zero. Tab 8.0 → *Weight, not Bayes*."
+            "A weight, not a Bayesian update. The model is already built out of relief and burial, "
+            "since the spill point is the relief, so multiplying in a record conditioned on both "
+            "would count the geometry twice. Two priors combine by weighting, which is why this is "
+            "a slider starting at zero. Tab 8.0, *Weight, not Bayes*."
         )
 
         bench_draw = _samples_for(bench_source, (round(own_relief, 1),), float(burial))
@@ -1209,7 +1179,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             for basis, columns in bases:
                 colour = (theme.BASIS_COLOUR[theme.GEOLOGICAL] if basis == theme.GEOLOGICAL
                           else theme.BASIS_COLOUR[theme.GIVEN_DHI])
-                curves.append((f"your model — {basis}", columns, colour, "solid", 3.2))
+                curves.append((f"this model, {basis}", columns, colour, "solid", 3.2))
                 fused_by_basis[basis] = benchmarks.shrink_toward(columns, bench, fuse_weight)
                 if fuse_weight > 0:
                     curves.append((f"{basis} + benchmark, weight {fuse_weight:.2f}",
@@ -1230,56 +1200,54 @@ What follows is a disagreement about **one estimator**, not about the data.
                 legend=dict(orientation="h", y=-0.2))
             n.plot(fig_fuse,
                    (f"{theme.basis_tag(theme.GEOLOGICAL)} "
-                    + (f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; **Both of your distributions "
-                       f"are here, each with its own combined curve** — same colour, dotted.\n\n"
+                    + (f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; Both distributions are here, "
+                       f"each with its own combined curve in the same colour, dotted.\n\n"
                        if len(bases) > 1 else "&nbsp; ")
-                    + "**Every curve is conditional on the prospect working** — these are column "
-                   "distributions, not chances. The benchmark is discoveries only, so it could not "
-                   "carry a chance even if you wanted it to.\n\n"
-                   "**The combined curve is a fusion, not a Bayesian update.** Bayes needs a "
-                   "likelihood — data whose probability depends on the unknown — and the Norwegian "
+                    + "Every curve is conditional on the prospect working: these are column "
+                   "distributions, not chances. The benchmark is discoveries only and carries no "
+                   "chance.\n\n"
+                   "The combined curve is a weighted fusion, not a Bayesian update. Bayes needs a "
+                   "likelihood, data whose probability depends on the unknown, and the Norwegian "
                    "record is not one: those discoveries were what they were before this prospect "
-                   "was mapped. These are **two priors on one unknown**, and two priors combine by "
+                   "was mapped. These are two priors on one unknown, and two priors combine by "
                    "weighting, which is why there is a slider and why it starts at zero. Averaged "
-                   "as quantiles, not mixed as densities, so the answer lies *between* them rather "
-                   "than coming out as two humps."))
+                   "as quantiles rather than mixed as densities, so the answer lies between them "
+                   "rather than coming out as two humps."))
 
             for basis, columns in bases:
                 if len(bases) > 1:
-                    st.caption(f"**Combined with the benchmark, on the {basis} model**")
+                    st.caption(f"Combined with the benchmark, on the {basis} model")
                 f1, f2, f3 = st.columns(3)
                 for col, pct_ in ((f1, 90), (f2, 50), (f3, 10)):
                     mine_v = float(np.percentile(columns, 100 - pct_))
                     fused_v = float(np.percentile(fused_by_basis[basis], 100 - pct_))
                     col.metric(f"Combined P{pct_}", f"{fused_v:,.0f} m",
-                               f"yours {mine_v:,.0f} m", delta_color="off")
+                               f"model {mine_v:,.0f} m", delta_color="off")
 
         st.warning(
-            "**This is a sanity check, not a score, and the reason is structural.** Every benchmark "
-            "is conditioned on **discovery** — your prospect is not one yet and every closure in "
-            "these datasets is. Some of \"optimistic against the NCS record\" is a statement about "
-            "which wells got written down, not about your model.\n\n"
-            "**And a prospect can be legitimately optimistic.** A better seal than the average NCS "
-            "closure, or a charge system that fills reliably, is a real thing to believe — it just "
-            "has to be believed **on evidence you can name**, not by accident. Use this to find out "
-            "which it is."
+            "This is a sanity check rather than a score, for a structural reason. Every benchmark "
+            "is conditioned on discovery: the prospect is not one yet and every closure in these "
+            "datasets is. Part of \"optimistic against the NCS record\" is a statement about which "
+            "wells were written down, not about the model.\n\n"
+            "A prospect can be optimistic on good grounds. A better seal than the average NCS "
+            "closure, or a charge system that fills reliably, is a defensible belief where the "
+            "evidence for it can be named. The comparison shows which case applies."
         )
 
-    theme.heading(TAB, "9 · The base rate for a prospect like yours")
+    theme.heading(TAB, "9 · The base rate for a comparable prospect")
     st.markdown(
-        "Edmundson's §5.2 recommends including **base-rate figures** and integrating them with the "
-        "geological assessment, citing Milkov (2017) on base-rate neglect — and gives no method "
-        "for the combination. This section is the part of that recommendation that carries no "
-        "risk: their matrix for a prospect of your dimensions, beside what your limits produced, "
-        "with the sample size in view.\n\n"
-        "**Nothing here changes a number.** The two are not merged, because merging them needs a "
-        "weight nobody can yet defend — see the note under the table."
+        "Edmundson's §5.2 recommends including base-rate figures and integrating them with the "
+        "geological assessment, citing Milkov (2017) on base-rate neglect, and gives no method for "
+        "the combination. This section is the part of that recommendation that carries no risk: "
+        "their matrix for a prospect of these dimensions, beside what the limits produced, with "
+        "the sample size in view.\n\n"
+        "Nothing here changes a number. The two are not merged, because merging them needs a "
+        "weight that cannot yet be defended; see the note under the table."
     )
 
     matrix_limits = st.session_state.get("limit_set")
     if matrix_limits is None or not own_relief or own_relief <= 0:
-        st.info("Build the limits on tab 3.0 and set a spill point on tab 2.0 to find the matching "
-                "cell.")
+        st.info("The matching cell needs the limits on tab 3.0 and a spill point on tab 2.0.")
     else:
         from hcwc.ui import run as engine_run
 
@@ -1299,8 +1267,8 @@ What follows is a disagreement about **one estimator**, not about the data.
             # was not a crash but a "Mean of empty slice" warning and a row of NaN percentages
             # presented beside real published ones -- which is worse, because it looks like data.
             st.info(
-                "**No realisation reaches the assessment minimum**, so there is no fill fraction "
-                "to compare against the published matrix. Lower the minimum on tab 2.0."
+                "No realisation reaches the assessment minimum, so there is no fill fraction "
+                "to compare against the published matrix. A lower minimum on tab 2.0 restores one."
             )
         else:
             cell = cell.iloc[0]
@@ -1336,15 +1304,15 @@ What follows is a disagreement about **one estimator**, not about the data.
             c2.metric("Discoveries in it", f"{int(cell.n)}",
                       "the whole basis for this row", delta_color="off")
             c3.metric("Of those, filled to spill", f"{float(cell.p_fill_100):.0%}",
-                      "censored — capacity never observed", delta_color="off")
+                      "censored; capacity not observed", delta_color="off")
 
-            labels = ("0–50%", "51–75%", "76–99%", "100% — censored")
+            labels = ("0–50%", "51–75%", "76–99%", "100%, censored")
             published = theirs + [float(cell.p_fill_100)]
             rows = []
             for i, label in enumerate(labels):
                 row = {"Trap fill": label, "This cell": f"{published[i]:.1%}"}
                 for basis, _ in fill_bases:
-                    row[f"Your model · {basis}"] = f"{shares[basis][i]:.1%}"
+                    row[f"This model · {basis}"] = f"{shares[basis][i]:.1%}"
                     row[f"Difference · {basis}"] = f"{shares[basis][i] - published[i]:+.1%}"
                 rows.append(row)
             comparison = pd.DataFrame(rows)
@@ -1353,7 +1321,7 @@ What follows is a disagreement about **one estimator**, not about the data.
             fig_base = go.Figure()
             for basis, _ in fill_bases:
                 fig_base.add_bar(
-                    x=shares[basis], y=axis, orientation="h", name=f"your model · {basis}",
+                    x=shares[basis], y=axis, orientation="h", name=f"this model · {basis}",
                     marker_color=(theme.BASIS_COLOUR[theme.GEOLOGICAL]
                                   if basis == theme.GEOLOGICAL
                                   else theme.BASIS_COLOUR[theme.GIVEN_DHI]))
@@ -1367,42 +1335,39 @@ What follows is a disagreement about **one estimator**, not about the data.
                    (f"{theme.basis_tag(theme.GEOLOGICAL)} "
                     + (f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; "
                        if len(fill_bases) > 1 else "&nbsp; ")
-                    + f"**Your competing limits against the {int(cell.n)} NCS discoveries in the same "
-                   f"trap-height and burial-depth cell.** Restricted to your success cases, because "
+                    + f"The competing limits against the {int(cell.n)} NCS discoveries in the same "
+                   f"trap-height and burial-depth cell, restricted to the success cases because "
                    "every one of theirs is a discovery.\n\n"
-                   "**Read the bottom pair apart from the other three.** The 100 % bar is not a "
-                   "fill outcome — it is the share of traps whose seal capacity was never "
-                   "observed, because geometry stopped the column first. It is a right-censoring "
-                   "rate, and comparing your model's filled-to-spill share against it compares "
-                   "two different kinds of number."))
+                   "The bottom pair reads apart from the other three. The 100 % bar is not a fill "
+                   "outcome; it is the share of traps whose seal capacity was not observed, "
+                   "because geometry stopped the column first. It is a right-censoring rate, and "
+                   "the model's filled-to-spill share is a different kind of number."))
             n.table(comparison,
-                    "**A disagreement here is a finding, not an error.** The base rate describes "
-                    "what was drilled and found on the NCS; your model describes what your "
-                    "mechanisms allow. They are built from different information and are allowed "
-                    "to differ — the question a difference raises is *which of my elicited limits "
-                    "would have to move to close it*, and §8 above answers the direction.")
+                    "A disagreement here is a finding rather than an error. The base rate "
+                    "describes what was drilled and found on the NCS; the model describes what "
+                    "the mechanisms allow. They are built from different information and may "
+                    "differ. The question a difference raises is which elicited limit would have "
+                    "to move to close it, and §8 gives the direction.")
 
             if len(fill_bases) > 1:
                 st.caption(
-                    "**The updated bars are displacement, not calibration.** Every one of these "
+                    "The updated bars are displacement, not calibration. Every one of these "
                     f"{int(cell.n)} traps is a discovery, and discoveries are partly selected by "
-                    "amplitudes — so the cell is not a DHI-free base rate any more than the "
-                    "benchmarks in §8 are. What the second bar shows is **how far the evidence "
-                    "moved your fill distribution**, against a fixed backdrop; on this prospect it "
-                    "moves most of the way toward the record, which is worth seeing and is not the "
-                    "same claim as being better calibrated."
+                    "amplitudes, so the cell is not a DHI-free base rate any more than the "
+                    "benchmarks in §8 are. The second bar shows how far the evidence moved the "
+                    "fill distribution against a fixed backdrop, which is not the same claim as "
+                    "being better calibrated."
                 )
             st.warning(
-                f"**This informs the contact distribution and never the chance.** The matrix is "
-                f"`P(trap fill | discovery)` — all {int(cell.n)} of those traps had hydrocarbons "
-                "in them. Used against POS it would silently condition on success, which is "
-                "precisely the error the rest of this tool is arranged to prevent. Moving a "
-                "chance would need a dataset containing dry holes, and this one has none.\n\n"
-                f"**And {int(cell.n)} discoveries is a thin basis.** Letting a cell this size "
-                "reshape a ten-thousand-realisation mechanistic model would be a strong move on "
-                "weak evidence, which is why the two are shown side by side and not combined. "
-                "The honest use is to notice a disagreement and go back to the limit that causes "
-                "it."
+                f"This informs the contact distribution and never the chance. The matrix is "
+                f"`P(trap fill | discovery)`: all {int(cell.n)} of those traps had hydrocarbons "
+                "in them. Used against POS it would condition on success, which is the error the "
+                "rest of the tool is arranged to prevent. Moving a chance would need a dataset "
+                "containing dry holes, and this one has none.\n\n"
+                f"{int(cell.n)} discoveries is a thin basis. Letting a cell this size reshape a "
+                "ten-thousand-realisation mechanistic model would be a strong move on weak "
+                "evidence, which is why the two are shown side by side and not combined. A "
+                "disagreement points back to the limit that causes it."
             )
 
             # Seven hundred words of argument about somebody else's arithmetic, with a
@@ -1410,41 +1375,41 @@ What follows is a disagreement about **one estimator**, not about the data.
             # on it. Moved to `docs/BASE_RATE_NEGLECT.md` on 5 Sep 2026. The sentence that
             # governs what the reader does next stays here.
             st.caption(
-                "**Side by side, not merged.** The rule usually attached to base-rate neglect is"
-                " **symmetric** — swap its two inputs and it returns the same answer, which no"
-                " Bayesian update does — and it moves the number even when the two already agree."
-                " Tab 8.0 → *Base rates* has the derivation. **None of it touches Milkov\u2019s"
-                " finding**, which stands on its own."
+                "Side by side, not merged. The rule usually attached to base-rate neglect is "
+                "symmetric, returning the same answer when its two inputs are swapped, which no "
+                "Bayesian update does, and it moves the number even when the two already agree. "
+                "Tab 8.0, *Base rates*, has the derivation. None of it touches Milkov\u2019s "
+                "finding, which stands on its own."
             )
 
-    theme.heading(TAB, "10 · What we are and are not claiming")
+    theme.heading(TAB, "10 · Scope of the claims")
     left, right = st.columns(2)
     left.success(
-        "**Stands**\n\n"
+        "Stands\n\n"
         "- The dataset itself, and the decision to publish it openly.\n"
-        "- Closure height is a genuine control on column height.\n"
+        "- Closure height is a control on column height.\n"
         "- The core message: one pre-drill distribution does not fit all prospects.\n"
         "- The fitted correction is calibrated band by band."
     )
     right.error(
-        "**Does not stand, or needs qualifying**\n\n"
-        "- Burial depth as the *weaker* control — corrected, it roughly doubles.\n"
-        "- The magnitude of the closure-height control — overstated, and still an upper bound.\n"
+        "Does not stand, or needs qualifying\n\n"
+        "- Burial depth as the weaker control: corrected, it roughly doubles.\n"
+        "- The magnitude of the closure-height control: overstated, and still an upper bound.\n"
         "- Reading the four trap-fill bins together as a column-height distribution: the 100 % bin "
-        "is a **censoring rate**, not a fill outcome like the other three."
+        "is a censoring rate, not a fill outcome like the other three."
     )
     st.markdown(
         """
-**Two selection effects remain uncorrected in every analysis on this page, ours included:**
+Two selection effects remain uncorrected in every analysis on this page, the corrected one included:
 
-1. **Discovery-only conditioning.** Dry wells are excluded by construction — the paper says so. This
+1. Discovery-only conditioning. Dry wells are excluded by construction, as the paper states. This
    is `P(column | discovery)`, not `P(column)`.
-2. **Left-truncation at the well's reservoir entry depth.** If the true contact sits *above* where
-   the well entered the reservoir, the well finds water and is logged as a dry hole. The
-   small-column tail is missing from every discovery dataset.
+2. Left-truncation at the well's reservoir entry depth. Where the true contact sits above the
+   point at which the well entered the reservoir, the well finds water and is logged as a dry
+   hole. The small-column tail is missing from every discovery dataset.
 
-Stacked, the empirical record is **truncated below and censored above**, and both push it to look
-better filled than reality. **Used as a pre-drill prior it is optimistic at both ends.**
+Stacked, the empirical record is truncated below and censored above, and both push it to look
+better filled than reality. Used as a pre-drill prior it is optimistic at both ends.
 """
     )
     st.caption(
