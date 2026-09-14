@@ -296,12 +296,12 @@ def render(n: Numbering | None = None) -> None:
     # `dhi_toggle` and nothing else. It reopened claiming a DHI and quietly using the default one.
     anomaly = st.radio(
         "Amplitude anomaly", OBSERVATIONS, horizontal=True, key="dhi_in_seen",
-        help="**Absent** is evidence too, and this tool uses it: no anomaly where the column "
-             "would have been thick enough to show one argues against a long column. It is only "
-             "usable if you would genuinely have seen it — say so with the detection function in "
-             "§3.\n\n**Seen over the crest only** is the middle case: something is convincingly "
-             "there and convincingly stops, but with no down-dip termination clean enough to pick "
-             "a contact on. It carries a bound, not a depth.")
+        help="Absent is evidence too: no anomaly where the column would have been thick enough "
+             "to show one argues for a short column. It is usable only where the anomaly would "
+             "have been seen, which the detection function in §3b states.\n\n"
+             "Seen over the crest only is the middle case: something is there and stops, with no "
+             "down-dip termination clean enough to pick a contact on. It carries a bound, not a "
+             "depth.")
     seen = anomaly != ABSENT
     partial = anomaly == PARTIAL
     # **2 250 m, because that is the prospect's pick** -- Lars, 3 Sep 2026, asked for it back after
@@ -349,7 +349,7 @@ def render(n: Numbering | None = None) -> None:
             help="The depth below which you are confident there is no anomaly — not where you "
                  "think the contact is. It is a bound: everything above it is equally consistent "
                  "with what you saw, and the likelihood falls away below it at a rate the "
-                 "detection function in §3 sets.")
+                 "detection function in §3b sets.")
         o2.metric("Bound, as a column", f"{max(absent_below - apex, 0.0):,.0f} m")
         sigma, contact = DEFAULT_SIGMA_M, absent_below
     elif shape == dhi_core.NORMAL:
@@ -449,7 +449,7 @@ def render(n: Numbering | None = None) -> None:
                "are the ones the update acts on. If that share is near zero the observation is "
                "telling you nothing you did not already believe — which is a real answer, not a "
                "failure. The likelihood does not stop dead at the line: it falls away below it at "
-               "the rate §3's detection function sets, because a slice of column just under the "
+               "the rate §3b's detection function sets, because a slice of column just under the "
                "cutoff could plausibly have been missed and a hundred metres of it could not.")
 
         # The one way this observation misleads, and it does it quietly. Once the cutoff is above
@@ -511,15 +511,19 @@ def render(n: Numbering | None = None) -> None:
                "reports as the effective sample size.")
 
     # ------------------------------------------------------------------ strength channel
-    theme.heading(TAB, sub=n.sub, text="2 · DHI strength — the amplitude channel")
-    st.markdown("**A DHI carries two independent kinds of evidence, and this is the second one.** §1 recorded *where* the anomaly terminates; this section is about its **character** — how bright, how consistent with the expected fluid response. §5 combines the two.")
+    theme.heading(TAB, sub=n.sub, text="2 · Amplitude character")
+    st.markdown(
+        "The amplitude carries two kinds of evidence. §1 recorded where the anomaly terminates; "
+        "this section grades its character: how bright, how consistent with the expected fluid "
+        "response. The character updates the chance of hydrocarbons and does not enter the "
+        "contact distribution; §5 multiplies the two."
+    )
     with st.expander("**How the strength model is built** — two curves on one axis, and the ratio of their heights"):
         st.markdown(
             """
-    **A DHI carries two independent kinds of evidence, and this is the second one.** §1 recorded
-    *where* the anomaly terminates; §§3–4 turn that geometry into a likelihood. This section is about
-    its **character** instead: how bright, how consistent with the expected fluid response, how
-    convincing as an amplitude. §5 combines the two.
+    §1 recorded where the anomaly terminates and §3 turns that geometry into a likelihood on the
+    column. This section grades the character of the amplitude instead: how bright, how
+    consistent with the expected fluid response. §5 multiplies the two.
 
     The construction is E-POS's, adapted from the custom R tool. Draw how a hydrocarbon-bearing
     prospect tends to look on a common strength axis, draw how a non-hydrocarbon one looks, then read
@@ -634,7 +638,7 @@ def render(n: Numbering | None = None) -> None:
             "**The evidence is strongly asymmetric.** The best positive was R ≈ 29; the negative "
             "at the outskirts was only R ≈ 0.70 — a factor of 1.4 *against*, where the positive "
             "was a factor of 29 *for*. Absence of an anomaly is much weaker evidence than presence "
-            "of one, which is the asymmetry §3 builds into the detection function and §1 into the "
+            "of one, which is the asymmetry §3b builds into the detection function and §1 into the "
             "*absent* case.\n\n"
             "**These are combined ratios, not this slider alone.** Their number carries the "
             "amplitude *and* the geometry — the fluid contacts are part of what their chain "
@@ -817,7 +821,7 @@ def render(n: Numbering | None = None) -> None:
     )
 
     # ------------------------------------------------------------------ combining
-    theme.heading(TAB, sub=n.sub, text="4 · Detection function D(h)")
+    theme.heading(TAB, sub=n.sub, text="3b · Detection function D(h)")
     st.markdown(
         "The chance a column of height *h* produces a **detectable** anomaly. Near zero below "
         "tuning thickness, rising through the resolution limit, then flat. It is what makes an "
@@ -854,7 +858,6 @@ def render(n: Numbering | None = None) -> None:
                  "hard-coded for that reason.")
 
     # ------------------------------------------------------------------ the update
-    theme.heading(TAB, sub=n.sub, text="5 · Prospect POS against threshold")
     observation = DhiObservation(
         seen=seen, contact_m=None if partial or not seen else contact,
         pick_sigma_m=sigma, area_km2=area or None,
@@ -883,7 +886,7 @@ def render(n: Numbering | None = None) -> None:
         except ValueError as exc:
             st.error(str(exc))
             return
-        theme.heading(TAB, sub=n.sub, text="4b · Well control")
+        theme.heading(TAB, sub=n.sub, text="3c · Well control")
         lo, hi = control.bracket()
         bits = []
         if control.hc_down_to_m is not None:
@@ -990,17 +993,56 @@ def render(n: Numbering | None = None) -> None:
             "1.0 makes any evidence look like it changed nothing."
         )
 
-    m1, m2, m3, m4, m5 = st.columns(5)
+    # ------------------------------------------------------------------ 4 · the contact
+    theme.heading(TAB, sub=n.sub, text="4 · Posterior contact distribution")
+    st.markdown(
+        "The contact distribution given the elements worked, reweighted by the pick. "
+        "Percentiles are over the realisations that reach the assessment minimum, in the "
+        "exceedance convention: P90 is the shallow end."
+    )
+    c1, c2, c3, c4 = st.columns(4)
+    for _col, _p in ((c1, 90), (c2, 50), (c3, 10)):
+        _col.metric(f"Contact P{_p}", f"{post.percentiles(float(_p))[0]:,.0f} m",
+                    f"geological {post.percentiles(float(_p), posterior=False)[0]:,.0f} m",
+                    delta_color="off")
+    c4.metric("Effective sample size", f"{post.effective_sample_size:,.0f}",
+              f"of {result.n:,}", delta_color="off")
+    _edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 61)
+    _centres = 0.5 * (_edges[:-1] + _edges[1:])
+    figh = go.Figure()
+    for _label, _w, _colour in ((theme.GEOLOGICAL, None, theme.BASIS_COLOUR[theme.GEOLOGICAL]),
+                                (theme.evidence_basis(), post.weights,
+                                 theme.BASIS_COLOUR[theme.GIVEN_DHI])):
+        _counts, _ = np.histogram(result.contact_m, bins=_edges, weights=_w)
+        _total = float(_counts.sum())
+        figh.add_bar(y=_centres, x=_counts / _total if _total else _counts, orientation="h",
+                     name=_label, opacity=0.55, marker_color=_colour, marker_line_width=0,
+                     hovertemplate="%{y:.0f} m TVDSS<br>%{x:.1%} of realisations<extra></extra>")
+    for _p, _dash in ((90, "dot"), (50, "solid"), (10, "dot")):
+        figh.add_hline(y=float(post.percentiles(float(_p))[0]), line=dict(color=POSTERIOR, dash=_dash, width=1.2),
+                       annotation_text=f"P{_p}", annotation_position="top left")
+    if h_min > 0:
+        figh.add_hline(y=apex + h_min, line=dict(color="#333", dash="dash", width=1.2),
+                       annotation_text="assessment minimum", annotation_position="bottom right")
+    figh.update_layout(barmode="overlay", bargap=0.04, xaxis_title="Share of realisations per depth bin",
+                       xaxis_tickformat=".0%", yaxis_title="Contact depth (m TVDSS)",
+                       yaxis=dict(autorange="reversed"), height=420, margin=dict(t=20),
+                       legend=dict(orientation="h", y=-0.18))
+    n.plot(figh, "Where the contact is, before and after the pick. Both histograms are over "
+                 "every realisation and conditional on the elements having worked; the lines are "
+                 "the posterior percentiles over the realisations above the assessment minimum. "
+                 "The amplitude character does not enter this figure: it updates the chance of "
+                 "hydrocarbons, not where the contact is given that there are.")
+
+    # ------------------------------------------------------------------ 5 · the chance
+    theme.heading(TAB, sub=n.sub, text="5 · Prospect chance against threshold")
+    m1, m2, m3 = st.columns(3)
     m1.metric(f"Prospect POS at h ≥ {h_min:.0f} m", f"{posterior_pos:.1%}",
               f"prior {prior_pos:.1%}")
     m2.metric("P(G | amplitude)", f"{p_g_updated:.1%}",
               f"P(G) {element_product:.1%} from tab 2.0", delta_color="off")
     m3.metric(f"P(column ≥ {h_min:.0f} m | G, pick)", f"{posterior_geometric:.1%}",
               f"geological {geometric_prior:.1%}", delta_color="off")
-    m4.metric("Posterior P50 contact", f"{post.percentiles(50.0)[0]:,.0f} m",
-              f"prior {post.percentiles(50.0, posterior=False)[0]:,.0f} m")
-    m5.metric("Effective sample size", f"{post.effective_sample_size:,.0f}",
-              f"of {result.n:,}", delta_color="off")
 
     st.caption(
         f"The prospect chance is a product of two factors, and the two channels of the DHI "
@@ -1190,7 +1232,7 @@ def render(n: Numbering | None = None) -> None:
         "separate numbers, which is why a volume is taken at the same row as the chance beside "
         "it. The chance to quote is the one at the row the volume was computed at.")
 
-    theme.heading(TAB, sub=n.sub, text="6 · The two factors")
+    theme.heading(TAB, sub=n.sub, text="5b · The two factors")
     st.markdown(
         "The amplitude character and the pick geometry are two aspects of one observation, and "
         "they answer two questions. Whether there is hydrocarbon at all is the character's "
@@ -1236,8 +1278,46 @@ def render(n: Numbering | None = None) -> None:
         "picked_contact_m": float(contact) if seen else None,
         "prior_pos": float(prior_pos),
         "posterior_pos": float(posterior_pos),
+        "p_g_given_amplitude": float(p_g_updated),
         "h_min": float(h_min),
     }
+
+    # ------------------------------------------------------------------ 6 · assumptions
+    # In the open, not behind a fold. Each is labelled for what it is: an elicited judgement,
+    # a heuristic, or a modelling choice. None is solved by wording.
+    theme.heading(TAB, sub=n.sub, text="6 · Assumptions and limitations")
+    _d_at = detection.at(result.column_m)
+    _d_flat = float(_d_at.max() - _d_at.min()) < 1e-3
+    st.markdown(
+        "Elicited judgements and heuristics.\n\n"
+        "- The strength axis has no external referent. R is the ratio of two elicited curves at "
+        "an elicited reading, capped at " + f"{dhi_core.R_SINGLE_CHANNEL:.0f}" + " : 1 either way. "
+        "Elicited judgement.\n"
+        "- c, the chance the picked event is the contact given hydrocarbons, is typed or taken "
+        "from three graded attributes combined by geometric mean. The combination rule is a "
+        "heuristic, not a calibration against drilling outcomes."
+    )
+    st.markdown(
+        "Modelling choices and simplifications.\n\n"
+        "- The detection function is logistic in column height. Its shape is a modelling "
+        "choice; a Class III sand can become less visible when very thick."
+        + (" At these inputs it is at its ceiling for every realisation, so only the ceiling "
+           "acts and the tuning parameters do not." if _d_flat else "") + "\n"
+        "- One fluid. A flat spot may be a gas–oil contact; the tool takes it as the "
+        "hydrocarbon–water contact, and a GOC picked as an HCWC understates the column.\n"
+        "- An absent anomaly is treated within G: it argues for a short column, not against "
+        "hydrocarbons. Evidence against hydrocarbons enters through the strength axis, which "
+        "is held neutral when nothing was seen.\n"
+        "- A flat event that is not the contact is taken as equally likely at any depth in "
+        "the model's contact range.\n"
+        "- The pick and a penetration are multiplied as independent evidence. A well's two "
+        "depths are tied to the map independently; one well has one tie error, and the "
+        "difference is under half a point at the default sigma.\n"
+        "- Floors of 1 − c and 1 − p_connected keep every contact depth in play, so no "
+        "single interpretation can rule a depth out (Cromwell's rule).\n"
+        "- Where every realisation clears the assessment minimum, the pick reshapes the contact "
+        "and cannot move the chance: P(column ≥ h_min | G) is 1 before and after."
+    )
 
     # ------------------------------------------------------------------ cross-checks
     # ------------------------------------------------------------- success attribution
@@ -1386,7 +1466,7 @@ def render(n: Numbering | None = None) -> None:
             "It moves the contact but **not** the chance.\n\n"
             "**This is a comparison, not an alternative model.** Its one real contribution was the "
             f"parameter — *is the picked event actually the contact* — and that now lives inside the "
-            f"likelihood in §2, at **p_valid = {p_valid:.3f}**, where it does more than switch between "
+            f"likelihood in §3, at p_valid = {p_valid:.2f}, where it does more than switch between "
             "two stories: it puts a floor under the whole update, so no contact depth is ever ruled "
             "out. There is no second slider here because there is no second number; running the "
             "comparison on a different one would be comparing against something else."
@@ -1454,6 +1534,7 @@ def _well_only(result, n: Numbering) -> None:
         "picked_contact_m": None,
         "prior_pos": prior_pos,
         "posterior_pos": posterior_pos,
+        "p_g_given_amplitude": product,
         "h_min": h_min,
     }
 

@@ -1359,8 +1359,9 @@ class TestEveryResultExhibitDeclaresItsBasis:
     def test_the_paired_captions_are_no_longer_identical(self):
         """The precise defect: same words, two distributions, nothing to tell them apart."""
         captions = self._captions(_run())
-        for a, b in (("Figure 4.1.1", "Figure 5.3.1"), ("Figure 4.1.3", "Figure 5.3.3"),
-                     ("Table 4.1.5", "Table 5.3.5"), ("Figure 4.2.2", "Figure 5.4.2")):
+        # Renumbered 15 Sep 2026 when 4.1 gained the chance curve (3) and the well (4).
+        for a, b in (("Figure 4.1.1", "Figure 5.3.1"), ("Figure 4.1.4", "Figure 5.3.4"),
+                     ("Table 4.1.6", "Table 5.3.6"), ("Figure 4.2.2", "Figure 5.4.2")):
             assert captions[a] != captions[b], f"{a} and {b} still read identically"
 
     def test_the_chip_follows_the_evidence_on_a_well_only_prospect(self):
@@ -1440,8 +1441,8 @@ class TestSectionNumbersHaveNoGaps:
         """It renders into a container reserved on sub-tab 4.1 and its figures are numbered 4.1.x,
         so its heading has to be too."""
         sections = self._sections(_run())[4]
-        assert "1.6" in sections, f"the trust panel is not 4.1.6: {sorted(sections)}"
-        assert "6" not in sections, "a bare `4.6` heading is still being drawn"
+        assert "1.8" in sections, f"the trust panel is not 4.1.8: {sorted(sections)}"
+        assert "8" not in sections, "a bare `4.8` heading is still being drawn"
 
     def test_every_section_reference_in_prose_points_at_a_real_section(self):
         """`§4` on tab 6.0 pointed into the gap. Citations of other people's papers are excluded by
@@ -1492,7 +1493,7 @@ class TestTheFullReportCarriesTheTables:
 
         tables = _run().session_state[numbering.TABLES_KEY]
         assert len(tables) > 10, f"only {len(tables)} tables registered"
-        for label in ("Table 3.2", "Table 4.1.5", "Table 4.2.3", "Table 6.10"):
+        for label in ("Table 3.2", "Table 4.1.6", "Table 4.2.3", "Table 6.10"):
             assert label in tables, f"{label} was drawn but never registered"
 
     def test_every_registered_table_reaches_the_document(self):
@@ -1525,8 +1526,8 @@ class TestTheFullReportCarriesTheTables:
         from hcwc.ui import numbering
 
         tables = _run().session_state[numbering.TABLES_KEY]
-        assert "GEOLOGICAL" in tables["Table 4.1.5"][1]
-        assert "GIVEN THE DHI" in tables["Table 5.3.5"][1]
+        assert "GEOLOGICAL" in tables["Table 4.1.6"][1]
+        assert "GIVEN THE DHI" in tables["Table 5.3.6"][1]
 
     def test_a_failed_figure_is_still_reported_and_the_tables_survive_it(self):
         """The missing-figure path had to keep working once the loop walked both kinds."""

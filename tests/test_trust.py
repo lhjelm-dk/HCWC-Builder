@@ -91,6 +91,9 @@ def test_the_apex_spill_pair_the_tab_recommends_does_not_crash_the_check():
     check = trust.correlation_projection(engine.run(coupled, n=2_000, seed=1))
     assert check.level == "ok", check.finding
     assert APEX in check.finding and spill in check.finding
+    # And the pair is reported as *realised*, not only as requested: the apex draw is kept
+    # since 15 Sep 2026 so every sampled correlation can be read back.
+    assert "realised +0.9" in check.finding or "realised +0.8" in check.finding, check.finding
 
 
 def test_no_correlations_is_reported_as_a_choice(real_minimum):

@@ -69,7 +69,7 @@ def stop_card(check: trust.Check) -> None:
 
 
 def render(n, result, *, posterior=None, tab: int,
-           heading: str = "6 · Run checks") -> list:
+           heading: str = "8 · Run checks") -> list:
     """Draw the panel and return the checks, so a caller can reuse them without recomputing."""
     checks = trust.review(result, posterior=posterior, other=run.repeat_of(result))
     level, sentence = trust.headline(checks)
