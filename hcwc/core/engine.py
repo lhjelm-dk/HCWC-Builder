@@ -40,13 +40,18 @@ class EngineResult:
     """One Monte Carlo run, with everything the diagnostics need kept rather than summarised."""
     limit_set: LimitSet
     apex_m: np.ndarray            # (n,)
-    uniforms: np.ndarray          # (n, k) the copula draws, kept so the realised correlation
-                                  # can be checked against the one that was asked for
+    uniforms: np.ndarray          # (n, k) the copula draws for the limits, kept so the realised
+                                  # correlation can be checked against the one that was asked for
     sampled_m: np.ndarray         # (n, k) column height each limit would impose, active or not
     active: np.ndarray            # (n, k) bool
     column_m: np.ndarray          # (n,) the shallowest active limit
     controller: np.ndarray        # (n,) index into limit_set.limits
     seed: int
+    #: (n,) the apex's own copula draw. Kept separately so `uniforms` keeps its (n, k) shape for
+    #: the sensitivity slices, while :meth:`realised_correlation` can cover the whole correlated
+    #: set. Until 15 Sep 2026 the apex draw was discarded, so a declared Apex|spill pair -- the
+    #: one the tab recommends -- could be requested and sampled but never reported as realised.
+    apex_uniform: np.ndarray | None = None
 
     @property
     def n(self) -> int:
@@ -105,12 +110,35 @@ class EngineResult:
         return np.where(self.active[:, idx], self.sampled_m[:, idx], INACTIVE).min(axis=1)
 
     def realised_correlation(self) -> np.ndarray:
-        """The rank correlation the run actually delivered.
+        """The rank correlation the run actually delivered, over :attr:`LimitSet.correlated_names`.
 
-        Worth checking rather than assuming: the Higham projection moves an inconsistent elicited
-        matrix, and the assessor should be able to see how far.
+        The apex is row and column 0 when its draw was kept, matching the order the copula
+        sampled in, so every pair that can be declared can be read back. Worth checking rather
+        than assuming: the Higham projection moves an inconsistent elicited matrix, and the
+        assessor should be able to see how far.
         """
-        return correlate.realised_spearman(self.uniforms)
+        if self.apex_uniform is None:
+            return correlate.realised_spearman(self.uniforms)
+        return correlate.realised_spearman(
+            np.column_stack([self.apex_uniform, self.uniforms]))
+
+    def realised_pairs(self) -> dict[str, float]:
+        """Every declared pair with the rank correlation the run delivered, keyed as declared."""
+        names = self.limit_set.correlated_names
+        index = {name: i for i, name in enumerate(names)}
+        matrix = self.realised_correlation()
+        if self.apex_uniform is None:
+            # No apex draw kept: the matrix is over the limits alone and apex pairs cannot be
+            # read. Reported as nan rather than skipped, so the caller can say so.
+            index = {name: i for i, name in enumerate(self.limit_set.names)}
+        out = {}
+        for key in self.limit_set.correlations:
+            a, b = key.split("|")
+            if a in index and b in index:
+                out[key] = float(matrix[index[a], index[b]])
+            else:
+                out[key] = float("nan")
+        return out
 
     def controlling_shares(self, *, successes_only: bool = False,
                            weights: np.ndarray | None = None) -> dict[str, float]:
@@ -223,7 +251,8 @@ def run(limit_set: LimitSet, n: int = 10_000, seed: int = 20260825) -> EngineRes
         )
 
     return EngineResult(limit_set=limit_set, apex_m=apex, uniforms=uniforms, sampled_m=sampled,
-                        active=active, column_m=column, controller=controller, seed=seed)
+                        active=active, column_m=column, controller=controller, seed=seed,
+                        apex_uniform=draws[:, 0])
 
 
 def limit_ranking(result: EngineResult, *, successes_only: bool = False,

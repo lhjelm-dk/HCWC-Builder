@@ -142,12 +142,12 @@ def render() -> None:
                 st.rerun()
 
     # ------------------------------------------------------------------ geometry
-    theme.heading(TAB, "1 · Geometry")
+    theme.heading(TAB, "1 · Geometry and the assessment minimum")
     st.markdown(
         "The apex is the datum: every capacity limit on tab 3.0 is measured downward from it. "
-        "The spill point and the burial depth are stated once here. The spill seeds the closure "
-        "limit's range; the burial depth sets the benchmark comparison and the seal "
-        "calculator's temperature."
+        "The spill point is stated once here and seeds the closure limit's range. The "
+        "assessment minimum is the definition of success, and every chance downstream is read "
+        "at it."
     )
     # Seeded once, then owned by the widget. Passing a `value=` *and* a `key=` every run makes
     # Streamlit warn that the widget is driven from two places — and after a load it genuinely is,
@@ -184,37 +184,42 @@ def render() -> None:
     st.session_state["spill_point"] = float(spill)
 
     apex_mid = 0.5 * (apex_lo + apex_hi)
-    b1, b2 = st.columns(2)
-    # Seeded from the apex the first time only. After that the widget owns it, so a loaded
-    # prospect is not overwritten by the apex on the next rerun.
-    st.session_state.setdefault("burial_input", float(apex_mid))
-    burial = b1.number_input(
-        "Burial depth (m TVDSS)", 0.0, 10000.0, step=25.0, key="burial_input",
-        help="Defaults to the apex. Edmundson's burial depth is a crest depth (mean 2 442 m "
-             "against a mean trap height of 212 m in that dataset), so the apex is the appropriate "
-             "default. Mid-reservoir is the alternative where that is the intended reference.")
-    st.session_state["burial_depth"] = float(burial)
-    st.session_state.setdefault("gradient_range", GRADIENT_C_PER_KM)
-    g_lo, g_hi = b2.slider(
-        "Geothermal gradient (°C/km)", 15.0, 60.0, step=0.5, key="gradient_range",
-        help="Stated as a range because it is the uncertain part of the temperature. 25–40 spans "
-             "normal to hot; the NCS default is high because 70–90 °C at about 2 050 m is "
-             "ordinary there. It sets the seal calculator's temperature on tab 3.0.")
-    t_lo, t_hi = temperature_range(burial)
-    b2.markdown(
-        f"<div style='margin-top:-0.4rem;font-size:0.9rem'>"
-        f"Implied reservoir temperature &nbsp;{t_lo:,.0f}–{t_hi:,.0f} °C"
-        f"<span style='opacity:0.7'> &nbsp;— {g_lo:.1f}–{g_hi:.1f} °C/km from "
-        f"{SURFACE_C:.0f} °C surface</span></div>", unsafe_allow_html=True)
+    st.session_state["apex"] = (apex_lo, apex_hi)
+    st.session_state["spill_point"] = float(spill)
+
+    # The assessment minimum sits with the geometry because it is the definition of success,
+    # not a run setting: every chance downstream is the exceedance curve read at this height.
+    # Five metres rather than zero (Lars, 28 Aug 2026): a column of a metre or two cannot be
+    # tested, and zero made the app open at a chance of 100 % by construction.
+    st.session_state.setdefault("min_column_input", 5.0)
+    m1, m2 = st.columns([1, 2])
+    min_column = m1.number_input(
+        "Assessment minimum (m column)", 0.0, 2000.0, step=5.0, key="min_column_input",
+        help="The smallest column that would make the well a discovery, as a height below the "
+             "apex. Stated as a column rather than a volume because only a column links to seal "
+             "capacity (Hood 2019). Defaults to 5 m as a physical floor, not a commercial "
+             "threshold.")
+    st.session_state["min_column"] = float(min_column)
+    m2.markdown(
+        f"Success is a column of at least {min_column:,.0f} m, a contact at or below "
+        f"{apex_mid + min_column:,.0f} m TVDSS at the mid apex. The prospect chance on tab 4.0 is "
+        f"the element chance times the chance of a column this tall given the elements worked, "
+        f"and the contact percentiles are taken over realisations that reach it. The limits on "
+        f"tab 3.0 say how deep the column could reach; this says how deep it must reach to "
+        f"count. Most operators want tens of metres; the definition used travels with the number."
+    )
+    if min_column == 0:
+        st.warning(
+            "At zero every realisation counts as a success. The column term reads 100 % by "
+            "construction and the prospect chance collapses to the element product. Tab 4.0 "
+            "does not print a chance until this is above zero."
+        )
     st.caption(
-        f"Structural relief {spill - apex_mid:,.0f} m at the mid apex. The temperature seeds the "
-        f"seal calculator on tab 3.0 → Retention; interfacial tension falls with temperature, "
-        f"so a deeper prospect has a weaker seal. The seal block may override the temperature "
-        f"where it is measured."
+        f"Structural relief {spill - apex_mid:,.0f} m at the mid apex."
     )
 
     # ------------------------------------------------------------------ element risk
-    theme.heading(TAB, "2 · Element risk")
+    theme.heading(TAB, "2 · Element chances")
     st.markdown(
         "Play is the chance the element works anywhere in the play; conditional is the chance it "
         "works here, given that it does. Their product is the element chance, and the four "
@@ -398,23 +403,42 @@ def render() -> None:
             st.info("At least one is required. A penetration that established neither fluid is not "
                     "evidence about the contact.")
 
-    # ------------------------------------------------------------------ run settings
-    theme.heading(TAB, "5 · Assessment and run settings")
-    r0, r1, r2 = st.columns(3)
-    # **Five metres, not zero.** Lars, 28 Aug 2026: a minimum of zero says a contact exactly at
-    # the apex counts as success, which is a column of nothing -- arithmetically fine and
-    # operationally meaningless, because a testing tool cannot be placed on a drill string to that
-    # precision and a column of a metre or two cannot be tested at all. Zero also made the app open
-    # with a chance of 100 % by construction, which tab (4) then had to refuse to display. Five is
-    # a floor with a physical reason, not a guess at anyone's commercial threshold -- which is why
-    # it is the smallest defensible number rather than a realistic one.
-    st.session_state.setdefault("min_column_input", 5.0)
-    min_column = r0.number_input(
-        "Assessment minimum (m column)", 0.0, 2000.0, step=5.0, key="min_column_input",
-        help="The minimum-volume risking criterion, stated as a column height because only a "
-             "column height links to seal capacity (Hood 2019). The chance is F(h) read at this "
-             "value. Defaults to 5 m as a physical floor, not a commercial threshold; the intended "
-             "value is the smallest column that would make the well a discovery.")
+    # ------------------------------------------------------------------ further inputs
+    theme.heading(TAB, "5 · Further inputs")
+    st.markdown(
+        "Inputs a first model can leave at their defaults. Burial depth and the geothermal "
+        "gradient set the seal calculator's temperature on tab 3.0 and the benchmark comparison "
+        "on tab 6.0. The trial count and the seed set the Monte Carlo."
+    )
+    b1, b2 = st.columns(2)
+    # Seeded from the apex the first time only. After that the widget owns it, so a loaded
+    # prospect is not overwritten by the apex on the next rerun.
+    st.session_state.setdefault("burial_input", float(apex_mid))
+    burial = b1.number_input(
+        "Burial depth (m TVDSS)", 0.0, 10000.0, step=25.0, key="burial_input",
+        help="Defaults to the apex. Edmundson's burial depth is a crest depth (mean 2 442 m "
+             "against a mean trap height of 212 m in that dataset), so the apex is the appropriate "
+             "default. Mid-reservoir is the alternative where that is the intended reference.")
+    st.session_state["burial_depth"] = float(burial)
+    st.session_state.setdefault("gradient_range", GRADIENT_C_PER_KM)
+    g_lo, g_hi = b2.slider(
+        "Geothermal gradient (°C/km)", 15.0, 60.0, step=0.5, key="gradient_range",
+        help="Stated as a range because it is the uncertain part of the temperature. 25–40 spans "
+             "normal to hot; the NCS default is high because 70–90 °C at about 2 050 m is "
+             "ordinary there. It sets the seal calculator's temperature on tab 3.0.")
+    t_lo, t_hi = temperature_range(burial)
+    b2.markdown(
+        f"<div style='margin-top:-0.4rem;font-size:0.9rem'>"
+        f"Implied reservoir temperature &nbsp;{t_lo:,.0f}–{t_hi:,.0f} °C"
+        f"<span style='opacity:0.7'> &nbsp;— {g_lo:.1f}–{g_hi:.1f} °C/km from "
+        f"{SURFACE_C:.0f} °C surface</span></div>", unsafe_allow_html=True)
+    st.caption(
+        "The temperature seeds the seal calculator on tab 3.0 → Retention; interfacial tension "
+        "falls with temperature, so a deeper prospect has a weaker seal. The seal block may "
+        "override the temperature where it is measured."
+    )
+
+    r1, r2 = st.columns(2)
     n_trials = r1.number_input(
         "Realisations", 1_000, 100_000, 10_000, 1_000, key="n_trials_input",
         help="At 10 000, P99.5 rests on 50 realisations, which is stable; at 1 000 it rests on "
@@ -424,27 +448,8 @@ def render() -> None:
         "Random seed", 0, 2**31 - 1, 20260825, 1, key="seed_input",
         help="Fixed by default so figures regenerate identically. An unfixed seed moves every "
              "number between runs, which a quoted document cannot carry.")
-
-    st.session_state["min_column"] = float(min_column)
     st.session_state["n_trials"] = int(n_trials)
     st.session_state["seed"] = int(seed)
-
-    st.caption(
-        "A column height, not a depth, measured from the apex. The contact it names is "
-        "`apex + h_min`; at `h_min = 0` that is the apex, a column of nothing. The limits say how "
-        "deep the column could reach; this says how deep it must reach to count. The chance is "
-        "the exceedance curve read here.\n\n"
-        "The default is 5 m rather than 0 because a column of a metre or two cannot be tested: "
-        "a testing tool cannot be placed on a drill string to that precision. Five is a physical "
-        "floor, not a commercial threshold; most operators will want tens of metres, and some a "
-        "rate rather than a height. The definition used should travel with the number."
-    )
-    if min_column == 0:
-        st.warning(
-            "At zero every realisation counts as a success. The column term reads 100 % by "
-            "construction, the prospect chance collapses to the element product, and the DHI "
-            "likelihood ratio is undefined. Tab 4.0 does not print a chance until this is above zero."
-        )
     tail = n_trials * 0.005
     (st.success if tail >= 20 else st.warning)(
         f"P99.5 rests on {tail:,.0f} realisations."

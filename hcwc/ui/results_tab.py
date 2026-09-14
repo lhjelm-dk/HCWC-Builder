@@ -371,8 +371,82 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                          "The box above shows the half it does move.")
                         if given_dhi else ""))
 
+    # ------------------------------------------------------------------ 3 · the chance
+    # The third question. Every point on this curve is a prospect chance: the element chance
+    # times the chance of a column at least this tall given the elements worked. On the
+    # geological tab the first factor is P(G) from tab 2.0; given the DHI it is P(G) updated by
+    # the amplitude, which tab 5.0 has already written into the overlay by the time its results
+    # sub-tab draws this.
+    theme.heading(tab, sub=n.sub, text="3 · Prospect chance against threshold")
+    _overlay = st.session_state.get("dhi_overlay") if given_dhi else None
+    _p_g_applied = (float(_overlay.get("p_g_given_amplitude", p_geological))
+                    if _overlay else p_geological)
+    _chance = _p_g_applied * np.asarray(exceed(grid), dtype=float)
+    _chance_prior = p_geological * np.asarray(result.exceedance(grid), dtype=float)
+    figp = go.Figure()
+    if given_dhi:
+        figp.add_scatter(x=_chance_prior, y=apex_med + grid, mode="lines",
+                         name="geological", line=dict(color="#7d8794", width=2, dash="dash"))
+    figp.add_scatter(x=_chance, y=apex_med + grid, mode="lines",
+                     name=(theme.evidence_basis() if given_dhi else "geological"),
+                     line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI if given_dhi
+                                                        else theme.GEOLOGICAL], width=3))
+    if h_min > 0:
+        figp.add_hline(y=apex_med + h_min, line=dict(color="#C44E52", dash="dash"),
+                       annotation_text=f"assessment minimum: {prospect_pos if not given_dhi else _p_g_applied * column_pos:.1%}",
+                       annotation_position="bottom right")
+    figp.update_layout(xaxis_title="Prospect chance  =  P(G) × P(column ≥ h | G)",
+                       xaxis_range=[0, min(1.0, max(_p_g_applied, p_geological, 0.05) * 1.15)],
+                       yaxis_title="Contact at least this deep (m TVDSS)",
+                       yaxis=dict(autorange="reversed"), height=420, margin=dict(t=20),
+                       legend=dict(orientation="h", y=-0.18))
+    n.plot(figp, f"The prospect chance at every threshold. Includes the element risk: each "
+                 f"point is P(G) = {_p_g_applied:.3f} times the chance of a column at least that "
+                 f"tall given the elements worked, so it starts at P(G) at the apex and falls with "
+                 f"depth. Read at the assessment minimum it is the headline above; read at any "
+                 f"other depth it is the chance of a column reaching that depth. A chance quoted "
+                 f"without its threshold is not a number.")
+
+    # ------------------------------------------------------------------ 4 · the well
+    # The last question: a well entering the reservoir at a depth finds hydrocarbon if the
+    # elements worked and the contact lies below that depth. The entry depth is shared with the
+    # per-element reading on the sibling sub-tab through session state, so the two agree.
+    theme.heading(tab, sub=n.sub, text="4 · The well")
+    from hcwc.ui.depth_risk_tab import DEFAULT_ENTRY_DEPTH_M
+    _lo_z, _hi_z = float(result.contact_m.min()), float(result.contact_m.max())
+    _open_z = min(max(DEFAULT_ENTRY_DEPTH_M, _lo_z), _hi_z)
+    _zkey, _zhead = f"z_entry_{tab}", f"z_entry_headline_{tab}"
+    st.session_state.setdefault(_zkey, _open_z)
+    st.session_state.setdefault(_zhead, float(st.session_state[_zkey]))
+
+    def _push_entry(zkey=_zkey, zhead=_zhead):
+        st.session_state[zkey] = st.session_state[zhead]
+        st.session_state[f"z_entry_num_{tab}"] = st.session_state[zhead]
+
+    w1, w2, w3 = st.columns([1, 1, 1])
+    z_entry = w1.number_input("Reservoir entry depth (m TVDSS)", _lo_z, _hi_z, step=5.0,
+                              key=_zhead, on_change=_push_entry,
+                              help="Where the well enters the reservoir. The same depth is used "
+                                   "by the per-element reading on the Risk against depth "
+                                   "sub-tab.")
+    _r_well = float(engine.exceedance(result.contact_m, np.array([z_entry]), weights)[0])
+    _p_well = _p_g_applied * _r_well
+    w2.metric("P(well finds hydrocarbon)", f"{_p_well:.1%}",
+              f"P(G) {_p_g_applied:.3f} × P(contact ≥ {z_entry:,.0f} m | G) {_r_well:.3f}",
+              delta_color="off")
+    w3.metric("Column at the well, P50", f"{max(pct(50) - z_entry, 0.0):,.0f} m",
+              f"P50 contact {pct(50):,.0f} m", delta_color="off")
+    st.caption(
+        f"P(well) includes the element risk and is read at the entry depth, not at the "
+        f"assessment minimum. It is the prospect chance times the chance the contact lies "
+        f"below {z_entry:,.0f} m given the elements worked, and is at most the prospect chance. "
+        f"The column at the well is the contact depth minus the entry depth; the per-element "
+        f"reading and the comparison with an allocated location factor are on the Risk against "
+        f"depth sub-tab."
+    )
+
     # ------------------------------------------------------------------ 3 · ranking
-    theme.heading(tab, sub=n.sub, text="3 · Limit ranking and sensitivity")
+    theme.heading(tab, sub=n.sub, text="5 · Limit ranking and sensitivity")
     successes_only = st.toggle(
         "Restrict to realisations above the assessment minimum", value=False,
         key=f"restrict_successes_{tab}",
@@ -495,7 +569,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                 "columns are needed; neither alone is the answer.")
 
     # ------------------------------------------------------------------ group minima
-    theme.heading(tab, sub=n.sub, text="4 · By risk element")
+    theme.heading(tab, sub=n.sub, text="6 · By risk element")
     rows = []
     for group in Group:
         gm = result.group_minimum(group)
@@ -516,7 +590,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             "these.")
 
     # ------------------------------------------------------------------ 5 · one axis
-    theme.heading(tab, sub=n.sub, text="5 · All limits on one axis")
+    theme.heading(tab, sub=n.sub, text="7 · All limits on one axis")
     st.markdown(
         "The competition drawn. A limit that is only sometimes present flattens at its "
         "`P(active)`, which can be read off the right-hand end of its curve. The result is the "
