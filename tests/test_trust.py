@@ -77,6 +77,22 @@ def test_correlation_check_reports_the_projection():
     assert "asked for" in check.finding
 
 
+def test_the_apex_spill_pair_the_tab_recommends_does_not_crash_the_check():
+    """Audit finding P2-1, 14 Sep 2026.
+
+    The apex leads the correlated set and the tab calls Apex|spill "the pair most worth
+    setting". The check built its matrix from the limit names alone, so declaring that pair
+    raised KeyError from inside the trust panel.
+    """
+    from hcwc.core.limits import APEX
+    ls = reference_prospect()
+    spill = next(n for n in ls.names if "spill" in n.lower())
+    coupled = dataclasses.replace(ls, min_column_m=120.0, correlations={f"{APEX}|{spill}": 0.9})
+    check = trust.correlation_projection(engine.run(coupled, n=2_000, seed=1))
+    assert check.level == "ok", check.finding
+    assert APEX in check.finding and spill in check.finding
+
+
 def test_no_correlations_is_reported_as_a_choice(real_minimum):
     check = trust.correlation_projection(real_minimum)
     assert check.level == "ok"

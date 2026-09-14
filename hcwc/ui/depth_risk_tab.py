@@ -195,10 +195,9 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                                               if weights is not None else ""),
                         legendgroup=element.value,
                         line=dict(color=theme.PILLAR_COLOURS[element.value], width=3))
-    if Group.RESERVOIR not in curves and reservoir.active:
-        fig.add_scatter(x=pos[Group.RESERVOIR] * d.reservoir_effectiveness, y=d.depths_m,
-                        mode="lines", name="Reservoir (effectiveness only)",
-                        line=dict(color=theme.PILLAR_COLOURS["Reservoir"], width=3, dash="dash"))
+    # Every element is in `curves` now, including one with no limit in the set: its curve is its
+    # element chance, flat with depth, times the effectiveness decline where one is set. The
+    # special case that used to draw "Reservoir (effectiveness only)" here is folded into that.
     if sub_elements:
         # One level down: the individual mechanisms inside each element, each in a variation of its
         # element's hue so the grouping stays readable at a glance. Scaled by the same element POS
@@ -429,7 +428,8 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         f"commercial column anywhere, and is always the larger. `r` is the depth term only and "
         f"carries no element risk; quoted as a chance of success it overstates the well by "
         f"`1 / P(G)`.\n\n"
-        "Reservoir has no derived value in the table because no limit in this model is "
-        "reservoir-controlled; an R2 pinch-out limit on tab 3.0 would give it one. Its "
-        "effectiveness decline (§1) is separate and applies either way."
+        "An element with no limit in the model never controls the contact, so its derived value "
+        "is its element chance unchanged with depth; on this model that is Reservoir, and an R2 "
+        "pinch-out limit on tab 3.0 would give it a depth curve of its own. Its effectiveness "
+        "decline (§1) applies either way."
     )
