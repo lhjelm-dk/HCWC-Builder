@@ -17,6 +17,29 @@ much* hydrocarbon is there, not merely whether any is::
 so the updated POS and the updated contact distribution are **the same object**, read at different
 thresholds. That is the answer to the question the note was written for.
 
+**The chain, and what is conditional on what.** Settled 14 Sep 2026 after an audit found the
+strength evidence counted twice. The engine's realisations are draws from ``p(h | G)`` -- every one
+of them already assumes the four elements worked -- so anything applied to them must be conditional
+on ``G`` too. The chain is::
+
+    A.  P(G | strength)          = simm_update(P(G), R_strength)          the character channel
+    B.  p(h | G, geometry)       ∝ p(h | G) · L(geometry | h, G)          the pick, within G
+        L(geometry | h, G)       = c · D(h) · Pick(z | apex + h) + (1 − c) · s
+        c                        = P(the picked event is the contact | G, contact attributes)
+    C.  POS(h_min)               = P(G | strength) · P(h ≥ h_min | G, geometry)
+
+One posterior over ``h`` -- the weights from B -- supplies the histogram, the percentiles, ``F(h)``
+and the conditional term in C. The curve ``P(G | strength) · F_post(h)`` passes through the
+headline at ``h_min`` by construction rather than by rescaling.
+
+What was wrong before: ``p_valid`` was built as ``P(G | strength) · c``. A term conditional on
+``G`` had ``P(G)`` inside it, so the strength reached the geometry posterior through the mixture
+weight *and* again through a separate likelihood ratio blended with ``r_dhi``. Holding ``c`` at 0.70
+and moving the strength alone moved the posterior P50 by 17 m and the conditional term by six
+points -- evidence about *whether there is hydrocarbon* reshaping *where the contact is, given there
+is*. :func:`prospect_pos` is the corrected C; :class:`CombinedUpdate` is retained only for the
+teaching comparison and must not supply a headline.
+
 **There is one model, and two things it is worth being compared against.** The note offered the
 scenario switch and the likelihood as rival formulations, and that framing survived longer than it
 should have. What settled it was moving ``p_valid`` — the chance the picked event really is the
@@ -124,10 +147,18 @@ class DhiObservation:
     * *width* decides how fast the chance falls **below** the pick.
     * ``p_valid`` decides the floor under all of it, and is the subject of :func:`likelihood`.
 
-    ``p_valid`` defaults to 1.0 so that constructing an observation the old way reproduces the old
-    numbers exactly. **The app never passes 1.0** — it derives the value from the DHI strength — and
-    the reason is Cromwell's rule: at ``p_valid = 1`` a bounded pick shape assigns probability zero
-    below its deepest bound, and no later evidence can ever revive a zero.
+    **``p_valid`` is ``P(the picked event is the contact | G, contact attributes)``.** Conditional
+    on hydrocarbons being present, because every realisation it weights already is. It is the
+    contact-attribute judgement -- conformance, flatness, whether the event cuts structure -- and
+    nothing else. It must not carry ``P(G)`` or any function of the amplitude strength: the
+    engine's sample is ``p(h | G)``, so a mixture weight with ``P(G)`` inside it counts the
+    chance of hydrocarbons once here and again wherever the strength channel is applied. Until
+    14 Sep 2026 the app passed ``P(G | strength) · c`` and the strength reached the geometry
+    posterior through this field.
+
+    It defaults to 1.0 so that constructing an observation the old way reproduces the old numbers
+    exactly. The app never passes 1.0, for Cromwell's rule: at ``p_valid = 1`` a bounded pick shape
+    assigns probability zero below its deepest bound, and no later evidence can ever revive a zero.
     """
     seen: bool
     contact_m: float | None = None
@@ -219,21 +250,30 @@ class DhiObservation:
         return dists.pert_ppf(u, self.shallowest_m, self.contact_m, self.deepest_m)
 
 
-def spurious_density(contact_m: np.ndarray) -> float:
-    """``c`` — the density of a flat event that is *not* the contact, at any one depth.
+def spurious_density(support_m: tuple[float, float]) -> float:
+    """``s`` — the density of a flat event that is *not* the contact, at any one depth.
 
-    Taken as uniform over the trap's own depth range: an event that has nothing to do with the
-    hydrocarbon column is equally likely to turn up anywhere in the closure. It is the same value
-    in the success and the failure world, and that equality is load-bearing — *is hydrocarbon
-    present* is the strength channel's question and it answers it once. Letting ``c`` differ
-    between the two worlds would answer it twice.
+    Taken as uniform over the model's declared contact support -- the interval
+    :meth:`hcwc.core.limits.LimitSet.contact_support_m` returns, apex to the deepest always-active
+    limit: an event that has nothing to do with the hydrocarbon column is equally likely to turn
+    up anywhere in the closure. It is the same value in the success and the failure world, and
+    that equality is load-bearing — *is hydrocarbon present* is the strength channel's question
+    and it answers it once. Letting ``s`` differ between the two worlds would answer it twice.
+
+    **From the declared support, not the sample.** Until 14 Sep 2026 this was ``1 / (max − min)``
+    of the realised contacts, which made the pick's likelihood depend on the trial count, the
+    seed, and whichever extreme the sampler happened to reach: on the reference prospect the
+    density moved by four per cent between a 2 000- and a 50 000-trial run of the same model. A
+    likelihood is a property of the model, and this one now is.
 
     Only the ratio to the pick density matters, so the overall rate of spurious events cancels and
     never has to be elicited.
     """
-    z = np.asarray(contact_m, dtype=float)
-    span = float(z.max() - z.min())
-    return 1.0 / span if span > 0 else 1.0
+    shallow, deep = float(support_m[0]), float(support_m[1])
+    span = deep - shallow
+    if not span > 0:
+        raise ValueError(f"the contact support must have positive width, got {support_m}")
+    return 1.0 / span
 
 
 def likelihood(result: EngineResult, detection: DetectionFunction,
@@ -262,28 +302,39 @@ def likelihood(result: EngineResult, detection: DetectionFunction,
 
     **Partial conformance** -- bright over the crest, reliably absent below ``z_off``. Neither of
     the other two: something is there, so the strength channel applies in full, but there is no
-    down-dip termination to pick. What the observation carries is a *bound*, and the arithmetic
-    says so::
+    down-dip termination to pick. What the observation carries is a *bound*: the anomaly's edge
+    lies above ``z_off``, to within the same pick-and-depth-conversion error a picked contact
+    carries. That is a **censored observation** of the contact, and the arithmetic is the standard
+    one for it::
 
-        L = p_valid · D(h) · [1 - D((h - h_off)+)]   +   (1 - p_valid)
+        L = p_valid · D(h) · Φ((z_off − (apex + h)) / σ)   +   (1 − p_valid)
 
-    with ``h_off = z_off - apex`` **per realisation**, because the apex is drawn in every one and a
-    depth means nothing until it is converted against the apex it belongs to.
+    with ``σ = pick_sigma_m`` and the apex drawn **per realisation**, because a depth means nothing
+    until it is converted against the apex it belongs to. Read it against the pick: a picked
+    contact is a normal *density* at ``z``; a bound is the normal *cumulative* at ``z_off``. Same
+    error, same interpreter, same ``σ`` -- one statement of *where the edge is*, made with less
+    precision.
 
-    Read it left to right. ``D(h)`` is the same first factor as a picked anomaly: a column this
-    tall had to be visible at all, or there would have been nothing to see. The bracket is the new
-    part. If the contact is above ``z_off`` the clamp makes the excess zero and the bracket is a
-    constant -- the observation is simply consistent, and no depth above the cutoff is preferred
-    over any other, which is exactly the claim an interpreter is making. If the contact is *below*
-    ``z_off`` then a slice of column of height ``h - h_off`` sits under the cutoff and should have
-    shown; ``1 - D`` of that height is the chance it did not. The likelihood therefore falls away
-    below the cutoff instead of stopping dead at it, and how fast it falls is set by the same
-    detection function the rest of the tab is elicited on.
+    ``Φ`` is one half at the cutoff, near one for a contact well above it, near zero well below.
+    The transition is soft, and its width is a number the interpreter can state: how well the
+    depth below which the anomaly is reliably absent is known. It is not a hard bound, for two
+    reasons that are visible in the formula rather than buried in it: ``σ`` spreads the edge, and
+    the ``1 − p_valid`` branch keeps ``L`` above zero however far below the cutoff a column sits
+    (Cromwell, as for a pick).
 
-    ⚠ **Applying ``D`` to a slice is the modelling choice here**, the counterpart of the shape
-    warning on :class:`DetectionFunction`. It treats the sub-cutoff interval as a thickness that
-    must clear tuning on its own terms, which is the reason a thin one hides; it does not model the
-    slice's contrast against the column above it. Worth a geophysicist's opinion, like the shape.
+    ``D(h)`` is the same first factor as for a picked anomaly and does the same job: something was
+    seen, so the column was tall enough to be visible at all. It is not applied a second time.
+
+    **What this replaced, and why.** Until 14 Sep 2026 the bound was
+    ``D(h) · [1 − D((h − h_off)+)]``: the detection function applied once to the column and once
+    to the slice of it below the cutoff, as though "seen above" and "not seen below" were two
+    independent detections of two separate thicknesses. They are not -- the down-dip edge of one
+    anomaly is one observation -- and the form had no parameter of its own. Its softness came
+    from ``h50`` and its steepness, elicited for whether a column shows at all, and its floor
+    inside the valid branch was ``1 − ceiling``, so the strength of the bound was set by a number
+    elicited for a different question. With the shipped defaults that put the fifty-per-cent
+    point 25 m *below* the stated cutoff. The censored form has one parameter, already on the
+    observation, meaning what it says.
 
     The spurious branch is a bare ``1``, not a density, because this likelihood is a probability
     rather than a density in depth -- and the value is right, not merely convenient. In the world
@@ -291,11 +342,16 @@ def likelihood(result: EngineResult, detection: DetectionFunction,
     to end, so *this observation is what you would have recorded whatever the column did*. The
     branch explains the data perfectly, which is what makes it a floor: ``L >= 1 - p_valid``, and
     partial conformance can never rule a column out. That the floor is high -- a much larger share
-    of the likelihood than the pick's ``c`` -- is the honest reading. "Bright above, absent below"
+    of the likelihood than the pick's ``s`` -- is the honest reading. "Bright above, absent below"
     is weaker evidence than a contact you can pick, and the arithmetic should not pretend otherwise.
 
     There is no ``V`` branch in the failure world: with no accumulation there is no contact to
     indicate, so ``p_valid`` is properly ``P(V | G)`` and appears only here.
+
+    **Everything in this function is conditional on ``G``.** ``result.column_m`` is a sample from
+    ``p(h | G)``, and the value returned is ``L(geometry | h, G)``. Nothing about whether there is
+    hydrocarbon at all belongs in it: that question is the strength channel's, answered once in
+    :func:`prospect_pos` by updating ``P(G)``, and never inside a term that already assumes ``G``.
     """
     d = detection.at(result.column_m)
     if not observation.seen:
@@ -310,8 +366,9 @@ def likelihood(result: EngineResult, detection: DetectionFunction,
                 f"the anomaly to have been seen in, so the observation describes no prospect. It "
                 f"has to be a depth inside the closure."
             )
-        excess = np.clip(result.column_m - h_off, 0.0, None)
-        valid = d * (1.0 - detection.at(excess))
+        # P(the observed edge lies above z_off | true contact at z), with the pick error on the
+        # edge. `h_off - column` is `z_off - z` in column space, the apex cancelling.
+        valid = d * norm.cdf((h_off - result.column_m) / observation.pick_sigma_m)
         if observation.p_valid >= 1.0:
             return valid
         return observation.p_valid * valid + (1.0 - observation.p_valid)
@@ -319,7 +376,8 @@ def likelihood(result: EngineResult, detection: DetectionFunction,
     if observation.p_valid >= 1.0:
         return valid
     return (observation.p_valid * valid
-            + (1.0 - observation.p_valid) * spurious_density(result.contact_m))
+            + (1.0 - observation.p_valid)
+            * spurious_density(result.limit_set.contact_support_m()))
 
 
 @dataclass(frozen=True)
@@ -372,7 +430,16 @@ class DhiPosterior:
 
     @property
     def r_dhi(self) -> float:
-        """Likelihood ratio: how much the observation favours success over failure.
+        """Diagnostic ratio: how much the geometry likelihood favours tall columns over short ones.
+
+        **Not part of the chance, since 14 Sep 2026.** Both sets it compares are inside ``G`` --
+        realisations that clear the assessment minimum against those that fall short -- so it is
+        a ratio between two column-height hypotheses, not between success and failure of the
+        prospect. Applying it as a likelihood ratio on the prospect chance, as
+        :class:`CombinedUpdate` did, treated ``P(h < h_min | G)`` as if it were ``P(not G)``. The
+        geometry's effect on the chance is now read directly: ``P(h ≥ h_min | G, geometry)`` is
+        :meth:`pos`, and :func:`prospect_pos` multiplies it by ``P(G | strength)``. This property
+        stays as a readout of how much the pick discriminates, and for the trust panel.
 
         For a **seen** anomaly this is E-POS's ``r_dfi`` construction — ``L`` averaged over the
         success cases divided by ``L`` averaged over the failures — so the two tools report a
@@ -474,6 +541,47 @@ def update(result: EngineResult, detection: DetectionFunction,
     return DhiPosterior(result=result, weights=w, detection=detection, observation=observation)
 
 
+def p_g_given_strength(p_g: float, r_strength: float) -> float:
+    """Step A: the element chance updated by the amplitude character alone.
+
+    :func:`simm_update` under the name of the job it does here, so that a reader of
+    :func:`prospect_pos` sees which factor the strength touches. It is the only place the
+    strength enters.
+    """
+    return simm_update(p_g, r_strength)
+
+
+def prospect_pos(p_g: float, r_strength: float, posterior: DhiPosterior) -> float:
+    """Step C: the prospect chance at the assessment minimum, given the DHI.
+
+    ``P(G | strength) × P(h ≥ h_min | G, geometry)``. The first factor is the element product from
+    tab 2.0 updated by the character channel; the second is :meth:`DhiPosterior.pos`, read off the
+    same weights that draw the posterior histogram and the percentiles. There is no third factor
+    and no blending: the two channels answer different questions -- *is there hydrocarbon* and
+    *given there is, how far down* -- and each answers its own once.
+
+    This replaces ``CombinedUpdate.posterior_pos`` as the headline. That construction updated
+    ``P(G) · F_prior(h_min)`` by a blend of the strength ratio and ``r_dhi``; ``r_dhi`` is a ratio
+    between two column heights inside ``G`` and is not a likelihood ratio on the prospect, and the
+    strength had already reached the weights through ``p_valid``. The result was a headline that
+    was not the integral of the distribution drawn beside it, so the curve had to be rescaled to
+    pass through it. This one passes through by construction: see :func:`prospect_pos_curve`.
+    """
+    return float(p_g_given_strength(p_g, r_strength) * posterior.pos())
+
+
+def prospect_pos_curve(p_g: float, r_strength: float, posterior: DhiPosterior,
+                       columns_m: np.ndarray) -> np.ndarray:
+    """``P(G | strength) × F_post(h)`` on a grid of column heights: the chance against threshold.
+
+    Read at ``posterior.result.limit_set.min_column_m`` it equals :func:`prospect_pos` exactly,
+    because both are the same product of the same two numbers. That identity is what lets the
+    figure on the DHI tab be drawn without the rescaling it needed under the blended headline.
+    """
+    return p_g_given_strength(p_g, r_strength) * np.asarray(posterior.exceedance(columns_m),
+                                                             dtype=float)
+
+
 @dataclass(frozen=True)
 class Outcome:
     """The two numbers a reader takes off the DHI tab, together.
@@ -483,24 +591,23 @@ class Outcome:
     put it, while the pick does the reverse. Reporting only one of them is how a control comes to
     look dead when it is not.
     """
-    #: ``P(G) x F(h_min)`` updated by the combined ratio -- the prospect chance given the DHI.
+    #: :func:`prospect_pos` -- ``P(G | strength) × P(h ≥ h_min | G, geometry)``.
     pos: float
     #: The posterior median contact, m TVDSS, over the success cases. ``nan`` if there are none.
     contact_m: float
 
 
 def outcome(result: EngineResult, detection: DetectionFunction, observation: DhiObservation, *,
-            prior_pos: float, r_strength: float, dependence: float = 0.5) -> Outcome:
+            p_g: float, r_strength: float) -> Outcome:
     """Run one full state of the tab and report what a reader would see.
 
-    The whole chain in one call -- reweight, read the geometry ratio, combine with the character
-    ratio -- so that :func:`leverage` can vary one input and be sure everything downstream of it
-    moved with it.
+    The whole chain in one call -- reweight within ``G``, update ``P(G)`` by the strength,
+    multiply -- so that :func:`leverage` can vary one input and be sure everything downstream of
+    it moved with it. ``observation.p_valid`` is the contact-attribute judgement ``c`` and
+    nothing else; see :class:`DhiObservation`.
     """
     post = update(result, detection, observation)
-    combined = CombinedUpdate(prior_pos=prior_pos, r_geometry=float(post.r_dhi),
-                              r_strength=r_strength, dependence=dependence)
-    return Outcome(pos=combined.posterior_pos,
+    return Outcome(pos=prospect_pos(p_g, r_strength, post),
                    contact_m=float(post.percentiles(50.0)[0]))
 
 
@@ -549,10 +656,11 @@ class Leverage:
 def leverage(build, values) -> Leverage:
     """Sweep one input over ``values`` and measure the swing, holding everything else fixed.
 
-    ``build(v)`` returns the ``(result, detection, observation, prior_pos, r_strength,
-    dependence)`` the tab would be in with that input at ``v`` -- everything, because an input
-    such as the assessment minimum changes the realisation set and not merely the likelihood, and
-    a sweep that varied only the likelihood would report a smaller number than the truth.
+    ``build(v)`` returns the ``(result, detection, observation, p_g, r_strength)`` the tab would
+    be in with that input at ``v`` -- everything, because an input such as the assessment minimum
+    changes the realisation set and not merely the likelihood, and a sweep that varied only the
+    likelihood would report a smaller number than the truth. ``p_g`` is the element product, not
+    the prior prospect chance: the chain multiplies it by the conditional column term itself.
 
     One-at-a-time, which is the honest reading of a slider: *this* control, from where everything
     else currently stands. It is not a variance decomposition and does not claim to be -- the
@@ -565,8 +673,8 @@ def leverage(build, values) -> Leverage:
         except (ValueError, ZeroDivisionError):
             continue
         try:
-            tried.append((v, outcome(args[0], args[1], args[2], prior_pos=args[3],
-                                     r_strength=args[4], dependence=args[5])))
+            tried.append((v, outcome(args[0], args[1], args[2], p_g=args[3],
+                                     r_strength=args[4])))
         except ValueError:
             # A state the model refuses -- every realisation ruled out, most often. Skipped rather
             # than counted as an extreme, because "the chance is zero there" and "the model will
@@ -812,6 +920,15 @@ def strength_bands(r: float) -> tuple[str, str]:
 class CombinedUpdate:
     """The two channels of one seismic observation, and the warning that goes with combining them.
 
+    **Superseded as the headline on 14 Sep 2026, and not to be used for one.** It blended
+    ``r_dhi`` -- a ratio between two column heights *inside* ``G`` -- with the strength ratio and
+    applied the blend to ``P(G) · F_prior(h_min)`` as if it were a likelihood ratio on the
+    prospect. It is not: ``P(h < h_min | G)`` is not ``P(not G)``. And the strength had already
+    entered the weights through the old ``p_valid``, so it was counted twice. The chance is now
+    :func:`prospect_pos`, and ``dependence`` has no role in it. This class stays so that the
+    tab can show what the blended construction gave beside the correct one, in the same way the
+    scenario switch and the pooled curve are shown: as arithmetic with something wrong in it.
+
     ``r_geometry`` is implied by the contact update on this tab — the detection function and the
     pick together say how much more likely the observation is if there really is a column.
     ``r_strength`` comes from the amplitude *character*, through the two-curve strength model.
@@ -901,13 +1018,15 @@ def combination_exceedance(result: EngineResult, detection: DetectionFunction,
 
     **It drops two terms, not one, and the smaller one used to have the label.** ``POOLED`` is
     ``norm.pdf(residual)`` with nothing under it, so it omits the detection function *and*
-    Cromwell's floor ``L >= 1 - p_valid``. Decomposed on the shipped prospect at its own
-    ``p_valid`` of 0.56, in maximum exceedance difference:
+    Cromwell's floor ``L >= 1 - p_valid``. Decomposed on the reference prospect at
+    ``p_valid = 0.56``, in maximum exceedance difference (re-measured 14 Sep 2026 under the
+    declared-support density; the earlier figures of 0.223 / 0.013 / 0.236 were taken with the
+    sample-based one):
 
     ==========================================  ======
-    the floor alone (holding ``D(h)`` flat)      0.223
-    the detection function alone                 0.013
-    both together, which is what ``POOLED`` is   0.236
+    the floor alone (holding ``D(h)`` flat)      0.286
+    the detection function alone                 0.017
+    both together, which is what ``POOLED`` is   0.303
     ==========================================  ======
 
     So the floor is most of it. That is Cromwell's rule doing visible work: without it a confident

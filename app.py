@@ -125,56 +125,54 @@ st.caption(
 
 (tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8) = st.tabs(theme.tab_labels())
 
-# --------------------------------------------------------------------------- 1.0 Purpose
+# --------------------------------------------------------------------------- 1.0 Concept
 with tab1:
     st.markdown(
         """
-The depth of the hydrocarbon–water contact is the largest single driver of prospect volume, and it
-is the only input that converts a prospect chance into a chance at a specific well location. Yet it
-is usually entered as one distribution, chosen by habit, with no record of what controls it.
+Predrill uncertainty in the depth of the hydrocarbon–water contact is often the largest single
+driver of prospect resource potential, and it sets the probability of encountering hydrocarbons at
+a specific well location.
 
-This tool builds the contact distribution the way the geology works: as a **competition between
-limits**. Charge, closure and spill, fault juxtaposition, capillary and continuity failure of top and
-base seal, tilt-related spillage, reservoir pinchout — each is sampled independently, each with its
-own probability of being active, and the **shallowest active limit wins** in every realisation.
-Nothing is blended, because blending a leak into the background column height suppresses outcomes
-*above* the leak, which is not geology.
+A generic distribution for the contact — uniform from apex to spill point, say — carries
+little connection to the mechanisms that may limit the column. A DHI, where present, may indicate
+the contact directly; the question is with what certainty that indication should enter the
+distribution.
 
-Because the model records **which limit won**, it answers questions a distribution alone cannot:
-which mechanism actually controls this contact, how that changes with depth, and therefore which
-element your risk really sits in — derived, not allocated.
+This tool models the contact as a competition between geological limiting mechanisms: charge,
+closure and spill, fault seal, top- and base-seal capacity and continuity, tilt-related spillage,
+reservoir pinch-out.
 
-It compares what you build against the published empirical record, and it corrects that record for a
-bias nobody has corrected before: **a closure that filled to spill tells you about the closure, not
-about the seal.** Nearly half the discoveries in the reference dataset are of that kind.
+Each limiter is assigned a probability of being active and an uncertainty in depth or capacity. In
+each Monte Carlo realisation the shallowest active limit controls the column.
 
-**It will not tell you whether to drill.** It produces one input to that decision, honestly, with its
-provenance attached.
-"""
+The simulation records which mechanism controls each realisation, so the result shows what sets
+the contact and how that changes with depth. The distribution is derived from the geological
+assumptions rather than imposed.
+
+Where available, the result can be compared with empirical data and updated with DHI evidence.
+        """
     )
 
-    # Eight tabs is a lot to land on, and nothing on this page said which of them to open first.
-    # The essay above says what the tool is for; a first-time reader also needs the path through it.
     st.markdown(
         """
 ---
 
-**New here? The working path runs through four tabs, in this order.**
+New here? Start with the tabs in this order.
 
-- **2.0 Prospect** — apex, spill point, element risk, and the **assessment minimum**: the smallest
-  column that would make the well a discovery. Everything downstream is measured against it.
-- **3.0 HCWC limiters** — one block per mechanism that could stop the column. Switch off what does
-  not apply; each one you keep needs a probability of being active and a depth or capacity.
-- **4.0 Results** — the contact distribution, which limit controls it, and the chance at every
-  depth. **5.0** is the same reading with a seismic amplitude anomaly folded in.
-- **7.0 Export** — percentiles for a volumetrics package, with the basis stated on the file.
+- **2.0 Prospect** — apex, spill point, element risk and the assessment minimum: the smallest
+  column that qualifies as a discovery at the well.
+- **3.0 HCWC Limiters** — the mechanisms that may limit the column, each with its probability
+  and its depth or capacity uncertainty.
+- **4.0 Results** — the contact distribution, the controlling mechanism, and the probability of
+  hydrocarbons with depth.
+- **5.0 DHI** — the geological model updated with a DHI indication and its uncertainty.
+- **6.0 Benchmarks** and **8.0 Theory** — empirical reference data and methodological
+  background.
+- **7.0 Export** — contact percentiles for predrill volumetric tools, with the distribution
+  basis stated.
 
-**6.0 Benchmarks** and **8.0 Theory** are reference rather than steps: the published record behind the
-defaults, and the reasoning the tool rests on.
-
-*In a hurry?* **Load the worked example on tab 2.0** and read tab 4.0 first — every number on this
-page is already filled in for a real prospect.
-"""
+The worked example on **2.0 Prospect** fills every input for a real prospect.
+        """
     )
 
     theme.heading(1, "1 · What can set a hydrocarbon–water contact")
@@ -182,193 +180,130 @@ page is already filled in for a real prospect.
     if concept_png.exists():
         st.image(str(concept_png), width="stretch")
         st.caption(
-            "**Every mechanism that can stop the column, on one section, with its distribution "
-            "where it acts.** Charge migrates in from below, follows the top reservoir up-dip under "
-            "buoyancy to the structural apex, and filling then works **downward** from there — "
-            "which is why every capacity in this tool is measured from the apex. Figure by Lars "
-            "Hjelm; `reference/concept_full.png` is the uncropped version with the depth-axis "
-            "panel, which tab 4.0 builds from live data."
+            "Every mechanism that can stop the column, on one section, with the distribution of "
+            "the depth at which it acts. Charge migrates in from below and follows the top "
+            "reservoir up-dip to the apex; filling then works downward from there, which is why "
+            "every capacity in this tool is measured from the apex. Figure by Lars Hjelm. "
+            "`reference/concept_full.png` is the uncropped version with the depth-axis panel that "
+            "tab 4.0 builds from live data."
         )
 
-    theme.heading(1, "2 · The rule the whole tool rests on")
-    st.markdown("**A probability of success is not a probability of anything until you say what counts as success.** Name the smallest accumulation that would make the well a discovery; in this tool naming that volume names a depth, and that depth is the **assessment minimum** on tab 2.0.")
-    with st.expander("**Why that rule, and what it rules out** — POS as a reading of the curve, and the error Beha et al. (2012) is written about"):
-        st.markdown(
-            """
-    **A probability of success is not a probability of anything until you say what counts as success.**
-
-    So say it. Name the smallest accumulation that would make the well a discovery — a cup of oil, a
-    sustained test rate, a commercial threshold; the tool does not care which, only that it is stated.
-    That single decision is the risk criterion, and everything else is downstream of it.
-
-    **In this tool, naming that volume names a depth.** The smallest volume that counts is the volume
-    above some contact, so choosing it fixes how far down the hydrocarbons must reach — a column height
-    below the apex, or equivalently a depth in metres TVDSS. That number is the **assessment minimum**
-    on tab 2.0, and it is not a detail of the run settings. It is the definition of success.
-
-    **Risk and volume are then one statement, not two.** POS is `F(h_min)` — the exceedance curve read
-    at that depth — so the chance and the volume it refers to come off the same object and cannot drift
-    apart. Move the minimum and both move together. Quote a chance from one threshold beside a volume
-    from another and you have said something incoherent, which is easy to do when POS arrives as a
-    scalar from one tool and volume as a distribution from another.
-
-    **What this rules out, and it is the common error.** A trapping element that fails *below* the crest
-    does not reduce the chance of finding hydrocarbons at the well — it reduces the chance of a *deeper
-    contact*. Folding fault seal, top seal capacity or spill into the chance chain therefore understates
-    POS and, because the volume is conditioned on that chance, **overstates volume**. Beha et al. (2012)
-    is written about exactly this. Here those mechanisms are limits on tab 3.0, where they move the
-    contact; only whether an element works *at the crest* belongs in the chance on tab 2.0.
-    """
-        )
-
-    theme.heading(1, "3 · Where to start")
-    # A heading over a bare fold says nothing, so the line that matters stays outside it. This one
-    # is not a summary of what is folded — the box at the top of the tab already lists the four
-    # steps — it is the single claim the long version exists to make.
+    theme.heading(1, "2 · The assessment minimum")
     st.markdown(
-        "**Step three is the one people skip, and it is the point of the whole tool.** The ranking "
-        "at the top of tab 3.0 says which limit is actually setting the contact and updates as you "
-        "edit; most limits turn out not to move the answer, so elicit the top two or three "
-        "carefully and leave the rest rough."
+        "A probability of success refers to a stated definition of success: the smallest "
+        "accumulation that would make the well a discovery. In this tool that volume corresponds "
+        "to a contact depth, and that depth is the assessment minimum on tab 2.0."
     )
-    with st.expander("**The four steps in full** — what to set on each tab, and the one people skip"):
+    with st.expander("Why the minimum defines the chance, and what that rules out"):
         st.markdown(
             """
-    Eight tabs is a lot to meet cold. There are only four steps, and the third is the one people skip
-    — so it now sits on the same screen as the second, where skipping it takes effort.
+The smallest volume that counts is the volume above some contact, so choosing it fixes how far
+down the hydrocarbons must reach: a column height below the apex, or a depth in metres TVDSS.
+That is the assessment minimum. It is the definition of success rather than a run setting.
 
-    **1 · Describe the prospect — tab 2.0.** Apex, spill point, burial depth, the four element chances
-    from E-POS, and whether it has a DHI. **Set the assessment minimum**: it is the definition of
-    success, not a run setting, and nothing downstream means anything without it. Tab 4.0 will refuse to
-    show you a chance until you have.
+The chance is then a reading of the contact distribution: POS is the exceedance at that depth,
+`F(h_min)`. Chance and volume come off the same curve, so they cannot refer to different
+thresholds. Moving the minimum moves both.
 
-    **2 · Say what could stop the column — tab 3.0.** Twelve mechanisms grouped by risk element. Do not
-    elicit them carefully yet. Leave the defaults, switch off the ones this prospect does not have, and
-    move on.
-
-    **3 · Elicit only what matters — tab 3.0 §1, without leaving the tab.** The ranking at the top of tab
-    3.0 says which limit is actually setting the contact, and it updates as you edit. **That
-    ranking is the point of the whole tool.** Most limits turn out not to move the answer, and the ones
-    that do are usually not the ones you would have spent the afternoon on — so spend it on the top two
-    or three and leave the rest rough. Tab 4.0 §4.1.3 has the fuller version: the same ranking restricted to
-    realisations worth drilling, and why the two differ.
-
-    **4 · Read the answer, and check it — tabs 4.0 and 6.0.** The exceedance curve is the output; the
-    chance is a *reading* of it at your minimum. Tab 6.0 §8 then says whether your distribution is
-    optimistic or pessimistic against 242 NCS discoveries at your own structural relief.
-
-    *If this is a DHI prospect, tab 5.0 carries the update across four sub-tabs — the walkthrough first,
-    then what you saw, then the same two readings tab 4.0 gives. Tab 4.0 stays purely geological.*
-
-    **Not sure where to begin?** Tab 2.0 → *Save or load this prospect* → **Load the worked example**.
-    """
+A trapping element that fails below the crest does not reduce the chance of finding hydrocarbons
+at the well; it reduces the chance of a deeper contact. Folding fault seal, seal capacity or spill
+into the chance chain understates POS and, because volume is conditioned on that chance,
+overstates volume. Beha et al. (2012) describe this error. Here those mechanisms are limits on
+tab 3.0, where they move the contact; only whether an element works at the crest belongs in the
+chance on tab 2.0.
+            """
         )
 
-    with st.expander(f"**{theme.section_label(1, '4 · How it is arranged')}**",
-                     expanded=False):
-        st.markdown(
-            "**Tab 2.0 is the prospect** — apex, spill point, burial depth, the element risk from E-POS, "
-            "and whether this is a DHI prospect. **Tab 3.0 is every mechanism that could limit the "
-            "column**, grouped by risk element: Charge, Closure, Retention. Everything after that is "
-            "output.\n\n"
-            "**Calculators are not tabs.** The charge filling and the seal-capacity calculation each "
-            "live inside the limit they fill in, behind a *Typed / Computed* radio, beside the inputs "
-            "they consume — the area–depth table sits next to the charge integration that reads it, "
-            "and nowhere else.\n\n"
-            "**Tab 4.0 is geological only.** The DHI update has its own tab, 5.0. That is "
-            "not tidiness: a fluid indicator may move the total chance and may **not** re-attribute it "
-            "between elements, so the geological model has to stay readable on its own."
-        )
+    theme.heading(1, "3 · Where the effort goes")
+    st.markdown(
+        "The ranking at the top of tab 3.0 shows which limit is setting the contact, and it "
+        "updates as inputs change. In most cases a few limits control the answer and the rest do "
+        "not move it, so the elicitation effort belongs on the top two or three. Tab 4.0 · 4.1.3 "
+        "gives the same ranking restricted to realisations above the assessment minimum."
+    )
+    st.markdown(
+        "Tab 6.0 · 8 compares the resulting distribution with 242 NCS discoveries at the same "
+        "structural relief, and states whether it is optimistic or pessimistic against that record."
+    )
 
-    with st.expander(f"**{theme.section_label(1, '5 · Where this sits')}**",
-                     expanded=False):
+    with st.expander(theme.section_label(1, "4 · Related tools"), expanded=False):
         st.markdown(
-            "Four free tools, each doing one job. Every one is open source and runs in the browser — "
-            "**app** to use it, **code** to check what it does."
+            "Four open-source tools, each doing one job. Each runs in the browser; *app* opens it "
+            "and *code* shows what it does."
         )
         left, mid, right = st.columns(3)
         left.markdown(
             "**Upstream — E-POS**\n"
             "[app](https://e-pos.streamlit.app) · "
             "[code](https://github.com/lhjelm-dk/E-POS)\n"
-            "Element risk: play and conditional for Charge, Closure, Reservoir and Retention, "
-            "Italian-flag evidence support, and the Bayesian DHI/DFI update. Supplies the element "
-            "chances on tab 2.0, and the DHI strength model on tab 5.0 is adapted from its custom-R tool."
+            "Element risk: play and conditional chances for Charge, Closure, Reservoir and "
+            "Retention, evidence support, and the Bayesian DHI update. Supplies the element chances "
+            "on tab 2.0; the DHI strength model on tab 5.0 is adapted from its custom-R tool."
         )
         mid.markdown(
             "**Volumetrics — SCOPE-HC**\n"
             "[app](https://scope-hc.streamlit.app) · "
             "[code](https://github.com/lhjelm-dk/SCOPE-HC)\n"
-            "Probabilistic volumes from GRV, reservoir and fluid inputs. It is what supplies the "
-            "`resource` column the WellVolPOS export on tab 7.0 deliberately leaves out. **Planned:** it "
-            "will read the 101-percentile contact distribution exported there."
+            "Probabilistic volumes from GRV, reservoir and fluid inputs. It supplies the resource "
+            "column the WellVolPOS export on tab 7.0 leaves out. Planned: it will read the "
+            "101-percentile contact distribution exported there."
         )
         right.markdown(
             "**Downstream — WellVolPOS**\n"
             "[app](https://wellvolpos.streamlit.app) · "
             "[code](https://github.com/lhjelm-dk/WellVolPOS)\n"
-            "Turns a contact distribution into well-location chance and at-the-well volume. Consumes "
-            "the trial table and the per-element curves from tab 7.0."
+            "Turns a contact distribution into well-location chance and at-the-well volume. "
+            "Consumes the trial table and the per-element curves from tab 7.0."
         )
 
-    with st.expander(f"**{theme.section_label(1, '6 · Known limitations')}**",
-                     expanded=False):
+    with st.expander(theme.section_label(1, "5 · Known limitations"), expanded=False):
         st.markdown(
             """
-    Stated here rather than discovered later. None of these is a bug; each is a thing the model does
-    not do, and knowing which is which is part of using it honestly.
+None of these is a bug. Each is something the model does not do.
 
-    **Seal capacity is treated as phase-independent, and it is not.**
-    `h_max = P_c / (Δρ · g)`, so it depends on the density contrast between hydrocarbon and water. **A
-    gas column and an oil column below the same seal are very different heights** — Sales (1997), cited
-    by Graham et al. (2015) as the interplay among closure height, seal capacity and fluid type. The
-    seal calculator takes a fluid, but a **mixed-phase** prospect needs the gas cap and the oil leg
-    limited by different capacities with a gas–oil contact between them, and this tool does not do that.
-    Run the phases as separate cases; treat a single mixed-phase run as indicative. A deliberate scope
-    decision, not an oversight.
+Seal capacity is treated as phase-independent. `h_max = P_c / (Δρ · g)` depends on the
+density contrast between hydrocarbon and water, so a gas column and an oil column below the same
+seal differ in height (Sales 1997; Graham et al. 2015). The seal calculator takes a fluid, but a
+mixed-phase prospect needs the gas cap and the oil leg limited by different capacities with a
+gas–oil contact between them, and this tool does not do that. Phases should be run as separate
+cases; a single mixed-phase run is indicative.
 
-    **Hydrodynamics and tilted contacts are not modelled.** A hydrodynamic gradient tilts the contact
-    and changes the effective seal capacity. Grant (2020) includes it; this assumes a hydrostatic,
-    horizontal contact. **Remigration and hydraulic reconfiguration** are absent for the same reason:
-    both genuinely stop columns, and neither is here.
+Hydrodynamics and tilted contacts are not modelled. A hydrodynamic gradient tilts the contact and
+changes the effective seal capacity; Grant (2020) includes it. The model assumes a hydrostatic,
+horizontal contact. Remigration and hydraulic reconfiguration are absent for the same reason.
 
-    **Compartmentalisation is out of scope, not merely unmodelled.** It turns one contact into
-    several, and this tool builds one — a compartmentalised trap needs a contact per compartment,
-    which is a different object rather than a harder version of this one.
+Compartmentalisation is out of scope. It turns one contact into several, and this tool builds one.
+A compartmentalised trap needs a contact per compartment.
 
-    **Whether a mechanism is present is drawn independently for each.** The copula correlates the
-    *depths* at which limits bite, so you can say two faults leak at similar depths — but not that
-    they are the same fault and therefore stand or fall together. Beha et al. (2012) make the same
-    independence assumption explicitly, which makes this a shared limitation of the approach rather
-    than a defect of this implementation, and it is still a limitation.
+Whether a mechanism is present is drawn independently for each. The copula correlates the depths
+at which limits act, so two faults may leak at similar depths, but it cannot state that they are
+the same fault and stand or fall together. Beha et al. (2012) make the same independence
+assumption.
 
-    **The empirical benchmarks are conditioned on discovery**, censored above and truncated below.
-    Tab 6.0 sets out exactly what that does and what it means for using them as a pre-drill prior.
+The empirical benchmarks are conditioned on discovery, censored above and truncated below. Tab 6.0
+sets out what that does to their use as a predrill prior.
 
-    **The engine is validated against one published case, not against a population.** Beha et al.
-    (2012) enumerate a two-fault closure by hand and get 0.60 / 0.12 / 0.28 at three leak points, and
-    the engine reproduces all three to Monte Carlo error. That is a genuine external check and it is
-    the only one there is — no published dataset of competing-limit models exists to test against, so
-    the engine's *behaviour* is verified by its own test suite and its *result* by one worked example.
+The engine is validated against one published case. Beha et al. (2012) enumerate a two-fault
+closure by hand and obtain 0.60 / 0.12 / 0.28 at three leak points; the engine reproduces all
+three to Monte Carlo error. No published dataset of competing-limit models exists to test
+against, so the engine's behaviour is verified by its test suite and its result by that one
+example.
 
-    **The competing-limits model is not new, and it is worth knowing whose it is.** Beha, Christensen
-    & Young (2012) set it out: enumerate the combinations of trapping elements sealing or failing,
-    assign each scenario a probability, and derive the leak point that follows. Their observation
-    that *a deeper leak point can be more likely than a shallower one* — because it needs more
-    elements to seal at once — is the principle in a sentence. Grant (2020) publishes the
-    controlling-limit diagnostic as "column height control statistics"; Lowry et al. (2005) had
-    chance against column height two decades ago. What is new here is the continuous, correlated
-    form of it, and the censoring correction on tab 6.0 — set out in full in the paper on
-    tab 8.0.
-    """
+The competing-limits model is not new. Beha, Christensen and Young (2012) set it out: enumerate
+the combinations of trapping elements sealing or failing, assign each scenario a probability, and
+derive the leak point that follows. Grant (2020) publishes the controlling-limit diagnostic as
+column height control statistics; Lowry et al. (2005) had chance against column height two
+decades earlier. What is new here is the continuous, correlated form, and the censoring
+correction on tab 6.0. The paper on tab 8.0 sets this out.
+            """
         )
 
     st.divider()
     _left, _mid, _right = st.columns([1, 2, 1])
     with _mid:
         st.caption(
-            "**This tool is free and open source, and it stays that way.** If it saved you an "
-            "afternoon or changed a number you were about to quote, you can buy me a coffee."
+            "The tool is free and open source. Contributions towards its development are "
+            "welcome and optional."
         )
         # `st.iframe` rather than `components.html`, which is deprecated with a removal
         # date of 2026-06-01 that has already passed. It takes the URL directly, so the
@@ -745,24 +680,27 @@ with tab8:
     # `docs/` and indexed in `docs/NEXT_PLAN.md`, which is the internal document by design; the
     # bibliography in section 3 names them where they bear on a citation.
     st.markdown(
-        "**Three notes on what may be treated as evidence**, each written against a specific "
-        "mistake this tool declines to make: → *Prior or likelihood?*, → *Weight, not Bayes*, "
-        "→ *Base rates*. **DHI alignment** is a working note on how POS and the DHI update fit "
-        "together, and **Benchmark sources** is a negative result — what was searched for and not "
-        "found."
+        "*Competing limits* is the construction the tool rests on: why the contact is derived "
+        "from the mechanisms rather than entered, and why the reference data are censored. "
+        "*Prior or likelihood?*, *Weight, not Bayes* and *Base rates* are three notes on what "
+        "may be treated as evidence, each written against a specific mistake. *DHI alignment* "
+        "is a working note on how POS and the DHI update fit together. *Benchmark sources* is "
+        "a negative result: what was searched for and not found."
     )
 
     _theory = st.radio(
         "Theory note",
-        ["Prior or likelihood?", "Weight, not Bayes", "Base rates",
+        ["Competing limits", "Prior or likelihood?", "Weight, not Bayes", "Base rates",
          "DHI alignment", "Benchmark sources"],
-        captions=["why a base rate is not evidence",
+        captions=["the construction, and why limits are not blended",
+                  "why a base rate is not evidence",
                   "why tab 6.0 §8 weights rather than multiplies",
                   "the symmetric rule, and why it cannot be Bayes",
                   "working note · POS and the DHI update",
                   "is there a second public dataset? — no"],
         horizontal=True, label_visibility="collapsed", key="theory_doc")
-    _theory_path = {"Prior or likelihood?": "LIKELIHOOD_OR_PRIOR.md",
+    _theory_path = {"Competing limits": "COMPETING_LIMITS.md",
+                    "Prior or likelihood?": "LIKELIHOOD_OR_PRIOR.md",
                     "Weight, not Bayes": "WEIGHT_NOT_BAYES.md",
                     "Base rates": "BASE_RATE_NEGLECT.md",
                     "DHI alignment": "DHI_alignment.md",

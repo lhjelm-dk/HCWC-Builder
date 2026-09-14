@@ -67,19 +67,19 @@ def render_charge(key: str, n_trials: int, seed: int,
     # definitions: an assessor who agonises over porosity while leaving net-to-gross at a default
     # is tightening one factor of a number whose other factors are still loose.
     st.caption(
-        "The three below multiply to one number — the fraction of gross rock volume that is "
-        "hydrocarbon. Only the **product** enters the calculation, so a range that is honest "
-        "about all three beats a precise value for one of them."
+        "The three below multiply to one number, the fraction of gross rock volume that is "
+        "hydrocarbon. Only the product enters the calculation, so a range that covers all three "
+        "is worth more than a precise value for one of them."
     )
     c1, c2, c3 = st.columns(3)
     ntg = c1.slider(
         "Net-to-gross", 0.05, 1.0, (0.50, 0.80), key=f"{key}_ntg",
-        help="Fraction of the gross interval that is reservoir at all. The range is the "
-             "uncertainty, and it is sampled independently in every realisation.")
+        help="Fraction of the gross interval that is reservoir. The range is the uncertainty, "
+             "sampled independently in every realisation.")
     por = c2.slider(
         "Porosity", 0.02, 0.45, (0.20, 0.30), key=f"{key}_por",
-        help="Of the net rock, the fraction that is pore space. Use the range you would defend "
-             "from analogues at this burial depth, not a log average from one well.")
+        help="Of the net rock, the fraction that is pore space. A range from analogues at this "
+             "burial depth, rather than a log average from one well.")
     sat = c3.slider(
         "HC saturation", 0.20, 1.0, (0.50, 0.80), key=f"{key}_sat",
         help="Of the pore space, the fraction filled with hydrocarbon rather than water. The rest "
@@ -88,32 +88,32 @@ def render_charge(key: str, n_trials: int, seed: int,
     case = st.selectbox(
         "Phase case", ["Pure oil", "Pure gas"], key=f"{key}_case",
         help="Which fluid the basin model delivered. It sets the conversion below and the default "
-             "volumes, which differ by more than two orders of magnitude — a gas charge in oil "
-             "units would fill any closure. It should agree with the seal calculator's fluid: the "
-             "same seal holds a much shorter column of gas.")
+             "volumes, which differ by more than two orders of magnitude; a gas charge in oil "
+             "units would fill any closure. It should agree with the seal calculator's fluid, "
+             "since the same seal holds a much shorter column of gas.")
     st.session_state["charge_phase"] = case
     f1, f2, f3 = st.columns(3)
     mean = f1.number_input(
         "Charge mean (10⁶ Sm³)", 0.0, 500_000.0,
         120.0 if case == "Pure oil" else 39600.0, 1.0, key=f"{key}_mean",
-        help="What the basin model says arrived in this closure, at **surface** conditions. This "
-             "is the volume charged, not the volume trapped — how much of it the structure can "
-             "hold is what the calculation below works out.")
+        help="The volume the basin model delivered to this closure, at surface conditions. This "
+             "is the volume charged, not the volume trapped; how much of it the structure holds "
+             "is what the calculation below works out.")
     sd = f2.number_input(
         "Charge sd (10⁶ Sm³)", 0.0, 200_000.0,
         30.0 if case == "Pure oil" else 5500.0, 1.0, key=f"{key}_sd",
         help="One standard deviation on that volume, sampled as a normal and clipped at zero. "
-             "Charge volumes are poorly known, so a wide spread here is usually the honest input — "
-             "it is what decides how often charge limits the column at all.")
+             "Charge volumes are poorly known, so a wide spread is usual, and it decides how "
+             "often charge limits the column at all.")
     factor = f3.number_input(
         "Bo (m³/Sm³)" if case == "Pure oil" else "1/Bg (Sm³/m³)",
         0.01, 500.0, 1.35 if case == "Pure oil" else 235.0, 0.01, key=f"{key}_factor",
-        help=("Oil formation volume factor: how many reservoir m³ one surface Sm³ occupies down "
-              "there. Above 1 because dissolved gas expands the oil in the reservoir."
+        help=("Oil formation volume factor: the reservoir m³ one surface Sm³ occupies at depth. "
+              "Above 1 because dissolved gas expands the oil in the reservoir."
               if case == "Pure oil" else
-              "Inverse gas formation volume factor: how many surface Sm³ fit into one reservoir "
-              "m³. Large because gas is compressed at reservoir pressure — which is why a gas "
-              "charge quoted in surface units fills so much less rock than it looks like."))
+              "Inverse gas formation volume factor: the surface Sm³ that fit into one reservoir "
+              "m³. Large because gas is compressed at reservoir pressure, which is why a gas "
+              "charge quoted in surface units fills much less rock than the number suggests."))
 
     def tri(pair):
         lo, hi = pair
@@ -134,9 +134,9 @@ def render_charge(key: str, n_trials: int, seed: int,
 
     if finite.size < 2:
         st.warning(
-            "Charge never limits the column with these inputs. That is a legitimate answer — the "
-            "prospect is charge-rich — and the honest way to say it is to **delete this row**, not "
-            "to give it a distribution at the base of the structure."
+            "Charge never limits the column with these inputs. That is a legitimate answer for a "
+            "charge-rich prospect, and the way to record it is to remove this limit rather than "
+            "give it a distribution at the base of the structure."
         )
         return None
 
@@ -149,9 +149,8 @@ def render_charge(key: str, n_trials: int, seed: int,
     st.plotly_chart(fig, width="stretch", key=f"{key}_charge_fig")
     st.caption(
         f"Over the {finite.size:,} realisations in which charge bound the column. The other "
-        f"{result.fraction_not_limiting:.0%} are carried as `P(active)`, not as a contact at the "
-        f"base of the table. Charge that fills past the deepest mapped depth is not a "
-        f"shallow limit — it is no limit, and that share belongs in `P(active)`."
+        f"{result.fraction_not_limiting:.0%} fill past the deepest mapped depth and are carried "
+        f"as `P(active)`, not as a contact at the base of the table."
     )
     return Handover(DepthDistribution.from_samples(columns), float(p_active),
                     f"{case}, mean {mean:,.0f}")
@@ -179,9 +178,9 @@ def _slider_default(pair: tuple[float, float], lo: float, hi: float) -> tuple[fl
 # --------------------------------------------------------------------------- seal capacity
 def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     st.markdown(
-        "`h_max = P_c / (Δρ·g)` with `P_c = 2γcos θ / r`. Inputs are **ranges**, because a limit "
-        "needs a distribution rather than a number — and because `P_c` goes as `1/r`, the spread "
-        "on pore-throat radius dominates everything else here."
+        "`h_max = P_c / (Δρ·g)` with `P_c = 2γcos θ / r`. Inputs are ranges, because a limit "
+        "needs a distribution rather than a number. `P_c` goes as `1/r`, so the spread on "
+        "pore-throat radius dominates the others."
     )
     # The temperature defaults from the burial depth set on tab 2, so a deep prospect cannot be
     # assessed with a shallow prospect's seal. Interfacial tension falls with temperature, so
@@ -203,47 +202,45 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         "Fluid", ["Oil", "Gas"], key=f"{key}_fluid",
         help="Must agree with the charge calculator's phase. Capacity depends on the density "
              "contrast with formation water, so the same seal holds a much shorter column of gas "
-             "than of oil — running one phase through charge and the other through the seal "
-             "produces a contact that belongs to no prospect, and tab 3.0 refuses it.")
+             "than of oil. One phase through charge and the other through the seal produces a "
+             "contact that belongs to no prospect, and tab 3.0 refuses it.")
     st.session_state["seal_fluid"] = fluid
     temp = c2.slider("Temperature (°C)", 10.0, 160.0, default_t, key=f"{key}_t",
                      help=(f"Defaulted from the {burial:,.0f} m burial depth on tab 2.0, at "
-                           f"25–40 °C/km. Override if you have a measured gradient."
-                           if burial else "Set a burial depth on tab 2.0 to default this."))
+                           f"25–40 °C/km. A measured gradient overrides it."
+                           if burial else "Defaults from the burial depth on tab 2.0."))
     theta = c3.slider(
         "Contact angle θ (°)", 0.0, 60.0, (0.0, 30.0), key=f"{key}_theta",
         help="How strongly the rock prefers water to hydrocarbon. 0° is fully water-wet, which "
-             "gives the strongest seal; the range says you do not know it exactly. Rarely "
-             "measured, so a range from 0 is the usual honest answer.")
+             "gives the strongest seal. Rarely measured, so a range from 0 is the usual input.")
 
     c4, c5 = st.columns(2)
     r_seal = c4.slider("Seal pore-throat radius (µm)", 0.01, 2.0, (0.01, 0.10), 0.01,
                        key=f"{key}_rs",
-                       help="The single most sensitive input, because `P_c` goes as `1/r` — the "
-                            "spread here dominates everything else in the calculator. A good shale "
-                            "is at or below 0.1 µm, which is where the default range ends.")
+                       help="The most sensitive input, because `P_c` goes as `1/r`; the spread "
+                            "here dominates the calculator. A good shale is at or below 0.1 µm, "
+                            "where the default range ends.")
     r_res = c5.slider("Reservoir pore-throat radius (µm)", 0.1, 10.0, (2.0, 3.5), 0.1,
                       help="The reservoir's own throats, which set the pressure already in the "
-                           "column. They must be **wider** than the seal's — that difference is "
-                           "what holds hydrocarbons back.",
+                           "column. They must be wider than the seal's; that difference is what "
+                           "holds hydrocarbons back.",
                       key=f"{key}_rr")
 
     c6, c7 = st.columns(2)
     rho_w = c6.slider(
         "Water density (g/cm³)", 0.95, 1.20, (1.00, 1.10), 0.01, key=f"{key}_rw",
-        help="**Formation water at reservoir conditions**, not a surface sample. Above 1.00 for "
-             "anything saline; temperature pushes it back down a little, so 1.00–1.10 covers most "
-             "of the NCS.")
+        help="Formation water at reservoir conditions, not a surface sample. Above 1.00 for "
+             "anything saline; temperature lowers it a little, so 1.00–1.10 covers most of the "
+             "NCS.")
     rho_hc = c7.slider(
         "HC density (g/cm³)", 0.10, 1.00, (0.70, 0.85), 0.01, key=f"{key}_rh",
-        help="**In situ, at reservoir pressure and temperature** — not stock-tank oil and not gas "
-             "at standard conditions. Only the *difference* from the water matters: capacity is "
-             "the entry pressure divided by it, so a light fluid buoys harder and the same seal "
-             "holds a much shorter column of it.\n\n"
-             "Typical in-situ values: **gas 0.15–0.35**, rising with depth; **live oil 0.60–0.85**, "
-             "lighter than the stock-tank oil you would measure at surface because the dissolved "
-             "gas is still in it. Surface-condition gas, around 0.0008, is not on this scale and "
-             "would give a column height of nonsense.")
+        help="In situ, at reservoir pressure and temperature; not stock-tank oil and not gas at "
+             "standard conditions. Only the difference from the water matters: capacity is the "
+             "entry pressure divided by it, so a light fluid buoys harder and the same seal holds "
+             "a shorter column of it.\n\n"
+             "Typical in-situ values: gas 0.15–0.35, rising with depth; live oil 0.60–0.85, "
+             "lighter than stock-tank oil because the dissolved gas is still in it. "
+             "Surface-condition gas, around 0.0008, is not on this scale.")
     # The one pairing that is quietly wrong. The fluid selector drives the interfacial-tension
     # correlation and the density slider drives the buoyancy, and nothing tied them together: the
     # shipped default used to be gas tension against an oil density contrast, which is the most
@@ -252,18 +249,18 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     _mid_hc = 0.5 * (rho_hc[0] + rho_hc[1])
     if fluid == "Gas" and _mid_hc > GAS_OIL_DENSITY_BOUNDARY:
         st.warning(
-            f"**That is an oil density against a gas interfacial tension.** In situ gas runs about "
+            f"An oil density against a gas interfacial tension. In situ gas runs about "
             f"0.15–0.35 g/cm³ at these depths, and this is set around {_mid_hc:.2f}. The two "
-            f"inputs disagree about which fluid this is, and the combination is the most generous "
-            f"the calculator can produce — high tension with a small density contrast — so the "
-            f"capacity it returns is larger than either fluid would really give."
+            f"inputs disagree about the fluid, and the combination, high tension with a small "
+            f"density contrast, is the most generous the calculator can produce, so the capacity "
+            f"is larger than either fluid would give."
         )
     elif fluid == "Oil" and _mid_hc < GAS_OIL_DENSITY_BOUNDARY:
         st.warning(
-            f"**That is a gas density against an oil interfacial tension.** Live oil in situ runs "
-            f"about 0.60–0.85 g/cm³, and this is set around {_mid_hc:.2f}. Oil–water tension is "
-            f"roughly a third of gas–water, so pairing it with a gas density understates the "
-            f"capacity rather than overstating it — but it is still not a fluid."
+            f"A gas density against an oil interfacial tension. Live oil in situ runs about "
+            f"0.60–0.85 g/cm³, and this is set around {_mid_hc:.2f}. Oil–water tension is "
+            f"roughly a third of gas–water, so this pairing understates the capacity rather "
+            f"than overstating it; it is still not a fluid."
         )
 
     # Hood (2019) slide 18 wants a GOC and an OWC both set by capillary capacity, and this
@@ -271,30 +268,30 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     # assessor on a two-phase prospect will come here looking for it and the honest answer is
     # "run the phases separately, and here is why that is not the same thing". The plan is
     # written; see docs/PLAN_DUAL_PHASE_SEAL.md.
-    with st.expander("**Two phases in one closure?** — what this calculator will not do"):
+    with st.expander("Two phases in one closure: what this calculator does not do"):
         st.markdown(
-            "This holds **one fluid at a time**. On a prospect with a gas cap over an oil leg, run "
-            "the two as separate cases — which is Hood's own advice, and what tab 3.0 tells you to "
-            "do if the charge and seal calculators disagree about the phase.\n\n"
-            "**It is not the same as a two-phase answer, and not conservatively so.** A single "
-            "seal sees gas at the crest and oil on the flanks between the two contacts, so the "
-            "gas cap is rated at the gas entry pressure while the oil leg below is rated at the "
-            "oil one. The oil leg is unchanged by the gas above it, and the gas cap sits on top "
-            "of it — so the *total* column a two-phase trap can hold is **taller than either "
-            "single-phase answer**, not somewhere between them.\n\n"
-            "On these shipped defaults that is roughly 150 m of oil under 130 m of gas against "
-            "150 m pure oil or 183 m pure gas. Spill and every other limit still apply on top, so "
-            "the effect only shows on a closure tall enough to let it.\n\n"
-            "Two-phase capacity is **not implemented**: the numbers above are what the physics in "
-            "`hcwc/core/seals.py` gives when the two constraints are written out, not something "
-            "this tool computes for you. `docs/PLAN_DUAL_PHASE_SEAL.md` is the plan. The "
-            "charge-driven route to a gas–oil contact exists in `hcwc.core.charge` "
-            "(`mixed_separate`, `mixed_joint`) and is not wired to any control either."
+            "This holds one fluid at a time. On a prospect with a gas cap over an oil leg, the "
+            "two are run as separate cases, which is Hood's advice and what tab 3.0 requires when "
+            "the charge and seal calculators disagree about the phase.\n\n"
+            "A separate-case answer is not a two-phase answer, and the difference is not "
+            "conservative. A single seal sees gas at the crest and oil on the flanks between the "
+            "two contacts, so the gas cap is rated at the gas entry pressure and the oil leg "
+            "below at the oil one. The oil leg is unchanged by the gas above it, and the gas cap "
+            "sits on top, so the total column a two-phase trap holds is taller than either "
+            "single-phase answer rather than between them.\n\n"
+            "On the shipped defaults that is roughly 150 m of oil under 130 m of gas, against "
+            "150 m pure oil or 183 m pure gas. Spill and every other limit still apply, so the "
+            "effect shows only on a closure tall enough to admit it.\n\n"
+            "Two-phase capacity is not implemented. The numbers above follow from the physics in "
+            "`hcwc/core/seals.py` when the two constraints are written out; the tool does not "
+            "compute them. `docs/PLAN_DUAL_PHASE_SEAL.md` is the plan. The charge-driven route "
+            "to a gas–oil contact exists in `hcwc.core.charge` (`mixed_separate`, `mixed_joint`) "
+            "and is not wired to a control either."
         )
 
     net = st.toggle("Subtract the reservoir's own entry pressure", value=True, key=f"{key}_net",
-                    help="The physically complete form — hydrocarbon already occupies the "
-                         "reservoir pores, so only the *difference* must be overcome.")
+                    help="The physically complete form: hydrocarbon already occupies the "
+                         "reservoir pores, so only the difference must be overcome.")
 
     try:
         inputs = seals.SealInputs(temperature_c=temp, contact_angle_deg=theta,
@@ -317,50 +314,49 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
             key=f"{key}_thickness",
             help="Gross thickness between the top reservoir and its base. The base seal's crest "
                  "sits this far below the structural apex, so its capacity is measured from there "
-                 "and its limit lands that much deeper. Only asked for on the base seal — the top "
-                 "seal *is* the datum.")
+                 "and its limit lands that much deeper. Asked for on the base seal only; the top "
+                 "seal is the datum.")
 
     elicited = capacity
-    with st.expander("**Pull this toward the NCS record** — a shrinkage prior on seal capacity"):
+    with st.expander("Pull this toward the NCS record: a shrinkage prior on seal capacity"):
         st.markdown(
-            "Edmundson's §5.2 asks for base rates to be *integrated* with the geological "
-            "assessment and does not say how. This is the safest place in the tool to do it: the "
-            "censoring-corrected NCS fit predicts **the same quantity this calculator computes** "
-            "— a seal capacity in metres of column — so the two can be averaged without either "
-            "having to stand in for the other.\n\n"
-            "**Against burial depth alone, and the omission is on purpose.** The fit also carries "
-            "a trap-height term, which is real in the data, but a *capacity* that knew how big "
-            "your closure was would smuggle geometry into a capillary property — and the engine "
-            "already takes `min(capacity, spill)` on top of it. Compaction closing pore throats is "
-            "the part with a physical reason to track burial, and it is the part borrowed."
+            "Edmundson (§5.2) asks for base rates to be integrated with the geological "
+            "assessment without saying how. The censoring-corrected NCS fit predicts the same "
+            "quantity this calculator computes, a seal capacity in metres of column, so the two "
+            "can be averaged without either standing in for the other.\n\n"
+            "The fit is used against burial depth alone. It also carries a trap-height term, "
+            "which is real in the data, but a capacity that depended on closure size would put "
+            "geometry into a capillary property, and the engine already takes "
+            "`min(capacity, spill)`. Compaction closing pore throats is the part with a physical "
+            "reason to track burial, and it is the part used."
         )
         weight = 0.0
         if not burial:
-            st.info("Set a burial depth on tab 2.0 to draw the NCS capacity for this prospect.")
+            st.info("The NCS capacity for this prospect needs a burial depth on tab 2.0.")
         else:
             weight = st.slider(
                 "Weight on the NCS record", 0.0, 1.0, 0.0, 0.05, key=f"{key}_shrink",
-                help="0 leaves your calculator untouched; 1 replaces it with the record. In "
-                     "between, the two quantile functions are averaged, so the answer sits "
-                     "*between* them rather than becoming two humps — which is what shrinking "
-                     "toward a population means.")
+                help="0 leaves the calculator untouched; 1 replaces it with the record. Between "
+                     "them the two quantile functions are averaged, so the result sits between "
+                     "the two rather than becoming bimodal, which is what shrinking toward a "
+                     "population means.")
             reference = benchmarks.ncs_seal_capacity(float(burial), n_trials, seed + 977)
             if weight > 0:
                 capacity = benchmarks.shrink_toward(elicited, reference, weight)
             r1, r2, r3 = st.columns(3)
             for col, p, label in ((r1, 10, "P90"), (r2, 50, "P50"), (r3, 90, "P10")):
                 col.metric(f"NCS {label}", f"{np.percentile(reference, p):,.0f} m",
-                           f"yours {np.percentile(elicited, p):,.0f} m", delta_color="off")
+                           f"calculator {np.percentile(elicited, p):,.0f} m", delta_color="off")
             fit = benchmarks._capacity_fit()
             st.caption(
-                f"The capacities the NCS record implies at **{burial:,.0f} m** burial, from the "
+                f"The capacities the NCS record implies at {burial:,.0f} m burial, from the "
                 f"censoring-corrected fit `log S = {fit.intercept:.2f} + "
-                f"{fit.slope:.2f}·log(burial)`. Fitted naively the burial term is about half that, "
-                "because censoring hides exactly the deep, well-sealed traps that carry the "
+                f"{fit.slope:.2f}·log(burial)`. Fitted naively the burial term is about half "
+                "that, because censoring hides the deep, well-sealed traps that carry the "
                 "relationship.\n\n"
-                "⚠ **The record is discoveries only.** All 242 of those traps held hydrocarbons, "
-                "so this is a prior on *how much a seal holds where it holds something*. It says "
-                "nothing about whether yours does, and it must never touch the chance."
+                "The record is discoveries only. All 242 traps held hydrocarbons, so this is a "
+                "prior on how much a seal holds where it holds something. It says nothing about "
+                "whether this one does, and it does not enter the chance."
             )
 
     m1, m2, m3 = st.columns(3)
@@ -395,25 +391,23 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     fig.update_yaxes(title_text="P(capacity at least this)", range=[0, 1.02], secondary_y=True)
     st.plotly_chart(fig, width="stretch", key=f"{key}_seal_fig")
     st.caption(
-        "⚠ **Check the units on any capacity you compare this against.** Interfacial "
-        "tension is quoted in dyne/cm and the conversion to N/m is `× 1e-3`; a stray "
-        "`/100` gives a column ten times too long and looks entirely plausible on a chart."
+        "Units on any capacity compared against this need checking. Interfacial tension is "
+        "quoted in dyne/cm and the conversion to N/m is `× 1e-3`; a stray `/100` gives a column "
+        "ten times too long that looks plausible on a chart."
     )
 
-    with st.expander("Is this capacity plausible? — the published calibration", expanded=False):
+    with st.expander("Is this capacity plausible: the published calibration", expanded=False):
         st.markdown(
-            "Every published model on one axis, computed live from this prospect's fluids rather "
-            "than read off a chart. Porosity comes down with burial "
-            "(Hansen, 1996), each published model turns porosity into a capillary entry pressure, "
-            "and Schowalter's (1979) balance turns that into a column: "
-            "`H = 2γcosθ (1/r − 1/R) / (g·Δρ)`. Dotted lines are each model's ±5 porosity-point "
-            "cases.\n\n"
-            "**The four disagree by roughly a factor of five, and that is the finding rather than a "
-            "defect.** Picking one as *the* answer would be false precision; the spread between them "
-            "is the honest uncertainty on any capacity derived this way, and it is why the "
-            "calculator asks for ranges. **The black bar is what you have selected above** — if it "
-            "sits outside the envelope at your burial depth, either the pore-throat radius or the "
-            "envelope is wrong, and it is worth knowing which."
+            "Every published model on one axis, computed from this prospect's fluids rather than "
+            "read off a chart. Porosity falls with burial (Hansen 1996), each model turns "
+            "porosity into a capillary entry pressure, and Schowalter's (1979) balance turns that "
+            "into a column: `H = 2γcosθ (1/r − 1/R) / (g·Δρ)`. Dotted lines are each model's "
+            "±5 porosity-point cases.\n\n"
+            "The four disagree by roughly a factor of five, which is the finding rather than a "
+            "defect. The spread between them is the uncertainty on any capacity derived this "
+            "way, and the reason the calculator asks for ranges. The black bar is the range "
+            "selected above; if it sits outside the envelope at this burial depth, either the "
+            "pore-throat radius or the envelope is wrong."
         )
         st.plotly_chart(
             calibration_figure(float(np.mean(rho_w)), float(np.mean(rho_hc)),
@@ -421,11 +415,10 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
             width="stretch", key=f"{key}_calib")
     if thickness:
         st.caption(
-            f"**The limit is the capacity plus the reservoir thickness.** This seal holds "
-            f"{np.percentile(capacity, 50):,.0f} m at P50, and it holds it starting "
-            f"{thickness:,.0f} m below the structural apex — so it bites at "
-            f"{np.percentile(capacity + thickness, 50):,.0f} m of column, which is the number the "
-            f"engine competes on."
+            f"The limit is the capacity plus the reservoir thickness. This seal holds "
+            f"{np.percentile(capacity, 50):,.0f} m at P50, starting {thickness:,.0f} m below the "
+            f"structural apex, so it applies at {np.percentile(capacity + thickness, 50):,.0f} m "
+            f"of column, which is the number the engine competes on."
         )
     return Handover(DepthDistribution.from_samples(capacity + thickness), 1.0,
                     f"{fluid}, r {r_seal[0]:.2f}–{r_seal[1]:.2f} µm"
@@ -435,10 +428,10 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
 # --------------------------------------------------------------------------- empirical
 def render_empirical(key: str, n_trials: int, seed: int) -> Handover | None:
     st.markdown(
-        "What the 242 NCS discoveries predict for a closure of these dimensions, **corrected for "
-        "the spill-point censoring** — seal capacity from the censored fit, then capped at the "
-        "closure, which is the same `min(S, H)` the geology applies. The fallback for a prospect "
-        "with nothing better, and the benchmark for one that has."
+        "What the 242 NCS discoveries predict for a closure of these dimensions, corrected for "
+        "the spill-point censoring: seal capacity from the censored fit, capped at the closure, "
+        "which is the same `min(S, H)` the geology applies. A fallback for a prospect with "
+        "nothing better, and a benchmark for one that has."
     )
     c1, c2 = st.columns(2)
     closure = c1.number_input("Closure height (m)", 20.0, 1500.0, 350.0, 10.0, key=f"{key}_h")
@@ -462,9 +455,9 @@ def render_empirical(key: str, n_trials: int, seed: int) -> Handover | None:
     m2.metric("Fills to spill", f"{np.mean(samples >= closure - 1e-9):.0%}",
               "of realisations", delta_color="off")
     st.caption(
-        "⚠ Discovery-conditioned, and the spike at the closure height is the filled-to-spill point "
-        "mass. Use it as a prior only where nothing better exists — tab 6.0 sets out what it is and "
-        "is not measuring."
+        "Discovery-conditioned; the spike at the closure height is the filled-to-spill point "
+        "mass. A prior for where nothing better exists. Tab 6.0 sets out what it does and does "
+        "not measure."
     )
     return Handover(DepthDistribution.from_samples(samples), 1.0,
                     f"NCS fit, closure {closure:,.0f} m at {burial:,.0f} m")
@@ -539,9 +532,9 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
                for suffix in ("fluid", "t", "theta", "rs", "rr", "rw", "rh", "net"))
     if not have:
         st.info(
-            "**The top seal is not on its calculator, so there are no inputs to copy.** Open "
-            "*Top seal (capillary)* above and set it to *From seal capacity* first — or compute "
-            "this one on its own with *From seal capacity* here."
+            "The top seal is not on its calculator, so there are no inputs to copy. Either set "
+            "Top seal (capillary) above to From seal capacity, or compute this one on its own "
+            "with From seal capacity here."
         )
         return None
 
@@ -572,13 +565,13 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
         return None
 
     st.markdown(
-        "**Taken from the top seal, unchanged.** Same shale, same fluids, same physics — edit it "
-        "above and this follows.\n\n"
-        f"- pore-throat radius **{read('rs')[0]:g} – {read('rs')[1]:g} µm**\n"
-        f"- temperature **{read('t')[0]:,.0f} – {read('t')[1]:,.0f} °C**, "
-        f"contact angle **{read('theta')[0]:,.0f} – {read('theta')[1]:,.0f}°**\n"
-        f"- {read('fluid').lower()} at **{read('rh')[0]:g} – {read('rh')[1]:g} g/cm³** against "
-        f"water at **{read('rw')[0]:g} – {read('rw')[1]:g} g/cm³**"
+        "Taken from the top seal, unchanged: same shale, same fluids, same physics. Edits above "
+        "carry through.\n\n"
+        f"- pore-throat radius {read('rs')[0]:g} – {read('rs')[1]:g} µm\n"
+        f"- temperature {read('t')[0]:,.0f} – {read('t')[1]:,.0f} °C, "
+        f"contact angle {read('theta')[0]:,.0f} – {read('theta')[1]:,.0f}°\n"
+        f"- {read('fluid').lower()} at {read('rh')[0]:g} – {read('rh')[1]:g} g/cm³ against "
+        f"water at {read('rw')[0]:g} – {read('rw')[1]:g} g/cm³"
     )
     # What the engine competes on: the capacity, carried down to where this seal actually is.
     limit = capacity + float(thickness)
@@ -590,18 +583,16 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
     m3.metric("P10 limit", f"{np.percentile(limit, 90):,.0f} m",
               f"capacity {np.percentile(capacity, 90):,.0f} m", delta_color="off")
     st.caption(
-        f"**Both numbers are metres of column below the structural apex, and they differ by the "
-        f"reservoir thickness.** The *capacity* is what this shale can hold, which is the top "
-        f"seal's number unchanged. The *limit* is where it bites — {thickness:,.0f} m deeper, "
-        f"because the base seal's crest is {thickness:,.0f} m below the crest everything else in "
-        f"this tool is measured from."
+        f"Both numbers are metres of column below the structural apex, and they differ by the "
+        f"reservoir thickness. The capacity is what this shale holds, the top seal's number "
+        f"unchanged. The limit is where it applies, {thickness:,.0f} m deeper, because the base "
+        f"seal's crest is that far below the crest the tool measures from."
     )
     st.caption(
-        "⚠ **Identical inputs are not an identical outcome, and the difference is on the "
-        "Correlations sub-tab.** Sampled independently, top and base seal fail at different "
-        "columns in the same realisation, which is a claim that one shale can be tight above and "
-        "leaky below at the same moment. If it is one unit, correlate them — the pairing is "
-        "already listed there, waiting for a number."
+        "Identical inputs are not an identical outcome. Sampled independently, top and base seal "
+        "fail at different columns in the same realisation, which claims that one shale can be "
+        "tight above and leaky below at once. Where it is one unit, the pair should be "
+        "correlated on the Correlations sub-tab, where it is already listed."
     )
     return Handover(DepthDistribution.from_samples(limit), 1.0,
                     f"as top seal +{thickness:,.0f} m — {read('fluid').lower()}, "
@@ -683,18 +674,17 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
     the WellVolPOS export all read what is in it.
     """
     st.markdown(
-        "**The structure the charge has to fill.** Gross rock volume is the trapezoidal integral "
-        "of *top area minus base area* — km² × m is 10⁶ m³, so no conversion factor is needed."
+        "The structure the charge has to fill. Gross rock volume is the trapezoidal integral of "
+        "top area minus base area; km² × m is 10⁶ m³, so no conversion factor is needed."
     )
 
     method = st.radio(
         "How is the structure described?", [SURFACES, THICKNESS], horizontal=True,
         key=AREA_DEPTH_METHOD,
-        help="**Two mapped surfaces** takes a base area for every depth, which is what you have "
-             "when the base reservoir is mapped. **Top surface and a thickness** derives the base "
-             "by shifting the top down a constant gross thickness — the common case, and the same "
-             "construction SCOPE-HC uses, so a prospect carried between the two tools gets the "
-             "same volume.")
+        help="Two mapped surfaces takes a base area for every depth, for a mapped base "
+             "reservoir. Top surface and a thickness derives the base by shifting the top down a "
+             "constant gross thickness: the common case, and the construction SCOPE-HC uses, so "
+             "a prospect carried between the two tools gets the same volume.")
 
     # A reloaded prospect arrives as three flat lists rather than a frame -- the save format
     # holds scalars and sequences, not tables. Rebuilt here, once, before the grid is drawn.
@@ -721,9 +711,9 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
         upload = st.file_uploader(
             "Import an area–depth table (.csv)", type=["csv"], key="charge_ad_upload",
             help="One row per mapped depth, with a depth and a top area. A base area column is "
-                 "used if present and ignored under *top surface and a thickness*. Column "
-                 "spellings are matched loosely — `TVDSS`, `Top area (km2)` and similar all work — "
-                 "because these come out of mapping software and nobody renames them by hand.")
+                 "used if present and ignored under top surface and a thickness. Column "
+                 "spellings are matched loosely (`TVDSS`, `Top area (km2)` and similar), since "
+                 "these come out of mapping software.")
     with c2:
         thickness = st.number_input(
             "Gross reservoir thickness (m)", 0.0, 2000.0, 50.0, 5.0,
@@ -742,14 +732,14 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
         try:
             imported = ch.AreaDepthTable.from_csv(upload.getvalue())
         except (ValueError, UnicodeDecodeError) as exc:
-            st.error(f"**That file could not be read.** {exc}")
+            st.error(f"The file could not be read. {exc}")
         else:
             st.session_state[AREA_DEPTH_ROWS] = pd.DataFrame(
                 {"Depth (m TVDSS)": imported.depths_m,
                  "Top area (km²)": imported.top_area_km2,
                  "Base area (km²)": imported.base_area_km2})
             st.session_state["charge_ad_upload_name"] = upload.name
-            st.success(f"Read {imported.depths_m.size} rows from **{upload.name}**.")
+            st.success(f"Read {imported.depths_m.size} rows from {upload.name}.")
             st.rerun()
 
     columns = ["Depth (m TVDSS)", "Top area (km²)"] + (
@@ -764,7 +754,7 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
     try:
         table = _table_from_rows(edited, method, float(thickness))
     except ValueError as exc:
-        st.error(f"**This table cannot be integrated.** {exc}")
+        st.error(f"This table cannot be integrated. {exc}")
         return None
 
     s1, s2, s3 = st.columns(3)
@@ -791,14 +781,14 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
         height=430, margin=dict(t=44), legend=dict(orientation="h", y=-0.22))
     st.plotly_chart(fig, width="stretch", key="area_depth_charge")
     st.caption(
-        f"**Two readings on one depth axis.** Solid lines are area against depth, on the bottom "
+        f"Two readings on one depth axis. Solid lines are area against depth, on the bottom "
         f"axis; the dashed line is the rock volume accumulated from the apex down, on the top "
-        f"axis. The charge calculation below is one lookup on that dashed curve — it converts the "
-        f"charge volume into a pore volume and reads off the depth where the structure has held "
-        f"that much."
-        + (f"\n\n**The base surface is derived**, not mapped: the top shifted down "
+        f"axis. The charge calculation below is one lookup on the dashed curve: it converts the "
+        f"charge volume into a pore volume and reads off the depth at which the structure has "
+        f"held that much."
+        + (f"\n\nThe base surface is derived, not mapped: the top shifted down "
            f"{thickness:,.0f} m. On the shipped example that reproduces the mapped base exactly, "
-           f"which is a useful check that the two methods agree."
+           f"a check that the two methods agree."
            if method == THICKNESS else "")
     )
     return table
@@ -888,12 +878,12 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
     exactly the case for competing them rather than picking the one that sounds most likely.
     """
     st.markdown(
-        "`H = (S_Hmin − P_p) / (grad_w − grad_h)` — Grant (2020), eq. 8.\n\n"
-        "The trap can take **`S_Hmin − P_p`** more bar at its crest before the seal hydrofractures. "
-        "A buoyant column raises the crest pressure above the aquifer's by `grad_w − grad_h` per "
-        "metre, so that headroom divided by the excess is how many metres fit. Tensile strength is "
-        "taken as zero and folded into `S_Hmin`: natural flaws and pre-existing sealed fractures "
-        "make an intact rock's tensile strength the wrong number to use."
+        "`H = (S_Hmin − P_p) / (grad_w − grad_h)`, Grant (2020) eq. 8.\n\n"
+        "The trap takes `S_Hmin − P_p` more bar at its crest before the seal hydrofractures. A "
+        "buoyant column raises the crest pressure above the aquifer's by `grad_w − grad_h` per "
+        "metre, so that headroom divided by the excess is the column that fits. Tensile strength "
+        "is taken as zero and folded into `S_Hmin`: natural flaws and pre-existing sealed "
+        "fractures make an intact rock's tensile strength the wrong number."
     )
 
     crest = _crest_depth_m()
@@ -903,10 +893,10 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
         (float(round(crest * HYDROSTATIC_BAR_PER_M - 5)),
          float(round(crest * HYDROSTATIC_BAR_PER_M + 5))), 1.0,
         key=f"{key}_pp",
-        help=f"From an MDT, RFT or a pressure model, at **{crest:,.0f} m** — the crest from tab "
-             f"2.0. Defaulted at a hydrostatic {HYDROSTATIC_BAR_PER_M:.3f} bar/m; a prospect with "
-             f"any overpressure sits above that, and overpressure is what makes this mechanism "
-             f"bite at all.")
+        help=f"From an MDT, RFT or a pressure model, at {crest:,.0f} m, the crest from tab 2.0. "
+             f"Defaulted at a hydrostatic {HYDROSTATIC_BAR_PER_M:.3f} bar/m. A prospect with "
+             f"overpressure sits above that, and overpressure is what makes this mechanism "
+             f"apply at all.")
     s_hmin = c2.slider(
         "Minimum horizontal stress S_Hmin at the crest (bar)", 0.0, 1500.0,
         (float(round(crest * FRACTURE_BAR_PER_M - 10)),
@@ -914,18 +904,18 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
         key=f"{key}_shmin",
         help="From the lower envelope of regional leak-off tests (Gaarenstroom et al. 1993), from "
              "a pore-pressure/stress coupling model, or from an offset structure known to be "
-             "leaking. The *lower* envelope, not the mean: a seal fails at its weakest point.")
+             "leaking. The lower envelope, not the mean: a seal fails at its weakest point.")
 
     c3, c4 = st.columns(2)
     rho_w = c3.slider(
         "Water density (g/cm³)", 0.95, 1.20, (1.00, 1.10), 0.01, key=f"{key}_rw",
-        help="**Formation water at reservoir conditions.** Only the contrast with the hydrocarbon "
-             "matters here — it is what converts spare pressure into metres.")
+        help="Formation water at reservoir conditions. Only the contrast with the hydrocarbon "
+             "matters here; it converts spare pressure into metres.")
     rho_hc = c4.slider(
         "HC density (g/cm³)", 0.10, 1.00, (0.70, 0.85), 0.01, key=f"{key}_rh",
-        help="**In situ, at reservoir pressure and temperature.** Typical: gas 0.15–0.35, live oil "
-             "0.60–0.85. A lighter fluid buoys harder, so the same headroom holds a shorter column "
-             "of gas than of oil — the opposite way round from how it feels.")
+        help="In situ, at reservoir pressure and temperature. Typical: gas 0.15–0.35, live oil "
+             "0.60–0.85. A lighter fluid buoys harder, so the same headroom holds a shorter "
+             "column of gas than of oil.")
 
     try:
         inputs = seals.MechanicalSealInputs(s_hmin_bar=s_hmin, pore_pressure_bar=p_pore,
@@ -943,13 +933,13 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
         col.metric(f"{label} column", f"{np.percentile(column, p):,.0f} m", delta_color="off")
 
     st.caption(
-        f"At **{crest:,.0f} m** those are gradients of "
-        f"**{np.mean(p_pore) / crest:.3f} bar/m** pore pressure "
+        f"At {crest:,.0f} m those are gradients of "
+        f"{np.mean(p_pore) / crest:.3f} bar/m pore pressure "
         f"({np.mean(p_pore) / crest / seals.EMW_PER_BAR_PER_M:.2f} s.g. equivalent mud weight) and "
-        f"**{np.mean(s_hmin) / crest:.3f} bar/m** minimum stress "
+        f"{np.mean(s_hmin) / crest:.3f} bar/m minimum stress "
         f"({np.mean(s_hmin) / crest / seals.EMW_PER_BAR_PER_M:.2f} s.g.). "
-        "Worth reading back: a pore-pressure gradient much above 0.105 bar/m is overpressure, and "
-        "overpressure is the whole reason this mechanism ever controls a column."
+        "A pore-pressure gradient much above 0.105 bar/m is overpressure, and overpressure is "
+        "the reason this mechanism controls a column at all."
     )
 
     # **Say when it cannot bite.** A normally pressured trap at two kilometres has hundreds of bar
@@ -961,11 +951,11 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
     median = float(np.percentile(column, 50))
     if relief and median > 3.0 * relief:
         st.info(
-            f"**This trap is nowhere near its fracture limit.** {headroom:,.0f} bar of headroom is "
-            f"about {median:,.0f} m of column, against roughly {relief:,.0f} m of structural "
-            f"relief — the mechanism cannot control the contact here and will sit far to the right "
-            f"of every other curve on tab 4.0. That is a finding, not a fault: it says the trap "
-            f"fails capillary or geometrically, if at all, and never mechanically. It bites in "
+            f"This trap is far from its fracture limit. {headroom:,.0f} bar of headroom is about "
+            f"{median:,.0f} m of column, against roughly {relief:,.0f} m of structural relief, so "
+            f"the mechanism cannot control the contact here and sits far to the right of every "
+            f"other curve on tab 4.0. That is a finding: the trap fails capillary or "
+            f"geometrically, if at all, and not mechanically. The mechanism applies in "
             f"overpressured sections, where the headroom is tens of bar rather than hundreds."
         )
 
@@ -973,12 +963,12 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
                                            float(np.mean(rho_w)), float(np.mean(rho_hc)), median),
                     width="stretch", key=f"{key}_pd_fig")
     st.caption(
-        "**The P50 realisation as a pressure–depth plot**, the frame this mechanism is read in "
-        "(Grant 2020, fig. 5c). The aquifer runs through the crest pressure at the water gradient. "
-        "The hydrocarbon leg leaves it at the contact and climbs the shallower hydrocarbon "
-        "gradient, so the gap between the two lines is buoyancy. The column is the depth at which "
-        "that gap has grown enough for the crest pressure to reach `S_Hmin` — where the "
-        "hydrocarbon line meets the stress marker. Anything deeper parts the seal."
+        "The P50 realisation as a pressure–depth plot, the frame this mechanism is read in "
+        "(Grant 2020, fig. 5c). The aquifer runs through the crest pressure at the water "
+        "gradient. The hydrocarbon leg leaves it at the contact and climbs the shallower "
+        "hydrocarbon gradient, so the gap between the two lines is buoyancy. The column is the "
+        "depth at which that gap has grown enough for the crest pressure to reach `S_Hmin`, "
+        "where the hydrocarbon line meets the stress marker. Anything deeper parts the seal."
     )
 
     return Handover(DepthDistribution.from_samples(column), 1.0,

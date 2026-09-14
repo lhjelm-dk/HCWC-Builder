@@ -91,19 +91,16 @@ def render() -> None:
     st.text_input("Prospect name", key="prospect_name")
 
     if st.session_state.pop("_loaded_name", None):
-        st.success("Prospect loaded. Every input below, and every limit and calculator on tab 3.0, "
-                   "is as it was saved.")
+        st.success("Prospect loaded. Every input below, and every limit and calculator on tab "
+                   "3.0, is as saved.")
 
     with st.expander("Save or load this prospect — or load the worked example"):
         st.markdown(
-            "**Everything lives in the browser session until you save it** — close the tab and an "
-            "hour of eliciting limits is gone. A saved file carries every input you touched, "
-            "including each calculator's own settings, so a reloaded prospect recomputes from the "
-            "numbers it was computed from.\n\n"
-            "**The file stores inputs, not answers.** Reopened after the tool changes it gives the "
-            "*new* answer to the *old* question, which is what a record of an assessment should do. "
-            "Storing the outputs would produce a file that quietly disagreed with the tool that "
-            "opened it."
+            "Inputs are held in the browser session until saved; closing the tab discards them. A "
+            "saved file carries every input, including each calculator's settings, so a "
+            "reloaded prospect recomputes from the numbers it was computed from.\n\n"
+            "The file stores inputs, not results. Reopened after the tool has changed, it gives the "
+            "current answer to the recorded question."
         )
         s1, s2 = st.columns(2)
         s1.download_button(
@@ -119,11 +116,9 @@ def render() -> None:
         if example.exists():
             st.markdown("---")
             st.markdown(
-                "**New here?** Load the worked example instead of reading twelve limit blocks "
-                "cold. It is a 350 m closure at 2 050 m with a **120 m assessment minimum**, so "
-                "the risk criterion actually bites, and its top seal is **computed** rather than "
-                "typed — which is the fastest way to see what the seal calculator does. Three "
-                "limits share control of the contact, so tab 4.0's ranking has something to say."
+                "The worked example is a 350 m closure at 2 050 m with a 120 m assessment minimum, "
+                "so the risk criterion applies. Its top seal is computed rather than typed, and three "
+                "limits share control of the contact, so the ranking on tab 3.0 is informative."
             )
             if st.button("Load the worked example", width="stretch",
                          key="load_example"):
@@ -149,9 +144,9 @@ def render() -> None:
     # ------------------------------------------------------------------ geometry
     theme.heading(TAB, "1 · Geometry")
     st.markdown(
-        "The apex is the **datum**: every capacity limit on tab 3.0 is measured downward from it. "
-        "The spill point and the burial depth are stated here once and reused — the spill seeds "
-        "the closure limit's range, the burial depth sets the benchmark comparison and the seal "
+        "The apex is the datum: every capacity limit on tab 3.0 is measured downward from it. "
+        "The spill point and the burial depth are stated once here. The spill seeds the closure "
+        "limit's range; the burial depth sets the benchmark comparison and the seal "
         "calculator's temperature."
     )
     # Seeded once, then owned by the widget. Passing a `value=` *and* a `key=` every run makes
@@ -163,15 +158,16 @@ def render() -> None:
     a1, a2, a3 = st.columns(3)
     apex_lo = a1.number_input(
         "Apex, P1 (m TVDSS)", 0.0, 10000.0, step=10.0, key="apex_p1",
-        help="The 1 % point of the apex depth — the shallow end. Narrow unless the depth "
-             "conversion is genuinely poor.")
+        help="The 1 % point of the apex depth, the shallow end. Narrow unless the depth "
+             "conversion is poor.")
     apex_hi = a2.number_input(
         "Apex, P99 (m TVDSS)", 0.0, 10000.0, step=10.0, key="apex_p99",
-        help="The 99 % point — the deep end. The gap between this and P1 is the depth-conversion uncertainty on the crest, and it is carried through every realisation rather than fixed.")
+        help="The 99 % point, the deep end. The gap to P1 is the depth-conversion uncertainty on "
+             "the crest, and it is carried through every realisation rather than fixed.")
     spill = a3.number_input(
         "Spill point, as mapped (m TVDSS)", 0.0, 10000.0, step=10.0, key="spill_input",
-        help="The mapped synclinal spill. Its **uncertainty** is a limit on tab 3.0 → Closure, and "
-             "that limit's range opens around this value, so it is entered once.")
+        help="The mapped synclinal spill. Its uncertainty is a limit on tab 3.0 → Closure, "
+             "and that limit's range opens around this value.")
 
     if apex_hi <= apex_lo:
         st.error("The apex P99 must be deeper than its P1.")
@@ -194,64 +190,58 @@ def render() -> None:
     st.session_state.setdefault("burial_input", float(apex_mid))
     burial = b1.number_input(
         "Burial depth (m TVDSS)", 0.0, 10000.0, step=25.0, key="burial_input",
-        help="Defaults to the apex. Edmundson's burial depth is a reservoir/crest depth — it "
-             "averages 2 442 m against a mean trap height of 212 m in that dataset — so the apex "
-             "is the right default, but set it to mid-reservoir if that is what you mean.")
+        help="Defaults to the apex. Edmundson's burial depth is a crest depth (mean 2 442 m "
+             "against a mean trap height of 212 m in that dataset), so the apex is the appropriate "
+             "default. Mid-reservoir is the alternative where that is the intended reference.")
     st.session_state["burial_depth"] = float(burial)
     st.session_state.setdefault("gradient_range", GRADIENT_C_PER_KM)
     g_lo, g_hi = b2.slider(
         "Geothermal gradient (°C/km)", 15.0, 60.0, step=0.5, key="gradient_range",
-        help="The uncertain part of the temperature, so it is stated as a range rather than a "
-             "number. 25–40 spans normal to hot; the NCS default sits high on purpose, because "
-             "70–90 °C at about 2 050 m is ordinary there. Moving it moves the seal calculator's "
-             "temperature on tab 3.0 with it.")
+        help="Stated as a range because it is the uncertain part of the temperature. 25–40 spans "
+             "normal to hot; the NCS default is high because 70–90 °C at about 2 050 m is "
+             "ordinary there. It sets the seal calculator's temperature on tab 3.0.")
     t_lo, t_hi = temperature_range(burial)
     b2.markdown(
         f"<div style='margin-top:-0.4rem;font-size:0.9rem'>"
-        f"<b>Implied reservoir temperature &nbsp;{t_lo:,.0f}–{t_hi:,.0f} °C</b>"
+        f"Implied reservoir temperature &nbsp;{t_lo:,.0f}–{t_hi:,.0f} °C"
         f"<span style='opacity:0.7'> &nbsp;— {g_lo:.1f}–{g_hi:.1f} °C/km from "
         f"{SURFACE_C:.0f} °C surface</span></div>", unsafe_allow_html=True)
     st.caption(
-        f"**Structural relief {spill - apex_mid:,.0f} m** at the mid apex. The temperature seeds "
-        f"the seal calculator on tab 3.0 → Retention, so a deep prospect cannot be assessed with a "
-        f"shallow prospect's seal — interfacial tension falls with temperature, so deeper is a "
-        f"weaker seal. **Move the gradient and that default moves with it**; the seal tab can still "
-        f"override the temperature outright if it is measured."
+        f"Structural relief {spill - apex_mid:,.0f} m at the mid apex. The temperature seeds the "
+        f"seal calculator on tab 3.0 → Retention; interfacial tension falls with temperature, "
+        f"so a deeper prospect has a weaker seal. The seal block may override the temperature "
+        f"where it is measured."
     )
 
     # ------------------------------------------------------------------ element risk
     theme.heading(TAB, "2 · Element risk")
     st.markdown(
-        "**Play** is the chance the element works anywhere in this play; **conditional** is the "
-        "chance it works *here*, given the play does. Their product is that element's chance, and "
-        "the four products multiply to P(G). It is the split **E-POS** produces — if your number "
-        "is already one chance per element, put it in Play and leave Conditional at 1.00.\n\n"
-        "These do not move the contact "
-        "— they scale the chance of success *at* each depth on tab 4.0, and they are what makes the "
-        "derived per-element curves a risk statement rather than a geometry statement."
+        "Play is the chance the element works anywhere in the play; conditional is the chance it "
+        "works here, given that it does. Their product is the element chance, and the four "
+        "products multiply to P(G). This is the split E-POS produces; a single chance per element "
+        "goes in Play with Conditional at 1.00.\n\n"
+        "These do not move the contact. They scale the chance of success at each depth on tab 4.0."
     )
     st.info(
-        "**These must be the chance the element works *at the crest*, for the minimum volume — not "
-        "the chance it holds the column you are hoping for.** Beha et al. (2012) is written about "
-        "this exact error: a trapping element that fails *down-dip* from the crest does not reduce "
-        "the chance of finding hydrocarbons at the location, it reduces the chance of a **deeper "
-        "contact**. Folding it into the chance chain as well as into the limits on tab 3.0 counts it "
-        "twice, which understates POS and — their finding — **overstates volume**.\n\n"
-        "So: Retention here is *does the seal hold anything at all*. **How much** it holds is the "
-        "top-seal capacity on tab 3.0. If your E-POS Retention number already means the full column, "
-        "it belongs on tab 3.0 instead of here."
+        "The chances here are for the element working at the crest, for the minimum volume. A "
+        "trapping element that fails down-dip from the crest does not reduce the chance of "
+        "hydrocarbons at the location; it reduces the chance of a deeper contact (Beha et al. "
+        "2012). Such mechanisms are limits on tab 3.0. Counting them here as well understates POS "
+        "and overstates volume.\n\n"
+        "Retention here is whether the seal holds anything. How much it holds is the top-seal "
+        "capacity on tab 3.0. An E-POS Retention number that already means the full column belongs "
+        "on tab 3.0."
     )
 
     with st.expander("Take these from E-POS"):
         st.markdown(
             "Upload the prospect file E-POS saves, or the flat JSON form "
             "`{\"Charge\": 0.9, …}`.\n\n"
-            "The file's `# Classic POS` row is the contract, and it carries **one number per "
-            "pillar** rather than a play/conditional split — so an import lands in **Play** with "
-            "**Conditional** left at 1.00, and the product is exactly the number E-POS booked. "
-            "The ESL rollup is deliberately not recomputed here: it combines belief masses up a "
-            "play × conditional tree with an uncertainty stance applied once at the top, and a "
-            "second copy of that logic would drift from E-POS's without anyone noticing."
+            "The file's `# Classic POS` row carries one number per element rather than a "
+            "play/conditional split, so an import lands in Play with Conditional at 1.00 and the "
+            "product equals the number E-POS booked. The ESL rollup is not recomputed here: it "
+            "combines belief masses up a play × conditional tree with an uncertainty stance "
+            "applied once at the top, and a second copy of that logic would drift from E-POS's."
         )
         upload = st.file_uploader("E-POS prospect (.csv) or element-POS (.json)",
                                   type=["csv", "json"], key="epos_upload")
@@ -305,25 +295,20 @@ def render() -> None:
         f"color:{theme.shade_hex(accent, -0.45)};font-weight:700'>Combined element chance &nbsp;P(G)</span>"
         f"<div style='font-size:2rem;font-weight:700;line-height:1.15;"
         f"color:{theme.shade_hex(accent, -0.5)}'>{product:.1%}</div>"
-        f"<span style='font-size:0.85rem;opacity:0.8'>the <b>product</b> of the four above — "
-        f"all four elements working <b>at the crest</b></span></div>",
+        f"<span style='font-size:0.85rem;opacity:0.8'>the product of the four above: "
+        f"all four elements working at the crest</span></div>",
         unsafe_allow_html=True)
 
     st.caption(
-        f"**What this number is, and what it is not.** `P(G)` is the chance that every element "
-        f"works **at the crest**: charge arrived, there is a closure, there is reservoir, there is "
-        f"a seal. It carries no statement about how far *down* the column reaches.\n\n"
-        f"**The geological POS of this prospect is not this number.** In this tool success is "
-        f"defined as a column of at least `h_min`, so\n\n"
+        f"P(G) is the chance that every element works at the crest: charge arrived, there is a "
+        f"closure, there is reservoir, there is a seal. It carries no statement about how far down "
+        f"the column reaches.\n\n"
+        f"The geological POS of the prospect is not this number. Success is a column of at least "
+        f"`h_min`, so\n\n"
         f"`Geological POS = P(G) × P(column ≥ h_min | G)`\n\n"
-        f"and tab 4.0 shows both terms and their product. The second comes from the competing "
+        f"Tab 4.0 shows both terms and their product. The second term comes from the competing "
         f"limits; taken down structure rather than read at one threshold, it is the depth-risk "
-        f"curve on tab 4.0's second sub-tab.\n\n"
-        f"**Why the split falls exactly there.** A trapping element that fails *below* the crest "
-        f"does not reduce the chance of finding hydrocarbons — it reduces the chance of a *deeper "
-        f"contact*. Elicit these four for the crest only; seal capacity, spill and fault leakage "
-        f"belong on tab 3.0, where they move the contact. Folding them in here would count them "
-        f"twice and, because volume is conditioned on the chance, **overstate volume**."
+        f"curve on tab 4.0's second sub-tab."
     )
 
     # ------------------------------------------------------------------ DHI
@@ -336,18 +321,17 @@ def render() -> None:
     st.session_state.setdefault("dhi_toggle", True)
     dhi_on = st.toggle(
         "This is a DHI prospect", key="dhi_toggle",
-        help="On by default. Turn it off for a prospect with no amplitude support: tab 5.0 then "
-             "says so and nothing else changes, because a DHI never edits the geological model.")
+        help="On by default. Off for a prospect with no amplitude support: tab 5.0 then says so "
+             "and nothing else changes, because a DHI never edits the geological model.")
     st.session_state["dhi_on"] = bool(dhi_on)
     st.caption(
-        "With this on, two further tabs become live: **Results + DHI** and **Depth risk + DHI**, "
-        "carrying the evidence inputs and the Bayesian update. Tab 4.0 stays **purely "
-        "geological** either way — a DHI never edits the geological model, and E-POS's resolution "
-        "ceiling is why: a fluid indicator senses whether a reservoir exists and what fills it, "
-        "not *which* of charge, closure or retention failed."
+        "With this on, Results + DHI and Depth risk + DHI become live, carrying the evidence "
+        "inputs and the Bayesian update. Tab 4.0 stays purely geological either way: a fluid "
+        "indicator senses whether a reservoir exists and what fills it, not which of charge, "
+        "closure or retention failed."
         if dhi_on else
-        "The geological model on tabs 3.0 to 4.0 stands on its own. Turn this on to add a seismic "
-        "amplitude as evidence, on two further tabs."
+        "The geological model on tabs 3.0 to 4.0 stands on its own. With this on, a seismic "
+        "amplitude enters as evidence on two further tabs."
     )
 
     # ------------------------------------------------------------------ well control
@@ -357,17 +341,16 @@ def render() -> None:
     # inference -- so it sits beside the geometry it constrains rather than behind the seismic.
     theme.heading(TAB, "4 · Offset well control")
     st.markdown(
-        "**A penetration in this closure is the sharpest evidence there is about the contact.** A "
-        "water leg says the contact is above it; hydrocarbons say it is below. Either enters as "
-        "evidence on tab 5.0 — reweighting the realisations tab 3.0 produced, never as an extra "
-        "limit, because a well *observes* the outcome of the mechanisms already modelled rather "
-        "than adding one."
+        "A penetration in this closure is the sharpest evidence available about the contact. A "
+        "water leg places the contact above it; hydrocarbons place it below. Either enters on tab "
+        "5.0 as evidence that reweights the realisations from tab 3.0, not as an additional "
+        "limit: a well observes the outcome of the mechanisms already modelled."
     )
     st.session_state.setdefault("well_toggle", False)
     well_on = st.toggle(
         "This closure has been penetrated", key="well_toggle",
         help="An appraisal, a nearby well through the same closure, or an earlier failure on the "
-             "same structure. Leave it off for an untested prospect.")
+             "same structure. Off for an untested prospect.")
     st.session_state["well_on"] = bool(well_on)
     if well_on:
         w1, w2 = st.columns(2)
@@ -389,32 +372,30 @@ def render() -> None:
         c1, c2 = st.columns(2)
         c1.slider(
             "Depth-tie uncertainty σ (m)", 1.0, 100.0, 30.0, 1.0, key="well_in_sigma",
-            help="**Not the well's own depth error**, which is a metre or two. This is the error "
-                 "in tying that depth to the mapped surface the apex is measured from — the same "
-                 "depth conversion that makes the apex a range rather than a number.")
+            help="Not the well's own depth error, which is a metre or two, but the error in "
+                 "tying that depth to the mapped surface the apex is measured from: the same depth "
+                 "conversion that makes the apex a range.")
         c2.slider(
             "Chance the well samples this accumulation", 0.05, 1.0, 0.60, 0.05,
             key="well_in_connected",
-            help="The fluid call is reliable; its *relevance* is what is uncertain. A different "
-                 "fault block, a different compartment, a different sand. Below 1 on purpose: it "
-                 "is the floor that stops one penetration ruling a contact out entirely.")
+            help="The fluid call is reliable; its relevance is uncertain: a different fault block, "
+                 "compartment or sand. Below 1 so that one penetration cannot rule a contact out "
+                 "entirely.")
 
         if use_hc and use_water and not hc_depth < water_depth:
             st.error(
-                f"**The hydrocarbons ({hc_depth:,.0f} m) must be above the water "
-                f"({water_depth:,.0f} m).** Reversed, this describes two accumulations rather than "
-                f"one contact."
+                f"The hydrocarbons ({hc_depth:,.0f} m) must be above the water ({water_depth:,.0f} m). "
+                f"Reversed, this describes two accumulations rather than one contact."
             )
         elif use_hc:
             st.warning(
-                "**Hydrocarbons proven in this closure means the prospect is a discovery**, which "
-                "is a much larger statement than anything about depth. This tool uses the depth "
-                "only — it does **not** touch the element chances above, because a proven "
-                "accumulation makes those a statement about an appraisal rather than a prospect. "
-                "That is a judgement to make deliberately, not a side effect of typing a depth."
+                "Hydrocarbons proven in this closure make the prospect a discovery, which is a larger "
+                "statement than one about depth. This tool uses the depth only and does not change the "
+                "element chances above; a proven accumulation makes those a statement about an appraisal "
+                "rather than a prospect, and that change is a separate decision."
             )
         if not use_hc and not use_water:
-            st.info("Tick at least one. A penetration that established neither fluid is not "
+            st.info("At least one is required. A penetration that established neither fluid is not "
                     "evidence about the contact.")
 
     # ------------------------------------------------------------------ run settings
@@ -430,50 +411,44 @@ def render() -> None:
     st.session_state.setdefault("min_column_input", 5.0)
     min_column = r0.number_input(
         "Assessment minimum (m column)", 0.0, 2000.0, step=5.0, key="min_column_input",
-        help="The minimum-volume risking criterion, stated as a **column height** rather than a "
-             "volume — Hood's reason being that only a column height links to seal capacity. The "
-             "chance is then F(h) read at this value, the same object as the contact distribution. "
-             "Defaults to 5 m as a physical floor, not as a commercial threshold: set it to the "
-             "smallest column that would make YOUR well a discovery.")
+        help="The minimum-volume risking criterion, stated as a column height because only a "
+             "column height links to seal capacity (Hood 2019). The chance is F(h) read at this "
+             "value. Defaults to 5 m as a physical floor, not a commercial threshold; the intended "
+             "value is the smallest column that would make the well a discovery.")
     n_trials = r1.number_input(
         "Realisations", 1_000, 100_000, 10_000, 1_000, key="n_trials_input",
-        help="At 10 000, P99.5 sits on 50 realisations, which is enough to be stable; at 1 000 it "
-             "is five, which is not. **The ceiling is 100 000**, which puts 500 there — past the "
-             "point where more trials tell you anything, and short of where one cached run costs "
-             "180 MB on a shared server.")
+        help="At 10 000, P99.5 rests on 50 realisations, which is stable; at 1 000 it rests on "
+             "five, which is not. The ceiling of 100 000 puts 500 there, beyond which more trials "
+             "add little, and one cached run costs 180 MB on a shared server.")
     seed = r2.number_input(
-        "Random seed", 0, 2**31 - 1, 20260825, 1, key="seed_input", help="Fixed by default so figures regenerate identically. An unfixed seed makes every "
-             "number on every tab move between runs, which is indefensible in a document "
-             "someone will quote from.")
+        "Random seed", 0, 2**31 - 1, 20260825, 1, key="seed_input",
+        help="Fixed by default so figures regenerate identically. An unfixed seed moves every "
+             "number between runs, which a quoted document cannot carry.")
 
     st.session_state["min_column"] = float(min_column)
     st.session_state["n_trials"] = int(n_trials)
     st.session_state["seed"] = int(seed)
 
     st.caption(
-        "**This is a column height, not a depth, and it is measured from the apex.** The contact "
-        "it names is `apex + h_min`; at `h_min = 0` that *is* the apex, which is a column of "
-        "nothing. **Nothing in the limits produces this number** — the limits say how deep the "
-        "column could reach, and this says how deep it must reach to be worth drilling. They meet "
-        "at one point: the chance is the exceedance curve read here.\n\n"
-        "**Why the default is 5 m rather than 0.** A column of a metre or two cannot be tested. A "
-        "testing tool cannot be placed on a drill string to that precision, so a contact you "
-        "cannot straddle is not a discovery whatever the model says. Five is a physical floor and "
-        "**not a commercial threshold** — most operators will want tens of metres, and some will "
-        "want a rate rather than a height. Set it to the smallest column that would make *your* "
-        "well a discovery, and say which definition you used when the number travels."
+        "A column height, not a depth, measured from the apex. The contact it names is "
+        "`apex + h_min`; at `h_min = 0` that is the apex, a column of nothing. The limits say how "
+        "deep the column could reach; this says how deep it must reach to count. The chance is "
+        "the exceedance curve read here.\n\n"
+        "The default is 5 m rather than 0 because a column of a metre or two cannot be tested: "
+        "a testing tool cannot be placed on a drill string to that precision. Five is a physical "
+        "floor, not a commercial threshold; most operators will want tens of metres, and some a "
+        "rate rather than a height. The definition used should travel with the number."
     )
     if min_column == 0:
         st.warning(
-            "**At zero every realisation counts as a success.** The column term reads 100 % by "
-            "construction, so the prospect chance collapses to the element product alone, and the "
-            "DHI likelihood ratio is undefined because there is no failure set to compare "
-            "against. Tab 4.0 will refuse to print a chance until this is above zero."
+            "At zero every realisation counts as a success. The column term reads 100 % by "
+            "construction, the prospect chance collapses to the element product, and the DHI "
+            "likelihood ratio is undefined. Tab 4.0 does not print a chance until this is above zero."
         )
     tail = n_trials * 0.005
     (st.success if tail >= 20 else st.warning)(
-        f"P99.5 would sit on {tail:,.0f} realisations."
-        + ("" if tail >= 20 else "  Raise the trial count — that estimate will move between runs.")
+        f"P99.5 rests on {tail:,.0f} realisations."
+        + ("" if tail >= 20 else " Raise the trial count; that estimate will move between runs.")
     )
 
     n.table(
@@ -483,9 +458,9 @@ def render() -> None:
             {"Property": "Structural relief", "Value": f"{spill - apex_mid:,.0f} m"},
             {"Property": "Burial depth", "Value": f"{burial:,.0f} m TVDSS"},
             {"Property": "Implied temperature", "Value": f"{t_lo:,.0f}–{t_hi:,.0f} °C"},
-            {"Property": "Geological POS", "Value": f"{product:.1%}"},
+            {"Property": "Element chance P(G)", "Value": f"{product:.1%}"},
             {"Property": "Assessment minimum", "Value": f"{min_column:,.0f} m column"},
             {"Property": "DHI", "Value": "yes" if dhi_on else "no"},
         ]),
-        "The prospect as stated. Every number here is used somewhere downstream and none of it is "
-        "entered twice.", height=320)
+        "The prospect as stated. Every number here is used downstream and none is entered twice.",
+        height=320)

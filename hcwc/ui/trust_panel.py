@@ -68,8 +68,8 @@ def stop_card(check: trust.Check) -> None:
     st.markdown(_row(check), unsafe_allow_html=True)
 
 
-def render(n, result, *, posterior=None, tab: int, heading: str = "6 · How much should you "
-                                                                 "trust this run?") -> list:
+def render(n, result, *, posterior=None, tab: int,
+           heading: str = "6 · Run checks") -> list:
     """Draw the panel and return the checks, so a caller can reuse them without recomputing."""
     checks = trust.review(result, posterior=posterior, other=run.repeat_of(result))
     level, sentence = trust.headline(checks)
@@ -84,16 +84,16 @@ def render(n, result, *, posterior=None, tab: int, heading: str = "6 · How much
     st.markdown("".join(_row(c) for c in checks), unsafe_allow_html=True)
 
     st.caption(
-        "**These checks are about the arithmetic, not the geology.** Nothing here knows whether "
-        "your minimum is sensible or your seal argument is any good — only whether the run "
-        "supports the digits being quoted from it. The geological sanity check is tab 6.0, against "
-        "the empirical record, and it is a different question with a different answer.\n\n"
-        "**A *watch* is not a defect.** It means the number needs a sentence beside it when it "
+        "These checks concern the arithmetic, not the geology. None of them knows whether the "
+        "minimum is sensible or the seal argument sound, only whether the run supports the "
+        "digits quoted from it. The geological check is tab 6.0, against the empirical record, "
+        "and is a different question.\n\n"
+        "A watch is not a defect. It means the number needs a sentence beside it when it "
         "travels: a prospect controlled 80 % by one limit is a legitimate prospect and a "
-        "misleading curve, and the difference is entirely whether anyone said so."
+        "misleading curve, and the difference is whether that was stated."
     )
     if posterior is None:
-        st.caption("The DHI check is not run because no posterior has been built. It appears here "
-                   "once tab 5.0 has one — absent rather than passing, because a check that did not "
-                   "run is not a check that passed.")
+        st.caption("The DHI check is not run because no posterior has been built. It appears "
+                   "once tab 5.0 has one; absent rather than passing, because a check that did "
+                   "not run is not a check that passed.")
     return checks

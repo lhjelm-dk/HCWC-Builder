@@ -45,9 +45,9 @@ OUT = ROOT / "docs" / "figures"
 HMIN = 120.0
 #: The picked flat-event depth the article's DHI section uses, m TVDSS.
 PICK_M = 2250.0
-#: `P(the picked event is the contact | there is hydrocarbon)`, the app's own default.
-#: `p_valid` is this times a ceiling of `P(G)` updated by the amplitude -- never `R/(R+1)`,
-#: which exceeded that ceiling at every strength. See `hcwc/ui/dhi_tab.py`.
+#: `P(the picked event is the contact | G, contact attributes)`, the app's own default. This
+#: *is* `p_valid`: conditional on hydrocarbons, because the realisations it weights are. The
+#: chance of hydrocarbons enters once, through `P(G)` updated by the amplitude, and never here.
 CONTACT_GIVEN_HC = 0.70
 #: The app's own default. Figures are drawn at the count a reader would
 #: reproduce, not at a smoother one.
@@ -264,26 +264,24 @@ def figure_3_survival(result: engine.EngineResult, p_g: float) -> None:
 
 # --------------------------------------------------------------------------- 4
 def _p_valid(p_g: float, r_strength: float) -> float:
-    """The app's construction: a ceiling of `P(G)` updated by the amplitude, times `c`.
+    """`c`, the contact-attribute judgement, and nothing else.
 
-    The ceiling uses the character channel alone. The geometry ratio depends on `p_valid`, so
-    taking the combined ratio here would close a loop -- the same reason the tab does it this way.
+    Until 14 Sep 2026 this multiplied `c` by `P(G)` updated by the amplitude. The engine's
+    realisations are conditional on G, so that put the chance of hydrocarbons inside a term that
+    already assumed it, and the strength reached the geometry posterior twice. The arguments are
+    kept so the ladder below reads as before; neither is used.
     """
-    ceiling = dhi_core.simm_update(p_g, r_strength)
-    return float(np.clip(ceiling * CONTACT_GIVEN_HC, 0.01, 0.99))
+    return float(np.clip(CONTACT_GIVEN_HC, 0.01, 0.99))
 
 
 def figure_4_dhi_update(result: engine.EngineResult, p_g: float) -> None:
     """Prior against posterior, with the effective sample size as the honest accounting.
 
-    **This has to take the app's road, not a shortcut.** A seismic observation reaches the answer
-    through two channels, and only one of them is the reweighting: the *geometry* channel reweights
-    realisations by the pick and the detection function, while the *character* channel updates the
-    prospect chance through E-POS's two-state model. ``CombinedUpdate`` blends the two likelihood
-    ratios with a stated dependence, and the depth curve is then anchored at the assessment
-    minimum -- exactly as ``hcwc/ui/dhi_tab.py`` builds ``pos_curve``. Multiplying a fixed ``P(G)``
-    by the reweighted exceedance instead would drop the character channel entirely, and an absent
-    anomaly would come out looking like no evidence at all.
+    The app's chain, not a shortcut: the *character* channel updates the element chance through
+    E-POS's two-state model, and the *geometry* channel reweights the realisations by the pick
+    and the detection function. The chance is their product, `dhi_core.prospect_pos`, and the
+    depth curve is `P(G | amplitude) × F_post(h)`, which reads the headline at the assessment
+    minimum by identity -- exactly as ``hcwc/ui/dhi_tab.py`` builds ``pos_curve``.
     """
     detection = dhi_core.DetectionFunction()
     strengths = dhi_core.StrengthModel()
@@ -295,12 +293,8 @@ def figure_4_dhi_update(result: engine.EngineResult, p_g: float) -> None:
     prior_pos = p_g * at_min
 
     def curve(post: dhi_core.DhiPosterior, r_strength: float) -> tuple[np.ndarray, float]:
-        combined = dhi_core.CombinedUpdate(prior_pos=prior_pos,
-                                           r_geometry=float(post.r_dhi),
-                                           r_strength=r_strength, dependence=0.5)
-        anchor = max(float(post.exceedance(np.array([HMIN]))[0]), 1e-12)
-        return (combined.posterior_pos * post.exceedance(grid) / anchor,
-                combined.posterior_pos)
+        return (dhi_core.prospect_pos_curve(p_g, r_strength, post, grid),
+                dhi_core.prospect_pos(p_g, r_strength, post))
 
     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(7.4, 3.5), width_ratios=[1.35, 1])
     ax.plot(grid + apex, p_g * prior_f, color=PRIOR_C, lw=2.0, zorder=5)
