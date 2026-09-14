@@ -156,7 +156,8 @@ class TestNoCircledNumeralsSurvive:
 
         root = pathlib.Path(__file__).resolve().parent.parent
         text = (root / "hcwc" / "ui" / "limiters_tab.py").read_text(encoding="utf-8")
-        assert '["A · Charge", "B · Closure", "C · Retention", "D · Correlations"]' in text
+        assert ('["A · Charge", "B · Closure", "C · Retention", "D · Reservoir", '
+                '"E · Correlations"]') in text
 
     def test_the_figures_on_tab_three_ignore_the_letters(self):
         """One sequence for the whole tab, counting straight through A, B, C, D. `Figure 3.4` is the

@@ -152,6 +152,9 @@ ELEMENT_BLURB: dict[Group, str] = {
     Group.CLOSURE: "Where the trap runs out. Mapped surfaces, so these are stated as depths.",
     Group.RETENTION: "What the seals and faults hold. Capacities, so these are stated as column "
                      "heights.",
+    Group.RESERVOIR: "Where the reservoir ends: a base or pinch-out that stops the column. A "
+                     "mapped surface, stated as a depth. Reservoir effectiveness with depth does "
+                     "not move the contact and is entered on tab 4.2, not here.",
 }
 
 
@@ -159,6 +162,7 @@ SUB_TABS: tuple[tuple[str, Group], ...] = (
     ("Charge", Group.CHARGE),
     ("Closure", Group.CLOSURE),
     ("Retention", Group.RETENTION),
+    ("Reservoir", Group.RESERVOIR),
 )
 
 #: Which calculator a limit may be computed from. "empirical" is offered on every limit
@@ -190,12 +194,26 @@ def _span_for(spec: LimitSpec) -> tuple[float, float]:
     return apex + lo, apex + hi
 
 
-def _render_group(group: Group, n_trials: int, seed: int) -> list[Limit]:
+def _reservoir_span() -> tuple[float, float]:
+    """Where an added reservoir base or pinch-out opens: inside the closure, above the spill."""
+    apex = float(np.mean(st.session_state.get("apex", DEFAULT_APEX)))
+    spill = float(st.session_state.get("spill_point", apex + 350.0))
+    return apex + 0.5 * (spill - apex), spill
+
+
+def _render_group(group: Group, n_trials: int, seed: int,
+                  share_slots: dict[str, object] | None = None) -> list[Limit]:
     """Every limit in one risk element, each in its own expander.
 
     The section carries the **element's own colour** from tab 2.0, so the same hue that labels
     Charge there labels it here. Each limit inside gets a *variation* of that hue, never the pure
     one, so the two levels do not compete.
+
+    ``share_slots`` collects one placeholder per limit, drawn at the top of its block, which
+    :func:`render` fills with the limit's current controlling share once the run exists. The
+    ranking figure says the same thing for all limits at once; this puts each limit's number
+    beside the inputs that set it, which is where the question "is this one worth eliciting"
+    is asked.
     """
     theme.element_heading(group.value, group.value, ELEMENT_BLURB.get(group, ""))
     if group is Group.RETENTION:
@@ -211,6 +229,8 @@ def _render_group(group: Group, n_trials: int, seed: int) -> list[Limit]:
 
     for spec, colour in zip(specs, shades):
         with st.expander(f"**{spec.name}**", expanded=spec.expanded or len(specs) == 1):
+            if share_slots is not None:
+                share_slots[spec.name] = st.empty()
             options = list(spec.computed)
             if spec.kind == COLUMN:
                 options.append("empirical")
@@ -235,14 +255,27 @@ def _render_group(group: Group, n_trials: int, seed: int) -> list[Limit]:
             if st.button("Remove this limit", key=f"extra_del_{group.value}_{index}"):
                 extras.pop(index)
                 st.rerun()
+            if share_slots is not None:
+                share_slots[renamed or name] = st.empty()
+            # A reservoir limit is a mapped base or pinch-out, so it opens as a depth; the other
+            # elements' added limits open as columns, as before.
             limit = limit_block.render(
                 renamed or name, group, key=f"extra_{group.value}_{index}",
-                default_kind=COLUMN, span=(100.0, 350.0),
+                default_kind=DEPTH if group is Group.RESERVOIR else COLUMN,
+                span=(100.0, 350.0) if group is not Group.RESERVOIR else _reservoir_span(),
                 colour=theme.PILLAR_COLOURS[group.value])
         if limit is not None:
             built.append(limit)
 
-    if st.button(f"Add another {group.value.lower()} limit", key=f"add_{group.value}"):
+    if not specs and not extras:
+        st.caption(
+            "No reservoir limit is defined. The contact is then never reservoir-controlled and "
+            "the Reservoir element chance from tab 2.0 applies unchanged with depth. A base or "
+            "pinch-out that the column cannot pass is added below."
+        )
+    if st.button(f"Add another {group.value.lower()} limit"
+                 if specs or extras else f"Add a {group.value.lower()} limit",
+                 key=f"add_{group.value}"):
         extras.append(f"{group.value} limit {len(extras) + 1}")
         st.rerun()
 
@@ -350,7 +383,7 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
            f"All realisations, not successes only. At elicitation time the question is what "
            f"controls this closure, and a limit that usually fails the prospect outright is the "
            f"one least suited to a default. The view restricted to successes, and the shift "
-           f"between the two, is on tab 4.0 → Contact and chance §3.")
+           f"between the two, is on tab 4.0 → Contact and chance §5.")
     idle = [name for name, share in ranking if share <= 0.0005]
     if idle:
         st.caption(
@@ -384,21 +417,27 @@ def render() -> None:
     # Letters sit outside that sequence entirely, so they can label a position without claiming one.
     # The figures and tables here go on counting straight through A, B, C, D as one sequence —
     # `Figure 3.4` is the fourth exhibit on this tab wherever it happens to sit.
-    charge_tab, closure_tab, retention_tab, corr_tab = st.tabs(
-        ["A · Charge", "B · Closure", "C · Retention", "D · Correlations"])
+    charge_tab, closure_tab, retention_tab, reservoir_tab, corr_tab = st.tabs(
+        ["A · Charge", "B · Closure", "C · Retention", "D · Reservoir", "E · Correlations"])
     # Names this strip so the stylesheet can colour it by risk element. It used to be picked out by
     # being four sub-tabs long, which was true until tab 5.0 grew a fourth and started wearing these
     # element colours by accident.
-    for _panel in (charge_tab, closure_tab, retention_tab, corr_tab):
+    for _panel in (charge_tab, closure_tab, retention_tab, reservoir_tab, corr_tab):
         with _panel:
             st.markdown(theme.subtab_marker(TAB), unsafe_allow_html=True)
+    # One placeholder per limit, at the top of its block, filled with its controlling share once
+    # the run exists. The ranking at the top of the tab says it for all limits at once; this says
+    # it beside the inputs that set each one.
+    share_slots: dict[str, object] = {}
     limits: list[Limit] = []
     with charge_tab:
-        limits += _render_group(Group.CHARGE, n_trials, seed)
+        limits += _render_group(Group.CHARGE, n_trials, seed, share_slots)
     with closure_tab:
-        limits += _render_group(Group.CLOSURE, n_trials, seed)
+        limits += _render_group(Group.CLOSURE, n_trials, seed, share_slots)
     with retention_tab:
-        limits += _render_group(Group.RETENTION, n_trials, seed)
+        limits += _render_group(Group.RETENTION, n_trials, seed, share_slots)
+    with reservoir_tab:
+        limits += _render_group(Group.RESERVOIR, n_trials, seed, share_slots)
 
     charge_phase = st.session_state.get("charge_phase")
     seal_fluid = st.session_state.get("seal_fluid")
@@ -459,6 +498,19 @@ def render() -> None:
         return
 
     st.session_state["limit_set"] = limit_set
+
+    # ---- each limit's share, into the placeholder at the top of its block ----------------
+    _result = engine_run.run(limit_set.to_dict(), n_trials, seed)
+    _all = _result.controlling_shares()
+    _won = _result.controlling_shares(successes_only=True)
+    for _name, _slot in share_slots.items():
+        if _name not in _all:
+            continue
+        _slot.caption(
+            f"Controls the contact in {_all[_name]:.0%} of realisations, and in "
+            f"{_won[_name]:.0%} of those above the assessment minimum."
+            + (" Not a limit on this prospect at these inputs; it can stay rough."
+               if _all[_name] < 0.005 else ""))
 
     # ---- the summary, written into the slot reserved at the top --------------------------
     with summary_slot:

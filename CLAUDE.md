@@ -33,7 +33,16 @@ Italics are for the titles of theory notes and papers. Never bold a phrase to ma
 **Numbers stay.** A measured value beside a control is content, not rhetoric — keep it, state it
 plainly, and give the unit.
 
-Rewrite status: tabs 1–3 done; tabs 4–8 to follow one at a time for review.
+Rewrite status: tabs 1–4 done. Tab 5: sections 1, 3, 4, 5, 5b and 6 done; 2, 3b, 3c and the diagnostics still carry the old voice. Tabs 6–8 to follow.
+
+## Structure, 15 Sep 2026
+
+The tabs answer three questions in order: where is the contact (4.1.1), what controls it
+(4.1.2, 3.1), what does that mean for the well (4.1.3, 4.1.4). A first model needs tab 2
+sections 1–2 and tab 3 defaults; everything else has a default. Every probability shown says
+whether it is conditional on G, whether it includes the element risk, and the threshold it is
+read at. Assumptions are stated in the open (5.2.6), each labelled elicited, heuristic or
+modelling choice; expanders hold diagnostics and derivations, never assumptions.
 
 ## Standing constraints
 

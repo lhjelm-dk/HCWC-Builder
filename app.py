@@ -218,7 +218,7 @@ chance on tab 2.0.
     st.markdown(
         "The ranking at the top of tab 3.0 shows which limit is setting the contact, and it "
         "updates as inputs change. In most cases a few limits control the answer and the rest do "
-        "not move it, so the elicitation effort belongs on the top two or three. Tab 4.0 · 4.1.3 "
+        "not move it, so the elicitation effort belongs on the top two or three. Tab 4.0 · 4.1.5 "
         "gives the same ranking restricted to realisations above the assessment minimum."
     )
     st.markdown(
