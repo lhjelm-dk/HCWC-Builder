@@ -124,13 +124,23 @@ class DetectionFunction:
         return self.ceiling / (1.0 + np.exp(-(h - self.h50_m) / self.steepness_m))
 
 
-#: The smallest number of below-minimum realisations that can support ``r_dhi``'s denominator.
+#: The smallest *share* of below-minimum realisations that can support ``r_dhi``'s denominator,
+#: and the floor on their count.
 #:
-#: It is a ratio of two sample means, so its relative error goes as ``1/sqrt(n)`` in the smaller
-#: group: a hundred gives roughly ten per cent, which is coarse but reportable. Seven, which is what
-#: the shipped prospect produced at a 5 m minimum, gives a number that is entirely noise and was
-#: moving the headline chance by twelve points.
-MIN_FAILURES_FOR_R = 100
+#: Audit finding P2-4, 14 Sep 2026. The gate was a count, ``100``, so whether the ratio was
+#: defined depended on the trial count: one per cent of ten thousand trials, ten per cent of a
+#: thousand. A prospect's status should not flip because the sidebar changed. The share is the
+#: quantity that means something -- it is what "a threshold a real share of realisations miss"
+#: says -- and the floor keeps the denominator from being a handful of draws at small trial
+#: counts. Seven, which is what the shipped prospect produced at a 5 m minimum, gives a number
+#: that is entirely noise and was moving the headline chance by twelve points.
+MIN_FAILURE_SHARE = 0.01
+MIN_FAILURES_FLOOR = 30
+
+
+def min_failures_for_r(n: int) -> int:
+    """How many below-minimum realisations ``r_dhi`` needs at ``n`` trials."""
+    return max(int(np.ceil(MIN_FAILURE_SHARE * n)), MIN_FAILURES_FLOOR)
 
 
 #: How the pick is shaped. All three are elicited in **m TVDSS** rather than as an error term,
@@ -474,7 +484,7 @@ class DhiPosterior:
         and seven is not a sample: on the shipped prospect at a 5 m minimum the ratio came out at
         1.66 from those seven, which lifted a **neutral** amplitude -- strength 0, ``r_strength``
         exactly 1 -- from 40.8 % to 53.3 %. An observation that says nothing must do nothing, and
-        E-POS agrees. Below :data:`MIN_FAILURES_FOR_R` the ratio is undefined rather than noisy,
+        E-POS agrees. Below :func:`min_failures_for_r` the ratio is undefined rather than noisy,
         and :class:`CombinedUpdate` then falls back to the strength channel alone.
 
         There is a deeper reason to be strict here. These "failures" are not failed *prospects* --
@@ -496,7 +506,7 @@ class DhiPosterior:
             # `E[1 - D(h) | success]` to take, and averaging over the failures instead would be a
             # different quantity wearing the same name.
             return float(self.weights[success].mean()) if success.any() else float("nan")
-        if not success.any() or int((~success).sum()) < MIN_FAILURES_FOR_R:
+        if not success.any() or int((~success).sum()) < min_failures_for_r(self.result.n):
             return float("nan")
         return float(self.weights[success].mean() / self.weights[~success].mean())
 
