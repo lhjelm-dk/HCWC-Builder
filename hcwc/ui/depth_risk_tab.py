@@ -58,8 +58,8 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     if with_dhi and st.session_state.get("dhi_posterior") is None:
         st.subheader("Risk against depth, per element | updated")
         st.info(
-            "**Nothing here has been updated yet.** On tab 2.0, turn on either *This is a DHI "
-            "prospect* or *This closure has been penetrated*. Tab 4.0 carries the geological "
+            "Nothing here has been updated yet. On tab 2.0, either This is a DHI prospect or "
+            "This closure has been penetrated needs to be on. Tab 4.0 carries the geological "
             "decomposition and is unaffected either way."
         )
         return
@@ -68,44 +68,43 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                  + (f" | {theme.evidence_basis()}" if with_dhi else ""))
     theme.basis_banner(
         theme.GIVEN_DHI if with_dhi else theme.GEOLOGICAL,
-        "The element chances are unchanged — evidence about *where* the contact is may move the "
-        "total and may not re-attribute it between elements. Only the depth curves respond."
+        "The element chances are unchanged. Evidence about where the contact is may move the "
+        "total and may not re-attribute it between elements; only the depth curves respond."
         if with_dhi else
         "The competing limits alone. The updated version of this tab is 5.4.")
     if with_dhi:
         st.markdown(
             "The same decomposition as tab 4.0, after the Bayesian update on tab 5.0. The "
-            "geological curves are drawn underneath unchanged, because **the DHI may move the "
-            "total and may not re-attribute it between elements** — E-POS's resolution "
-            "ceiling: a fluid indicator senses whether a reservoir exists and what fluid fills it, "
-            "not *which* of charge, closure or retention failed."
+            "geological curves are drawn underneath unchanged, because the DHI may move the "
+            "total and may not re-attribute it between elements. That is E-POS's resolution "
+            "ceiling: a fluid indicator senses whether a reservoir exists and what fluid fills "
+            "it, not which of charge, closure or retention failed."
         )
     st.markdown(
-        "WellVolPOS computes one location factor, `r = P(contact > z_entry | success)`, and spreads "
-        "it across the elements by a weighting rule. Its own docstring is candid about what that "
-        "buys: *\"Spreading a single number across four elements presents it differently; it does "
-        "not add information about charge or closure.\"*\n\n"
-        "The competing-limits model can do better, because it knows **which element bound the "
-        "column in each realisation**. Take the shallowest active limit *within* each element — its "
-        "group minimum — and each element gets its own curve. That is a "
-        "**derivation**; the allocation is a presentation."
+        "WellVolPOS computes one location factor, `r = P(contact > z_entry | success)`, and "
+        "spreads it across the elements by a weighting rule. Its docstring states what that "
+        "gives: *\"Spreading a single number across four elements presents it differently; it "
+        "does not add information about charge or closure.\"*\n\n"
+        "The competing-limits model knows which element bound the column in each realisation. "
+        "Taking the shallowest active limit within each element, its group minimum, gives each "
+        "element its own curve. That is a derivation; the allocation is a presentation."
     )
 
     # ------------------------------------------------------------------ reservoir effectiveness
-    theme.heading(tab, sub=n.sub, text="1 · Reservoir effectiveness — the effect that is not a limit")
+    theme.heading(tab, sub=n.sub, text="1 · Reservoir effectiveness")
     st.markdown(
-        "Two things get called *reservoir versus depth* and only one moves the contact. "
-        "**R2, the base or pinchout**, ends the reservoir so the column cannot continue — that is a "
-        "geometric limit like spill and belongs on tab 3.0. **R1, effectiveness** — diagenesis, "
-        "cementation, a net-to-gross trend — does not move the contact; it changes the chance of "
-        "success *at* a depth. Conflating them breaks the consistency identity below, so R1 lives "
+        "Two effects are called reservoir versus depth, and only one moves the contact. R2, the "
+        "base or pinch-out, ends the reservoir so the column cannot continue; that is a "
+        "geometric limit like spill and belongs on tab 3.0. R1, effectiveness (diagenesis, "
+        "cementation, a net-to-gross trend), does not move the contact; it changes the chance of "
+        "success at a depth. Conflating them breaks the consistency identity below, so R1 is "
         "here and the identity is checked over the contact-controlling elements only."
     )
     use_r1 = st.toggle(
         "Apply a reservoir-effectiveness decline", value=False, key=f"r1_on_{tab}",
-        help="For a reservoir that degrades with depth rather than stopping at a surface. Between "
-             "the two depths it asks for, the chance of an effective reservoir falls off linearly, "
-             "so a deeper contact is worth less than its height alone suggests.")
+        help="For a reservoir that degrades with depth rather than stopping at a surface. "
+             "Between the two depths the chance of an effective reservoir falls linearly, so a "
+             "deeper contact is worth less than its height alone suggests.")
     reservoir = ReservoirEffectiveness()
     if use_r1:
         r1, r2 = st.columns(2)
@@ -126,18 +125,18 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         full_to = r1.number_input("Fully effective to (m TVDSS)", 0.0, 8000.0,
                                   _full_default, 25.0,
                                   key=f"r1_full_{tab}",
-                                  help="Above this depth the reservoir is as good as it gets — "
-                                       "the decline has not started. Defaults to "
-                                       f"{DECLINE_INTERVAL_M:.0f} m above the spill point, so the "
-                                       "decline occupies the deepest part of the closure and "
-                                       "nothing above it is touched until you say so.")
+                                  help="Above this depth the reservoir is fully effective; the "
+                                       "decline has not started. Defaults to "
+                                       f"{DECLINE_INTERVAL_M:.0f} m above the spill point, so "
+                                       "the decline occupies the deepest part of the closure "
+                                       "and nothing above it is affected.")
         none_below = r2.number_input("Not a reservoir below (m TVDSS)", 0.0, 8000.0,
                                      _none_default, 25.0,
                                      key=f"r1_none_{tab}",
-                                     help="Below this there is effectively no reservoir left, so "
-                                          "a contact down there adds nothing. Defaults to the "
-                                          "spill point from tab 2.0, below which there is no closure "
-                                          "to fill in any case.")
+                                     help="Below this there is effectively no reservoir, so a "
+                                          "contact there adds nothing. Defaults to the spill "
+                                          "point from tab 2.0, below which there is no closure "
+                                          "to fill.")
         if none_below < full_to:
             st.error("The reservoir cannot stop being effective above the depth it is fully "
                      "effective to.")
@@ -166,16 +165,16 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         st.info("Set the element risk on tab 2.0 first.")
         return
     st.caption(
-        "Element chances come from tab 2.0 — "
-        + " · ".join(f"**{g.value}** {v:.2f}" for g, v in pos.items())
-        + ". Change them there and this whole tab follows."
+        "Element chances from tab 2.0: "
+        + " · ".join(f"{g.value} {v:.2f}" for g, v in pos.items())
+        + ". This tab follows any change made there."
     )
 
     sub_elements = st.toggle(
         "Break each element into its mechanisms", value=False, key=f"sub_el_{tab}",
-        help="The sub-element view: which limit inside Retention is doing the work at this depth, "
-             "rather than that Retention is. Each mechanism is drawn in a variation of its "
-             "element's hue.")
+        help="The sub-element view: which limit inside Retention is doing the work at this "
+             "depth, rather than that Retention is. Each mechanism is drawn in a variation of "
+             "its element's hue.")
     show_dhi = with_dhi
 
     curves = d.element_pos_at_depth(pos)
@@ -238,7 +237,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         fig.add_scatter(x=[_pos_at(_min_depth)], y=[_min_depth], mode="markers+text",
                         marker=dict(color="#C44E52", size=11, symbol="diamond",
                                     line=dict(color="white", width=1.5)),
-                        text=[f"  {_pos_at(_min_depth):.1%} — the quoted POS, at your minimum"],
+                        text=[f"  {_pos_at(_min_depth):.1%}, the quoted POS at the minimum"],
                         textposition="middle right", textfont=dict(size=11, color="#8A2F33"),
                         showlegend=False, hoverinfo="skip")
 
@@ -261,23 +260,21 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     fig.update_layout(xaxis_title="Probability", xaxis_range=[0, 1],
                       yaxis_title="Depth (m TVDSS)", yaxis=dict(autorange="reversed"),
                       height=620, margin=dict(t=20), legend=dict(orientation="h", y=-0.15))
-    n.plot(fig, "Each element's own chance curve, derived from the shallowest active limit within "
-                "that element and scaled by the prospect's element POS. **This is what WellVolPOS "
-                "should consume** in place of allocating one location factor — it is the "
-                "evidence-based replacement for the hard-typed \"HCWC dissection\" column in the "
-                "old `Results` sheet."
+    n.plot(fig, "Each element's chance curve, derived from the shallowest active limit within "
+                "that element and scaled by the prospect's element POS. This is the input "
+                "WellVolPOS can consume in place of allocating one location factor."
                 + ("  Dashed lines are the individual mechanisms within each element, in "
-                   "variations of its hue. A mechanism that flattens short of 1.0 is one that is "
-                   "not always present — the flat value **is** its `P(active)`, read straight off "
-                   "the axis." if sub_elements else "")
-                + ("  The red curve is the whole-prospect chance after the DHI update from tab 5.0."
+                   "variations of its hue. A mechanism that flattens short of 1.0 is not always "
+                   "present; the flat value is its `P(active)`, read off the axis."
+                   if sub_elements else "")
+                + ("  The red curve is the whole-prospect chance after the update from tab 5.0."
                    if show_dhi and overlay is not None else ""))
 
     if show_dhi and overlay is None:
         st.caption(
-            "**The DHI update has not been computed yet.** Open tab 5.0 (*Results + DHI*) once so "
-            "the evidence is entered; the curve appears here on the next interaction, because that "
-            "tab computes it after this one has already drawn."
+            "The DHI update has not been computed yet. Opening tab 5.0 (Results + DHI) once "
+            "enters the evidence; the curve appears here on the next interaction, because that "
+            "tab computes it after this one has drawn."
         )
     if show_dhi and overlay is not None:
         o1, o2 = st.columns(2)
@@ -286,24 +283,23 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         o2.metric("At the assessment minimum", f"{limit_set.min_column_m:.0f} m column",
                   "both read at the same threshold", delta_color="off")
         st.caption(
-            "**The DHI moves the whole curve, not a scalar beside it.** That is the same point tab "
-            "5.0 makes with its POS-against-threshold figure, seen from the other side: because the "
-            "updated POS and the updated contact distribution are one object, a DHI that raises "
-            "the chance of success also moves *where* the contact is, and both readings have to "
-            "come from this one curve.\n\n"
-            "**The element curves below it are deliberately not updated.** E-POS's resolution "
-            "ceiling says a fluid indicator senses whether a reservoir exists and what fills it, "
-            "not *which* of charge, closure or retention failed — so the DHI may move the total "
-            "and may not re-attribute it between elements."
+            "The DHI moves the whole curve, not a scalar beside it. The updated POS and the "
+            "updated contact distribution are one object, so a DHI that raises the chance of "
+            "success also moves where the contact is, and both readings come from this one "
+            "curve.\n\n"
+            "The element curves below it are not updated. A fluid indicator senses whether a "
+            "reservoir exists and what fills it, not which of charge, closure or retention "
+            "failed, so the DHI may move the total and may not re-attribute it between "
+            "elements."
         )
 
     # ------------------------------------------------------------------ consistency
-    theme.heading(tab, sub=n.sub, text="3 · The consistency test")
+    theme.heading(tab, sub=n.sub, text="3 · Consistency test")
     st.markdown(
-        "Under independent limits, `∏ₑ Pₑ(z) = P(contact > z)` — the product of the element curves "
-        "must reproduce the contact distribution. **Where it does not, the elements are not "
-        "independent, and that gap is the double-count** the three-tool architecture exists to "
-        "avoid, and it is worth running every time rather than assuming independence holds."
+        "Under independent limits, `∏ₑ Pₑ(z) = P(contact > z)`: the product of the element "
+        "curves reproduces the contact distribution. Where it does not, the elements are not "
+        "independent, and the gap is the double-count the three-tool architecture exists to "
+        "avoid. The test runs on every rerun rather than assuming independence."
     )
     c1, c2, c3 = st.columns(3)
     c1.metric("Max gap, column space", f"{d.max_abs_residual_column:.3f}",
@@ -323,21 +319,20 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     fig2.update_layout(xaxis_title="Probability", yaxis_title="Depth (m TVDSS)",
                        yaxis=dict(autorange="reversed"), height=560, margin=dict(t=20),
                        legend=dict(orientation="h", y=-0.15))
-    n.plot(fig2, "Factorised against direct. A residual near zero says the elements are behaving "
-                 "independently and the decomposition can be handed downstream as-is. A large one "
-                 "says the elements share something — correlated limits, or a wide apex — and the "
-                 "per-element curves should not be multiplied by anything else that also depends "
-                 "on depth.")
+    n.plot(fig2, "Factorised against direct. A residual near zero says the elements behave "
+                 "independently and the decomposition can be handed downstream as it is. A large "
+                 "one says the elements share something (correlated limits, or a wide apex), and "
+                 "the per-element curves should not be multiplied by anything else that also "
+                 "depends on depth.")
 
     st.info(
-        "**Why the two spaces.** Every element's *contact* is `apex + h`, so the elements share "
-        "the apex draw: even with perfectly independent limits, the depth-space curves are "
-        "dependent and their product is not the contact distribution. The identity is exact only "
-        "in **column-height** space. The difference between the two residuals is therefore the "
-        "apex's contribution, and it is what tells you whether the depth-space test can be read at "
-        "face value. On a tightly picked apex the two residuals are all but identical and the "
-        "distinction can be ignored; a prospect with real depth-conversion uncertainty cannot "
-        "ignore it."
+        "Two spaces, because every element's contact is `apex + h`, so the elements share the "
+        "apex draw: even with independent limits, the depth-space curves are dependent and "
+        "their product is not the contact distribution. The identity is exact only in "
+        "column-height space. The difference between the two residuals is the apex's "
+        "contribution, and it says whether the depth-space test can be read at face value. On a "
+        "tightly picked apex the two residuals are nearly identical; a prospect with real "
+        "depth-conversion uncertainty needs the distinction."
     )
 
     # ------------------------------------------------------------------ allocation comparison
@@ -362,8 +357,8 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     z_entry = _c1.slider("Well reservoir entry depth (m TVDSS)", _lo, _hi, step=5.0,
                          key=_sld, on_change=_from_slider)
     _c2.number_input("or type it", _lo, _hi, step=5.0, key=_num, on_change=_from_number,
-                     help="The same value as the slider. Typed to the metre when the well plan "
-                          "gives you one; the slider rounds to 5 m.")
+                     help="The same value as the slider, to the metre where the well plan gives "
+                          "one; the slider rounds to 5 m.")
     comp = dc.allocation_comparison(d, pos, z_entry)
     # **Both bases, side by side, when there is a posterior to compare against.** Lars, 4 Sep 2026:
     # this table was the DHI-updated allocation on tab 5.0 and the geological one on tab 4.0, drawn
@@ -388,18 +383,18 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         rows.append(row)
 
     n.table(pd.DataFrame(rows),
-            ((f"At {z_entry:,.0f} m the location factor is **r = {comp_geo['r_location']:.3f} "
-                f"geological** and **r = {comp['r_location']:.3f} {theme.evidence_basis()}**, "
-                f"and every difference in the table follows from that one number — the element "
+            ((f"At {z_entry:,.0f} m the location factor is r = {comp_geo['r_location']:.3f} "
+                f"geological and r = {comp['r_location']:.3f} {theme.evidence_basis()}, and "
+                f"every difference in the table follows from that one number. The element "
                 f"chances from tab 2.0 are identical in both halves, because evidence about "
-                f"*where* the contact is moves the total and may not re-attribute it between "
+                f"where the contact is moves the total and may not re-attribute it between "
                 f"elements. "
                 if comp_geo is not None else
                 f"At {z_entry:,.0f} m, r = {comp['r_location']:.3f}. ")
-             + f"**Derived and allocated are different kinds of object.** The allocation divides "
-               f"one number by a rule and reproduces P_well = {comp['allocated::P_well']:.3f} "
-               f"whatever rule is chosen. The derived columns carry information about which element "
-               f"actually binds at this depth, so they can — and do — disagree."))
+             + f"Derived and allocated are different kinds of object. The allocation divides one "
+               f"number by a rule and reproduces P_well = {comp['allocated::P_well']:.3f} "
+               f"whatever rule is chosen. The derived columns carry information about which "
+               f"element binds at this depth, so they can disagree with it."))
     # `P_well` is what this section computes, and it was a cell in the table above -- quieter
     # than the allocation rule beside it. Given the treatment tab 2.0 gives `P(G)`, and paired
     # with the two readings it is most often confused with: the prospect POS, which asks whether
@@ -428,13 +423,13 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
             unsafe_allow_html=True)
 
     st.caption(
-        f"**Three readings, and they answer three questions.** `P(well)` is the chance this "
-        f"*well*, entering at {z_entry:,.0f} m, finds hydrocarbon — the prospect chance times the "
-        f"chance the contact lies below that depth. The **prospect POS** above it asks whether "
-        f"there is a commercial column *anywhere*, and is therefore always the larger. `r` is only "
-        f"the depth term, and carries no element risk at all: quoting it as a chance of success "
-        f"overstates the well by `1 / P(G)`.\n\n"
-        "Reservoir has no derived value in the table because no limit in this model is reservoir-"
-        "controlled; add an R2 pinchout limit on tab 3.0 to give it one. Its effectiveness decline "
-        "(§1) is separate and applies either way."
+        f"Three readings, answering three questions. `P(well)` is the chance this well, entering "
+        f"at {z_entry:,.0f} m, finds hydrocarbon: the prospect chance times the chance the "
+        f"contact lies below that depth. The prospect POS above it asks whether there is a "
+        f"commercial column anywhere, and is always the larger. `r` is the depth term only and "
+        f"carries no element risk; quoted as a chance of success it overstates the well by "
+        f"`1 / P(G)`.\n\n"
+        "Reservoir has no derived value in the table because no limit in this model is "
+        "reservoir-controlled; an R2 pinch-out limit on tab 3.0 would give it one. Its "
+        "effectiveness decline (§1) is separate and applies either way."
     )

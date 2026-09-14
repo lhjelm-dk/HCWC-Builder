@@ -126,8 +126,8 @@ def tail_support(result: EngineResult) -> Check:
         finding=(f"{successes:,} of {result.n:,} realisations clear the assessment minimum. "
                  f"P10 rests on {behind_p10:,} of them, P1 on {behind_p1:,}."),
         meaning=("Enough to quote P10 to the metre." if level == "ok" else
-                 "Raise the trial count before quoting P10 — the percentiles are taken over "
-                 "successes only, so a low chance of success thins the tail twice over."),
+                 "P10 needs a higher trial count before it is quoted. The percentiles are taken "
+                 "over successes only, so a low chance of success thins the tail twice over."),
     )
 
 
@@ -148,12 +148,12 @@ def concentration(result: EngineResult) -> Check:
     return Check(
         name="Spread of control",
         level=level,
-        finding=f"**{top}** sets the contact in {share:.0%} of successful realisations.{tail}",
-        meaning=("Several mechanisms contribute, so the spread is a genuine competition."
+        finding=f"{top} sets the contact in {share:.0%} of successful realisations.{tail}",
+        meaning=("Several mechanisms contribute, so the spread is a competition."
                  if level == "ok" else
-                 f"This is essentially {top}'s distribution. That may be exactly right — a seal "
-                 f"prospect is a seal prospect — but say so beside the curve, because a reader "
-                 f"will otherwise credit the spread to four mechanisms that are not in it."),
+                 f"This is close to {top}'s distribution alone. That may be right, since a seal "
+                 f"prospect is a seal prospect, but it needs stating beside the curve; a reader "
+                 f"will otherwise credit the spread to mechanisms that are not in it."),
     )
 
 
@@ -176,12 +176,12 @@ def assessment_minimum(result: EngineResult) -> Check:
         return Check(
             name="The assessment minimum",
             level="stop",
-            finding="The assessment minimum is **0 m**, so every realisation with any column at "
-                    "all counts as a success and `P(column ≥ h | G)` is 100 % by construction — "
-                    "the prospect chance collapses to the element product alone.",
-            meaning="Set the minimum to the smallest column worth drilling. The column term means "
-                    "*at least this tall* — with no minimum it means nothing, and no DHI evidence "
-                    "can move a certainty.",
+            finding="The assessment minimum is 0 m, so every realisation with any column "
+                    "counts as a success and `P(column ≥ h | G)` is 100 % by construction; the "
+                    "prospect chance collapses to the element product alone.",
+            meaning="The minimum needs to be the smallest column worth drilling. The column term "
+                    "means at least this tall; with no minimum it means nothing, and no DHI "
+                    "evidence can move a certainty.",
         )
     if pos <= 0.02 or pos >= 0.98:
         return Check(
@@ -189,18 +189,18 @@ def assessment_minimum(result: EngineResult) -> Check:
             level="watch",
             finding=f"A minimum of {minimum:,.0f} m gives `P(column ≥ h | G)` = {pos:.1%}, which "
                     f"is almost decided either way.",
-            meaning="Check the minimum is the volume that actually justifies the well. A term "
-                    "this close to an endpoint usually means the minimum is far off the "
-                    "distribution rather than that the prospect is settled.",
+            meaning="The minimum should be the volume that justifies the well. A term this close "
+                    "to an endpoint usually means the minimum is far off the distribution rather "
+                    "than that the prospect is settled.",
         )
     return Check(
         name="The assessment minimum",
         level="ok",
-        finding=f"A minimum of {minimum:,.0f} m gives `P(column ≥ h | G)` = {pos:.1%} — the "
-                f"conditional column term, to be multiplied by the element product for the "
-                f"prospect chance.",
-        meaning="The criterion sits inside the distribution, which is where a risk statement has "
-                "to sit to mean anything.",
+        finding=f"A minimum of {minimum:,.0f} m gives `P(column ≥ h | G)` = {pos:.1%}, the "
+                f"conditional column term, multiplied by the element product for the prospect "
+                f"chance.",
+        meaning="The criterion sits inside the distribution, where a risk statement has to sit "
+                "to mean anything.",
     )
 
 
@@ -221,8 +221,9 @@ def correlation_projection(result: EngineResult) -> Check:
             name="Correlations as sampled",
             level="ok",
             finding="No correlations were elicited, so every limit is drawn independently.",
-            meaning="Independence is a modelling choice too. If two limits share a cause — the same "
-                    "seal, the same fault — say so on tab 3.0 rather than leaving it at zero.",
+            meaning="Independence is a modelling choice too. Two limits that share a cause, the "
+                    "same seal or the same fault, belong correlated on tab 3.0 rather than left "
+                    "at zero.",
         )
     worst = max(pairs, key=lambda row: abs(row[2] - row[3]))
     moved = abs(worst[2] - worst[3])
@@ -231,13 +232,13 @@ def correlation_projection(result: EngineResult) -> Check:
         name="Correlations as sampled",
         level=level,
         finding=(f"{len(pairs)} pair{'s' if len(pairs) != 1 else ''} elicited. Largest move under "
-                 f"the projection: **{worst[0]} ↔ {worst[1]}**, asked for {worst[2]:+.2f}, "
+                 f"the projection: {worst[0]} ↔ {worst[1]}, asked for {worst[2]:+.2f}, "
                  f"sampled at {worst[3]:+.2f}."),
         meaning=("The matrix was already consistent, so what was asked for is what was sampled."
                  if level == "ok" else
-                 "The elicited matrix was not internally consistent and had to be projected. "
-                 "Revisit that pair on tab 3.0 — the correlation in the model is not the one you "
-                 "stated, and the difference came from what was said about a third limit."),
+                 "The elicited matrix was not internally consistent and was projected. The "
+                 "correlation in the model is not the one stated for that pair on tab 3.0, and "
+                 "the difference came from what was stated about a third limit."),
     )
 
 
@@ -268,11 +269,11 @@ def repeatability(result: EngineResult, other: EngineResult | None = None) -> Ch
         name="Repeatability across seeds",
         level=level,
         finding=f"Rerun at seed {other.seed}, the P90/P50/P10 contacts move by at most "
-                f"**{shift:,.1f} m** ({relative:.1%} of P50).",
-        meaning=("Smaller than any depth you could pick off a seismic section, so the digits being "
+                f"{shift:,.1f} m ({relative:.1%} of P50).",
+        meaning=("Smaller than any depth that can be picked off a seismic section, so the digits "
                  "quoted are the model's and not the sampler's." if level == "ok" else
-                 "Quote fewer digits or run more trials. A number that moves this much between two "
-                 "seeds is reporting the random number generator, and it will be read as geology."),
+                 "Fewer digits, or more trials. A number that moves this much between two seeds "
+                 "reports the random number generator, and will be read as geology."),
     )
 
 
@@ -304,25 +305,25 @@ def dhi_evidence(posterior, current: EngineResult | None = None) -> Check:
         return Check(
             name="Weight behind the DHI update",
             level="watch",
-            finding=f"The DHI update on hand was built on **{n:,} realisations at seed "
-                    f"{posterior.result.seed}**, and this run is {current.n:,} at seed "
+            finding=f"The DHI update on hand was built on {n:,} realisations at seed "
+                    f"{posterior.result.seed}, and this run is {current.n:,} at seed "
                     f"{current.seed}. It is one interaction behind.",
-            meaning="Not an error and not yet a number to quote: tab 5.0 rebuilds after this panel "
-                    "renders, so the run that changed the trial count or seed sees the previous "
-                    "posterior. Touch anything and it catches up.",
+            meaning="Not an error, and not yet a number to quote: tab 5.0 rebuilds after this "
+                    "panel renders, so the run that changed the trial count or seed sees the "
+                    "previous posterior. It catches up on the next interaction.",
         )
 
     level = _level(share, ESS_WATCH, ESS_STOP, higher_is_worse=False)
     return Check(
         name="Weight behind the DHI update",
         level=level,
-        finding=f"Effective sample size **{ess:,.0f}** of {n:,} realisations ({share:.0%}); the "
+        finding=f"Effective sample size {ess:,.0f} of {n:,} realisations ({share:.0%}); the "
                 f"evidence is worth R = {_readable(posterior.r_dhi)}.",
         meaning=("Enough of the sample survives the reweighting to read the posterior percentiles."
                  if level == "ok" else
-                 "The posterior is being carried by a small, heavily weighted part of the sample. "
-                 "Raise the trial count, or soften the detection function — a likelihood this "
-                 "sharp is a claim that the amplitude alone nearly settles the column height."),
+                 "The posterior is carried by a small, heavily weighted part of the sample. It "
+                 "needs a higher trial count or a softer detection function; a likelihood this "
+                 "sharp claims that the amplitude alone nearly settles the column height."),
     )
 
 
@@ -355,9 +356,10 @@ def headline(checks: list[Check]) -> tuple[str, str]:
     stops = sum(1 for c in checks if c.level == "stop")
     watches = sum(1 for c in checks if c.level == "watch")
     if level == "stop":
-        return level, (f"{stops} check{'s' if stops != 1 else ''} would embarrass this run if a "
-                       f"reviewer found {'them' if stops != 1 else 'it'} first. Fix "
-                       f"{'those' if stops != 1 else 'that'} before the numbers go out.")
+        return level, (f"{stops} check{'s' if stops != 1 else ''} "
+                       f"{'do' if stops != 1 else 'does'} not support the numbers as they stand. "
+                       f"{'They need' if stops != 1 else 'It needs'} resolving before the "
+                       f"numbers are quoted.")
     if level == "watch":
         return level, (f"{watches} check{'s' if watches != 1 else ''} "
                        f"{'need' if watches != 1 else 'needs'} a sentence beside the number, not a "
