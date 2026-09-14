@@ -610,8 +610,9 @@ contact, the floor is the term doing the work, and §14.1 is why.
 The detection function becomes decisive in two circumstances, and both are recognisable in
 advance.
 
-**When the anomaly is absent.** There is then no pick to carry the update, and $1 - D(h)$ is the
-entire likelihood. Section 12 is that case.
+**When the anomaly is absent.** There is then no pick to carry the update: $1 - D(h)$ is the
+entire likelihood within $G$, and its average over the geological columns is the numerator of the
+ratio that lowers the chance. Section 12 is that case.
 
 **When the detection threshold falls inside the range of columns the pick favours.** The shipped
 prospect has a P50 column of 196 m against a detection midpoint of 25 m, so every column under
@@ -667,37 +668,43 @@ scenario switch, which mixes two branches, can only broaden.
 ## 12 · Absence as evidence
 
 The detection function is what lets an *absent* anomaly enter the update at all. If a column of
-height $h$ should have produced a mappable anomaly and none is present, the likelihood is
-$1 - D(h)$, which is largest at small $h$. No special handling is required — absence enters the
+height $h$ should have produced a mappable anomaly and none is present, the likelihood within $G$
+is $1 - D(h)$, which is largest at small $h$. No special handling is required — absence enters the
 same machinery as presence.
 
 What that machinery can do with it is bounded by §9. The realisations are conditional on $G$, so
 $1 - D(h)$ redistributes probability among column heights and says nothing about whether there
 are hydrocarbons. On the worked prospect the redistribution is nil: with a detection midpoint of
-25 m every column above the 120 m assessment minimum sits on the function's ceiling, the weights
-are flat to within rounding, and prospect POS stays at 40.2 % on an effective sample of 9,995.
-Move the midpoint to 150 m, a reservoir near the limit of resolution, and absence does what the
-formulation promises within $G$: the median contact shallows from 2,247 m to 2,197 m, the
-effective sample falls to 5,233, and the chance moves by little because the minimum is small.
+25 m every column above the 120 m assessment minimum sits on the function's ceiling, and the
+weights are flat to within rounding. Move the midpoint to 150 m, a reservoir near the limit of
+resolution, and absence does what the formulation promises within $G$: the median contact
+shallows from 2,247 m to 2,197 m and the effective sample falls to 5,233.
 
-An earlier draft reported a fall from 40.3 % to 6.3 % on the default prospect. That number came
-from applying a ratio between two column heights inside $G$ as if it were a likelihood ratio on
-the prospect, and is withdrawn.
+**Absence on the chance needs one more number.** Monigle *et al.* (2025) treat an absent anomaly
+as a negative line of evidence within ExxonMobil's integrated chance-of-success framework, and
+report a prospect carried from a geological 46 % to an integrated 8 % on that basis; their own
+assessment is that the practice "is not consistently applied in industry". The likelihood ratio
+on $G$ is
 
-**The chance-axis route is published and is not implemented here.** Monigle *et al.* (2025) treat
-an absent anomaly as a negative line of evidence within ExxonMobil's integrated chance-of-success
-framework, and report a prospect carried from a geological 46 % to an integrated 8 % on that
-basis; their own assessment is that the practice "is not consistently applied in industry". A
-likelihood ratio on $G$ for an absent anomaly is
-$P(\text{absent} \mid G) / P(\text{absent} \mid \neg G)$. The numerator is available — it is
-$1 - D(h)$ averaged over the geological columns, 0.10 on the default prospect — but the
-denominator is the chance that a barren trap shows no anomaly, which needs a false-positive rate
-for bright events with no hydrocarbons behind them. The two-population strength model does not
-carry that number, because "no anomaly" is not a reading on its axis. The implementation
-therefore holds the character channel neutral when nothing is seen: an absent anomaly reshapes the
-column and does not lower the chance. That is a limitation of the current formulation and is
-listed as one in §17. A false-positive rate is an elicitable quantity, and adding it would close
-the gap without changing anything else in the chain.
+$$R_\text{absent} = \frac{P(\text{absent} \mid G)}{P(\text{absent} \mid \neg G)} = \frac{1 - d}{1 - f\,d}$$
+
+where $d$ is $D(h)$ averaged over the geological columns — the chance a hydrocarbon-filled trap
+of the modelled geometry shows, 0.90 on the worked prospect — and $f$ is the chance a barren trap
+shows an anomaly of the same class, stated *relative* to $d$. Tying the false-positive rate to
+$d$ is a modelling choice, made so that the ratio behaves at the ends: where nothing could have
+shown ($d \to 0$) absence is uninformative whatever $f$ says, where a barren trap shows as
+readily as a filled one ($f = 1$) likewise, and since $f d \leq d$ the ratio is never above one
+— absence never counts *for* hydrocarbons. With $f = 0$ it is $1 - d$, the strongest case. The
+ratio is bounded below at $1/10$ like the character channel.
+
+$f$ is elicited, and no calibration is known. The implementation opens at $f = 0.5$, the
+maximum-ignorance value, and labels it as such. On the worked prospect that gives
+$R_\text{absent} = 0.10 / 0.55 = 0.18$ and a prospect POS of 11.0 %, against 40.3 % before; at
+$f = 0$ it is 6.4 %, and at $f = 1$ the chance is untouched. An earlier draft reported 6.3 %
+from applying a ratio between two column heights inside $G$ as if it were a ratio on the
+prospect; that number is withdrawn, and the coincidence with the $f = 0$ case is what it looks
+like — the old ratio was $E[1 - D(h)]$ over the success cases, which is $1 - d$ against a barren
+trap taken as certain to show nothing.
 
 The narrower claim that survives is the column-height route. Where the detection threshold falls
 inside the range of geological columns, absence reshapes the contact distribution toward the
@@ -729,7 +736,7 @@ which reports how many of the original realisations the posterior effectively re
 | mild — strength 5, $\sigma$ 15 m | 46.6 % | 2,252 m | 56 m | 3,758 |
 | moderate — strength 20, $\sigma$ 10 m | 64.2 % | 2,251 m | 40 m | 2,589 |
 | strong — strength 40, $\sigma$ 5 m | 82.3 % | 2,250 m | 23 m | **1,346** |
-| absent where one was expected | 40.2 % | 2,247 m | 132 m | 9,995 |
+| absent where one was expected, $f = 0.5$ | 11.0 % | 2,247 m | 132 m | 9,995 |
 
 A low ESS does not mean the interpretation is wrong. It means the posterior depends heavily on it.
 At 1,346 the answer rests on under a seventh of the geological realisations, and should be
@@ -739,7 +746,7 @@ The ESS reports the geometry channel only. The character channel updates a singl
 throws no realisations away, which is why the chance can move from 40.3 % to 82.3 % on the strong
 row while the ESS is the same as for a neutral character at the same pick (§10). The absent row
 is the converse: nothing is reweighted because every column sits on the detection ceiling, and
-nothing moves.
+the whole move is the absence ratio of §12 acting on the chance.
 
 ---
 
@@ -912,12 +919,12 @@ and the pick likelihood are elicited, not measured. This is why the effective sa
 sensitivity of the answer to each seismic input are reported: when a typed assumption moves the
 contact further than the geology does, that is a finding about the assumptions.
 
-**An absent anomaly does not lower the chance.** The formulation applies absence within $G$, where
-it reshapes the column, and holds the character channel neutral because the strength model has
-no reading for "nothing seen". The negative evidence on the chance that Monigle *et al.* (2025)
-apply needs a false-positive rate for bright events with no hydrocarbons behind them, which is not
-elicited here (§12). An assessor who wants absence to count against the prospect has to do so
-outside the update.
+**The false-positive rate is uncalibrated.** What an absent anomaly says about the chance rests
+on $f$, the barren trap's chance of showing relative to a filled one (§12), and the shipped value
+is the maximum-ignorance 0.5 rather than a measurement. Tying that rate to the filled trap's
+detectability is a modelling choice made for the behaviour at the ends, not an observed
+relationship. On a prospect where absence is the decisive observation, $f$ is the input to argue
+about.
 
 These limitations do not invalidate the framework. They define the circumstances under which
 additional modelling is required. The purpose is a transparent probabilistic representation of the
@@ -984,9 +991,10 @@ contact or column-height distributions directly during pre-drill prospect assess
    attribution, and reshapes the depth-dependent risk rather than scaling it. The amplitude
    character updates the chance that the elements worked and the picked geometry updates the
    column given that they did; the prospect chance at a threshold is their product, and each
-   piece of evidence enters once. The effective sample size reports how far the geometry has
-   displaced the geology, and the likelihood floor ensures that a single interpretation can never
-   rule the geology out.
+   piece of evidence enters once. An absent anomaly reshapes the column through the detection
+   function and lowers the chance through a stated false-positive rate. The effective sample
+   size reports how far the geometry has displaced the geology, and the likelihood floor ensures
+   that a single interpretation can never rule the geology out.
 
 7. **The assessment becomes auditable.** Rather than asking why a particular HCWC distribution was
    chosen, a reviewer can examine the mechanisms that generated it.

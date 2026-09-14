@@ -35,6 +35,13 @@ ratio between two column heights inside G — as if it were a likelihood ratio o
 §5's open question on the two channels' independence is answered by structure: they update
 different factors. `dhi.prospect_pos` is the chain; `CombinedUpdate` stays only as a comparison.
 
+**An absent anomaly reaches the chance through its own ratio.** With the chain conditional on G,
+`1 − D(h)` can only reshape the column, and §3.2 below overstated what it does: on the shipped
+prospect every column sits on the detection ceiling and nothing moves. The chance is now updated
+by `dhi.absence_ratio`, `P(absent | G) / P(absent | ¬G) = (1 − d) / (1 − f·d)`, with `d` the mean
+detectability over the geological columns and `f` an elicited relative false-positive rate on the
+detection function (audit P1-0). It is never above 1 and is floored at 1/10.
+
 **The spurious-event density is a property of the model.** It was `1 / (max − min)` of the
 *sampled* contacts, so a pick's likelihood depended on the trial count and the seed — four per
 cent between a 2 000- and a 50 000-trial run. It is now one over the declared contact support,
