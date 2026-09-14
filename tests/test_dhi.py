@@ -1111,13 +1111,41 @@ class TestANeutralAmplitudeDoesNothing:
         """The old guard caught only *every* realisation clearing the minimum."""
         post = self._posterior(1.0)
         below = int((~post.result.above_minimum).sum())
-        assert below < dhi.MIN_FAILURES_FOR_R
+        assert below < dhi.min_failures_for_r(post.result.n)
         assert np.isnan(post.r_dhi), f"{below} failures should not support a ratio"
 
     def test_it_is_defined_where_the_minimum_is_a_real_threshold(self):
         post = self._posterior(180.0)
-        assert int((~post.result.above_minimum).sum()) >= dhi.MIN_FAILURES_FOR_R
+        assert int((~post.result.above_minimum).sum()) >= dhi.min_failures_for_r(post.result.n)
         assert np.isfinite(post.r_dhi) and post.r_dhi > 1.0
+
+    def test_the_gate_is_a_share_so_the_trial_count_does_not_decide_it(self):
+        """Audit finding P2-4, 14 Sep 2026.
+
+        The gate was a count of 100: one per cent of ten thousand trials, ten per cent of a
+        thousand, so a prospect's ratio could be defined on the default sidebar and undefined
+        after the trial count was lowered. As a share with a floor, the verdict at a minimum a
+        real share of realisations miss is the same at 1 000 and 100 000 trials, and so is the
+        verdict at a minimum almost none miss.
+        """
+        for n in (1_000, 100_000):
+            assert dhi.min_failures_for_r(n) == max(int(np.ceil(0.01 * n)), dhi.MIN_FAILURES_FLOOR)
+
+        def _at(min_column_m, n):
+            limits = dataclasses.replace(reference_prospect(), min_column_m=min_column_m)
+            result = engine.run(limits, n, 4242)
+            return dhi.update(result, DetectionFunction(),
+                              DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=18.0,
+                                             p_valid=0.6))
+
+        real = [np.isfinite(_at(180.0, n).r_dhi) for n in (1_000, 100_000)]
+        floor = [np.isfinite(_at(1.0, n).r_dhi) for n in (1_000, 100_000)]
+        assert real == [True, True]
+        assert floor == [False, False]
+
+    def test_the_floor_keeps_a_thin_denominator_out_at_small_trial_counts(self):
+        """One per cent of 300 trials is three realisations, and three is not a sample."""
+        assert dhi.min_failures_for_r(300) == dhi.MIN_FAILURES_FLOOR
 
     def test_a_neutral_strength_leaves_pos_exactly_alone(self):
         """The whole point. With the geometry channel undefined, the combination falls back to

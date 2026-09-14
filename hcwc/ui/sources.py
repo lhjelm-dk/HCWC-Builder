@@ -140,7 +140,14 @@ def render_charge(key: str, n_trials: int, seed: int,
         )
         return None
 
-    columns = finite - table.apex_m
+    # The column is measured from the apex the assessor elicited on tab 2.0, not from the
+    # table's first row: the engine adds the apex it draws, so a column measured from the
+    # table's crest lands the contact deeper by the gap between the two (audit P2-2). Without
+    # an apex on tab 2.0 the table's own crest is the only apex there is.
+    _apex = st.session_state.get("apex")
+    prospect_apex = float(np.mean(_apex)) if _apex else table.apex_m
+    converted = ch.columns_below_apex(result, prospect_apex, table)
+    columns = converted.column_m
     fig = go.Figure()
     fig.add_histogram(y=finite, nbinsy=50, marker_color=theme.PILLAR_COLOURS["Charge"])
     fig.update_layout(xaxis_title="Realisations", yaxis_title="Depth (m TVDSS)",
@@ -150,7 +157,11 @@ def render_charge(key: str, n_trials: int, seed: int,
     st.caption(
         f"Over the {finite.size:,} realisations in which charge bound the column. The other "
         f"{result.fraction_not_limiting:.0%} fill past the deepest mapped depth and are carried "
-        f"as `P(active)`, not as a contact at the base of the table."
+        f"as `P(active)`, not as a contact at the base of the table. The column is measured from "
+        f"the apex on tab 2.0, {prospect_apex:,.0f} m"
+        + (f", {converted.crest_offset_m:+,.0f} m from the table's crest" if _apex else "")
+        + (f"; {converted.share_clipped:.1%} of the limiting realisations put the contact above "
+           f"the apex and are a zero column." if converted.share_clipped else ".")
     )
     return Handover(DepthDistribution.from_samples(columns), float(p_active),
                     f"{case}, mean {mean:,.0f}")
@@ -761,6 +772,35 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
     s1.metric("Apex of the mapped surface", f"{table.apex_m:,.0f} m")
     s2.metric("Deepest mapped", f"{table.deepest_m:,.0f} m")
     s3.metric("Gross rock volume", f"{table.capacity_1e6m3:,.0f} ×10⁶ m³")
+
+    # Two checks of the table against tab 2.0, audit findings P2-2 and P2-3. The first is the
+    # crest: the charge column is measured from the elicited apex (see `render_charge`), and a
+    # table whose first row sits well away from it describes a different structure. The second
+    # is the last row: charge that fills past it is declared not limiting, which is only right
+    # when the table reaches the spill.
+    _apex = st.session_state.get("apex")
+    if _apex:
+        _p1, _p99 = float(min(_apex)), float(max(_apex))
+        # A table's first row is often a zero-area crest one step above the mapped area, as the
+        # shipped one is, so the tolerance is the apex spread or one row spacing, whichever is
+        # wider.
+        _tol = max(_p99 - _p1, float(table.depths_m[1] - table.depths_m[0]))
+        if abs(table.apex_m - float(np.mean(_apex))) > _tol:
+            st.warning(
+                f"The table's crest is at {table.apex_m:,.0f} m and the apex on tab 2.0 spans "
+                f"{_p1:,.0f}–{_p99:,.0f} m. The charge column is measured from the apex, so the "
+                f"gap of {table.apex_m - float(np.mean(_apex)):+,.0f} m is not added to the "
+                f"contact; a contact the table puts above the apex is a zero column. A crest this "
+                f"far from the apex describes a different structure."
+            )
+    _gap = ch.table_short_of_spill(table, st.session_state.get("spill_point"))
+    if _gap:
+        st.warning(
+            f"The table ends at {table.deepest_m:,.0f} m, {_gap:,.0f} m above the spill point on "
+            f"tab 2.0. Charge that fills past the last row is counted as not limiting, so any "
+            f"charge that would have bound between the two depths is lost. The table should reach "
+            f"the spill."
+        )
 
     # Area and cumulative volume on one depth axis. They are read together -- *how big is the
     # structure here* and *how much has it held by here* -- and putting them on two figures makes

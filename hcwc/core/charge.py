@@ -304,3 +304,56 @@ def column_height_from_contact(contact_m: np.ndarray, apex_m: np.ndarray) -> np.
     ``inf`` passes straight through, which is what makes a non-limiting charge lose the minimum.
     """
     return np.asarray(contact_m, dtype=float) - np.asarray(apex_m, dtype=float)
+
+
+@dataclass(frozen=True)
+class ChargeColumns:
+    """Charge-limited columns below the *prospect's* apex, with what the conversion had to do."""
+    #: Column height below the prospect apex, finite realisations only, metres.
+    column_m: np.ndarray
+    #: Table crest minus the prospect apex, metres. Positive means the table starts below the
+    #: apex the assessor elicited; negative means above it.
+    crest_offset_m: float
+    #: Share of the limiting realisations whose contact lay above the prospect apex and were
+    #: set to a zero column. Dry realisations (no charge) are counted here too: their contact is
+    #: the table crest, and a zero column is their true value in any frame.
+    share_clipped: float
+
+
+def columns_below_apex(result: ChargeResult, prospect_apex_m: float,
+                       table: AreaDepthTable) -> ChargeColumns:
+    """Audit finding P2-2, 14 Sep 2026: measure the charge column from the prospect apex.
+
+    The fill depth is a depth on the area-depth table's own map. The engine states a charge
+    limit as a column and adds the apex it drew in each realisation, so a column measured from
+    the *table's* crest lands the contact deeper by the gap between that crest and the elicited
+    apex -- 10 m on the shipped prospect, unbounded on an imported table whose first row is not
+    the crest. Measured from the prospect apex instead, the engine's contact reproduces the
+    table's fill depth to within the apex draw, which is the map's own uncertainty.
+
+    A contact above the prospect apex is a zero column: either the realisation carried no charge
+    and its contact is the crest, or the table's crest sits above the apex and the volume filled
+    less than the gap. Both are reported through ``share_clipped`` rather than hidden, and
+    ``crest_offset_m`` says how far the two crests disagree so the panel can warn.
+    """
+    finite = result.contact_m[np.isfinite(result.contact_m)]
+    raw = finite - float(prospect_apex_m)
+    clipped = raw < 0.0
+    return ChargeColumns(column_m=np.where(clipped, 0.0, raw),
+                         crest_offset_m=float(table.apex_m - prospect_apex_m),
+                         share_clipped=float(clipped.mean()) if raw.size else 0.0)
+
+
+def table_short_of_spill(table: AreaDepthTable, spill_m: float | None) -> float | None:
+    """Audit finding P2-3, 14 Sep 2026: metres by which the table ends above the spill.
+
+    A charge that fills past the table's last row is declared not limiting, which is right when
+    the table reaches the spill and wrong when it stops short: charge that would have bound
+    between the table's end and the spill is then counted as no limit at all. Returns the gap
+    in metres when the table ends above the spill, ``0.0`` when it reaches it, and ``None`` when
+    no spill depth is known. The caller decides whether to warn or refuse.
+    """
+    if spill_m is None:
+        return None
+    gap = float(spill_m) - table.deepest_m
+    return gap if gap > 0.0 else 0.0

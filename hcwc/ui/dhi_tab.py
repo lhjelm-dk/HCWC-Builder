@@ -272,9 +272,9 @@ def render(n: Numbering | None = None) -> None:
     # likelihood ratio (`r_dhi` needing a failure set); under the corrected chain the ratio is
     # not part of the chance and the reason is the plain one.
     _short = int((~result.above_minimum).sum())
-    if _short < dhi_core.MIN_FAILURES_FOR_R:
+    if _short < dhi_core.min_failures_for_r(result.n):
         _need = float(np.quantile(result.column_m,
-                                  dhi_core.MIN_FAILURES_FOR_R / max(result.n, 1)))
+                                  dhi_core.min_failures_for_r(result.n) / max(result.n, 1)))
         st.warning(
             f"At an assessment minimum of {h_min:,.0f} m, {result.n - _short:,} of "
             f"{result.n:,} realisations clear it, so P(column ≥ h_min | G) is 1 before the "
