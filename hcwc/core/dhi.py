@@ -96,10 +96,18 @@ class DetectionFunction:
     when very thick, as the top and base responses separate; that is a humped function, not a
     monotone one. The logistic is exposed rather than hard-coded for that reason, and
     ``docs/DHI_alignment.md`` §9 flags it as worth a geophysicist's opinion.
+
+    ``false_positive`` is the detector's other property: how often a trap with **no** hydrocarbons
+    shows an anomaly of the class being looked for, stated relative to how often a
+    hydrocarbon-filled trap of the modelled geometry does. It is what lets an absent anomaly say
+    anything about whether there are hydrocarbons at all; see :func:`absence_ratio`. It is
+    elicited, and no calibration is known to the tool: the default is the maximum-ignorance
+    value and is labelled as such where it is shown.
     """
     h50_m: float = 25.0
     steepness_m: float = 8.0
     ceiling: float = 0.9
+    false_positive: float = 0.5
 
     def __post_init__(self) -> None:
         if self.h50_m <= 0:
@@ -108,6 +116,8 @@ class DetectionFunction:
             raise ValueError("steepness must be positive; it is the width of the transition")
         if not 0.0 < self.ceiling <= 1.0:
             raise ValueError("the detection ceiling must be in (0, 1]")
+        if not 0.0 <= self.false_positive <= 1.0:
+            raise ValueError("the relative false-positive rate must be in [0, 1]")
 
     def at(self, column_m: np.ndarray) -> np.ndarray:
         h = np.asarray(column_m, dtype=float)
@@ -551,6 +561,44 @@ def p_g_given_strength(p_g: float, r_strength: float) -> float:
     return simm_update(p_g, r_strength)
 
 
+def absence_ratio(result: EngineResult, detection: DetectionFunction) -> float:
+    """The likelihood ratio on ``G`` carried by an anomaly that is absent where one was looked for.
+
+    Audit finding P1-0, 14 Sep 2026. The engine's realisations are conditional on ``G``, so the
+    absent case's ``1 - D(h)`` weights can only reshape the column; they cannot lower the chance
+    that there are hydrocarbons, and until this function the character channel was held neutral
+    when nothing was seen. E-POS's principle -- an amplitude absent where one was expected lowers
+    P(G) -- and Monigle et al. (2025) both put absence on the chance. This is that ratio::
+
+        R_absent = P(absent | G) / P(absent | not G)
+                 = (1 - d) / (1 - f · d),      d = E[D(h)] over the geological columns
+
+    ``d`` is the chance a hydrocarbon-filled trap of the modelled geometry shows, averaged over
+    ``p(h | G)``; ``f`` is :attr:`DetectionFunction.false_positive`, the barren trap's chance of
+    showing stated relative to ``d``. Tying the false-positive rate to ``d`` is a modelling
+    choice, made so that the ratio behaves at the ends: where nothing could have shown
+    (``d -> 0``) absence is uninformative, ``R = 1``, whatever ``f`` says; where a barren trap
+    shows as readily as a filled one (``f = 1``) likewise. Since ``f·d <= d`` the ratio is never
+    above 1 -- absence never counts *for* hydrocarbons -- and with ``f = 0`` it is ``1 - d``, the
+    strongest case. Bounded below at ``1 / R_SINGLE_CHANNEL`` like every other single channel.
+    """
+    d = float(np.mean(detection.at(result.column_m)))
+    r = (1.0 - d) / (1.0 - detection.false_positive * d)
+    return float(np.clip(r, 1.0 / R_SINGLE_CHANNEL, 1.0))
+
+
+def applied_ratio(result: EngineResult, detection: DetectionFunction,
+                  observation: DhiObservation, r_strength: float) -> float:
+    """The ratio that updates ``P(G)`` for this observation.
+
+    A seen anomaly is graded on the strength axis and ``r_strength`` is applied as it stands. An
+    absent one has no character to grade, so the strength is ignored and :func:`absence_ratio`
+    is applied instead. One function, so the tab, the leverage sweep and the paper's figures
+    cannot disagree about which ratio the absent case carries.
+    """
+    return float(r_strength) if observation.seen else absence_ratio(result, detection)
+
+
 def prospect_pos(p_g: float, r_strength: float, posterior: DhiPosterior) -> float:
     """Step C: the prospect chance at the assessment minimum, given the DHI.
 
@@ -607,7 +655,8 @@ def outcome(result: EngineResult, detection: DetectionFunction, observation: Dhi
     nothing else; see :class:`DhiObservation`.
     """
     post = update(result, detection, observation)
-    return Outcome(pos=prospect_pos(p_g, r_strength, post),
+    r = applied_ratio(result, detection, observation, r_strength)
+    return Outcome(pos=prospect_pos(p_g, r, post),
                    contact_m=float(post.percentiles(50.0)[0]))
 
 

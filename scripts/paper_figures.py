@@ -316,19 +316,24 @@ def figure_4_dhi_update(result: engine.EngineResult, p_g: float) -> None:
         esses.append(float(post.effective_sample_size))
         labels.append(f"{tag}\n{strength:.0f} / {sigma:.0f} m")
 
-    # An absent anomaly carries no character to grade, so r_strength is neutral by construction
-    # -- the app does the same, and for the same reason.
-    absent_post = dhi_core.update(result, detection, dhi_core.DhiObservation(seen=False))
-    y, pos = curve(absent_post, 1.0)
+    # An absent anomaly carries no character to grade; the chance is updated by the absence
+    # ratio instead, P(absent | G) / P(absent | not G), through the same `applied_ratio` the
+    # app uses. Within G the weights are flat on this prospect (every column sits on the
+    # detection ceiling), so the curve is the geological one scaled by P(G | absent) / P(G).
+    absent_obs = dhi_core.DhiObservation(seen=False)
+    absent_post = dhi_core.update(result, detection, absent_obs)
+    y, pos = curve(absent_post, dhi_core.applied_ratio(result, detection, absent_obs, 1.0))
     ax.plot(grid + apex, y, color="#0369A1", lw=1.6, ls="-.", zorder=4)
-    tags.append((y[0], f"absent — {pos:.1%}", "#0369A1"))
-    for y0, text, colour in tags:
-        ax.annotate(text, (grid[0] + apex, y0), xytext=(6, 4),
-                    textcoords="offset points", fontsize=6.8, color=colour, va="bottom")
+    tags.append((y[0], f"absent — {pos:.1%}   (f {detection.false_positive:.1f})", "#0369A1", "top"))
+    for y0, text, colour, *va in tags:
+        below = va and va[0] == "top"
+        ax.annotate(text, (grid[0] + apex, y0), xytext=(6, -4 if below else 4),
+                    textcoords="offset points", fontsize=6.8, color=colour,
+                    va="top" if below else "bottom")
 
     ax.axvline(apex + HMIN, color="#111", lw=0.9, ls="--", zorder=1)
-    ax.annotate("assessment\nminimum", (apex + HMIN, 0.015), xytext=(-5, 0), rotation=90,
-                textcoords="offset points", fontsize=7, va="bottom", ha="right")
+    ax.annotate("assessment\nminimum", (apex + HMIN, 0.37), xytext=(-5, 0), rotation=90,
+                textcoords="offset points", fontsize=7, va="top", ha="right")
     ax.axvline(PICK_M, color="#B45309", lw=0.9, ls=":", zorder=1)
     ax.annotate("DHI pick", (PICK_M, 0.30), xytext=(4, 0), textcoords="offset points",
                 fontsize=7, color="#B45309", va="bottom")

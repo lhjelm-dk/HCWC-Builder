@@ -758,6 +758,84 @@ class TestAbsenceIsEvidenceAgainst:
         assert combined.posterior_pos < prior_pos * 0.5
 
 
+class TestAbsenceLowersTheChance:
+    """Audit finding P1-0, 14 Sep 2026.
+
+    The corrected chain updates P(G) by the strength and reweights within G by the pick. An
+    absent anomaly has no strength to grade, so the chance was held neutral and absence could
+    only reshape the column -- on the shipped prospect, where every column sits on the detection
+    ceiling, it did nothing at all. E-POS's principle and Monigle et al. (2025) both put absence
+    on the chance. `absence_ratio` is that ratio, and `applied_ratio` is the one place that
+    decides which ratio an observation carries.
+    """
+
+    def test_the_ratio_is_the_two_absences_divided(self):
+        """`(1 - d) / (1 - f d)`, with `d` the filled trap's chance of showing."""
+        result = run(5.0)
+        detection = DetectionFunction(false_positive=0.3)
+        d = float(np.mean(detection.at(result.column_m)))
+        expected = (1.0 - d) / (1.0 - 0.3 * d)
+        assert dhi.absence_ratio(result, detection) == pytest.approx(expected, rel=1e-12)
+
+    def test_a_barren_trap_that_never_shows_makes_absence_strongest(self):
+        """`f = 0`: the ratio is the chance of having missed a real column, and nothing softer."""
+        result = run(5.0)
+        detection = DetectionFunction(false_positive=0.0)
+        expected = float(np.mean(1.0 - detection.at(result.column_m)))
+        assert dhi.absence_ratio(result, detection) == pytest.approx(max(expected, 0.1), rel=1e-12)
+
+    def test_a_barren_trap_that_shows_as_readily_makes_absence_uninformative(self):
+        assert dhi.absence_ratio(run(5.0), DetectionFunction(false_positive=1.0)) == 1.0
+
+    def test_absence_never_counts_for_hydrocarbons(self):
+        """`f d <= d`, so the ratio cannot exceed 1 whatever the two inputs say."""
+        result = run(5.0)
+        for f in (0.0, 0.25, 0.5, 0.75, 1.0):
+            for h50 in (5.0, 25.0, 150.0, 400.0):
+                r = dhi.absence_ratio(result, DetectionFunction(h50_m=h50, false_positive=f))
+                assert 0.1 <= r <= 1.0, (f, h50, r)
+
+    def test_where_nothing_could_have_shown_absence_says_nothing(self):
+        """A blind survey: `d -> 0`, so the ratio goes to 1 regardless of the false-positive rate."""
+        result = run(5.0)
+        blind = dhi.absence_ratio(result, DetectionFunction(h50_m=5000.0, false_positive=0.0))
+        assert blind == pytest.approx(1.0, abs=1e-6)
+
+    def test_the_ratio_is_bounded_like_every_single_channel(self):
+        result = run(5.0)
+        detection = DetectionFunction(ceiling=1.0, h50_m=1.0, steepness_m=0.1, false_positive=0.0)
+        # d is essentially 1, so the raw ratio is essentially 0; it must stop at the floor.
+        assert dhi.absence_ratio(result, detection) == pytest.approx(1.0 / dhi.R_SINGLE_CHANNEL)
+
+    def test_the_applied_ratio_is_the_strength_when_seen_and_the_absence_ratio_when_not(self):
+        result, detection = run(5.0), DetectionFunction()
+        seen = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=15.0, p_valid=0.7)
+        absent = DhiObservation(seen=False)
+        assert dhi.applied_ratio(result, detection, seen, 3.7) == 3.7
+        assert dhi.applied_ratio(result, detection, absent, 3.7) == \
+            dhi.absence_ratio(result, detection)
+
+    def test_an_absent_anomaly_lowers_the_prospect_chance_through_outcome(self):
+        """The chain end to end: with nothing seen, the chance falls and the column is the
+        same posterior it was before the ratio existed."""
+        result, detection = run(5.0), DetectionFunction()
+        absent = DhiObservation(seen=False)
+        before = dhi.prospect_pos(0.408, 1.0, dhi.update(result, detection, absent))
+        out = dhi.outcome(result, detection, absent, p_g=0.408, r_strength=9.0)
+        assert out.pos < before, "the strength passed in must not rescue an absent anomaly"
+        assert out.pos == pytest.approx(
+            dhi.prospect_pos(0.408, dhi.absence_ratio(result, detection),
+                             dhi.update(result, detection, absent)))
+        assert out.contact_m == pytest.approx(
+            float(dhi.update(result, detection, absent).percentiles(50.0)[0]))
+
+    def test_the_false_positive_rate_is_validated(self):
+        with pytest.raises(ValueError):
+            DetectionFunction(false_positive=1.5)
+        with pytest.raises(ValueError):
+            DetectionFunction(false_positive=-0.1)
+
+
 class TestPartialConformance:
     """Bright over the crest, reliably absent below a depth — the third observation.
 
