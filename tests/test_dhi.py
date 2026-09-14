@@ -13,7 +13,7 @@ import pytest
 
 from hcwc.core import dhi, engine
 from hcwc.core.dhi import DetectionFunction, DhiObservation
-from hcwc.core.limits import LimitSet, reference_prospect
+from hcwc.core.limits import DepthDistribution, Group, Limit, LimitSet, reference_prospect
 
 N = 40_000
 
@@ -409,11 +409,10 @@ class TestLeverageIsMeasuredNotAsserted:
                                                if k in ("h50_m", "steepness_m", "ceiling")})
         obs = dataclasses.replace(self.obs, **{k: v for k, v in over.items()
                                                if k in ("contact_m", "pick_sigma_m", "p_valid")})
-        return (self.result, det, obs, 0.4, over.get("r_strength", 1.4),
-                over.get("dependence", 0.5))
+        return (self.result, det, obs, 0.4, over.get("r_strength", 1.4))
 
     def test_outcome_reports_both_numbers(self):
-        got = dhi.outcome(self.result, self.det, self.obs, prior_pos=0.4, r_strength=1.4)
+        got = dhi.outcome(self.result, self.det, self.obs, p_g=0.4, r_strength=1.4)
         assert 0.0 < got.pos < 1.0
         assert np.isfinite(got.contact_m)
 
@@ -673,7 +672,7 @@ class TestNothingIsEverRuledOut:
         result = run()
         obs = DhiObservation(seen=True, contact_m=2300.0, p_valid=p_valid, **shape)
         weights = dhi.likelihood(result, DetectionFunction(), obs)
-        c = dhi.spurious_density(result.contact_m)
+        c = dhi.spurious_density(result.limit_set.contact_support_m())
         assert (weights / c).min() >= (1.0 - p_valid) - 1e-9
 
     def test_a_bounded_pick_without_the_mixture_does_assign_zero(self):
@@ -796,18 +795,63 @@ class TestPartialConformance:
             dhi.likelihood(result, DetectionFunction(),
                            DhiObservation(seen=True, absent_below_m=shallow))
 
-    def test_everything_above_the_cutoff_is_equally_consistent(self):
-        """The claim is a bound, not a depth. Above the cutoff no contact is preferred, which is
-        what separates this from a pick — a pick peaks somewhere and this must not."""
-        result, post = self._at(2250.0, p_valid=1.0)
+    def test_well_above_the_cutoff_every_contact_is_equally_consistent(self):
+        """The claim is a bound, not a depth. Clear of the cutoff no contact is preferred, which is
+        what separates this from a pick — a pick peaks somewhere and this must not.
+
+        *Clear of* means more than a few σ above: the bound is a censored pick with the same
+        edge error, so within a σ or two of the cutoff a contact is a little less consistent than
+        one far above it. That is the softness, and it is meant.
+        """
+        result, post = self._at(2250.0, p_valid=1.0, pick_sigma_m=15.0)
         h_off = 2250.0 - result.apex_m
-        above = result.column_m <= h_off
-        assert above.sum() > 50, "the fixture needs realisations on both sides of the cutoff"
-        # Above the cutoff the only variation left is D(h) itself, so the bound contributes a
-        # constant. Divide it out and what remains must be flat.
+        clear = result.column_m <= h_off - 4 * 15.0
+        assert clear.sum() > 50, "the fixture needs realisations well above the cutoff"
         detection = DetectionFunction()
-        bound_factor = post.weights[above] / detection.at(result.column_m[above])
-        assert np.allclose(bound_factor, bound_factor[0])
+        bound_factor = post.weights[clear] / detection.at(result.column_m[clear])
+        assert np.allclose(bound_factor, bound_factor[0], rtol=1e-4)
+
+    def test_the_bound_is_a_censored_pick_and_nothing_else(self):
+        """The formula, pinned: `D(h) · Φ((z_off − z) / σ)` in the valid branch. One error, one
+        parameter, and the detection function applied once."""
+        result = self._result()
+        detection = DetectionFunction()
+        obs = DhiObservation(seen=True, absent_below_m=2250.0, p_valid=1.0, pick_sigma_m=20.0)
+        weights = dhi.likelihood(result, detection, obs)
+        from scipy.stats import norm
+        expected = detection.at(result.column_m) * norm.cdf(
+            (2250.0 - result.contact_m) / 20.0)
+        np.testing.assert_allclose(weights, expected, rtol=1e-12)
+
+    def test_the_bound_is_fifty_fifty_at_the_stated_cutoff(self):
+        """The interpreter states the depth; the model puts the half-way point there, not 25 m
+        below it as the old form did (its softness came from `h50`, elicited for another job)."""
+        result = self._result()
+        detection = DetectionFunction()
+        obs = DhiObservation(seen=True, absent_below_m=2250.0, p_valid=1.0)
+        factor = dhi.likelihood(result, detection, obs) / detection.at(result.column_m)
+        at_cutoff = np.abs(result.contact_m - 2250.0) < 1.0
+        assert at_cutoff.any()
+        assert factor[at_cutoff].mean() == pytest.approx(0.5, abs=0.03)
+
+    def test_the_edge_error_is_the_only_width_the_bound_has(self):
+        """Halving σ sharpens the transition; changing the detection function's shape does not
+        touch it. The two parameters answer different questions and stay apart."""
+        result = self._result()
+        band = np.abs(result.contact_m - 2250.0) < 30.0
+        assert band.sum() > 30
+
+        def transition(sigma, **det):
+            obs = DhiObservation(seen=True, absent_below_m=2250.0, p_valid=1.0, pick_sigma_m=sigma)
+            d = DetectionFunction(**det)
+            factor = dhi.likelihood(result, d, obs) / d.at(result.column_m)
+            return float(np.std(factor[band]))
+
+        assert transition(5.0) > transition(30.0)
+        assert transition(15.0, h50_m=25.0) == pytest.approx(transition(15.0, h50_m=80.0),
+                                                              rel=1e-9)
+        assert transition(15.0, ceiling=0.9) == pytest.approx(transition(15.0, ceiling=0.5),
+                                                               rel=1e-9)
 
     def test_it_argues_against_columns_below_the_cutoff(self):
         result, post = self._at(2250.0, p_valid=1.0)
@@ -896,6 +940,79 @@ class TestPartialConformance:
         assert r_absent < r_bound < r_pick
 
 
+class TestTheSpuriousDensityIsAPropertyOfTheModel:
+    """`s` is one over the declared contact support, not over whatever the sampler reached.
+
+    Audit of 14 Sep 2026. `1 / (max − min)` of the realised contacts made a picked flat spot's
+    likelihood depend on the trial count and the seed: four per cent between a 2 000- and a
+    50 000-trial run of the same model on the reference prospect. The support now comes off the
+    declared distributions and the same limit set gives the same number every time.
+    """
+
+    def test_the_support_comes_from_the_declared_inputs(self):
+        limits = reference_prospect()
+        shallow, deep = limits.contact_support_m()
+        assert shallow == pytest.approx(float(limits.apex.ppf(np.array([0.001]))[0]))
+        assert deep > shallow + 100.0
+
+    def test_the_density_does_not_depend_on_the_trial_count(self):
+        limits = reference_prospect()
+        densities = {n: dhi.spurious_density(engine.run(limits, n, 4242).limit_set
+                                             .contact_support_m())
+                     for n in (500, 5_000, 50_000)}
+        assert len({round(v, 15) for v in densities.values()}) == 1, densities
+
+    def test_the_density_does_not_depend_on_the_seed(self):
+        limits = reference_prospect()
+        densities = [dhi.spurious_density(engine.run(limits, 4_000, seed).limit_set
+                                          .contact_support_m()) for seed in (1, 2, 3, 99)]
+        assert max(densities) == min(densities)
+
+    def test_the_old_construction_did_move_with_the_trial_count(self):
+        """The defect, reproduced on purpose so its absence stays visible."""
+        limits = reference_prospect()
+        spans = []
+        for n in (500, 50_000):
+            contacts = engine.run(limits, n, 4242).contact_m
+            spans.append(float(contacts.max() - contacts.min()))
+        assert abs(spans[1] - spans[0]) / spans[1] > 0.01, "the sample-based span no longer moves"
+
+    def test_a_pick_likelihood_is_the_same_whatever_the_trial_count(self):
+        """What the density is for: the floor under a pick, per realisation, cannot depend on how
+        many other realisations were drawn."""
+        limits = reference_prospect()
+        obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=15.0, p_valid=0.6)
+        floors = []
+        for n in (1_000, 40_000):
+            result = engine.run(limits, n, 4242)
+            weights = dhi.likelihood(result, DetectionFunction(), obs)
+            # Far from the pick the valid branch is nil and the weight is the floor alone.
+            far = np.abs(result.contact_m - 2250.0) > 8 * 15.0
+            assert far.any()
+            floors.append(float(weights[far].mean()))
+        assert floors[0] == pytest.approx(floors[1], rel=1e-9)
+
+    def test_the_deep_end_is_the_tightest_always_active_limit(self):
+        """A contact cannot lie below a limit that is always there."""
+        base = reference_prospect()
+        tight = dataclasses.replace(base, limits=base.limits + (
+            Limit("Shallow lid", Group.RETENTION, 1.0,
+                  DepthDistribution("fixed", {"value": 120.0})),))
+        _, deep_base = base.contact_support_m()
+        _, deep_tight = tight.contact_support_m()
+        assert deep_tight < deep_base
+        assert deep_tight == pytest.approx(float(base.apex.ppf(np.array([0.999]))[0]) + 120.0)
+
+    def test_a_model_with_no_room_for_a_contact_is_refused(self):
+        base = reference_prospect()
+        from hcwc.core.limits import DEPTH
+        lid = dataclasses.replace(base, limits=base.limits + (
+            Limit("Lid above the apex", Group.CLOSURE, 1.0,
+                  DepthDistribution("fixed", {"value": 2000.0}), kind=DEPTH),))
+        with pytest.raises(ValueError, match="no depth interval"):
+            lid.contact_support_m()
+
+
 class TestANeutralAmplitudeDoesNothing:
     """Lars, 2 Sep 2026, checking against E-POS: a DHI strength of 0 must not lift POS.
 
@@ -938,10 +1055,161 @@ class TestANeutralAmplitudeDoesNothing:
         assert combined.posterior_pos == pytest.approx(0.408, abs=1e-12)
 
     def test_a_defined_geometry_channel_still_moves_it(self):
-        """The guard must not have switched the channel off everywhere."""
+        """The guard must not have switched the channel off everywhere.
+
+        `CombinedUpdate` is no longer the chance (see the classes below); this pins the class's
+        own arithmetic, which the tab still draws as a comparison.
+        """
         combined = dhi.CombinedUpdate(prior_pos=0.408, r_geometry=2.34, r_strength=1.0,
                                       dependence=0.5)
         assert combined.posterior_pos > 0.408
+
+
+# --------------------------------------------------------------------------- the conditional chain
+#
+# Audit of 14 Sep 2026. The engine's realisations are draws from p(h | G); `p_valid` was built as
+# P(G | strength) × c, so the strength reached the geometry posterior through the mixture weight,
+# and then again through `CombinedUpdate`. Measured on the reference prospect with c held at 0.70:
+# moving the strength alone moved the posterior P50 by 17 m and the conditional column term by six
+# points. The chain is now A: P(G | strength); B: p(h | G, geometry); C: their product at h_min.
+
+
+class TestStrengthCannotReachTheGeometryPosterior:
+    """B is conditional on G, so nothing about whether there is hydrocarbon may enter it.
+
+    The strength ratio is the answer to *is there hydrocarbon*. If it can move the posterior over
+    *where the contact is, given there is*, it is being counted where it does not belong -- and it
+    was, through `p_valid`. These tests hold the contact-attribute judgement `c` fixed and vary
+    the strength across its whole allowed range.
+    """
+
+    P_G, C = 0.408, 0.70
+
+    def setup_method(self):
+        self.result = run(min_column_m=120.0)
+        self.det = DetectionFunction()
+        self.obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=15.0, p_valid=self.C)
+
+    def _outcome(self, r):
+        return dhi.outcome(self.result, self.det, self.obs, p_g=self.P_G, r_strength=r)
+
+    def test_the_geometry_posterior_is_identical_at_every_strength(self):
+        """The weights never see the strength, so the P50 cannot move by a nanometre."""
+        neutral = self._outcome(1.0).contact_m
+        for r in (1.0 / dhi.R_SINGLE_CHANNEL, 0.5, 1.4, 3.0, dhi.R_SINGLE_CHANNEL):
+            assert self._outcome(r).contact_m == neutral
+
+    def test_the_conditional_column_term_is_identical_at_every_strength(self):
+        """`P(h ≥ h_min | G, geometry)` is a property of the geometry alone."""
+        post = dhi.update(self.result, self.det, self.obs)
+        term = post.pos()
+        for r in (0.1, 1.0, 10.0):
+            assert dhi.prospect_pos(self.P_G, r, post) / dhi.p_g_given_strength(self.P_G, r) \
+                == pytest.approx(term, abs=1e-15)
+
+    def test_a_neutral_strength_changes_nothing_at_all(self):
+        """R = 1 leaves P(G) alone, so the chance is P(G) × the conditional term exactly, and the
+        contact is the geometry posterior's own. No hidden path can move either."""
+        post = dhi.update(self.result, self.det, self.obs)
+        got = self._outcome(1.0)
+        assert got.pos == pytest.approx(self.P_G * post.pos(), abs=1e-15)
+        assert got.contact_m == float(post.percentiles(50.0)[0])
+
+    def test_the_strength_moves_only_the_first_factor(self):
+        """Two strengths, one geometry posterior: the ratio of the two chances is the ratio of the
+        two updated element chances, to machine precision."""
+        a, b = self._outcome(1.0), self._outcome(dhi.R_SINGLE_CHANNEL)
+        expected = (dhi.p_g_given_strength(self.P_G, dhi.R_SINGLE_CHANNEL)
+                    / dhi.p_g_given_strength(self.P_G, 1.0))
+        assert b.pos / a.pos == pytest.approx(expected, rel=1e-12)
+
+    def test_the_old_construction_did_leak_and_this_is_why_the_test_exists(self):
+        """The regression this guards against, reproduced on purpose.
+
+        Building `p_valid` as P(G | strength) × c -- the shipped form until 14 Sep 2026 -- and
+        holding c fixed, the geometry posterior moves with the strength. That is the double count.
+        Kept as an executable statement of the defect, so that if anyone reintroduces a P(G)
+        factor into `p_valid` the difference is visible here rather than on a report sheet.
+        """
+        p50 = []
+        for r in (1.0, 10.0):
+            leaked = dataclasses.replace(self.obs, p_valid=dhi.simm_update(self.P_G, r) * self.C)
+            post = dhi.update(self.result, self.det, leaked)
+            p50.append(float(post.percentiles(50.0)[0]))
+        assert abs(p50[1] - p50[0]) > 5.0, "the old construction no longer leaks; update this note"
+
+    def test_p_valid_is_not_bounded_by_the_element_chance(self):
+        """A confident contact interpretation on a risky prospect is a legal and common state.
+
+        Under the old ceiling `p_valid ≤ P(G | strength)`, so c = 0.95 on a 0.4 prospect was
+        clipped to something under 0.4. Conditional on G it is 0.95, and the chance still comes out
+        below P(G | strength) because the column term is at most one.
+        """
+        confident = dataclasses.replace(self.obs, p_valid=0.95)
+        post = dhi.update(self.result, self.det, confident)
+        assert post.observation.p_valid == 0.95
+        chance = dhi.prospect_pos(0.4, 1.4, post)
+        assert chance <= dhi.p_g_given_strength(0.4, 1.4)
+
+
+class TestTheHeadlineIsReadOffTheDistributionItIsDrawnBeside:
+    """One posterior over h supplies the histogram, the percentiles, F(h) and the chance.
+
+    Under the blended construction the headline was `simm_update(P(G) · F_prior, R_comb)` while
+    the histogram came from the weights, and the curve was rescaled to pass through the headline.
+    These tests pin the identities that make rescaling unnecessary.
+    """
+
+    P_G, R = 0.408, 1.4
+
+    def setup_method(self):
+        self.result = run(min_column_m=120.0)
+        self.post = dhi.update(self.result, DetectionFunction(),
+                               DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=15.0,
+                                              p_valid=0.70))
+
+    def test_the_chance_is_the_weighted_share_above_the_minimum(self):
+        """The conditional term is exactly the histogram's mass at and below the threshold depth."""
+        w = self.post.weights
+        col = self.result.column_m
+        h_min = self.result.limit_set.min_column_m
+        by_hand = float(w[col >= h_min].sum() / w.sum())
+        assert self.post.pos() == pytest.approx(by_hand, abs=1e-12)
+        assert dhi.prospect_pos(self.P_G, self.R, self.post) == pytest.approx(
+            dhi.p_g_given_strength(self.P_G, self.R) * by_hand, abs=1e-12)
+
+    def test_the_curve_passes_through_the_headline_without_rescaling(self):
+        h_min = self.result.limit_set.min_column_m
+        curve = dhi.prospect_pos_curve(self.P_G, self.R, self.post, np.array([h_min]))
+        assert float(curve[0]) == pytest.approx(dhi.prospect_pos(self.P_G, self.R, self.post),
+                                                abs=1e-15)
+
+    def test_the_curve_is_the_exceedance_scaled_by_one_constant(self):
+        """No point on the curve carries any factor the headline does not."""
+        grid = np.linspace(0.0, float(self.result.column_m.max()), 50)
+        curve = dhi.prospect_pos_curve(self.P_G, self.R, self.post, grid)
+        f_post = self.post.exceedance(grid)
+        scale = dhi.p_g_given_strength(self.P_G, self.R)
+        np.testing.assert_allclose(curve, scale * f_post, rtol=0, atol=1e-15)
+
+    def test_the_percentiles_and_the_chance_share_one_set_of_weights(self):
+        """The P50 the tab prints and the chance it prints are readings of the same object: the
+        weighted median lies where the weighted exceedance crosses one half."""
+        p50 = float(self.post.percentiles(50.0)[0])
+        keep = self.result.above_minimum
+        contacts, w = self.result.contact_m[keep], self.post.weights[keep]
+        share_deeper = float(w[contacts >= p50].sum() / w.sum())
+        assert share_deeper == pytest.approx(0.5, abs=0.01)
+
+    def test_the_headline_is_bounded_by_the_updated_element_chance(self):
+        """F ≤ 1, so the chance can never exceed P(G | strength) -- the blended form could."""
+        for r in (0.1, 1.0, 10.0):
+            assert dhi.prospect_pos(self.P_G, r, self.post) <= dhi.p_g_given_strength(self.P_G, r)
+
+    def test_the_chance_falls_monotonically_with_the_threshold(self):
+        grid = np.linspace(0.0, float(self.result.column_m.max()), 40)
+        curve = dhi.prospect_pos_curve(self.P_G, self.R, self.post, grid)
+        assert np.all(np.diff(curve) <= 1e-15)
 
 
 class TestTheOtherRatiosWereCheckedToo:

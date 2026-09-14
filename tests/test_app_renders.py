@@ -1062,7 +1062,7 @@ class TestTheMechanicalTopSealIsAvailableAsALimit:
         so the mechanism is correct and irrelevant — and a reader not told that will wonder why it
         never appears in the controlling-limit statistics."""
         at = _run(**{f"{self.KEY}_src": "fracture"})
-        assert any("nowhere near its fracture limit" in str(i.value) for i in at.get("info"))
+        assert any("far from its fracture limit" in str(i.value) for i in at.get("info"))
 
     def test_overpressure_is_what_makes_it_bite(self):
         """Twenty bar of headroom instead of a hundred, and the column falls by an order of
@@ -1658,7 +1658,11 @@ class TestThePageIsNotAnEssay:
                           for e in at.get(kind))
         for phrase in (
             "Beha et al. (2012)",                       # tab 1.0 §2, folded
-            "the third is the one people skip",         # tab 1.0 §3, folded
+            # tab 1.0 §3. Until 14 Sep 2026 this was "the third is the one people skip",
+            # from a four-step fold that duplicated the tab list in the intro and was removed
+            # when tab 1 moved to the report tone. The claim that section exists to make is
+            # the one pinned now.
+            "the elicitation effort belongs on the top two or three",
             "a prior and a likelihood are the same kind of object",   # tab 8.0 §1, folded
             "in the absence of direct hydrocarbon",     # tab 6.0 §7, folded
             "The censored MLE crossing is a prediction",  # tab 6.0 §2, folded

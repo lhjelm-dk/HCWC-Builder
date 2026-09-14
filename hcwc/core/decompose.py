@@ -135,12 +135,18 @@ class Decomposition:
         """
         out = {}
         for element in ELEMENTS:
+            # An element with no limit in the set never controls the contact, so its depth curve
+            # is one everywhere -- but its element chance still multiplies in. Until 14 Sep 2026
+            # such an element was left out of this dict altogether, and `factorised_pos` and the
+            # derived P_well then ran without its chance: on the shipped prospect, which carries
+            # no Reservoir limit, the derived P(well) was 1 / P(Reservoir) = 1.59 times the
+            # allocated one, and the comparison table on tab 4.2 was comparing two different
+            # quantities.
             curve = self.by_element_depth.get(element)
             if curve is None:
-                continue
+                curve = np.ones_like(self.depths_m)
             out[element] = float(element_pos.get(element, 1.0)) * curve
-        if Group.RESERVOIR in out:
-            out[Group.RESERVOIR] = out[Group.RESERVOIR] * self.reservoir_effectiveness
+        out[Group.RESERVOIR] = out[Group.RESERVOIR] * self.reservoir_effectiveness
         return out
 
     def factorised_pos(self, element_pos: dict[Group, float]) -> np.ndarray:

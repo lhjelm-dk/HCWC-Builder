@@ -12,6 +12,54 @@ Once you see that, the incompatibility disappears.
 
 ---
 
+## 0 · Status, 14 September 2026 — what the audit changed
+
+Three corrections to what follows, all in `hcwc/core/dhi.py`. The note is left as written below
+so the reasoning can be followed; where it conflicts with this section, this section is current.
+
+**The chain is conditional, and the strength enters once.** The engine samples `p(h | G)`, so
+everything applied to its realisations is conditional on G. The prospect chance is
+
+```
+POS(h_min) = P(G | strength) × P(h ≥ h_min | G, geometry)
+```
+
+with `P(G | strength) = simm_update(P(G), R_strength)` and the second factor read off the same
+weights that draw the posterior histogram and percentiles. `p_valid` is
+`P(the picked event is the contact | G, contact attributes)` — the contact-attribute judgement `c`
+and nothing else. It had been built as `P(G | strength) × c`, which put `P(G)` inside a term
+already conditional on G, so the strength reached the geometry posterior through the mixture
+weight and then again through a blended likelihood ratio (`CombinedUpdate`). Holding `c` at 0.70
+and moving the strength alone moved the posterior P50 by 17 m. The blend also applied `r_dhi` — a
+ratio between two column heights inside G — as if it were a likelihood ratio on the prospect.
+§5's open question on the two channels' independence is answered by structure: they update
+different factors. `dhi.prospect_pos` is the chain; `CombinedUpdate` stays only as a comparison.
+
+**The spurious-event density is a property of the model.** It was `1 / (max − min)` of the
+*sampled* contacts, so a pick's likelihood depended on the trial count and the seed — four per
+cent between a 2 000- and a 50 000-trial run. It is now one over the declared contact support,
+`LimitSet.contact_support_m()`: the apex's shallow quantile to the tightest always-active limit's
+deep quantile, read off the distributions rather than the draws.
+
+**Partial conformance is a censored pick.** "Bright above `z_off`, reliably absent below" is one
+observation of where the anomaly's edge is, made with the same pick-and-depth-conversion error a
+picked contact carries. Its likelihood is therefore the normal *cumulative* where a pick's is the
+normal *density*:
+
+```
+L = p_valid · D(h) · Φ((z_off − (apex + h)) / σ)  +  (1 − p_valid)
+```
+
+The form it replaces, `D(h) · [1 − D((h − h_off)+)]`, applied the detection function twice —
+once to the column and once to the slice below the cutoff — as if the two were independent
+detections, and had no parameter of its own: its softness came from `h50` and its steepness, and
+its floor inside the valid branch from `1 − ceiling`, all elicited for a different question. With
+the shipped defaults that placed the fifty-per-cent point 25 m below the stated cutoff. The
+censored form has one parameter, `σ`, already on the observation, and puts the half-way point at
+the depth the interpreter stated.
+
+---
+
 ## 1 · Why it feels contradictory
 
 Two numbers that appear to be about the same thing:
