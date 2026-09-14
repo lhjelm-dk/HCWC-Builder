@@ -299,10 +299,29 @@ class TestStrengthModel:
         """The curves cross at 0 by symmetry of the defaults."""
         assert dhi.StrengthModel().r_at(0.0) == pytest.approx(1.0, abs=0.01)
 
-    def test_r_is_floored_and_capped(self):
+    def test_r_is_floored_and_capped_at_the_single_channel_ceiling(self):
+        """Not `R_CAP`, which is five times looser and guards the *combination*.
+
+        The two were one number until 9 Sep 2026, and the looser of the two jobs won: one
+        elicited slider on an axis with no external referent could move the prospect chance
+        from 1.4 % to 97.2 %, while `strength_bands` said in words, three lines away, that
+        |R| above 10 should send you back to the inputs.
+        """
         m = dhi.StrengthModel()
-        assert m.r_at(-10_000.0) >= dhi.R_FLOOR
-        assert m.r_at(10_000.0) <= dhi.R_CAP
+        assert m.r_at(400.0) == pytest.approx(dhi.R_SINGLE_CHANNEL)
+        assert m.r_at(-400.0) == pytest.approx(1.0 / dhi.R_SINGLE_CHANNEL)
+
+    def test_far_enough_out_both_curves_underflow_and_the_answer_is_neutral(self):
+        """Not the ceiling: with both densities at zero there is no ratio to take.
+
+        Pinned rather than fixed. R = 1 is the right answer for a reading neither population
+        can produce, and it is unreachable from the slider anyway.
+        """
+        assert dhi.StrengthModel().r_at(10_000.0) == 1.0
+
+    def test_the_single_channel_ceiling_is_stricter_than_the_combination_guard(self):
+        """They do different jobs, so one must not quietly become the other again."""
+        assert dhi.R_SINGLE_CHANNEL < dhi.R_CAP
 
     def test_r_is_scale_invariant_in_the_strength_axis(self):
         """Only the relative heights matter, so rescaling the axis cannot change R."""
@@ -310,6 +329,133 @@ class TestStrengthModel:
         scaled = dhi.StrengthModel(dhi.StrengthCase(-500.0, 1000.0),
                                    dhi.StrengthCase(-1000.0, 500.0)).r_at(250.0)
         assert scaled == pytest.approx(base, rel=1e-9)
+
+
+class TestTheStrengthAxisCanBeInverted:
+    """`strength_at` exists so the slider can stop where the evidence stops.
+
+    A slider whose outer halves are flattened by a cap is worse than a narrower live one: it
+    invites a reading the arithmetic then refuses without saying so.
+    """
+
+    def test_it_inverts_r_at_on_the_defaults(self):
+        m = dhi.StrengthModel()
+        for r in (0.2, 0.5, 1.0, 2.0, 5.0, dhi.R_SINGLE_CHANNEL):
+            assert m.r_at(m.strength_at(r)) == pytest.approx(r, rel=1e-6)
+
+    def test_the_defaults_are_symmetric_about_neutral(self):
+        m = dhi.StrengthModel()
+        hi = m.strength_at(dhi.R_SINGLE_CHANNEL)
+        lo = m.strength_at(1.0 / dhi.R_SINGLE_CHANNEL)
+        assert hi == pytest.approx(-lo, rel=1e-6)
+
+    def test_unequal_widths_take_the_near_branch(self):
+        """With unequal standard deviations log R is a quadratic and reaches any target twice.
+
+        The far root is where the narrower curve has collapsed to nothing. Arithmetically the
+        ratio is right; as a slider bound it would put the *supportive* end of the axis at a
+        reading that sits on the wrong side of the crossing.
+        """
+        m = dhi.StrengthModel(hc=dhi.StrengthCase(-50.0, 100.0),
+                              no_hc=dhi.StrengthCase(-80.0, 10.0))
+        crossing = m.strength_at(1.0)
+        hi = m.strength_at(dhi.R_SINGLE_CHANNEL)
+        assert hi > crossing
+        assert m.r_at(hi) == pytest.approx(dhi.R_SINGLE_CHANNEL, rel=1e-2)
+
+    def test_curves_that_never_separate_have_no_inverse(self):
+        """Identical populations give R = 1 everywhere, and nan is the honest answer."""
+        same = dhi.StrengthCase(-100.0, 100.0)
+        assert np.isnan(dhi.StrengthModel(hc=same, no_hc=same).strength_at(2.0))
+
+
+class TestEachChannelIsBoundedBeforeCombining:
+    """The geometry ratio is reported raw and used clipped, and the two are different numbers."""
+
+    def test_a_runaway_geometry_ratio_cannot_walk_into_the_combination(self):
+        loose = dhi.CombinedUpdate(0.4, r_geometry=4_000.0, r_strength=1.0, dependence=0.0)
+        assert loose.r_combined == pytest.approx(dhi.R_SINGLE_CHANNEL)
+
+    def test_a_runaway_ratio_downward_is_bounded_too(self):
+        loose = dhi.CombinedUpdate(0.4, r_geometry=1e-6, r_strength=1.0, dependence=0.0)
+        assert loose.r_combined == pytest.approx(1.0 / dhi.R_SINGLE_CHANNEL)
+
+    def test_a_missing_geometry_channel_still_bounds_the_strength(self):
+        c = dhi.CombinedUpdate(0.4, r_geometry=float("nan"), r_strength=1_000.0)
+        assert c.r_combined == pytest.approx(dhi.R_SINGLE_CHANNEL)
+
+    def test_two_bounded_channels_may_exceed_one(self):
+        """The combination guard is looser on purpose: Kjonsberg measured 29 on a drilled gas find."""
+        both = dhi.CombinedUpdate(0.4, r_geometry=dhi.R_SINGLE_CHANNEL,
+                                  r_strength=dhi.R_SINGLE_CHANNEL, dependence=0.0)
+        assert both.r_combined > dhi.R_SINGLE_CHANNEL
+        assert both.r_combined <= dhi.R_CAP
+
+
+class TestLeverageIsMeasuredNotAsserted:
+    """What a control is worth, so the tab can print it beside the control.
+
+    The audit that prompted this found the explanation distributed by how interesting a number is
+    rather than by how far it moves the answer.
+    """
+
+    def setup_method(self):
+        self.result = run(min_column_m=120.0)
+        self.det = DetectionFunction()
+        self.obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=15.0, p_valid=0.35)
+
+    def _state(self, **over):
+        det = dataclasses.replace(self.det, **{k: v for k, v in over.items()
+                                               if k in ("h50_m", "steepness_m", "ceiling")})
+        obs = dataclasses.replace(self.obs, **{k: v for k, v in over.items()
+                                               if k in ("contact_m", "pick_sigma_m", "p_valid")})
+        return (self.result, det, obs, 0.4, over.get("r_strength", 1.4),
+                over.get("dependence", 0.5))
+
+    def test_outcome_reports_both_numbers(self):
+        got = dhi.outcome(self.result, self.det, self.obs, prior_pos=0.4, r_strength=1.4)
+        assert 0.0 < got.pos < 1.0
+        assert np.isfinite(got.contact_m)
+
+    def test_the_amplitude_character_moves_the_chance(self):
+        lv = dhi.leverage(lambda v: self._state(r_strength=v),
+                          [1.0 / dhi.R_SINGLE_CHANNEL, 1.0, dhi.R_SINGLE_CHANNEL])
+        assert lv.measurable
+        assert not lv.inert
+        assert lv.pos_points > 50.0
+
+    def test_the_detection_shape_is_inert_when_every_column_clears_tuning(self):
+        """The finding this whole readout exists to make visible.
+
+        `D(h)` sits at its ceiling for every realisation on any prospect worth drilling, so the
+        two shape parameters multiply every weight by the same number and cancel out of the
+        ratio. They carried a warning triangle and a paragraph of the paper for that.
+        """
+        cleared = self.result.column_m[self.result.above_minimum]
+        assert float(cleared.min()) > 3 * self.det.h50_m
+        lv = dhi.leverage(lambda v: self._state(h50_m=v), [5.0, 15.0, 25.0, 50.0])
+        assert lv.inert
+
+    def test_a_refused_state_is_skipped_rather_than_counted_as_an_extreme(self):
+        """A state the model will not enter is not a leverage of one hundred points.
+
+        A *pick* can never do it -- Cromwell's floor keeps every weight positive however far
+        out the contact is put, which is the whole point of it -- so the refusal here comes
+        from the observation constructor instead.
+        """
+        lv = dhi.leverage(lambda v: self._state(pick_sigma_m=v), [3.0, 15.0, -1.0])
+        assert lv.measurable
+        assert lv.span == (3.0, 15.0)
+
+    def test_too_few_usable_points_is_nan_rather_than_zero(self):
+        """"Nothing moved" and "the sweep could not run" are different findings."""
+        lv = dhi.leverage(lambda v: self._state(pick_sigma_m=v), [-1.0, -2.0])
+        assert not lv.measurable
+        assert not lv.inert
+
+    def test_the_swept_span_is_reported(self):
+        lv = dhi.leverage(lambda v: self._state(pick_sigma_m=v), [3.0, 15.0, 120.0])
+        assert lv.span == (3.0, 120.0)
 
 
 class TestSimmUpdate:

@@ -132,15 +132,31 @@ the app reaches that at strength +61. Above that the app keeps going: strength 1
 The three published anchors span 10–29. The app's cap is 50, which is above all of them, and
 `volume_weight(50) = 0.980`.
 
-**This is a decision for Lars, not a bug**, and it is worth stating why it is arguable in both
-directions. Kjønsberg's 29 was a full prestack Bayesian inversion — better evidence than a rated
-anomaly — so a cap above 29 leaves room for evidence better than anything in Monigle's database.
-Against that, no published measurement reaches 50, and the app's own `strength_bands` already tells
-the user that R above 10 should send them back to the inputs while the slider silently permits 50.
+### Settled, 9 September 2026
 
-The narrow, safe change: leave `R_CAP` alone and **name 0.95 on the `p_valid` control as the
-empirically calibrated ceiling**, with the citation. The user can still exceed it; they just cannot
-do so unaware.
+Not by moving the number but by **splitting the constant**, because it was doing two jobs whose
+right answers differ — and the table above is what shows it. Kjønsberg's 29 came out of a full
+prestack inversion carrying the amplitude *and* the geometry, so it is a **combined** ratio.
+Simm's 10 is explicitly about a **single** line of fluid-indicator evidence. Ranking them in one
+column was the error: they are bounds on different quantities.
+
+| constant | value | bounds | anchored by |
+|---|---:|---|---|
+| `R_SINGLE_CHANNEL` | **10** | each channel, going into the combination | Simm (2016) |
+| `R_CAP` | **50** | the combination, coming out | above Kjønsberg's measured 29 |
+
+What made this more than housekeeping was a sensitivity sweep of the whole DHI tab. On the
+shipped prospect the strength slider alone moved the prospect chance from **1.4 % to 97.2 %** —
+a 96-point swing from one elicited number on an axis with no external referent, and more than
+every other control on the tab combined. Under the split it is 81 points, which is still the
+largest single lever in the app and now a defensible one.
+
+The slider was narrowed to match rather than left to run into a flattened range: `strength_at`
+inverts the two curves for the reading that buys R = 10, and that is where the axis ends. A
+dead half-slider would have invited a reading the arithmetic then silently refused.
+
+The narrow change this section originally recommended — **naming 0.95 on the `p_valid` control
+as the empirically calibrated ceiling**, with the citation — is still worth doing and still open.
 
 ---
 
@@ -272,7 +288,7 @@ qualification. Useful as a sanity check on any prospect where a DHI is claimed.
 |---|---|
 | Mathematical conflict | **None.** The integration formula is the same; the app's is a strict superset (it also reweights the column-height distribution). |
 | Conceptual conflict | **None on attribution or double counting** — the paper states the app's rule as policy. |
-| Calibration disagreement | **Yes, one.** The app's `R_CAP = 50` implies a contact weight of 0.980 against their empirically calibrated ceiling of 0.95, and above Kjønsberg's measured 29 and Simm's verbal 10. §3.2. |
+| Calibration disagreement | **Was one, now resolved.** `R_CAP = 50` was bounding a single channel as well as the combination. Split on 9 Sep 2026 into `R_SINGLE_CHANNEL = 10` (Simm) and `R_CAP = 50` (above Kjønsberg's 29). §3.2. |
 | Missing concept | **Yes.** Discernibility, and specifically the separation of *confidence* from *quality*, which they tested and adopted after finding the combined form unpredictive. §6. |
 | Overclaim in this repo | **Yes, one.** `docs/ARTICLE.md` §12 on absent anomalies. §5. |
 
