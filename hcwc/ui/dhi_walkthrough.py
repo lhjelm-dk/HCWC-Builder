@@ -116,13 +116,14 @@ def render(n: Numbering | None = None) -> None:
     figl.add_scatter(x=grid, y=d_curve, mode="lines", name="D(h) — would I have seen it at all?",
                      line=dict(color=PRIOR, width=2.6))
     if observation.is_partial:
-        # Same two questions, but the second one is asked about the slice below the cutoff rather
-        # than about a termination depth: having shown up, would the part under the cutoff have
-        # been missed? Plotted on the same axes so the shapes can be compared directly.
+        # The bound is a censored pick: the edge lies above the cutoff, to within the same error
+        # a picked contact carries, so the curve is the normal cumulative where a pick's is the
+        # density. Plotted on the same axes so the shapes can be compared directly.
+        from scipy.stats import norm as _norm
         h_off = observation.absent_below_m - apex
-        bound_curve = 1.0 - detection.at(np.clip(grid - h_off, 0.0, None))
+        bound_curve = _norm.cdf((h_off - grid) / observation.pick_sigma_m)
         figl.add_scatter(x=grid, y=bound_curve, mode="lines",
-                         name="1 − D(h − h_off) — would the part below have been missed?",
+                         name="Φ((z_off − z) / σ) — does the edge lie above the cutoff?",
                          line=dict(color=POSTERIOR, width=2.6))
         product = d_curve * bound_curve
         figl.add_scatter(x=grid, y=product / (float(product.max()) or 1.0), mode="lines",
@@ -161,15 +162,18 @@ def render(n: Numbering | None = None) -> None:
         "convincing it looks.\n\n"
         "Your tool answers it in two places, one for each thing the amplitude carries:"
     )
-    rows = [{"Aspect of the observation": "**Character** — how hydrocarbon-like the amplitude looks",
+    rows = [{"Aspect of the observation": "Character: how hydrocarbon-like the amplitude looks",
              "Answered by": "the two-curve strength model, sub-tab 2.0 §2",
+             "Updates": "P(G), the chance the elements worked",
              "Gives": f"R = {r_strength:.2f}" if r_strength else "R from strength"},
-            {"Aspect of the observation": "**Geometry** — where the event terminates",
+            {"Aspect of the observation": "Geometry: where the event terminates",
              "Answered by": "the pick likelihood against a flat rival, §4 below",
-             "Gives": f"floor 1 − p_valid = {1 - observation.p_valid:.3f}"}]
+             "Updates": "p(h | G), the column given that they worked",
+             "Gives": f"floor 1 − p_valid = {1 - observation.p_valid:.2f}"}]
     n.table(pd.DataFrame(rows),
-            "**Two aspects of one observation, not two observations.** They are combined with a "
-            "discount for exactly that reason — see sub-tab 2.0 §5, where `dependence` lives.")
+            "Two aspects of one observation, answering two questions. Each updates its own "
+            "factor of the chance and neither is applied to the other's, so nothing is counted "
+            "twice and nothing has to be discounted.")
 
     # ------------------------------------------------------------------ 4 · the two branches
     st.markdown("#### Step 4 · What if the thing I picked isn't the contact at all?")
@@ -183,10 +187,13 @@ def render(n: Numbering | None = None) -> None:
              r" \;+\; \underbrace{(1 - p_{\mathrm{valid}}) \cdot c}"
              r"_{\neg V:\ \text{it says nothing about depth}}")
     st.markdown(
-        f"With `p_valid = {observation.p_valid:.3f}`, derived from the DHI strength.\n\n"
-        "**The second branch is flat in depth, so the geological prior passes through it "
-        "untouched.** That is not a patch — it is what stops one seismic pick from ever declaring "
-        "a contact depth impossible."
+        f"With `p_valid = {observation.p_valid:.2f}`: the chance the picked event is the "
+        "contact, given that there is hydrocarbon for it to be the contact of. It is the "
+        "contact-attribute judgement from sub-tab 2.0 §3 and carries nothing about whether "
+        "there is hydrocarbon, since every realisation it weights already assumes there is.\n\n"
+        "The second branch is flat in depth, so the geological prior passes through it "
+        "untouched. That is what stops one seismic pick from ever declaring a contact depth "
+        "impossible."
     )
 
     if observation.seen:
@@ -196,14 +203,15 @@ def render(n: Numbering | None = None) -> None:
             # The same three branches, for the bound. The spurious one is a bare 1 rather than a
             # density: with the bright event unrelated to the column, its down-dip edge is wherever
             # that thing ends, so this observation is what you would have recorded either way.
-            valid_at = d_at * (1.0 - detection.at(
-                np.clip(result.column_m - (observation.absent_below_m - result.apex_m), 0.0, None)))
+            from scipy.stats import norm as _norm
+            valid_at = d_at * _norm.cdf(
+                (observation.absent_below_m - result.contact_m) / observation.pick_sigma_m)
             c = 1.0
-            labels = ("V alone — the anomaly really stops at the cutoff",
+            labels = ("V alone — the edge really lies above the cutoff",
                       "¬V alone — the bright event is not the column")
         else:
             valid_at = d_at * observation.pick_pdf(result.contact_m)
-            c = dhi_core.spurious_density(result.contact_m)
+            c = dhi_core.spurious_density(result.limit_set.contact_support_m())
             labels = ("V alone — the pick is the contact",
                       "¬V alone — the pick is spurious")
         branches = {
@@ -257,30 +265,38 @@ def render(n: Numbering | None = None) -> None:
 
     # ------------------------------------------------------------------ 6 · the arithmetic
     st.markdown("#### Step 6 · The arithmetic, on this prospect")
-    prior_odds, posterior_odds = _odds(prior_pos), _odds(posterior_pos)
-    r_combined = posterior_odds / prior_odds if prior_odds else float("nan")
+    st.markdown(
+        "The odds form above is applied to one factor, the chance the elements worked. The pick "
+        "then updates the other factor, the column given that they did, and the two multiply."
+    )
+    r_applied = float(r_strength) if (r_strength and observation.seen) else 1.0
+    p_g_updated = dhi_core.p_g_given_strength(element_product, r_applied)
+    prior_odds, posterior_odds = _odds(element_product), _odds(p_g_updated)
+    f_prior, f_post = float(post.pos(posterior=False)), float(post.pos())
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Prior odds", f"{prior_odds:.3f}", f"POS {prior_pos:.1%}", delta_color="off")
-    c2.metric("× R combined", f"{r_combined:.3f}", "both channels, discounted", delta_color="off")
-    c3.metric("= Posterior odds", f"{posterior_odds:.3f}", delta_color="off")
-    c4.metric("POS given the DHI", f"{posterior_pos:.1%}", f"{posterior_pos - prior_pos:+.1%}")
-    st.latex(rf"{prior_odds:.3f} \times {r_combined:.3f} = {posterior_odds:.3f} "
-             rf"\quad\Longrightarrow\quad \frac{{{posterior_odds:.3f}}}"
-             rf"{{1 + {posterior_odds:.3f}}} = \mathbf{{{posterior_pos:.1%}}}")
+    c1.metric("Prior odds on G", f"{prior_odds:.3f}", f"P(G) {element_product:.1%}",
+              delta_color="off")
+    c2.metric("× R, amplitude", f"{r_applied:.3f}", "character channel", delta_color="off")
+    c3.metric("= P(G | amplitude)", f"{p_g_updated:.1%}", f"odds {posterior_odds:.3f}",
+              delta_color="off")
+    c4.metric(f"× P(column ≥ {h_min:.0f} m | G, pick)", f"{f_post:.1%}",
+              f"geological {f_prior:.1%}", delta_color="off")
+    st.latex(rf"{prior_odds:.3f} \times {r_applied:.3f} = {posterior_odds:.3f} "
+             rf"\;\Longrightarrow\; P(G \mid \mathrm{{amplitude}}) = {p_g_updated:.3f}"
+             rf"\qquad {p_g_updated:.3f} \times {f_post:.3f} = \mathbf{{{posterior_pos:.1%}}}")
+    st.caption(
+        f"The prior prospect chance was P(G) × F(h_min) = {element_product:.3f} × "
+        f"{f_prior:.3f} = {prior_pos:.1%}. The second factor is read off the same weighted "
+        f"realisations that draw the contact distribution on sub-tab 2.0, so the histogram, the "
+        f"percentiles and the chance are one object."
+    )
 
-    r_geometry = float(post.r_dhi)
-    if np.isnan(r_geometry):
-        st.warning(
-            f"**All of that came from the strength slider.** At an assessment minimum of "
-            f"{h_min:.0f} m every realisation counts as a success, so there is no failure set for "
-            "the geometry channel to compare against and `R geometry` is undefined. The flat "
-            "spot's *position* reshapes your contact distribution and moves your POS by nothing.\n\n"
-            "Raise the assessment minimum on tab 2.0 and geometry starts paying in — and once the "
-            "minimum sits below the picked contact, it pays in **negatively**, which is the "
-            "downgrade you would expect from being asked for more column than the amplitude "
-            "supports."
+    if f_prior >= 0.999:
+        st.info(
+            f"At an assessment minimum of {h_min:.0f} m the column term is 1 before and after "
+            f"the update: every realisation clears it. The pick reshapes the contact "
+            f"distribution and cannot move the chance here; the whole move comes from the "
+            f"amplitude. A minimum a real share of realisations miss lets the pick reach the "
+            f"chance, and once it sits below the picked contact the pick lowers the chance, which "
+            f"is the reading of being asked for more column than the amplitude supports."
         )
-    else:
-        st.caption(
-            f"**R geometry = {r_geometry:.3f}** and **R strength = "
-            f"{r_strength:.2f}**" if r_strength else f"**R geometry = {r_geometry:.3f}**")

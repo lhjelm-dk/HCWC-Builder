@@ -267,39 +267,25 @@ def render(n: Numbering | None = None) -> None:
         "Every contact distribution below carries the amplitude evidence. The purely geological "
         "model is on tab 4.0 and is unchanged by anything here.")
 
-    # The geometry channel has a precondition and it belongs here, above the inputs it
-    # governs, not in section 5 where the combination happens. `r_dhi` compares the
-    # likelihood over realisations that clear the assessment minimum with the likelihood over
-    # those that fall short; below `MIN_FAILURES_FOR_R` there is no second group to average
-    # over and the ratio is undefined. On the shipped prospect at a 5 m minimum nothing falls
-    # short, so the channel is off -- and the notice that used to say so sat far down the
-    # page, in the combining block, and blamed a minimum "of zero" that is not what the guard
-    # tests. A user who moved `c` and saw nothing happen had no way to find out why.
-    #
-    # Not the same thing as a dead section: the pick still reweights every realisation, so the
-    # contact distribution still moves. What it cannot do is contribute to the chance. Both
-    # halves are said, because being told "this does nothing" about a control that visibly
-    # does something is its own kind of wrong.
+    # The geometry enters the chance as P(h ≥ h_min | G, geometry). At an assessment minimum
+    # that every realisation clears, that factor is 1 before and after the update, so the pick
+    # can reshape the contact distribution and cannot move the chance. Said here, above the
+    # inputs it concerns, because a reader who moves the pick and sees the chance stand still
+    # needs the reason beside the control. Until 14 Sep 2026 this was framed as a guard on a
+    # likelihood ratio (`r_dhi` needing a failure set); under the corrected chain the ratio is
+    # not part of the chance and the reason is the plain one.
     _short = int((~result.above_minimum).sum())
     if _short < dhi_core.MIN_FAILURES_FOR_R:
         _need = float(np.quantile(result.column_m,
                                   dhi_core.MIN_FAILURES_FOR_R / max(result.n, 1)))
         st.warning(
-            f"**The geometry channel is off, so the pick cannot move the chance — only "
-            f"the amplitude character can.** It needs realisations that *fall short* of the "
-            f"assessment minimum to measure against, and at **{h_min:,.0f} m** only "
-            f"**{_short:,} of {result.n:,}** do — below the **"
-            f"{dhi_core.MIN_FAILURES_FOR_R}** needed for a ratio that is a measurement rather "
-            f"than noise.\n\n"
-            f"**What still works.** The picked depth, its width and *c* reweight every "
-            f"realisation, so the contact distribution below is genuinely updated. What is "
-            f"switched off is their contribution to the *chance*: `R, combined` falls back to "
-            f"the strength channel alone.\n\n"
-            f"**To switch it on**, raise the assessment minimum on tab 2.0 to a commercial "
-            f"threshold — about **{_need:,.0f} m** on this prospect is the lowest that "
-            f"gives the ratio a denominator. A physical floor is not a threshold anything "
-            f"fails to clear, and comparing tall columns with short ones is only a question "
-            f"worth asking when a real share of them are short."
+            f"At an assessment minimum of {h_min:,.0f} m, {result.n - _short:,} of "
+            f"{result.n:,} realisations clear it, so P(column ≥ h_min | G) is 1 before the "
+            f"update and stays 1 after it. The pick, its width and c reshape the contact "
+            f"distribution below; they cannot move the prospect chance, which at this minimum "
+            f"responds to the amplitude character alone.\n\n"
+            f"The pick reaches the chance once the minimum is a threshold a real share of "
+            f"realisations miss. On this prospect about {_need:,.0f} m is the lowest such value."
         )
 
     # ------------------------------------------------------------------ observation
@@ -739,40 +725,36 @@ def render(n: Numbering | None = None) -> None:
     )
 
     # ------------------------------------------------------------------ p_valid
-    # The volume weight has a second job. Read as a probability it is exactly the question the
-    # depth channel needs answered -- is the thing I picked really the contact -- and using it
-    # there makes the floor `1/(R+1)`, which the capped R can never drive to zero.
-    # Published for the walkthrough sub-tab, which explains this number rather than
-    # producing it. Same one-frame lag as everything else that crosses a sub-tab boundary.
-    st.session_state["dhi_r_strength"] = float(r_strength)
-    derived_p_valid = dhi_core.volume_weight(r_strength)
-
-    # **Out of the expander, 9 Sep 2026.** `c` stopped being a footnote the moment p_valid
-    # stopped being derived: it is now the only part of p_valid a person types, and Lars
-    # could not find it. A control nobody can find is a default nobody chose. The reasoning
-    # behind it stays folded below, which is what expanders are for.
+    # `p_valid` is `c`: P(the picked event is the contact | G, contact attributes). Nothing
+    # else. Until 14 Sep 2026 it was `P(G | strength) x c`, which put the chance of hydrocarbons
+    # inside a term that weights realisations already conditional on G, so the strength reached
+    # the geometry posterior here and again in the combination. The ceiling, the R-c plane and
+    # the override that came with that construction went with it. See `dhi.prospect_pos`.
     #
-    # The ceiling uses the **character channel only**. The geometry ratio depends on
-    # p_valid, so using the combined one here would close a loop.
+    # Published for the walkthrough sub-tab, which explains this number rather than producing
+    # it. Same one-frame lag as everything else that crosses a sub-tab boundary.
+    st.session_state["dhi_r_strength"] = float(r_strength)
     _elements = st.session_state.get("element_pos") or {}
     _p_g = float(np.prod([float(v) for v in _elements.values()])) if _elements else 1.0
-    ceiling = dhi_core.simm_update(_p_g, r_strength)
 
     theme.heading(TAB, sub=n.sub, text="3 · Is the picked event the contact?")
-    # The three contact attributes, combined by geometric mean so that one poor attribute
-    # drags the answer down rather than being averaged away -- an event that does not follow
-    # structure is probably not a contact however sharp its terminations are.
+    st.markdown(
+        "A flat event can be lithology, a diagenetic front, fizz gas read as pay, or a "
+        "processing artefact. This section states the chance that it is none of those, given "
+        "that there is a column here for it to be the base of. It is a question about the "
+        "event, answered from its contact attributes: conformance, flatness, whether it cuts "
+        "structure. The amplitude answers a different question in §2, whether there is "
+        "hydrocarbon at all, and the two enter the chance as separate factors."
+    )
     picked_levels = {}
-    with st.expander("**Grade the three contact attributes** — they suggest a value for the "
-                     "slider below, and are the half of a DHI the strength axis does not read"):
+    with st.expander("Grade the three contact attributes, for a suggested value of c"):
         st.markdown(
-            "Monigle *et al.* (2025) separate the five DHI attributes into two groups, and the "
-            "split is the answer to *is `c` related to the strength?* — **body** attributes "
-            "(anomaly strength, lateral contrast) say whether there is hydrocarbon and are what "
-            "the strength slider grades; **contact** attributes say whether the picked event is "
-            "its base. They move together, because both improve with impedance contrast and data "
-            "quality, and neither follows from the other: a dim body can carry a beautifully "
-            "conformable event, and a bright one can terminate raggedly."
+            "Monigle et al. (2025) separate DHI attributes into two groups. Body attributes "
+            "(anomaly strength, lateral contrast) bear on whether there is hydrocarbon and are "
+            "what the strength axis grades. Contact attributes bear on whether the picked event "
+            "is its base. The two tend to move together, since both improve with impedance "
+            "contrast and data quality, and neither follows from the other: a dim body can "
+            "carry a conformable event, and a bright one can terminate raggedly."
         )
         cols = st.columns(len(CONTACT_ATTRIBUTES))
         for col, (attribute, levels) in zip(cols, CONTACT_ATTRIBUTES.items()):
@@ -782,204 +764,57 @@ def render(n: Numbering | None = None) -> None:
         scores = [CONTACT_ATTRIBUTES[a][lv] for a, lv in picked_levels.items()]
         suggested_c = float(np.prod(scores) ** (1.0 / len(scores)))
         st.caption(
-            f"**Suggested c = {suggested_c:.2f}** — the geometric mean of "
+            f"Suggested c = {suggested_c:.2f}, the geometric mean of "
             f"{', '.join(f'{s:.2f}' for s in scores)}. Geometric rather than arithmetic so that "
-            f"one poor attribute pulls the answer down rather than being averaged away.\n\n"
-            f"**These levels are elicited judgements, not a calibration.** Nothing here is fitted "
-            f"to drilling outcomes, which is why it is a suggestion and not the value."
+            f"one poor attribute pulls the value down rather than being averaged away. The "
+            f"levels are elicited judgements, not a calibration against drilling outcomes, "
+            f"which is why this is a suggestion."
         )
 
     use_attributes = st.checkbox(
         f"Use the attributes' suggestion (c = {suggested_c:.2f})", value=False,
         key="dhi_in_c_from_attributes",
-        help="Takes c from the three gradings above instead of the slider. Off by default: the "
-             "combination rule is a heuristic, and a number you chose is easier to defend than "
-             "one a rule chose for you.")
+        help="Takes c from the three gradings above instead of the slider. Off by default: "
+             "the combination rule is a heuristic, and a stated value is easier to defend than "
+             "one a rule chose.")
     stated_c = st.slider(
-        "Given there IS hydrocarbon here, is the picked event its base?",
+        "Given there is hydrocarbon here, is the picked event its base?",
         0.05, 1.0, DEFAULT_CONTACT_GIVEN_HC, 0.01, key="dhi_in_contact_given_hc",
         disabled=use_attributes,
-        help="A question about the *event*, not the amplitude and not the charge: granted "
-             "there is a column here, is this flat thing its base — rather than lithology, "
-             "a diagenetic front, fizz, or a processing artefact? Conformance, flatness and "
-             "whether it cuts structure are what answer it.")
+        help="P(the picked event is the contact | hydrocarbon present). A question about the "
+             "event, not the amplitude and not the charge: granted a column here, is this flat "
+             "thing its base rather than lithology, a diagenetic front, fizz, or an artefact. "
+             "Conformance, flatness and whether it cuts structure answer it.")
     _lev["c"] = st.empty()
     contact_given_hc = suggested_c if use_attributes else stated_c
-    p_valid = float(np.clip(ceiling * contact_given_hc, 0.01, 0.99))
-
-    # What the slider is *doing*, and what it cannot do. At a near-zero assessment minimum every
-    # realisation is a success, so `r_dhi` has no failure set to compare against and returns nan:
-    # the depth channel then cannot move POS at all, whatever p_valid says. It still reshapes the
-    # contact distribution, and a reader who moves the slider and sees nothing deserves to be told
-    # which of those is happening rather than left to conclude the control is broken.
-    _clears = float((result.column_m >= h_min).mean())
-    _inert = _clears > 0.995
+    p_valid = float(np.clip(contact_given_hc, 0.01, 0.99))
 
     pv1, pv2 = st.columns([1, 2])
-    pv1.metric("p_valid", f"{p_valid:.3f}",
-               f"{ceiling:.3f} × {contact_given_hc:.2f}", delta_color="off")
+    pv1.metric("p_valid", f"{p_valid:.2f}", f"floor {1 - p_valid:.2f}", delta_color="off")
     pv2.caption(
-        f"**The one number here you have to supply yourself.** Everything else on this tab "
-        f"is read off a curve or carried from tab 2.0.\n\n"
-        f"`p_valid` is the chance the picked event really is the hydrocarbon–water contact, "
-        f"and it is the slider above times a **ceiling of {ceiling:.3f}** — `P(G)` = "
-        f"{_p_g:.3f} from tab 2.0, updated by the amplitude alone (R = {r_strength:.2f}). "
-        f"A *hydrocarbon*–water contact needs hydrocarbons, so the event cannot be one more "
-        f"often than there is hydrocarbon to make it. The remaining **{1 - p_valid:.3f}** is "
-        f"the floor that keeps the geological distribution in play whatever the pick says."
+        f"The one number on this tab that is typed rather than read off a curve or carried "
+        f"from tab 2.0. It decides how much of the contact depth the pick is allowed to settle. "
+        f"The remaining {1 - p_valid:.2f} goes to a branch in which the pick says nothing about "
+        f"depth and the geological model stands, which keeps every contact depth in play "
+        f"however sharply the pick is drawn: the depth channel can say at most "
+        f"{p_valid / (1 - p_valid):.1f} : 1 against any depth.\n\n"
+        f"It does not carry the chance of hydrocarbons. Every realisation it weights already "
+        f"assumes the elements worked, so that chance enters once, through P(G) and the "
+        f"amplitude in §5, and not here."
     )
-
-    # The plane both numbers live in, shaded by the p_valid they make. Drawn rather than
-    # argued because "R does not set c" is a claim about a two-dimensional space, and a reader
-    # who can see the space stops expecting a line through it.
-    _r_axis = np.logspace(np.log10(dhi_core.R_FLOOR), np.log10(dhi_core.R_CAP), 90)
-    _c_axis = np.linspace(0.05, 1.0, 80)
-    _surface = np.array([[float(np.clip(dhi_core.simm_update(_p_g, rr) * cc, 0.01, 0.99))
-                          for rr in _r_axis] for cc in _c_axis])
-    figq = go.Figure(go.Contour(
-        x=np.log10(_r_axis), y=_c_axis, z=_surface, colorscale="Blues",
-        contours=dict(start=0.05, end=0.95, size=0.05, showlabels=True,
-                      labelfont=dict(size=9, color="#333")),
-        colorbar=dict(title="p_valid", thickness=12), zmin=0.0, zmax=1.0,
-        hovertemplate="R %{customdata:.2f}<br>c %{y:.2f}<br>p_valid %{z:.3f}<extra></extra>",
-        customdata=np.tile(_r_axis, (len(_c_axis), 1))))
-    for _x in (np.log10(1 / 1.5), np.log10(1.5)):
-        figq.add_vline(x=_x, line=dict(color="#888", width=1, dash="dot"))
-    for _y in (0.40, 0.75):
-        figq.add_hline(y=_y, line=dict(color="#888", width=1, dash="dot"))
-    for _x, _y, _txt in (
-            (np.log10(dhi_core.R_CAP) * 0.72, 0.93, "bright<br>and convincing"),
-            (np.log10(dhi_core.R_FLOOR) * 0.72, 0.93, "dim but<br>convincing"),
-            (np.log10(dhi_core.R_CAP) * 0.72, 0.14, "bright but<br>unconvincing"),
-            (np.log10(dhi_core.R_FLOOR) * 0.72, 0.14, "neither")):
-        # A backing box on each: the top-right corner sits on the darkest shading, where
-        # grey text is unreadable, and the bottom-right one lands on a contour label.
-        figq.add_annotation(x=_x, y=_y, text=_txt, showarrow=False, align="center",
-                            font=dict(size=10, color="#333"),
-                            bgcolor="rgba(255,255,255,0.82)", borderpad=3)
-    figq.add_scatter(x=[np.log10(max(r_strength, dhi_core.R_FLOOR))], y=[contact_given_hc],
-                     mode="markers+text", marker=dict(color=POSTERIOR, size=15,
-                                                      symbol="diamond",
-                                                      line=dict(color="white", width=2)),
-                     text=["  this prospect"], textposition="middle right",
-                     textfont=dict(size=11, color=POSTERIOR), showlegend=False,
-                     hovertemplate=f"R {r_strength:.2f}<br>c {contact_given_hc:.2f}"
-                                   f"<br>p_valid {p_valid:.3f}<extra></extra>")
-    _ticks = [0.02, 0.1, 0.5, 1, 2, 10, 50]
-    figq.update_xaxes(title_text="R from the amplitude  (log scale)",
-                      tickvals=[np.log10(v) for v in _ticks],
-                      ticktext=[str(v) for v in _ticks])
-    figq.update_yaxes(title_text="c — is the picked event the contact?", range=[0.05, 1.0])
-    figq.update_layout(height=380, margin=dict(t=20, b=10))
-    n.plot(figq,
-           "**The two questions are a plane, not a line.** The shading is `p_valid` — the "
-           "amplitude sets a ceiling and *c* takes a fraction of it — so moving right raises what "
-           "is available and moving up spends more of it. The dotted lines mark where the app "
-           "starts calling the two answers inconsistent: the **off-diagonal corners are real "
-           "prospects**, and a mapping from R to *c* would collapse this plane onto its diagonal "
-           "and make them unsayable.")
-
-    if _inert:
-        st.warning(
-            f"**This slider cannot move the prospect POS at the moment, and that is not a fault "
-            f"in the slider.** Your assessment minimum is {h_min:,.0f} m, which "
-            f"{_clears:.1%} of realisations clear — so every realisation is already a success and "
-            f"the depth channel has no failures to tell them apart from. `R` from geometry is "
-            f"undefined, and the update falls back to the amplitude alone.\n\n"
-            f"**It is still working.** Move it and watch the *contact distribution* in §5: the "
-            f"spread narrows as `p_valid` rises. To make POS respond as well, raise the "
-            f"assessment minimum on tab 2.0 to a column you would actually call a discovery."
-        )
-
-    # R informs c by flagging disagreement, not by setting it. Any f(R) -> c is the mapping
-    # removed on 9 Sep wearing a different name -- and the natural-looking f is R/(R+1), which
-    # *is* that mapping. What R can honestly do is say when the two channels are telling
-    # different stories, because those are the cases worth a sentence in the report.
-    _amp_strong, _amp_weak = r_strength >= 1.5, r_strength <= 1 / 1.5
-    _evt_strong, _evt_weak = contact_given_hc >= 0.75, contact_given_hc <= 0.40
-    if _amp_strong and _evt_weak:
-        st.info(
-            f"**Bright body, unconvincing event.** The amplitude argues for hydrocarbons "
-            f"(R = {r_strength:.2f}) while you have graded the pick itself at "
-            f"{contact_given_hc:.2f}. That is a real and common prospect — an anomaly you believe "
-            f"in, bounded by something you do not — and it is worth saying so explicitly, because "
-            f"the two numbers will be read together downstream. Expect the chance to move and the "
-            f"contact to stay roughly where the geology put it."
-        )
-    elif _amp_weak and _evt_strong:
-        st.info(
-            f"**Dim body, convincing event.** The amplitude argues against hydrocarbons "
-            f"(R = {r_strength:.2f}) while the pick is graded at {contact_given_hc:.2f}. Also "
-            f"real — a conformable flat spot on a low-contrast reservoir is a good contact "
-            f"indicator with an unremarkable amplitude — and it is the case the old mapping could "
-            f"not express, because it derived the second number from the first. Expect the "
-            f"contact to sharpen while the chance falls."
-        )
 
     st.caption(
-        "**The amplitude does not set this number, but it does bear on it.** Body attributes and "
-        "contact attributes tend to move together, because both improve with impedance contrast "
-        "and data quality — so an unusual pairing is not wrong, only worth being deliberate "
-        "about. It is flagged above when it occurs.\n\n"
-        "**Anchors for the slider above.** These are judgements, not measurements, and the "
-        "spacing matters more than the exact value.\n\n"
-        "- **0.9 and up** — a flat, conformable event that cuts dipping structure, with a clear "
-        "fluid contact reflection. You would defend this in a room.\n"
-        "- **0.6–0.8** — conformable and plausibly a contact, but something is missing: no FCR, "
-        "or terminations you would not call sharp. **The shipped default sits here.**\n"
-        "- **0.3–0.5** — the event is there and flat, and so is a plausible lithological "
-        "explanation. You are picking it because it is the best candidate, not because it "
-        "convinces.\n"
-        "- **Below 0.2** — you would not have picked it if the prospect were not interesting. "
-        "Consider whether you have a DHI at all, or a structural guess wearing one's clothes."
+        "Anchors for the slider. These are judgements, not measurements, and the spacing "
+        "matters more than the exact value.\n\n"
+        "- 0.9 and up: a flat, conformable event that cuts dipping structure, with a clear "
+        "fluid contact reflection.\n"
+        "- 0.6 to 0.8: conformable and plausibly a contact, with something missing: no FCR, or "
+        "terminations that are not sharp. The shipped default sits here.\n"
+        "- 0.3 to 0.5: the event is there and flat, and so is a plausible lithological "
+        "explanation.\n"
+        "- Below 0.2: the event would not have been picked on a less interesting prospect. "
+        "Whether there is a DHI at all is the question at this level."
     )
-
-    _manual_p_valid = False
-
-    with st.expander("**Why p_valid is bounded, and what happens when it is not** — the "
-                     "mapping this replaced assumed a 50 % chance of hydrocarbons"):
-        st.markdown(
-            "A flat event can be lithology, a diagenetic front, fizz gas read as pay, or a "
-            "processing artefact. **`p_valid` is the chance it is none of those**, and it decides "
-            "how much of the contact depth the pick is allowed to settle.\n\n"
-            "The rest of the probability goes to a branch where the pick says nothing about depth "
-            "and *the geological model on tab 4.0 stands untouched*. That branch is what keeps the "
-            "chance from ever reaching zero, however sharply the pick is drawn:\n\n"
-            f"- the depth channel can say at most **{derived_p_valid / (1 - derived_p_valid):.1f} : 1** "
-            f"against any contact depth\n"
-            f"- and never more than **{dhi_core.R_SINGLE_CHANNEL:.0f} : 1**, because each "
-            "channel is capped, so a bounded pick shape is safe to use\n\n"
-            "**Where this mapping can be wrong.** The strength axis measures how *hydrocarbon-like "
-            "the amplitude looks*, not how reliably the event locates a contact. A dim but "
-            "geometrically perfect flat spot is an excellent contact indicator and gets an "
-            "unfairly low `p_valid` here; a bright non-conformable blob gets an unfairly high one. "
-            "Override it when that is the case — and if you are overriding often, the mapping "
-            "is wrong and worth telling me about."
-        )
-
-        # The override stays, because a coherence rule is a model and models are wrong
-        # sometimes. Off by default, and it says what it is switching off.
-        # Recorded, not just acted on: an override cuts both the strength slider and *c* out
-        # of `p_valid`, so the leverage sweep has to know it happened or it would report a
-        # swing on two controls that are no longer connected to anything.
-        _manual_p_valid = st.checkbox(
-            "Set p_valid directly instead", value=False, key="dhi_in_pvalid_manual",
-            help="Bypasses the ceiling. Only defensible if you think the element chances "
-                 "on tab 2.0 are wrong, in which case fix those instead.")
-        if _manual_p_valid:
-            p_valid = st.slider("p_valid", 0.01, 0.99, float(round(p_valid, 2)), 0.01,
-                                key="dhi_in_pvalid",
-                                help="1.0 is deliberately unreachable: it would say the pick "
-                                     "is certainly the contact, and certainty cannot be "
-                                     "argued with.")
-            if p_valid > ceiling + 1e-9:
-                st.warning(
-                    f"**That is above the ceiling.** You are saying the picked event is the "
-                    f"hydrocarbon–water contact with probability {p_valid:.2f}, while the "
-                    f"elements and the amplitude together put the chance of *any* "
-                    f"hydrocarbon at {ceiling:.2f}. One of the two is wrong, and this tab "
-                    f"cannot tell you which."
-                )
 
     # ------------------------------------------------------------------ combining
     theme.heading(TAB, sub=n.sub, text="4 · Detection function D(h)")
@@ -1081,77 +916,47 @@ def render(n: Numbering | None = None) -> None:
     # first, so it reads the posterior built on the previous run. Every interaction reruns both.
     st.session_state["dhi_posterior"] = post
 
-    if np.isnan(post.r_dhi):
-        st.info(
-            "**R is undefined here.** It compares the likelihood over the success cases against "
-            "the likelihood over the failures, and with the assessment minimum at "
-            f"{h_min:.0f} m every realisation counts as a success — so there is no failure set to "
-            "compare against. Set a minimum column height on tab 2.0 to get a likelihood ratio "
-            "comparable with E-POS's `r_dfi`."
-        )
-
     if post.effective_sample_size < 300:
         st.warning(
-            f"**Effective sample size {post.effective_sample_size:,.0f}.** The picked contact sits "
+            f"Effective sample size {post.effective_sample_size:,.0f}. The picked contact sits "
             f"far out in the tail of the geological prior, so the posterior rests on very few "
-            f"realisations. That is a finding about the model or the pick, not a number to read off."
+            f"realisations. That is a finding about the model or the pick, not a number to "
+            f"read off."
         )
 
-    # --------------------------------------------------------------- the anchor
-    # E-POS anchors its DFI update to the *geological* POS -- the product of the element chances,
-    # or the ESL mass-rollup -- and never to a geometric exceedance probability
-    # (`logic/dfi_bayes.py::compute_dfi_posterior`, `prior_pg_override`). This tool anchored to
-    # F(h_min) alone, which is P(column reaches the threshold | the prospect works). At a zero
-    # assessment minimum that is 1.0, and no evidence can move certainty -- which is why a
-    # "Negligible" DHI appeared to leave POS at 100 %.
+    # --------------------------------------------------------------- the chain
+    # POS(h_min) = P(G | strength) x P(h >= h_min | G, geometry). The first factor is the
+    # element product from tab 2.0 updated by the amplitude character; the second is read off
+    # the same weights that draw the histogram and the percentiles below. Nothing is blended and
+    # nothing is rescaled: the curve `P(G | strength) x F_post(h)` passes through the headline
+    # at h_min by identity. Until 14 Sep 2026 the headline was `simm_update(P(G) x F_prior,
+    # blend(r_dhi, R_strength))`, which counted the strength twice (it had already entered
+    # the weights through p_valid) and applied a ratio between two column heights inside G
+    # as if it were a likelihood ratio on the prospect. See `dhi.prospect_pos`.
     #
-    # The prospect POS is the product of the two, and both halves already exist: the element
-    # chances come from tab 2 and the exceedance from the engine. R itself is unaffected -- a
-    # likelihood ratio is invariant to re-anchoring, which E-POS says in as many words.
+    # Nothing seen, nothing to characterise: the strength axis grades an observed anomaly, and
+    # with no anomaly it is held neutral, or an absent DHI would read as encouraging as a
+    # bright one.
     element_pos = st.session_state.get("element_pos") or {}
     element_product = float(np.prod([float(v) for v in element_pos.values()])) if element_pos else 1.0
+    r_applied = r_strength if seen else 1.0
+    p_g_updated = dhi_core.p_g_given_strength(element_product, r_applied)
     geometric_prior = post.pos(posterior=False)
-    prior_pos = element_product * geometric_prior
     posterior_geometric = post.pos()
-
-    # The two channels are combined here rather than in §5 because the figure below cannot be
-    # drawn without the result: its posterior curve has to read the quoted POS at the assessment
-    # minimum, and that number carries the strength channel. §5 keeps the argument for why the
-    # combination is discounted, and the sweep showing what the discount costs.
-    dependence = st.slider(
-        "Dependence between the two channels", 0.0, 1.0, 0.5, 0.05, key="dhi_in_dependence",
-        help="0 multiplies the two ratios outright, which assumes they are independent evidence. "
-             "1 takes the stronger channel and ignores the other, which assumes they say the same "
-             "thing. 0.5 is the default because neither end is defensible. §5 explains why.")
-    _lev["dependence"] = st.empty()
-
-    # **Nothing was seen, so there is no amplitude to characterise.** The strength slider grades
-    # the character of an observed anomaly; with no anomaly it has no subject, and leaving it
-    # applied made an absent DHI as encouraging as a bright one -- the same POS, from evidence
-    # pointing the opposite way. Neutral is the only defensible value.
-    combined = dhi_core.CombinedUpdate(
-        prior_pos=prior_pos,
-        r_geometry=float(post.r_dhi),
-        r_strength=r_strength if seen else 1.0,
-        dependence=dependence)
+    prior_pos = element_product * geometric_prior
+    posterior_pos = dhi_core.prospect_pos(element_product, r_applied, post)
 
     # ---- what each control is worth, into the placeholders reserved beside them -----------
     # Everything the tab reads is known by this line and not one line earlier, which is why
-    # the captions are placeholders: `dependence` is read below the detection function, and
-    # the detection function is read below the pick. A caption written where its control is
-    # drawn would be quoting the previous rerun.
+    # the captions are placeholders: the detection function is read below the pick. A caption
+    # written where its control is drawn would be quoting the previous rerun.
     #
     # `_state` rebuilds the whole tab at one changed value rather than patching the
-    # likelihood, because several of these controls reach further than the likelihood: `c`
-    # and the strength both arrive through `p_valid`, and the manual override cuts both out.
-    # Reconstructing from the same expressions the tab itself used is the only way the swing
-    # reported is the swing a user would get by dragging the control.
+    # likelihood, so the swing reported is the swing a user would get by dragging the control.
     def _state(**over):
         _s = over.get("strength", strength)
         _r = model.r_at(_s) if seen else 1.0
-        _pv = p_valid if _manual_p_valid else float(np.clip(
-            dhi_core.simm_update(_p_g, model.r_at(_s))
-            * over.get("c", contact_given_hc), 0.01, 0.99))
+        _pv = float(np.clip(over.get("c", contact_given_hc), 0.01, 0.99))
         _det = DetectionFunction(h50_m=over.get("h50", h50),
                                  steepness_m=over.get("steep", steep),
                                  ceiling=over.get("det_ceiling", ceiling))
@@ -1162,13 +967,12 @@ def render(n: Numbering | None = None) -> None:
             pick_shape=shape, shallowest_m=None if partial else shallowest,
             deepest_m=None if partial else deepest,
             p_valid=_pv, absent_below_m=absent_below)
-        return (result, _det, _obs, prior_pos, _r, over.get("dependence", dependence))
+        return (result, _det, _obs, element_product, _r)
 
     _span = (float(result.contact_m.min()), float(result.contact_m.max()))
     _sweeps = {
         "strength": (lambda v: _state(strength=v), np.linspace(_s_lo, _s_hi, 9)),
         "c": (lambda v: _state(c=v), np.linspace(0.05, 1.0, 9)),
-        "dependence": (lambda v: _state(dependence=v), np.linspace(0.0, 1.0, 9)),
         "sigma": (lambda v: _state(sigma=v), [3.0, 8.0, 15.0, 30.0, 60.0, 120.0]),
         "contact": (lambda v: _state(contact=v), np.linspace(_span[0], _span[1], 9)),
         "h50": (lambda v: _state(h50=v), [5.0, 15.0, 25.0, 50.0, 100.0]),
@@ -1179,41 +983,36 @@ def render(n: Numbering | None = None) -> None:
         _build, _values = _sweeps[_name]
         _slot.caption(_leverage_caption(dhi_core.leverage(_build, _values)))
 
-
     if not element_pos:
         st.warning(
-            "**No element risk set**, so the update is anchored to the geometric chance alone. "
-            "Set play × conditional on tab 2.0 — anchoring a DHI to a probability of 1.0 makes any "
-            "evidence look like it changed nothing."
+            "No element risk is set, so the update is anchored to the geometric chance alone. "
+            "Play x conditional on tab 2.0 supplies P(G); anchoring a DHI to a probability of "
+            "1.0 makes any evidence look like it changed nothing."
         )
 
-    m1, m2, m3, m4 = st.columns(4)
-    # `element_product * posterior_geometric` is the geometry update on its own and was reading
-    # 40.8 % under a "Prospect POS" label while the tab's answer was 49.1 %. The combined update
-    # is the number this metric is claiming to show.
-    m1.metric(f"Prospect POS at h ≥ {h_min:.0f} m", f"{combined.posterior_pos:.1%}",
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric(f"Prospect POS at h ≥ {h_min:.0f} m", f"{posterior_pos:.1%}",
               f"prior {prior_pos:.1%}")
-    # R compares the likelihood over successes against the likelihood over failures, so it needs
-    # both sets to exist. With the assessment minimum at zero every realisation is a success and R
-    # is genuinely undefined -- which is worth saying rather than printing "nan".
-    r = post.r_dhi
-    m2.metric("Likelihood ratio R", _fmt_r(r),
-              "needs an assessment minimum" if np.isnan(r) else "above 1 favours success",
-              delta_color="off")
-    m3.metric("Posterior P50 contact", f"{post.percentiles(50.0)[0]:,.0f} m",
+    m2.metric("P(G | amplitude)", f"{p_g_updated:.1%}",
+              f"P(G) {element_product:.1%} from tab 2.0", delta_color="off")
+    m3.metric(f"P(column ≥ {h_min:.0f} m | G, pick)", f"{posterior_geometric:.1%}",
+              f"geological {geometric_prior:.1%}", delta_color="off")
+    m4.metric("Posterior P50 contact", f"{post.percentiles(50.0)[0]:,.0f} m",
               f"prior {post.percentiles(50.0, posterior=False)[0]:,.0f} m")
-    m4.metric("Effective sample size", f"{post.effective_sample_size:,.0f}",
+    m5.metric("Effective sample size", f"{post.effective_sample_size:,.0f}",
               f"of {result.n:,}", delta_color="off")
 
     st.caption(
-        f"**The anchor is the geological POS, not the exceedance curve.** Prospect POS is "
-        f"`∏ element chances × P(column ≥ h)` = **{element_product:.3f} × "
-        f"{geometric_prior:.3f} = {prior_pos:.3f}** before the DHI. Anchoring to the exceedance "
-        f"alone is what E-POS's `prior_pg_override` exists to prevent: at a zero assessment "
-        f"minimum that term is 1.0, and no evidence can move certainty.\n\n"
-        f"**R is unaffected by the anchor.** A likelihood ratio compares how surprising the "
-        f"observation is under success against under failure; re-anchoring moves only where that "
-        f"ratio is applied, which is E-POS's point too."
+        f"The prospect chance is a product of two factors, and the two channels of the DHI "
+        f"update one each. The amplitude character (§2) updates the element chance: "
+        f"`P(G | amplitude)` = {element_product:.3f} updated by R = {r_applied:.2f} gives "
+        f"{p_g_updated:.3f}. The pick (§1, §3) updates the column distribution, given that the "
+        f"elements worked: `P(column ≥ h_min | G, pick)` = {posterior_geometric:.3f}, against "
+        f"{geometric_prior:.3f} from the geology alone.\n\n"
+        f"`Prospect POS` = {p_g_updated:.3f} × {posterior_geometric:.3f} = "
+        f"{posterior_pos:.3f}. The second factor is read off the same weighted realisations "
+        f"that draw the contact distribution below, so the histogram, the percentiles and the "
+        f"chance are one object."
     )
 
     # **Multiplied through by the element product.** Drawn as the bare exceedance this figure read
@@ -1251,19 +1050,20 @@ def render(n: Numbering | None = None) -> None:
     hs = np.linspace(0.0, float(result.column_m.max()), 300)
     depths = apex + hs
 
-    def _anchored(curve, at_min, pos):
-        """A curve that reads its own quoted POS at the assessment minimum.
+    # No rescaling. Each curve is one constant times one exceedance function -- P(G) times the
+    # geological F(h), P(G | amplitude) times the updated F(h) -- and reads its headline at h_min
+    # by identity. The `_anchored` helper this replaces existed because the blended headline was
+    # not the integral of the distribution drawn beside it.
+    geological = element_product * np.asarray(post.exceedance(hs, posterior=False), dtype=float)
+    updated = dhi_core.prospect_pos_curve(element_product, r_applied, post, hs)
 
-        Scaling by the element product alone draws the *geometry* update and silently drops the
-        strength channel's effect on the chance, which is how this figure came to read 40.8 % at
-        the minimum beside a headline of 49.1 %.
+    def _comparison_curve(exceedance_fn):
+        """A rival construction of the conditional term, on the same first factor.
+
+        The pooled and scenario curves are alternative geometry updates, so they take the same
+        `P(G | amplitude)` the Bayesian one does and differ only in the second factor.
         """
-        return pos * np.asarray(curve) / max(float(at_min), 1e-12)
-
-    prior_at_min = float(post.exceedance(np.array([h_min]), posterior=False)[0])
-    post_at_min = float(post.exceedance(np.array([h_min]))[0])
-    geological = _anchored(post.exceedance(hs, posterior=False), prior_at_min, combined.prior_pos)
-    updated = _anchored(post.exceedance(hs), post_at_min, combined.posterior_pos)
+        return p_g_updated * np.asarray(exceedance_fn, dtype=float)
 
     # Depth on y, inverted. This figure used to be the one exception to the tool's own convention,
     # which every other caption states out loud -- and being the exception made it read as a
@@ -1301,24 +1101,17 @@ def render(n: Numbering | None = None) -> None:
     floor_part = None
     if show_all and seen:
         for method, dash in ((dhi_core.POOLED, "dash"), (dhi_core.SCENARIO, "dot")):
-            curve = _anchored(
-                dhi_core.combination_exceedance(result, detection, observation, hs, method=method),
-                float(dhi_core.combination_exceedance(
-                    result, detection, observation, np.array([h_min]), method=method)[0]),
-                combined.posterior_pos)
+            curve = _comparison_curve(
+                dhi_core.combination_exceedance(result, detection, observation, hs, method=method))
             if method == dhi_core.POOLED:
                 pooled_gap = float(np.abs(np.asarray(curve) - np.asarray(updated)).max())
                 # The same comparison with the detection function held flat, so the caption can
                 # say how much of the gap is the floor rather than asserting a split that moves
                 # with p_valid.
                 _flat = dhi_core.DetectionFunction(h50_m=1e-6, steepness_m=1e-6, ceiling=1.0)
-                _flat_curve = _anchored(
+                _flat_curve = _comparison_curve(
                     dhi_core.combination_exceedance(result, _flat, observation, hs,
-                                                    method=dhi_core.BAYES),
-                    float(dhi_core.combination_exceedance(
-                        result, _flat, observation, np.array([h_min]),
-                        method=dhi_core.BAYES)[0]),
-                    combined.posterior_pos)
+                                                    method=dhi_core.BAYES))
                 floor_part = float(np.abs(np.asarray(curve) - np.asarray(_flat_curve)).max())
             fig.add_scatter(x=curve, y=depths, mode="lines", opacity=0.65,
                             name={dhi_core.POOLED: "…with the floor and D(h) dropped",
@@ -1336,9 +1129,9 @@ def render(n: Numbering | None = None) -> None:
     for label, h, colour in markers:
         if not 0 <= h <= hs[-1]:
             continue
-        geo = float(_anchored(post.exceedance(h, posterior=False), prior_at_min,
-                              combined.prior_pos)[0])
-        upd = float(_anchored(post.exceedance(h), post_at_min, combined.posterior_pos)[0])
+        geo = float(element_product * post.exceedance(h, posterior=False)[0])
+        upd = float(dhi_core.prospect_pos_curve(element_product, r_applied, post,
+                                                np.array([h]))[0])
         rows.append({"Threshold": label, "Column (m)": f"{h:,.0f}",
                      "Contact (m TVDSS)": f"{apex + h:,.0f}",
                      "POS, geological": f"{geo:.1%}", "POS, given the DHI": f"{upd:.1%}",
@@ -1359,13 +1152,13 @@ def render(n: Numbering | None = None) -> None:
     # the assessment minimum, and the question this figure is asked most often.
     median_contact = float(np.interp(0.5, updated[::-1] / max(updated.max(), 1e-12),
                                      depths[::-1]))
-    fig.add_scatter(x=[combined.posterior_pos * 0.5], y=[median_contact], mode="markers",
+    fig.add_scatter(x=[p_g_updated * 0.5], y=[median_contact], mode="markers",
                     marker=dict(color=POSTERIOR, size=13, symbol="circle-open",
                                 line=dict(width=3)),
                     name=f"posterior median contact, {median_contact:,.0f} m", hoverinfo="skip")
 
-    fig.update_layout(xaxis_title="Prospect POS  =  P(G) × P(column ≥ h)",
-                      xaxis_range=[0, min(1.0, max(combined.prior_pos, combined.posterior_pos,
+    fig.update_layout(xaxis_title="Prospect POS  =  P(G | amplitude) × P(column ≥ h | G, pick)",
+                      xaxis_range=[0, min(1.0, max(element_product, p_g_updated,
                                                    0.05) * 1.15)],
                       yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
                       height=560, margin=dict(t=40 if not shares else 60),
@@ -1379,150 +1172,72 @@ def render(n: Numbering | None = None) -> None:
             xaxis2=dict(overlaying="x", side="top", range=[0, peak * 3.0], showgrid=False,
                         tickformat=".0%", title="share of realisations per depth bin",
                         title_font_size=11, tickfont_size=10))
-    n.plot(fig, "**The figure this tab exists for.** Every chance anyone quotes is a point on one "
-                "of these curves, and each is a **prospect POS** — the element product times the "
-                "chance of clearing that threshold, not the conditional column term on its own.\n\n"
-                "**A DHI is not a lift; it is a reshaping.** It raises the chance at thresholds "
-                "near and above the picked contact and *lowers* it below, and the curves cross "
-                "where that changes. The open circle is the posterior median: it lands on the "
-                "pick, because an amplitude termination is an estimate of the contact and not a "
-                "floor under it — which is why the reading there is about half the one at your "
-                "assessment minimum."
+    n.plot(fig, "The chance against threshold. Every point on either curve is a prospect POS: "
+                "the chance the elements worked times the chance of clearing that threshold "
+                "given that they did. The geological curve is P(G) × F(h); the updated curve is "
+                "P(G | amplitude) × F(h | G, pick), and the two factors move independently: the "
+                "amplitude scales the whole curve, the pick reshapes it.\n\n"
+                "A DHI reshapes rather than lifts. The pick raises the chance at thresholds near "
+                "and above the picked contact and lowers it below, and the curves cross where that "
+                "changes. The open circle is the posterior median; it lands on the pick because an "
+                "amplitude termination is an estimate of the contact and not a floor under it, so "
+                "the reading there is about half the one at the assessment minimum."
                 + _pooled_note(pooled_gap, floor_part))
 
     n.table(
         pd.DataFrame(rows),
-        "**POS and its threshold, always as a pair.** These are readings of the curve above, not "
-        "separate numbers — which is why a volume must be taken at the same row as the chance "
-        "beside it. The answer to *which chance do I quote* is: whichever row your volume was "
-        "computed at.")
+        "POS and its threshold, as a pair. These are readings of the curve above rather than "
+        "separate numbers, which is why a volume is taken at the same row as the chance beside "
+        "it. The chance to quote is the one at the row the volume was computed at.")
 
-    theme.heading(TAB, sub=n.sub, text="6 · Combining the two channels")
+    theme.heading(TAB, sub=n.sub, text="6 · The two factors")
     st.markdown(
-        """
-Geometry and character are **two aspects of one observation, not two observations.** A bright
-anomaly is more likely to have a mappable termination, so the two are positively dependent, and
-multiplying their likelihood ratios assumes they are not. That over-states the evidence — the same
-double-count this whole architecture is arranged to avoid, arriving one level in.
-
-So the combination is discounted rather than taken raw.
-"""
+        "The amplitude character and the pick geometry are two aspects of one observation, and "
+        "they answer two questions. Whether there is hydrocarbon at all is the character's "
+        "question, and it updates the element chance. Given that there is, how far down the "
+        "column reaches is the pick's question, and it updates the column distribution. Each "
+        "channel enters its own factor once; neither is applied to the other's."
     )
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("R, geometry", _fmt_r(post.r_dhi),
-              "from §4" if not np.isnan(post.r_dhi) else "needs an assessment minimum",
+    c1.metric("R, amplitude character", _fmt_r(r_applied),
+              dhi_core.strength_bands(r_applied)[0] if seen else "neutral; nothing was seen",
               delta_color="off")
-    c2.metric("R, strength", _fmt_r(combined.r_strength),
-              "from §2" if seen else "neutral — nothing was seen", delta_color="off")
-    # Moved here from §2 by the reorder: it needs the prior, and a chance is a result rather than
-    # an input. It is the number to read the strength band against — see the caption in §2.
-    c2.metric("POS on strength alone",
-              f"{dhi_core.simm_update(prior_pos, combined.r_strength):.1%}",
-              f"prior {prior_pos:.1%}", delta_color="off")
-    c3.metric("R, combined", _fmt_r(combined.r_combined),
-              dhi_core.strength_bands(combined.r_combined)[0], delta_color="off")
-    c4.metric("Prospect POS", f"{combined.posterior_pos:.1%}",
-              f"prior {combined.prior_pos:.1%}")
+    c2.metric("P(G | amplitude)", f"{p_g_updated:.1%}", f"P(G) {element_product:.1%}",
+              delta_color="off")
+    c3.metric(f"P(column ≥ {h_min:.0f} m | G, pick)", f"{posterior_geometric:.1%}",
+              f"geological {geometric_prior:.1%}", delta_color="off")
+    c4.metric("Prospect POS", f"{posterior_pos:.1%}", f"prior {prior_pos:.1%}")
 
-    # Published for tab 4.0, which draws the posterior beside the per-element decomposition. Tab 4.0
-    # renders before this one, so it reads the value written on the previous run -- a one-frame lag
-    # that is invisible in practice, because every interaction reruns both and the user has to
-    # switch tabs to look. Storing the curve rather than the object keeps the dependency one-way.
+    # Published for tab 4.0, which draws the posterior beside the per-element decomposition.
+    # Tab 4.0 renders before this one, so it reads the value written on the previous run, a
+    # one-frame lag that is invisible in practice because every interaction reruns both.
+    # Storing the curve rather than the object keeps the dependency one-way.
     depth_grid = apex + np.linspace(0.0, float(result.column_m.max()), 300)
     st.session_state["dhi_overlay"] = {
         "depths_m": depth_grid,
-        # **Scaled to the prospect chance, not left conditional.** `post.exceedance` is
-        # P(column >= h | the prospect works AND the DHI), so it starts at 1.0 at the apex. The
-        # *Risk against depth* sub-tab beside this one draws it against per-element curves that already carry the element chances, and an
-        # unscaled curve therefore sat at 100 % where the geological curves sat at 41 % -- two
-        # different quantities on one axis, which is the error this whole tool is arranged to
-        # prevent, committed by the tool itself.
-        #
-        # The anchor is the assessment minimum, because that is where the Bayesian update was
-        # applied: at h_min the curve must read the posterior prospect POS exactly, and the shape
-        # above and below comes from the updated contact distribution.
-        "pos_curve": (combined.posterior_pos
-                      * post.exceedance(depth_grid - apex)
-                      / max(float(post.exceedance(np.array([h_min]))[0]), 1e-12)),
-        "prior_curve": (combined.prior_pos
-                        * post.exceedance(depth_grid - apex, posterior=False)
-                        / max(float(post.exceedance(np.array([h_min]),
-                                                    posterior=False)[0]), 1e-12)),
-        # A resampled set of contacts, so downstream code that needs *samples* rather than a
-        # curve -- the export, the benchmark comparison -- gets the posterior distribution itself
-        # rather than reconstructing it from percentiles. Importance resampling with replacement,
-        # which is exact in the limit and honest about the effective sample size above.
+        # Scaled to the prospect chance, not left conditional: the Risk against depth sub-tab
+        # draws this against per-element curves that already carry the element chances. Each
+        # curve is one constant times one exceedance function and reads its headline at h_min
+        # by identity.
+        "pos_curve": dhi_core.prospect_pos_curve(element_product, r_applied, post,
+                                                 depth_grid - apex),
+        "prior_curve": element_product * np.asarray(
+            post.exceedance(depth_grid - apex, posterior=False), dtype=float),
+        # A resampled set of contacts, so downstream code that needs samples rather than a
+        # curve (the export, the benchmark comparison) gets the posterior distribution itself.
+        # Importance resampling with replacement, exact in the limit and honest about the
+        # effective sample size above.
         "contact_samples": _resample(result.contact_m[result.above_minimum],
                                      post.weights[result.above_minimum],
                                      int(st.session_state.get("n_trials", 10_000))),
-        # The raw per-realisation weights, so the sibling sub-tab can rebuild the decomposition as its
-        # posterior twin rather than being handed one pre-computed curve.
+        # The raw per-realisation weights, so the sibling sub-tab can rebuild the decomposition
+        # as its posterior twin rather than being handed one pre-computed curve.
         "weights": post.weights,
-        # The picked contact, so the sibling figures can mark it and say what the curve
-        # reads there -- the reading Lars made and had to ask about.
         "picked_contact_m": float(contact) if seen else None,
-        "prior_pos": float(combined.prior_pos),
-        "posterior_pos": float(combined.posterior_pos),
+        "prior_pos": float(prior_pos),
+        "posterior_pos": float(posterior_pos),
         "h_min": float(h_min),
     }
-
-    if np.isnan(post.r_dhi):
-        st.info(
-            f"**The geometry channel is undefined**, so the combination below is the strength "
-            f"channel alone. Fewer than {dhi_core.MIN_FAILURES_FOR_R} realisations fall short "
-            f"of the assessment minimum, leaving R without a denominator — the "
-            f"precondition set out in §1, above the inputs it governs."
-        )
-    elif post.r_dhi > dhi_core.R_CAP:
-        # Found by wiring this section up: the geometry channel is not clipped, and on a sharp pick
-        # against a low assessment minimum it returns astronomical values. The clip in
-        # CombinedUpdate then does all the work, and a reader who is not told that will read the
-        # cap as a finding. Say it plainly instead.
-        st.warning(
-            f"**The geometry channel returned R = {post.r_dhi:,.0f}, and the guard is what you are "
-            f"seeing in `R, combined`, not the evidence.** The measurement is reported raw so "
-            f"you can see how far out it is; going into the combination it is clipped to "
-            f"{dhi_core.R_SINGLE_CHANNEL:.0f}, and that clip is binding here.\n\n"
-            "A ratio that size says the pick is near-impossible unless the prospect succeeds, which "
-            "is an artefact of comparing a sharp pick against a failure set that the pick sits far "
-            "away from — not a statement about the seismic. **Simm's caution applies: for a single "
-            "line of fluid-indicator evidence an honest R rarely exceeds about 3 either way.** "
-            "Widen the pick σ in §1, raise the assessment minimum on tab 2.0, or lower the detection "
-            "ceiling in §3, and watch it fall. If it will not fall, the model — not the DHI — is "
-            "asserting the answer."
-        )
-
-    # A flat sweep is not the same finding as a robust one, and the figure cannot tell them apart
-    # on its own: when the geometry channel is undefined the combination falls back to strength
-    # alone for every value of `dependence`, so the curve is a horizontal line that reads as
-    # "nothing rests on this assumption" when it means "one of the two channels is switched off".
-    if np.isnan(combined.r_geometry):
-        st.warning(
-            "**The curve below is flat, and that is not reassurance.** With the geometry channel "
-            "undefined there is only one channel left, so there is nothing for `dependence` to "
-            "trade off and every setting returns the same answer. Give the assessment minimum a "
-            "value that some realisations fail and this figure starts saying something."
-        )
-
-    span = np.linspace(0.0, 1.0, 41)
-    figc = go.Figure()
-    figc.add_scatter(
-        x=span,
-        y=[dhi_core.CombinedUpdate(combined.prior_pos, combined.r_geometry,
-                                   combined.r_strength, float(d)).posterior_pos for d in span],
-        mode="lines", name=f"POS {theme.evidence_basis()}", line=dict(color=POSTERIOR, width=2.5))
-    figc.add_hline(y=combined.prior_pos, line=dict(color=PRIOR, dash="dash"),
-                   annotation_text="geological POS", annotation_position="bottom right")
-    figc.add_scatter(x=[dependence], y=[combined.posterior_pos], mode="markers",
-                     showlegend=False, marker=dict(color=theme.INK, size=10))
-    figc.update_layout(xaxis_title="Assumed dependence between the channels",
-                       yaxis_title="Prospect POS", yaxis_range=[0, 1], height=320,
-                       margin=dict(t=20), showlegend=False)
-    n.plot(figc, "**How much the answer rests on an assumption nobody can measure.** The left-hand "
-                 "end treats the two channels as independent evidence and the right-hand end treats "
-                 "them as one; the gap between the ends is the size of the double-count you would "
-                 "commit by multiplying without thinking. If that gap is large, the honest report "
-                 "is the range, not the midpoint.")
 
     # ------------------------------------------------------------------ cross-checks
     # ------------------------------------------------------------- success attribution
@@ -1702,8 +1417,9 @@ def _well_only(result, n: Numbering) -> None:
     channel in the tool that needed no argument to be admissible. Lars, 4 Sep 2026, asking what well
     control was *for*: this is what it is for, and it was unreachable.
 
-    The DHI path below is untouched. When both channels exist they still combine there, discounted
-    for dependence; this is the branch where there is nothing to combine with.
+    The DHI path is untouched. There the amplitude updates P(G) and the pick updates the column
+    distribution; here there is no amplitude, so the chance is P(G) times the well-updated
+    column term, which is the same chain with the character factor at one.
     """
     control = well_control()
     if control is None:
@@ -1726,13 +1442,11 @@ def _well_only(result, n: Numbering) -> None:
     posterior_pos = product * posterior.pos()
     st.session_state["dhi_overlay"] = {
         "depths_m": depth_grid,
-        # Anchored at the assessment minimum exactly as the amplitude branch is, so the two curves
-        # are the same quantity and the sibling sub-tab can draw either without knowing which.
-        "pos_curve": (posterior_pos * posterior.exceedance(depth_grid - apex)
-                      / max(float(posterior.exceedance(np.array([h_min]))[0]), 1e-12)),
-        "prior_curve": (prior_pos * posterior.exceedance(depth_grid - apex, posterior=False)
-                        / max(float(posterior.exceedance(np.array([h_min]),
-                                                         posterior=False)[0]), 1e-12)),
+        # The same quantity the amplitude branch writes, so the sibling sub-tab can draw either
+        # without knowing which: P(G) times the exceedance, with no amplitude to update P(G).
+        "pos_curve": dhi_core.prospect_pos_curve(product, 1.0, posterior, depth_grid - apex),
+        "prior_curve": product * np.asarray(
+            posterior.exceedance(depth_grid - apex, posterior=False), dtype=float),
         "contact_samples": _resample(result.contact_m[result.above_minimum],
                                      posterior.weights[result.above_minimum],
                                      int(st.session_state.get("n_trials", 10_000))),
