@@ -99,14 +99,14 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         theme.basis_banner(
             theme.GIVEN_DHI,
             "Every figure below carries the evidence named above. The purely geological versions "
-            "of the same figures are on tab 4.0, in the same order — they are a different "
+            "of the same figures are on tab 4.0, in the same order. They are a different "
             "distribution, not a different view of this one.")
     else:
         theme.basis_banner(
             theme.GEOLOGICAL,
-            "The competing limits alone. If this prospect has a DHI or a penetration, its updated "
-            "results are on tab 5.0 and are a different distribution — not a different view of "
-            "this one.")
+            "The competing limits alone. Where the prospect has a DHI or a penetration, the "
+            "updated results are on tab 5.0 and are a different distribution, not a different "
+            "view of this one.")
 
     # ------------------------------------------------------------------ headline
     #
@@ -148,43 +148,41 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             col.metric(f"Contact P{p}", f"{pct(p):,.0f} m",
                        "all realisations — no minimum set", delta_color="off")
         st.caption(
-            "**The contact distribution is still real; only the chance is not.** With no minimum "
+            "The contact distribution stands; only the chance is undefined. With no minimum "
             "every realisation counts as a success, so these percentiles are the whole "
-            "distribution rather than its success cases, and there is no threshold for a chance to "
-            "be read at. Everything below this point is unaffected — it is the *chance* that needs "
-            "the minimum, not the contact."
+            "distribution rather than its success cases, and there is no threshold to read a "
+            "chance at. Everything below this point is unaffected: the chance needs the minimum, "
+            "the contact does not."
         )
     else:
         m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric(f"Prospect POS at h ≥ {h_min:.0f} m", f"{prospect_pos:.1%}",
                   "the reportable number", delta_color="off")
         m2.metric(f"P(column ≥ {h_min:.0f} m | G)", f"{column_pos:.1%}",
-                  "conditional — this tab only", delta_color="off")
+                  "conditional; this tab only", delta_color="off")
         for col, p in ((m3, 90), (m4, 50), (m5, 10)):
             col.metric(f"Contact P{p}", f"{pct(p):,.0f} m",
                        "success cases only", delta_color="off")
         st.markdown(
-            f"**The prospect chance is a product of two things, and this tab computes only one of "
-            f"them.**\n\n"
+            f"The prospect chance is a product of two terms, and this tab computes one of "
+            f"them.\n\n"
             f"`Prospect POS = P(G) × P(column ≥ h | G)` = "
-            f"**{p_geological:.3f} × {column_pos:.3f} = {prospect_pos:.3f}**\n\n"
-            f"`P(G)` is the **geological POS** from tab 2.0 — the product of the four element "
-            f"chances, the chance the prospect works *at all*. It is E-POS's headline number and "
-            f"it says nothing about how tall the column is. `P(column ≥ h | G)` is everything on "
-            f"this tab: the competing limits, **conditional on the elements having worked**. A "
-            f"reservoir that is not there has no contact to distribute."
+            f"{p_geological:.3f} × {column_pos:.3f} = {prospect_pos:.3f}\n\n"
+            f"`P(G)` is the element chance from tab 2.0: the product of the four element chances, "
+            f"the chance the prospect works at all, and E-POS's headline number. It says nothing "
+            f"about how tall the column is. `P(column ≥ h | G)` is what this tab computes: the "
+            f"competing limits, conditional on the elements having worked."
         )
         st.caption(
-            "**Every chance here carries its threshold, and the conditioning it was computed "
-            "under.** The contact percentiles are *success cases only* — conditional, in the sense "
-            "WellVolPOS settled: the distribution is the primary object and the chance multiplies "
-            "it, never the other way round. Quoting a chance from one threshold beside a volume "
-            "from another is the error tab 6.0 is written to prevent, and quoting the conditional "
-            "term as though it were the prospect chance is the same error one level up."
+            "Every chance here carries its threshold and the conditioning it was computed under. "
+            "The contact percentiles are success cases only. The distribution is the primary "
+            "object and the chance multiplies it. A chance from one threshold beside a volume "
+            "from another is the error tab 6.0 is written to prevent; the conditional term quoted "
+            "as the prospect chance is the same error one level up."
         )
 
     # ------------------------------------------------------------------ 1 · exceedance
-    theme.heading(tab, sub=n.sub, text="1 · Where is the contact?")
+    theme.heading(tab, sub=n.sub, text="1 · Contact depth")
     # A cumulative curve hides where the mass is: two quite different contact distributions can
     # trace nearly the same exceedance. The histogram is the same object read the other way, so it
     # is on by default and switchable off rather than the reverse.
@@ -230,12 +228,12 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             overlaying="x", side="top", range=[0, max(peak, 1e-6) * 3.0], showgrid=False,
             tickformat=".0%", title="share of realisations per depth bin",
             title_font_size=11, tickfont_size=10))
-    n.plot(fig, "The exceedance curve `F(h) = P(column ≥ h)`, on the depth axis. Depth on y, "
-                "inverted, m TVDSS — the convention throughout this tool and WellVolPOS. **This "
-                "curve is the risk output**; POS at any threshold is a reading of it.")
+    n.plot(fig, "The exceedance curve `F(h) = P(column ≥ h)` on the depth axis. Depth on y, "
+                "inverted, m TVDSS, the convention throughout this tool and WellVolPOS. This "
+                "curve is the risk output; POS at any threshold is a reading of it.")
 
     # ------------------------------------------------------------------ 2 · which limit controls
-    theme.heading(tab, sub=n.sub, text="2 · Which limit controls the contact?")
+    theme.heading(tab, sub=n.sub, text="2 · Controlling limit by depth")
     edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 26)
     centres = 0.5 * (edges[:-1] + edges[1:])
 
@@ -252,9 +250,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     if given_dhi:
         view = st.radio("Show", (GIVEN, GEOLOGICAL, DIFFERENCE), horizontal=True,
                         key=f"controlling_view_{tab}",
-                        help="A DHI cannot tell you which element failed. It can tell you which "
-                             "limit set the contact, because knowing roughly where the contact "
-                             "sits is evidence about which mechanism put it there.")
+                        help="A DHI cannot say which element failed. It can say which limit set "
+                             "the contact, because roughly where the contact sits is evidence "
+                             "about which mechanism put it there.")
         # **Without this the first two views are indistinguishable, and correctly so.** Normalising
         # each bin against itself conditions on contact depth, and the detection function is
         # saturated at its ceiling for every column in every occupied bin — so once the depth is
@@ -266,7 +264,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             key=f"controlling_scaled_{tab}", disabled=view == DIFFERENCE,
             help="On: bars are shares of all realisations, so bin height carries the contact "
                  "distribution and the two bases differ visibly. Off: each bin is normalised "
-                 "against itself — the classic diagnostic, and a view a DHI cannot move.")
+                 "against itself, the classic diagnostic, which a DHI cannot move.")
     basis_weights = weights if view != GEOLOGICAL else None
     if view == DIFFERENCE:
         # **Not the difference of the two views above, and it cannot be.** Those normalise within
@@ -341,50 +339,47 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         moves = {name: float(shares[name].sum()) for name in ranked}
         gained = max(moves, key=moves.get)
         lost = min(moves, key=moves.get)
-        n.plot(fig2, "**What the amplitude did to the controlling mechanism.** Right of the line "
-                     "is a limit the DHI promoted; left is one it demoted. Bars are shares of "
-                     "*all* realisations, so each limit's bars sum across depth to its change in "
-                     "overall controlling share — here "
-                     f"**{gained} {moves[gained]:+.1%}** and **{lost} {moves[lost]:+.1%}**.\n\n"
-                     "**Why this is not the difference of the two views above.** Those normalise "
-                     "within each depth bin, which conditions on where the contact is — and that "
-                     "is almost the whole of what a DHI knows. Subtract them and you get nothing: "
-                     "0.9 points at most, against 3.9 here. A DHI moves the *depth distribution*, "
-                     "and only through it the mechanism mix.\n\n"
-                     "This is a claim about **geometry**, not about elements. The amplitude says "
-                     "roughly where the contact is and some mechanisms explain that depth better "
-                     "than others; it is not evidence about which element failed, and the element "
-                     "chances on tab 2.0 are untouched by it.")
+        n.plot(fig2, "What the evidence changed in the controlling mechanism. Right of the line "
+                     "is a limit the evidence promoted; left is one it demoted. Bars are shares "
+                     "of all realisations, so each limit's bars sum across depth to its change in "
+                     f"overall controlling share: here {gained} {moves[gained]:+.1%} and {lost} "
+                     f"{moves[lost]:+.1%}.\n\n"
+                     "This is not the difference of the two views above. Those normalise within "
+                     "each depth bin, which conditions on where the contact is, and that is "
+                     "almost all a DHI knows; their difference is 0.9 points at most, against 3.9 "
+                     "here. A DHI moves the depth distribution, and only through it the mechanism "
+                     "mix.\n\n"
+                     "This is a claim about geometry, not about elements. The amplitude says "
+                     "roughly where the contact is, and some mechanisms explain that depth better "
+                     "than others. It is not evidence about which element failed, and the element "
+                     "chances on tab 2.0 are unchanged by it.")
     else:
-        n.plot(fig2, "The diagnostic the argmin bookkeeping buys, and the reason for keeping it: "
-                     "**the controlling mechanism changes as you step down structure.** Hue is the "
-                     "risk element, in E-POS's colours — salmon charge, blue closure, yellow "
-                     "reservoir, green retention — and lightness separates the limits within an "
-                     "element. Grant (2020) publishes an equivalent as \"column height control "
-                     "statistics\"; the per-element curves built from it are, as far as I can "
-                     "find, unpublished."
-                     + (("\n\n**Bin height carries the contact distribution here**, which is why "
-                         f"*{GIVEN}* and *Geological* differ visibly: the evidence moves which "
-                         "depths are reached far more than it moves the mechanism mix at any one "
-                         "depth."
+        n.plot(fig2, "The controlling mechanism at each depth, which changes down structure. Hue "
+                     "is the risk element in E-POS's colours (salmon charge, blue closure, yellow "
+                     "reservoir, green retention); lightness separates the limits within an "
+                     "element. Grant (2020) publishes an equivalent as column height control "
+                     "statistics; per-element curves built from it appear to be unpublished."
+                     + (("\n\nBin height carries the contact distribution here, which is why "
+                         f"{GIVEN} and Geological differ visibly: the evidence moves which depths "
+                         "are reached far more than it moves the mechanism mix at any one depth."
                          if scaled else
-                         f"\n\n**{GIVEN} and Geological look identical here — by "
-                         f"{_within_bin_move(result, edges, weights):.1%} at most — and that is a "
-                         "property of the evidence, not a broken control.** Normalising each bin "
-                         "against itself conditions on contact depth, and the evidence moves "
-                         "*which depths are reached*, not *what stops the column once you are at "
-                         "one*. **Tick the box above** to see the half it does move.")
+                         f"\n\n{GIVEN} and Geological are near-identical here, by "
+                         f"{_within_bin_move(result, edges, weights):.1%} at most, and that is a "
+                         "property of the evidence rather than of the control. Normalising each "
+                         "bin against itself conditions on contact depth, and the evidence moves "
+                         "which depths are reached, not what stops the column at a given depth. "
+                         "The box above shows the half it does move.")
                         if given_dhi else ""))
 
     # ------------------------------------------------------------------ 3 · ranking
-    theme.heading(tab, sub=n.sub, text="3 · Which limit — and which elicited number — actually matters?")
+    theme.heading(tab, sub=n.sub, text="3 · Limit ranking and sensitivity")
     successes_only = st.toggle(
         "Restrict to realisations above the assessment minimum", value=False,
         key=f"restrict_successes_{tab}",
-        help="The two answer different questions. Unrestricted: what controls this closure? "
-             "Restricted: what controls it, given it is worth drilling? Reporting only the "
-             "restricted one repeats, one level up, the selection error this tool criticises in "
-             "the published column-height statistics.")
+        help="The two answer different questions. Unrestricted: what controls this closure. "
+             "Restricted: what controls it, given that it is worth drilling. Reporting only the "
+             "restricted one repeats, one level up, the selection error in the published "
+             "column-height statistics.")
     ranking = engine.limit_ranking(result, successes_only=successes_only, weights=weights)
     other = engine.limit_ranking(result, successes_only=not successes_only, weights=weights)
     other_map = dict(other)
@@ -396,17 +391,16 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     fig3.update_layout(xaxis_title="Share of realisations in which this limit set the contact",
                        height=max(300, 46 * len(live)), margin=dict(t=20), showlegend=False,
                        xaxis_tickformat=".0%")
-    n.plot(fig3, "Limits ordered by how often they set the contact. **Use this as a workflow "
-                 "step, not a summary:** run once, then spend elicitation effort only on the top "
-                 "two or three. A limit near zero can be left rough — it is not moving the answer.")
+    n.plot(fig3, "Limits ordered by how often they set the contact. The elicitation effort "
+                 "belongs on the top two or three; a limit near zero does not move the answer "
+                 "and can stay at a rough value.")
 
     # ---- the other half of this section's question --------------------------------------
     swing_space = st.radio(
         "Swing measured on", ["Column below apex", "Contact depth"], horizontal=True,
         key=f"tornado_space_{tab}",
-        help="They rank differently and both are honest. The apex barely moves the COLUMN and "
-             "moves the CONTACT one-for-one, so a tool offering only one would hide half the "
-             "sensitivity.")
+        help="The two rank differently and both are valid. The apex barely moves the column and "
+             "moves the contact one-for-one, so either alone would hide half the sensitivity.")
     space = "column" if swing_space.startswith("Column") else "depth"
     # **The DHI tornado needs a DHI.** It perturbs the amplitude's own inputs -- pick sigma, the
     # strength, the detection function -- so a posterior built from an offset penetration alone has
@@ -419,9 +413,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
               else sensitivity.baseline(result, space=space))
     if given_dhi and not amplitude:
         st.caption(
-            "**This tornado is geological.** The updated one perturbs the amplitude's own inputs — "
-            "the pick, its σ, the detection function — and this prospect is updated by a "
-            "penetration rather than by an amplitude, so there is nothing there to perturb. What "
+            "This tornado is geological. The updated one perturbs the amplitude's own inputs "
+            "(the pick, its σ, the detection function), and this prospect is updated by a "
+            "penetration rather than an amplitude, so there is nothing there to perturb. What "
             "moves the answer here is the limits, which is what is ranked below."
         )
 
@@ -433,16 +427,14 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         _thin = [e for e in effects[:12] if e.support < MIN_TORNADO_SUPPORT]
         if _thin:
             st.warning(
-                f"**{len(_thin)} of these bars rest on very little.** After reweighting, the "
-                f"thinnest carries an effective sample of **{min(e.support for e in _thin):,}** "
-                f"realisations — the tail still holds about a tenth of the run, but almost all of "
-                f"that weight is now near zero. Read those bars as directions rather than "
-                f"distances: "
-                + ", ".join(f"*{e.name}* ({e.support:,})" for e in _thin[:4])
+                f"{len(_thin)} of these bars rest on very little. After reweighting, the "
+                f"thinnest carries an effective sample of {min(e.support for e in _thin):,} "
+                f"realisations; the tail still holds about a tenth of the run, but most of that "
+                f"weight is near zero. Those bars are directions rather than distances: "
+                + ", ".join(f"{e.name} ({e.support:,})" for e in _thin[:4])
                 + ("…" if len(_thin) > 4 else "")
-                + ".\n\nMore realisations do not fix this — it is the update concentrating on "
-                "fewer of them, and §5's effective sample size is the same story for the whole "
-                "posterior."
+                + ".\n\nMore realisations do not change this. The update concentrates on fewer "
+                "of them, and §5's effective sample size shows the same for the whole posterior."
             )
 
     if effects:
@@ -470,19 +462,19 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             height=max(280, 34 * len(shown)), margin=dict(t=20),
             barmode="overlay", legend=dict(orientation="h", y=-0.22))
         n.plot(fig4,
-               f"**How much each elicited number moves the mean**, which is a different question "
-               f"from how often it controls the contact — the figure above. A limit can set the "
+               f"How much each elicited number moves the mean, which is a different question "
+               f"from how often it controls the contact (the figure above). A limit can set the "
                f"contact in most realisations and still be worth no effort, because it always "
-               f"bites at nearly the same depth.\n\n"
-               f"Each bar is a **conditional mean**: the average outcome when that input came out "
-               f"in its top tenth, against its bottom tenth, taken from the run already on screen. "
-               f"Because the slices come from the actual joint sample, the bars respect the "
-               f"correlations — couple the apex to the spill and the spill's bar changes.\n\n"
-               f"**Two kinds of bar.** *Where it bites* is the distribution; *whether it is there* "
-               f"is `P(active)`. They are different elicitations, and which one is longer tells "
-               f"you whether to go and argue about a depth or about a probability. **The mean, not "
-               f"the median** — it is what a volume is built from, and a median can sit still "
-               f"while the tail moves underneath it.")
+               f"applies at nearly the same depth.\n\n"
+               f"Each bar is a conditional mean: the average outcome when that input came out in "
+               f"its top tenth, against its bottom tenth, taken from the run on screen. The "
+               f"slices come from the joint sample, so the bars respect the correlations; "
+               f"coupling the apex to the spill changes the spill's bar.\n\n"
+               f"Two kinds of bar. Where it applies is the distribution; whether it is there is "
+               f"`P(active)`. They are different elicitations, and the longer one says whether "
+               f"the question is a depth or a probability. The mean rather than the median, "
+               f"because a volume is built from the mean and a median can sit still while the "
+               f"tail moves.")
     else:
         st.info("Too few realisations to slice into deciles for a sensitivity.")
 
@@ -497,10 +489,10 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         # Optional: it exists only when an assessment minimum is set, so numbering it in the main
         # sequence would renumber everything below whenever that minimum went to zero.
         n.table(table, optional=True,
-                caption="The same selection effect this tool identifies in the empirical literature, "
-                "committed one level up if it is ignored: **a limit that usually kills the prospect "
-                "outright is under-represented among the survivors precisely because it is the most "
-                "severe.** Both columns are wanted; neither alone is the answer.")
+                caption="The same selection effect the tool identifies in the empirical "
+                "literature, one level up: a limit that usually fails the prospect outright is "
+                "under-represented among the survivors because it is the most severe. Both "
+                "columns are needed; neither alone is the answer.")
 
     # ------------------------------------------------------------------ group minima
     theme.heading(tab, sub=n.sub, text="4 · By risk element")
@@ -519,22 +511,22 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      "Median column when it binds": f"{np.median(finite):,.0f} m",
                      "Controls the contact": f"{sum(s for nm, s in ranking if group_of[nm] is group):.1%}"})
     n.table(pd.DataFrame(rows),
-            "Group minima — the shallowest active limit within each element. These are what the "
-            "per-element "
-            "chance-versus-depth curves on the *Risk against depth* sub-tab are derived from.")
+            "Group minima: the shallowest active limit within each element. The per-element "
+            "chance-versus-depth curves on the Risk against depth sub-tab are derived from "
+            "these.")
 
     # ------------------------------------------------------------------ 5 · one axis
-    theme.heading(tab, sub=n.sub, text="5 · Every limit, and the answer, on one axis")
+    theme.heading(tab, sub=n.sub, text="5 · All limits on one axis")
     st.markdown(
-        "The competition, drawn. **A limit that is only sometimes present flattens at its "
-        "`P(active)`** — read that number off the right-hand end of its curve — and **the result is "
-        "the lower envelope**, because the contact is the shallowest active limit. A curve far to "
-        "the right of the bold line is a mechanism that never mattered."
-        + (f"\n\n**Both answers are on the axis.** The bold red line is the contact "
-           f"*{theme.evidence_basis()}* — the answer on this tab — and the dashed blue one "
-           f"is the purely geological contact from tab 4.0, kept beside it because the gap "
-           f"between them is what the evidence bought. Every thin limit curve is drawn under "
-           f"the same weights, which is what keeps the lower-envelope reading true."
+        "The competition drawn. A limit that is only sometimes present flattens at its "
+        "`P(active)`, which can be read off the right-hand end of its curve. The result is the "
+        "lower envelope, because the contact is the shallowest active limit. A curve far to the "
+        "right of the bold line is a mechanism that never controlled."
+        + (f"\n\nBoth answers are on the axis. The bold red line is the contact "
+           f"{theme.evidence_basis()}, the answer on this tab; the dashed blue one is the purely "
+           f"geological contact from tab 4.0, kept beside it because the gap between them is "
+           f"what the evidence changed. Every thin limit curve is drawn under the same weights, "
+           f"which keeps the lower-envelope reading true."
            if given_dhi else ""))
     c1, c2, c3 = st.columns([2, 2, 1])
     space = c1.radio(
@@ -552,11 +544,13 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         # comparison.
         "Draw as", limit_stack.MODES, index=limit_stack.MODES.index("Violin"),
         key=f"stack_mode_{tab}",
-        help="Exceedance curves read as probabilities; the violins and the histogram show where each limit actually lands; points show the individual realisations behind them.")
+        help="Exceedance curves read as probabilities; the violins and the histogram show where "
+             "each limit lands; points show the individual realisations behind them.")
     every = c3.number_input(
         "Every n-th point", 1, 500, 10, 1, key=f"stack_every_{tab}",
         disabled=mode != "Points",
-        help="Thinning, so the cloud stays readable: 10 draws every tenth realisation. Only applies to **Points**, which is why it is greyed out otherwise.")
+        help="Thinning, so the cloud stays readable: 10 draws every tenth realisation. Applies "
+             "to Points only.")
 
     apex_med = float(np.median(result.apex_m))
     lo_def, hi_def = limit_stack.default_window(result, space, apex_med,
@@ -572,21 +566,20 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
 
     n.plot(limit_stack.figure(result, space=space, mode=mode, window=window,
                               every=int(every), posterior=weights),
-           "One axis, five ways of looking at it. **Exceedance curves** is the analytic view — "
-           "flattening levels are `P(active)`, and the bold line is the lower envelope. "
-           "**Violin** and **half violin** show where each limit's mass sits, which is better for "
-           "spotting overlap and worse for reading a probability. **Histogram** is the same "
-           "unsmoothed, for when a kernel would invent a shape the samples do not have. "
-           "**Points** shows the sample itself."
-           + ("\n\n**Three groups, and they are three kinds of thing.** *Competing limits* are the "
-              "mechanisms. *The evidence alone* is not one of them, and is drawn hollow because it "
-              "is a **likelihood, not a count of realisations** — read its shape, not its area. "
-              "*Result* carries both answers, "
+           "One axis, five views. Exceedance curves is the analytic view: flattening levels are "
+           "`P(active)`, and the bold line is the lower envelope. Violin and half violin show "
+           "where each limit's mass sits, better for overlap and worse for reading a "
+           "probability. Histogram is the same unsmoothed, for where a kernel would invent a "
+           "shape the samples do not have. Points shows the sample itself."
+           + ("\n\nThree groups of three kinds. Competing limits are the mechanisms. The "
+              "evidence alone is not one of them and is drawn hollow because it is a likelihood, "
+              "not a count of realisations; its shape carries the information, not its area. "
+              "Result carries both answers, "
               + theme.basis_tag(theme.GEOLOGICAL) + " and " + theme.basis_tag(theme.GIVEN_DHI)
-              + ", so the middle group is visibly what turns the first into the second.\n\n"
-                "**Points** is the exception: the evidence lane's markers are drawn *from* its "
-                "shape rather than observed, and the updated result lane is an importance "
-                "*resample*, so a favoured realisation appears more than once."
+              + ", so the middle group is what turns the first into the second.\n\n"
+                "Points is the exception: the evidence lane's markers are drawn from its shape "
+                "rather than observed, and the updated result lane is an importance resample, so "
+                "a favoured realisation appears more than once."
               if given_dhi else ""))
 
     # ------------------------------------------------------------------ 6 · trust
