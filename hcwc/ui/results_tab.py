@@ -29,9 +29,10 @@ TAB = 4
 TRUST_SLOT_KEY = "_trust_slot"
 
 #: Below this effective sample size a tornado bar is reported as thin rather than drawn as though
-#: it were as well supported as the rest. Same threshold and same reasoning as
-#: :data:`hcwc.core.dhi.MIN_FAILURES_FOR_R`: a mean of a hundred effective realisations is coarse
-#: but reportable, and twenty-seven is not.
+#: it were as well supported as the rest. An effective count rather than a share, unlike
+#: :func:`hcwc.core.dhi.min_failures_for_r`, because a tornado bar's support is the ESS of a
+#: slice and not a fraction of the trial count: a mean of a hundred effective realisations is
+#: coarse but reportable, and twenty-seven is not.
 MIN_TORNADO_SUPPORT = 100
 
 

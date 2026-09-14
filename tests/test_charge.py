@@ -364,3 +364,81 @@ class TestReadingAnAreaDepthCsv:
     def test_fewer_than_two_usable_rows_is_refused(self):
         with pytest.raises(ValueError, match="fewer than two usable rows"):
             AreaDepthTable.from_csv("depth_m,top_area_km2\n2000,1\n")
+
+
+class TestTheChargeColumnIsMeasuredFromTheProspectApex:
+    """Audit finding P2-2, 14 Sep 2026.
+
+    The table's crest is 2 040 m and the elicited apex about 2 050 m. A column measured from the
+    crest, added by the engine to the apex it draws, put every charge-limited contact 10 m deeper
+    than the integration computed. Measured from the prospect apex, the engine's contact
+    reproduces the table's fill depth to within the apex draw.
+    """
+
+    @staticmethod
+    def _limiting(table):
+        rng = np.random.default_rng(7)
+        n = 4_000
+        volume = rng.normal(60.0, 20.0, n).clip(0.0)
+        return charge.oil_contact(table, volume, np.full(n, BO), np.full(n, K))
+
+    def test_the_conversion_subtracts_the_prospect_apex(self, table):
+        res = self._limiting(table)
+        out = charge.columns_below_apex(res, 2050.0, table)
+        finite = res.contact_m[np.isfinite(res.contact_m)]
+        expected = np.maximum(finite - 2050.0, 0.0)
+        assert np.allclose(out.column_m, expected)
+        assert out.crest_offset_m == pytest.approx(table.apex_m - 2050.0)
+
+    def test_a_contact_above_the_apex_is_a_zero_column_and_is_counted(self, table):
+        res = self._limiting(table)
+        out = charge.columns_below_apex(res, 2050.0, table)
+        finite = res.contact_m[np.isfinite(res.contact_m)]
+        assert out.share_clipped == pytest.approx(float((finite < 2050.0).mean()))
+        assert (out.column_m >= 0.0).all()
+
+    def test_the_engine_reproduces_the_fill_depth_to_within_the_apex_draw(self, table):
+        """The whole point: the 10 m offset is gone.
+
+        A charge-only limit set with the app's apex (2 049–2 051 m). Every engine contact must
+        sit within the apex spread of the fill depth the table computed for the same quantile,
+        where before it sat 10 m deeper.
+        """
+        from hcwc.core import engine
+        from hcwc.core.limits import DepthDistribution, Group, Limit, LimitSet
+
+        res = self._limiting(table)
+        apex = DepthDistribution("uniform", {"minimum": 2049.0, "maximum": 2051.0})
+        out = charge.columns_below_apex(res, 2050.0, table)
+        limit = Limit("Charge", Group.CHARGE, 1.0, DepthDistribution.from_samples(out.column_m))
+        result = engine.run(LimitSet(apex=apex, limits=(limit,), name="charge only",
+                                     min_column_m=5.0), n=4_000, seed=3)
+        finite = res.contact_m[np.isfinite(res.contact_m)]
+        for q in (0.1, 0.5, 0.9):
+            table_depth = float(np.quantile(finite, q))
+            engine_depth = float(np.quantile(result.contact_m, q))
+            assert abs(engine_depth - table_depth) <= 1.0 + 2.0, (q, table_depth, engine_depth)
+
+    def test_measuring_from_the_crest_was_the_offset_the_audit_measured(self, table):
+        """Pinned so the old conversion cannot come back unnoticed."""
+        res = self._limiting(table)
+        finite = res.contact_m[np.isfinite(res.contact_m)]
+        old = charge.column_height_from_contact(finite, table.apex_m)
+        new = charge.columns_below_apex(res, 2050.0, table).column_m
+        keep = finite > 2050.0
+        assert np.allclose(old[keep] - new[keep], 2050.0 - table.apex_m)
+
+
+class TestATableThatEndsAboveTheSpillIsReported:
+    """Audit finding P2-3, 14 Sep 2026: charge past the last row is not limiting only if the
+    table reaches the spill."""
+
+    def test_a_table_reaching_the_spill_reports_no_gap(self, table):
+        assert charge.table_short_of_spill(table, table.deepest_m) == 0.0
+        assert charge.table_short_of_spill(table, table.deepest_m - 100.0) == 0.0
+
+    def test_a_table_ending_above_the_spill_reports_the_gap(self, table):
+        assert charge.table_short_of_spill(table, table.deepest_m + 80.0) == pytest.approx(80.0)
+
+    def test_no_spill_means_no_verdict(self, table):
+        assert charge.table_short_of_spill(table, None) is None
