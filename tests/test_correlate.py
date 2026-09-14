@@ -170,14 +170,33 @@ class TestInTheEngine:
 
     def test_the_declared_correlation_is_delivered(self):
         r = engine.run(self.correlated_prospect(0.7), N)
-        names = list(self.correlated_prospect(0.7).names)
+        # The realised matrix is over `correlated_names`, apex first, since 15 Sep 2026.
+        names = list(self.correlated_prospect(0.7).correlated_names)
         i, j = names.index("Top seal (capillary)"), names.index("Base seal (capillary)")
         assert r.realised_correlation()[i, j] == pytest.approx(0.7, abs=0.02)
+        assert r.realised_pairs()["Top seal (capillary)|Base seal (capillary)"] == \
+            pytest.approx(0.7, abs=0.02)
+
+    def test_an_apex_correlation_is_realised_and_reported(self):
+        """The apex is a member of the correlated set. Its draw used to be discarded after
+        sampling, so the Apex|spill pair the tab recommends could be requested and sampled but
+        never read back as realised."""
+        from hcwc.core.limits import APEX
+        base = reference_prospect()
+        spill = next(n for n in base.names if "spill" in n.lower())
+        ls = LimitSet(apex=base.apex, limits=base.limits, name=base.name,
+                      correlations={f"{APEX}|{spill}": 0.8})
+        r = engine.run(ls, N)
+        names = list(ls.correlated_names)
+        assert names[0] == APEX
+        assert r.realised_correlation().shape == (len(base.limits) + 1,) * 2
+        assert r.realised_correlation()[0, names.index(spill)] == pytest.approx(0.8, abs=0.02)
+        assert r.realised_pairs()[f"{APEX}|{spill}"] == pytest.approx(0.8, abs=0.02)
 
     def test_perfect_dependence_claims_two_limits_are_the_same_rock(self):
         """`TopandbaseSeal` has an off-diagonal of 1.0, not merely a positive number."""
         r = engine.run(self.correlated_prospect(1.0), 30_000)
-        names = list(self.correlated_prospect(1.0).names)
+        names = list(self.correlated_prospect(1.0).correlated_names)
         i, j = names.index("Top seal (capillary)"), names.index("Base seal (capillary)")
         got = r.realised_correlation()[i, j]
         assert got > 0.99, "perfect dependence must still be achievable, not merely near"

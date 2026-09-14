@@ -231,13 +231,23 @@ def correlation_projection(result: EngineResult) -> Check:
     worst = max(pairs, key=lambda row: abs(row[2] - row[3]))
     moved = abs(worst[2] - worst[3])
     level = _level(moved, PROJECTION_WATCH, PROJECTION_STOP)
+    # Three numbers per declared pair: asked for, achievable after the projection, and what the
+    # run delivered. The third is read off the draws themselves -- apex included, since the apex
+    # is a member of the correlated set and the Apex|spill pair is the one the tab recommends.
+    realised = result.realised_pairs()
+    rows = "; ".join(
+        f"{key.replace('|', ' ↔ ')} asked for {declared[key]:+.2f}, realised "
+        + ("n/a" if not np.isfinite(realised.get(key, float('nan')))
+           else f"{realised[key]:+.2f}")
+        for key in declared)
     return Check(
         name="Correlations as sampled",
         level=level,
         finding=(f"{len(pairs)} pair{'s' if len(pairs) != 1 else ''} elicited. Largest move under "
                  f"the projection: {worst[0]} ↔ {worst[1]}, asked for {worst[2]:+.2f}, "
-                 f"sampled at {worst[3]:+.2f}."),
-        meaning=("The matrix was already consistent, so what was asked for is what was sampled."
+                 f"sampled at {worst[3]:+.2f}. Realised in this run: {rows}."),
+        meaning=("The matrix was already consistent, so what was asked for is what was sampled, "
+                 "to Monte Carlo error."
                  if level == "ok" else
                  "The elicited matrix was not internally consistent and was projected. The "
                  "correlation in the model is not the one stated for that pair on tab 3.0, and "

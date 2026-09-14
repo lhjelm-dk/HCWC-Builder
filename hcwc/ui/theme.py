@@ -128,7 +128,7 @@ def _tab_css() -> str:
 
 #: Tab 3.0's sub-tabs, in order, and the risk element whose colour each takes. ``None`` is the
 #: Correlations sub-tab, which belongs to no single element and stays neutral.
-SUBTAB_ELEMENTS: tuple[str | None, ...] = ("Charge", "Closure", "Retention", None)
+SUBTAB_ELEMENTS: tuple[str | None, ...] = ("Charge", "Closure", "Retention", "Reservoir", None)
 
 #: How many sub-tabs each tab has, for the tabs whose sub-strips take their parent's accent rather
 #: than element colours. Their sub-tabs are *views of one thing* — the contact and its

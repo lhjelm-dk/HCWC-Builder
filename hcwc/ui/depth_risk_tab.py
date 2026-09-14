@@ -346,11 +346,17 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     for _k in (_sld, _num):
         st.session_state.setdefault(_k, _opening)
 
-    def _from_slider(sld=_sld, num=_num):
-        st.session_state[num] = st.session_state[sld]
+    # The headline well reading on the sibling sub-tab (4.1 §4 / 5.3 §4) shares the depth, so a
+    # change in either place lands in both.
+    _head = f"z_entry_headline_{tab}"
 
-    def _from_number(sld=_sld, num=_num):
+    def _from_slider(sld=_sld, num=_num, head=_head):
+        st.session_state[num] = st.session_state[sld]
+        st.session_state[head] = st.session_state[sld]
+
+    def _from_number(sld=_sld, num=_num, head=_head):
         st.session_state[sld] = st.session_state[num]
+        st.session_state[head] = st.session_state[num]
 
     _c1, _c2 = st.columns([3, 1])
     z_entry = _c1.slider("Well reservoir entry depth (m TVDSS)", _lo, _hi, step=5.0,
