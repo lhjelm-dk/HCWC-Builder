@@ -81,44 +81,43 @@ SPECS: tuple[LimitSpec, ...] = (
     # ---- Charge -----------------------------------------------------------------------------
     LimitSpec("Charge", Group.CHARGE, COLUMN, (100.0, 400.0), 1.0, "pert",
               "The column the available charge can fill. Charge that fills past the deepest mapped "
-              "depth is **not a shallow limit — it is no limit**, and that share belongs in "
-              "`P(active)` rather than as a contact at the base of the structure.",
+              "depth is no limit at all; that share belongs in `P(active)`, not as a contact at "
+              "the base of the structure.",
               computed=("charge",), opens_on="charge"),
     # ---- Closure ----------------------------------------------------------------------------
     LimitSpec("Closure / spill point", Group.CLOSURE, DEPTH, (300.0, 400.0), 1.0, "pert",
-              "Where the closure spills. **Always active** — every prospect has a spill point, and "
-              "the engine requires at least one limit that always bites."),
+              "Where the closure spills. Always active: every prospect has a spill point, and the "
+              "engine requires at least one limit that always applies."),
     LimitSpec("Fault geometry 1", Group.CLOSURE, DEPTH, (200.0, 320.0), 0.5, "pert",
-              "A relay ramp or shear zone that breaches the closure geometrically. This is about "
-              "*shape*, not about whether the fault seals — fault leakage is a Retention mechanism "
-              "and lives on the next sub-tab, even when it is the same fault."),
+              "A relay ramp or shear zone that breaches the closure geometrically. This concerns "
+              "shape, not whether the fault seals; fault leakage is a Retention mechanism on the "
+              "next sub-tab, even where it is the same fault."),
     LimitSpec("Fault geometry 2", Group.CLOSURE, DEPTH, (220.0, 340.0), 0.0, "pert",
-              "A second independent geometric breach. Off by default in effect — set `P(active)` "
-              "to 0 or untick the limit if the structure has only one."),
+              "A second independent geometric breach. Off in effect by default; `P(active)` at 0, "
+              "or the limit unticked, where the structure has only one."),
     LimitSpec("Wedge geometry", Group.CLOSURE, DEPTH, (250.0, 360.0), 0.0, "pert",
               "Pinch-out, truncation or onlap that ends the closure down-dip. Geometry, so it sits "
-              "in Closure rather than Reservoir; **Reservoir** in this tool is effectiveness only "
-              "and never moves the contact."),
+              "in Closure rather than Reservoir; Reservoir in this tool is effectiveness only and "
+              "never moves the contact."),
     # ---- Retention --------------------------------------------------------------------------
     LimitSpec("Fault leakage 1", Group.RETENTION, COLUMN, (130.0, 170.0), 0.25, "pert",
-              "The column a fault will hold before it leaks — a *capacity*, so it is stated as a "
-              "height and does not move when the apex pick moves."),
+              "The column a fault holds before it leaks. A capacity, so it is stated as a height "
+              "and does not move when the apex pick moves."),
     LimitSpec("Fault leakage 2", Group.RETENTION, COLUMN, (140.0, 320.0), 0.0, "pert",
-              "A second fault, or a second segment of the same one. **Off by default** — most "
-              "structures are bounded by one fault worth modelling, and a second one left on "
-              "quietly shortens every column. Give it a `P(active)` if this prospect has one."),
+              "A second fault, or a second segment of the same one. Off by default: most "
+              "structures are bounded by one fault worth modelling, and a second left on shortens "
+              "every column. It needs a `P(active)` where the prospect has one."),
     LimitSpec("Top seal (capillary)", Group.RETENTION, COLUMN, (100.0, 500.0), 1.0, "pert",
-              "The column the top seal can hold against buoyancy. Opens typed, at a range wide "
-              "enough to admit a seal that outlives the closure — the *Computed* source derives "
-              "it from pore-throat radius and the density contrast instead, and is worth using: "
-              "`P_c` goes as `1/r`, and freezing the radius removes three quarters of the spread "
-              "this calculator produces.",
+              "The column the top seal holds against buoyancy. Opens typed, at a range wide enough "
+              "to admit a seal that outlives the closure. The Computed source derives it from "
+              "pore-throat radius and the density contrast instead; `P_c` goes as `1/r`, and the "
+              "radius carries about three quarters of the spread that calculator produces.",
               mode=250.0, computed=("seal",), expanded=True),
     LimitSpec("Base seal (capillary)", Group.RETENTION, COLUMN, (80.0, 280.0), 0.0, "pert",
-              "The same physics below the reservoir, and the same calculator — or take the top "
-              "seal's inputs wholesale with *Same as the top seal*, which is the honest default "
-              "when one shale unit wraps the reservoir. Usually correlated with the top seal "
-              "either way; see the Correlations sub-tab.",
+              "The same physics below the reservoir, with the same calculator. Same as the top "
+              "seal takes the top seal's inputs wholesale, which is the usual case where one shale "
+              "unit wraps the reservoir. Usually correlated with the top seal either way; see the "
+              "Correlations sub-tab.",
               computed=("seal", "seal_as_top")),
     LimitSpec("Top seal (continuity)", Group.RETENTION, COLUMN, (100.0, 350.0), 0.3, "pert",
               "Not capillary failure but a hole in the seal: a sand-filled channel, an erosional "
@@ -126,8 +125,8 @@ SPECS: tuple[LimitSpec, ...] = (
     LimitSpec("Base seal (continuity)", Group.RETENTION, COLUMN, (120.0, 380.0), 0.0, "pert",
               "The same, below."),
     LimitSpec("Preservation / tilt", Group.RETENTION, COLUMN, (150.0, 400.0), 0.2, "pert",
-              "Post-charge tilting spilling part of the column, or a palaeo-contact left behind. "
-              "It bites rarely, but when it does it can be severe."),
+              "Post-charge tilting that spills part of the column, or a palaeo-contact left "
+              "behind. It applies rarely, and can be severe when it does."),
     # Grant (2020), eq. 8, added 4 Sep 2026. The mechanism the tool was missing: every other
     # Retention limit here fails because the pore throats are wide enough or because there is a hole
     # in the seal, and this one fails because the *rock parts*. The two are independent -- a shale
@@ -139,20 +138,20 @@ SPECS: tuple[LimitSpec, ...] = (
     # and so thousands of metres of column, far more than any structure holds. Off means visible and
     # auditable rather than silently absent, and turning it on is one number.
     LimitSpec("Top seal (fracture)", Group.RETENTION, COLUMN, (200.0, 500.0), 0.0, "pert",
-              "The column the trap can hold before the **top seal parts in tension** — pressure at "
-              "the crest reaching the minimum horizontal stress, not the pore throats letting go. "
-              "Grant (2020): a pressure-release *valve* rather than a catastrophe, since the "
-              "fracture closes and reseals once pressure bleeds off, so it caps a column rather "
-              "than emptying a trap. **It only ever controls in overpressured sections.**",
+              "The column the trap holds before the top seal parts in tension: pressure at the "
+              "crest reaching the minimum horizontal stress, rather than the pore throats letting "
+              "go. Grant (2020) describes it as a pressure-release valve rather than a catastrophe, "
+              "since the fracture closes and reseals once pressure bleeds off, so it caps a column "
+              "rather than emptying a trap. It controls only in overpressured sections.",
               computed=("fracture",)),
 )
 
 #: What each element's sub-tab is for, shown under its coloured heading.
 ELEMENT_BLURB: dict[Group, str] = {
-    Group.CHARGE: "Is there enough hydrocarbon to fill the closure, and how far down does it reach?",
-    Group.CLOSURE: "Where the trap runs out — mapped surfaces, so these are stated as depths.",
-    Group.RETENTION: "What the seals and faults will hold — capacities, so these are stated as "
-                     "column heights.",
+    Group.CHARGE: "Whether the available hydrocarbon fills the closure, and how far down it reaches.",
+    Group.CLOSURE: "Where the trap runs out. Mapped surfaces, so these are stated as depths.",
+    Group.RETENTION: "What the seals and faults hold. Capacities, so these are stated as column "
+                     "heights.",
 }
 
 
@@ -201,10 +200,10 @@ def _render_group(group: Group, n_trials: int, seed: int) -> list[Limit]:
     theme.element_heading(group.value, group.value, ELEMENT_BLURB.get(group, ""))
     if group is Group.RETENTION:
         st.caption(
-            "**These are *how much* the seals and faults hold, not *whether* they work.** Whether "
+            "These are how much the seals and faults hold, not whether they work. Whether "
             "Retention works at the crest is the element chance on tab 2.0. Entering the same "
-            "uncertainty in both places counts it twice — the error Beha et al. (2012) is written "
-            "about, which understates POS and overstates volume. See tab 8.0 → *Beha et al. (2012)*."
+            "uncertainty in both places counts it twice, which understates POS and overstates "
+            "volume (Beha et al. 2012)."
         )
     built: list[Limit] = []
     specs = [s for s in SPECS if s.group is group]
@@ -257,25 +256,23 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
     # acted on. `LimitSet.correlated_names` owns the ordering; this owns the offer.
     choices = (APEX, *names)
     st.markdown(
-        f"Pairs, not a matrix. A full matrix over {len(SPECS)} limits is "
-        f"{len(SPECS) * (len(SPECS) - 1) // 2} numbers and nobody fills that "
-        "in; an assessor states the couplings they believe in and the rest are zero — which is "
-        "itself a modelling statement, and usually a wrong one for the seal pairs.\n\n"
-        "Values are **rank** correlations, which is what an assessor means and what `RiskCorrmat` "
-        "uses. They are converted to the Gaussian copula's normal-score parameter before sampling; "
-        "skipping that step would quietly deliver a weaker correlation than the one asked for."
+        f"Pairs rather than a matrix. A full matrix over {len(SPECS)} limits is "
+        f"{len(SPECS) * (len(SPECS) - 1) // 2} numbers. The assessor states the couplings "
+        "they hold and the rest are zero, which is itself a modelling statement, and usually "
+        "a wrong one for the seal pairs.\n\n"
+        "Values are rank correlations, as in `RiskCorrmat`. They are converted to the Gaussian "
+        "copula's normal-score parameter before sampling; without that step the sampled "
+        "correlation is weaker than the one stated."
     )
     st.info(
-        "**Apex ↔ a depth-stated limit is the pair most worth setting.** A spill point and the "
-        "apex are picked off the *same* depth-converted surface, so a depth-conversion error moves "
-        "both together. Leaving them independent is what lets a realisation put the spill above "
-        "the apex — and it is the same errors-in-variables coupling that inflates the published "
-        "column-height regression on tab 6.0. Correlating them is the honest default, not a "
-        "refinement.\n\n"
-        "**How much it is worth.** On a 120 m apex uncertainty with a mapped spill, treating the "
-        "two as independent gives the derived closure height a spread of 33 m; correlating them at "
-        "0.9 gives 11 m. Two thirds of that spread was manufactured by the assumption, not by the "
-        "geology."
+        "Apex to a depth-stated limit is the pair most worth setting. A spill point and the apex "
+        "are picked off the same depth-converted surface, so a depth-conversion error moves both "
+        "together. Left independent, a realisation can put the spill above the apex; it is also "
+        "the errors-in-variables coupling that inflates the published column-height regression "
+        "on tab 6.0.\n\n"
+        "On a 120 m apex uncertainty with a mapped spill, treating the two as independent gives "
+        "the derived closure height a spread of 33 m; correlating them at 0.9 gives 11 m. Two "
+        "thirds of that spread comes from the assumption rather than the geology."
     )
 
     if CORR_KEY not in st.session_state:
@@ -292,8 +289,8 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
             "Limit B": st.column_config.SelectboxColumn(options=list(choices), width="medium"),
             "Rank correlation": st.column_config.NumberColumn(
                 min_value=-1.0, max_value=1.0, step=0.05, format="%.2f",
-                help="Spearman. Top and base seal at 1.0 would be perfect dependence — a claim that "
-                     "they are the same rock. Correlated, usually; identical, rarely."),
+                help="Spearman. Top and base seal at 1.0 is perfect dependence, a claim that "
+                     "they are the same rock. Usually correlated; rarely identical."),
         }, key="limiter_corr_editor")
     st.session_state[CORR_KEY] = rows
 
@@ -312,8 +309,8 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
 def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int) -> None:
     """Which of these twelve is actually setting the contact — **on the tab where you edit them**.
 
-    Tab 1.0 calls the ranking *"the point of the whole tool"* and tells the assessor to run once, read
-    it, then elicit only the top two or three. It lived on tab 4.0, so following that instruction meant
+    Tab 1.0 §1.3 says the elicitation effort belongs on the top two or three limits this ranking
+    names. It lived on tab 4.0, so following that instruction meant
     a round trip on every refinement cycle — and people do not make round trips. They either elicit
     all of them carefully or none of them, which are the two outcomes the ranking exists to prevent.
 
@@ -336,7 +333,7 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
     if not live:
         return
 
-    theme.heading(TAB, "1 · Which of these actually matters?")
+    theme.heading(TAB, "1 · Which limits control the contact")
     colour_of = limit_colours(limit_set)
     fig = go.Figure()
     fig.add_bar(x=[s for _, s in live][::-1], y=[nm for nm, _ in live][::-1], orientation="h",
@@ -346,21 +343,20 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
                       height=max(200, 34 * len(live)), margin=dict(t=10, b=40),
                       showlegend=False, xaxis_tickformat=".0%")
     n.plot(fig,
-           f"**Run first, elicit second.** The blocks below are open at their defaults; this says "
-           f"which of them your afternoon should go to. **{live[0][0]}** sets the contact in "
-           f"{live[0][1]:.0%} of realisations, and anything near the bottom can stay rough — it is "
-           f"not moving the answer.\n\n"
-           f"All realisations, not successes only: at elicitation time the question is *what "
-           f"controls this closure*, and a limit that usually kills the prospect outright is the "
-           f"one you least want to leave at a default. The restricted view, the shift between them "
-           f"and why the difference matters are on tab 4.0 → *Contact and chance* §3.")
+           f"The share of realisations in which each limit set the contact, at the current "
+           f"inputs. {live[0][0]} sets it in {live[0][1]:.0%} of realisations. Limits near the "
+           f"bottom do not move the answer and can stay at rough values; the elicitation effort "
+           f"belongs on the top two or three.\n\n"
+           f"All realisations, not successes only. At elicitation time the question is what "
+           f"controls this closure, and a limit that usually fails the prospect outright is the "
+           f"one least suited to a default. The view restricted to successes, and the shift "
+           f"between the two, is on tab 4.0 → Contact and chance §3.")
     idle = [name for name, share in ranking if share <= 0.0005]
     if idle:
         st.caption(
-            f"**Never sets the contact:** {', '.join(idle)}. Either it is genuinely always deeper "
-            f"than something else — which is a finding, not a fault — or it is switched on with a "
-            f"distribution that puts it below the spill point, in which case it is costing you "
-            f"elicitation effort for nothing."
+            f"Never sets the contact: {', '.join(idle)}. Either it is always deeper than "
+            f"something else, which is a finding, or it is switched on with a distribution that "
+            f"puts it below the spill point, in which case eliciting it further has no effect."
         )
 
 
@@ -368,12 +364,13 @@ def render() -> None:
     n = Numbering(TAB)
     st.subheader("HCWC limiters")
     st.markdown(
-        "Every mechanism that could stop the column going deeper, grouped by the risk element it "
-        "belongs to. Each has a chance of being present at all and — given it is — a distribution "
-        "of where it bites. **In every realisation the shallowest active one wins.**\n\n"
-        "Nothing is blended. Merging a leak into the background column-height distribution "
-        "suppresses realisations *above* the leak, which is not geology — it can even make apparent "
-        "prospect volume rise when a leak is added (Hood, 2024)."
+        "Every mechanism that may stop the column going deeper, grouped by the risk element it "
+        "belongs to. Each has a probability of being present and, given that it is, a "
+        "distribution of the depth or capacity at which it applies. In every realisation the "
+        "shallowest active limit sets the contact.\n\n"
+        "Limits are sampled, not blended. Merging a leak into the background column-height "
+        "distribution suppresses realisations above the leak, and can raise apparent prospect "
+        "volume when a leak is added (Hood 2024). The theory note on tab 8.0 sets this out."
     )
 
     summary_slot = st.container()
@@ -410,7 +407,7 @@ def render() -> None:
 
     if not limits:
         with summary_slot:
-            st.error("**No limits are switched on**, so there is nothing to run.")
+            st.error("No limits are switched on, so there is nothing to run.")
         st.session_state.pop("limit_set", None)
         return
 
@@ -435,9 +432,9 @@ def render() -> None:
                      if abs(r[2] - r[3]) > 0.01]
             if moved:
                 st.warning(
-                    "**Some correlations are not jointly achievable** and have been projected onto "
-                    "the nearest matrix that is. Asked for, then sampled:\n\n"
-                    + "\n".join(f"- {a} / {b}: **{req:+.2f}** → **{got:+.2f}**"
+                    "Some correlations are not jointly achievable and have been projected onto "
+                    "the nearest matrix that is. Stated, then sampled:\n\n"
+                    + "\n".join(f"- {a} / {b}: {req:+.2f} → {got:+.2f}"
                                 for a, b, req, got in moved))
 
     # The engine checks the geometry while it samples -- a depth-stated limit that lands above the
@@ -455,7 +452,7 @@ def render() -> None:
     try:
         engine_run.run(limit_set.to_dict(), n_trials, seed)
     except ValueError as exc:
-        st.error(f"**This limit set cannot be sampled.**\n\n{exc}")
+        st.error(f"This limit set cannot be sampled.\n\n{exc}")
         st.session_state.pop("limit_set", None)
         return
 
@@ -485,26 +482,26 @@ def render() -> None:
                 "P10": f"{stats['P10']:,.0f}",
             })
         n.table(pd.DataFrame(rows),
-                "Every limit as entered, in its own space — so a depth-stated limit reads in "
-                "m TVDSS and a capacity reads in metres of column, and neither has been silently "
-                "converted for display. Percentiles are exceedance: **P90 is the shallow end.**",
+                "Every limit as entered, in its own units: a depth-stated limit reads in m TVDSS "
+                "and a capacity in metres of column, with no conversion for display. Percentiles "
+                "are exceedance; P90 is the shallow end.",
                 height=min(60 + 35 * len(rows), 480))
         if phase_clash:
             st.error(
-                f"**Phase mismatch: the charge calculator is filling with "
-                f"*{charge_phase.replace('Pure ', '').lower()}* and the seal calculator is holding "
-                f"back *{seal_fluid.lower()}*.**\n\n"
-                f"That is not a labelling nicety. Seal capacity is `h_max = P_c / (Δρ·g)`, so it "
-                f"depends on the density contrast between the hydrocarbon and the water — the same "
-                f"seal holds a much shorter gas column than an oil one. Running one phase through "
-                f"the charge and the other through the seal produces a contact that belongs to no "
-                f"prospect. Set both to the same fluid, or run the two phases as separate cases."
+                f"Phase mismatch: the charge calculator is filling with "
+                f"{charge_phase.replace('Pure ', '').lower()} and the seal calculator is holding "
+                f"back {seal_fluid.lower()}.\n\n"
+                f"Seal capacity is `h_max = P_c / (Δρ·g)`, so it depends on the density contrast "
+                f"between the hydrocarbon and the water; the same seal holds a much shorter gas "
+                f"column than an oil one. One phase through the charge and the other through the "
+                f"seal produces a contact that belongs to no prospect. Both should be set to the "
+                f"same fluid, or the two phases run as separate cases."
             )
 
         always = [x.name for x in limit_set.limits if x.always_active]
         st.caption(
-            f"**{len(limit_set.limits)} limits**, of which "
+            f"{len(limit_set.limits)} limits, of which "
             f"{len(always)} always active ({', '.join(always) if always else 'none'}). "
-            f"At least one must always be active, because every prospect has a spill point — the "
-            f"engine refuses a set where the column could be unbounded."
+            f"At least one must always be active, because every prospect has a spill point; the "
+            f"engine refuses a set in which the column could be unbounded."
         )

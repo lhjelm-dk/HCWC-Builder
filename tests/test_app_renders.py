@@ -1062,7 +1062,7 @@ class TestTheMechanicalTopSealIsAvailableAsALimit:
         so the mechanism is correct and irrelevant — and a reader not told that will wonder why it
         never appears in the controlling-limit statistics."""
         at = _run(**{f"{self.KEY}_src": "fracture"})
-        assert any("nowhere near its fracture limit" in str(i.value) for i in at.get("info"))
+        assert any("far from its fracture limit" in str(i.value) for i in at.get("info"))
 
     def test_overpressure_is_what_makes_it_bite(self):
         """Twenty bar of headroom instead of a hundred, and the column falls by an order of
