@@ -798,9 +798,10 @@ def render(n: Numbering | None = None) -> None:
     st.markdown(
         "The chance a column of height h produces a detectable anomaly. Near zero below tuning "
         "thickness, rising through the resolution limit, then flat. It is what makes an absent "
-        "anomaly usable evidence: the likelihood is `1 − D(h)`, largest at small h."
+        "anomaly usable evidence: within G the likelihood is `1 − D(h)`, largest at small h, and "
+        "on the chance the fourth input below sets how much absence says."
     )
-    d1, d2, d3 = st.columns(3)
+    d1, d2, d3, d4 = st.columns(4)
     h50 = d1.number_input("50 % detection column (m)", 1.0, 500.0, 25.0, 1.0,
                           help="Roughly the tuning thickness for this reservoir and frequency.")
     steep = d2.number_input(
@@ -812,8 +813,18 @@ def render(n: Numbering | None = None) -> None:
                               help="Below 1 on purpose. A thick column can still fail to show, and "
                                    "a function reaching certainty would make an absent anomaly "
                                    "infinitely strong evidence.")
+    false_positive = d4.number_input(
+        "Barren trap shows, relative", 0.0, 1.0, 0.5, 0.05, key="dhi_in_false_positive",
+        help="How often a trap with no hydrocarbons shows an anomaly of this class, as a fraction "
+             "of how often a hydrocarbon-filled trap of this geometry does. 0 says a barren trap "
+             "never shows; 1 says it shows as readily as a filled one, and absence then says "
+             "nothing about the chance. Elicited; no calibration is known to the tool, and 0.5 "
+             "is the maximum-ignorance default rather than a measurement. It acts only when "
+             "nothing was seen.")
     _lev["h50"], _lev["steep"], _lev["det_ceiling"] = d1.empty(), d2.empty(), d3.empty()
-    detection = DetectionFunction(h50_m=h50, steepness_m=steep, ceiling=ceiling)
+    _lev["false_positive"] = d4.empty()
+    detection = DetectionFunction(h50_m=h50, steepness_m=steep, ceiling=ceiling,
+                                  false_positive=false_positive)
 
     grid = np.linspace(0.0, max(float(result.column_m.max()), h50 * 3), 300)
     figd = go.Figure()
@@ -909,12 +920,14 @@ def render(n: Numbering | None = None) -> None:
     # the weights through p_valid) and applied a ratio between two column heights inside G
     # as if it were a likelihood ratio on the prospect. See `dhi.prospect_pos`.
     #
-    # Nothing seen, nothing to characterise: the strength axis grades an observed anomaly, and
-    # with no anomaly it is held neutral, or an absent DHI would read as encouraging as a
-    # bright one.
+    # Nothing seen, nothing to characterise: the strength axis grades an observed anomaly. With
+    # no anomaly the chance is updated by `absence_ratio` instead -- P(absent | G) over
+    # P(absent | not G), audit finding P1-0 -- so that an absent DHI reads against the prospect
+    # rather than as neutral, and never as encouraging.
     element_pos = st.session_state.get("element_pos") or {}
     element_product = float(np.prod([float(v) for v in element_pos.values()])) if element_pos else 1.0
-    r_applied = r_strength if seen else 1.0
+    r_applied = dhi_core.applied_ratio(result, detection, observation, r_strength)
+    st.session_state["dhi_r_applied"] = float(r_applied)
     p_g_updated = dhi_core.p_g_given_strength(element_product, r_applied)
     geometric_prior = post.pos(posterior=False)
     posterior_geometric = post.pos()
@@ -930,11 +943,12 @@ def render(n: Numbering | None = None) -> None:
     # likelihood, so the swing reported is the swing a user would get by dragging the control.
     def _state(**over):
         _s = over.get("strength", strength)
-        _r = model.r_at(_s) if seen else 1.0
+        _r = model.r_at(_s)
         _pv = float(np.clip(over.get("c", contact_given_hc), 0.01, 0.99))
         _det = DetectionFunction(h50_m=over.get("h50", h50),
                                  steepness_m=over.get("steep", steep),
-                                 ceiling=over.get("det_ceiling", ceiling))
+                                 ceiling=over.get("det_ceiling", ceiling),
+                                 false_positive=over.get("false_positive", false_positive))
         _obs = DhiObservation(
             seen=seen,
             contact_m=None if partial or not seen else over.get("contact", contact),
@@ -953,6 +967,7 @@ def render(n: Numbering | None = None) -> None:
         "h50": (lambda v: _state(h50=v), [5.0, 15.0, 25.0, 50.0, 100.0]),
         "steep": (lambda v: _state(steep=v), [2.0, 5.0, 8.0, 20.0, 50.0]),
         "det_ceiling": (lambda v: _state(det_ceiling=v), [0.5, 0.7, 0.9, 0.99]),
+        "false_positive": (lambda v: _state(false_positive=v), [0.0, 0.25, 0.5, 0.75, 1.0]),
     }
     for _name, _slot in _lev.items():
         _build, _values = _sweeps[_name]
@@ -1212,12 +1227,14 @@ def render(n: Numbering | None = None) -> None:
         "channel enters its own factor once; neither is applied to the other's."
     )
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("R, amplitude character", _fmt_r(r_applied),
-              dhi_core.strength_bands(r_applied)[0] if seen else "neutral; nothing was seen",
+    c1.metric("R, amplitude character" if seen else "R, absent anomaly", _fmt_r(r_applied),
+              dhi_core.strength_bands(r_applied)[0] if seen
+              else f"(1 − d) / (1 − f·d), d = {float(np.mean(detection.at(result.column_m))):.2f}",
               delta_color="off")
-    c2.metric("P(G | amplitude)", f"{p_g_updated:.1%}", f"P(G) {element_product:.1%}",
-              delta_color="off")
-    c3.metric(f"P(column ≥ {h_min:.0f} m | G, pick)", f"{posterior_geometric:.1%}",
+    c2.metric("P(G | amplitude)" if seen else "P(G | absence)", f"{p_g_updated:.1%}",
+              f"P(G) {element_product:.1%}", delta_color="off")
+    c3.metric(f"P(column ≥ {h_min:.0f} m | G, {'pick' if seen else 'absence'})",
+              f"{posterior_geometric:.1%}",
               f"geological {geometric_prior:.1%}", delta_color="off")
     c4.metric("Prospect POS", f"{posterior_pos:.1%}", f"prior {prior_pos:.1%}")
 
@@ -1276,9 +1293,10 @@ def render(n: Numbering | None = None) -> None:
            "acts and the tuning parameters do not." if _d_flat else "") + "\n"
         "- One fluid. A flat spot may be a gas–oil contact; the tool takes it as the "
         "hydrocarbon–water contact, and a GOC picked as an HCWC understates the column.\n"
-        "- An absent anomaly is treated within G: it argues for a short column, not against "
-        "hydrocarbons. Evidence against hydrocarbons enters through the strength axis, which "
-        "is held neutral when nothing was seen.\n"
+        "- An absent anomaly argues for a short column within G and, on the chance, applies "
+        "P(absent | G) / P(absent | no hydrocarbons) with the barren trap's chance of showing "
+        "tied to the filled trap's by the rate in §3b: a modelling choice, elicited and "
+        "uncalibrated.\n"
         "- A flat event that is not the contact is taken as equally likely at any depth in "
         "the model's contact range.\n"
         "- The pick and a penetration are multiplied as independent evidence. A well's two "

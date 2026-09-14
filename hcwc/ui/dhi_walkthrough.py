@@ -155,6 +155,12 @@ def render(n: Numbering | None = None) -> None:
     # early when there is no DHI.
     r_strength = (st.session_state.get("dhi_r_strength")
                   if st.session_state.get("dhi_on") else None)
+    # The ratio the tab applied: the strength when something was seen, the absence ratio when
+    # nothing was. Falls back to recomputing from the posterior's own detection function so a
+    # stale key cannot put a strength on an absent anomaly.
+    r_applied = (float(st.session_state.get("dhi_r_applied"))
+                 if st.session_state.get("dhi_r_applied") is not None
+                 else dhi_core.applied_ratio(result, detection, observation, r_strength or 1.0))
     st.markdown(
         "This is the term most often skipped, and the reason bright amplitudes over-persuade. "
         "An observation is evidence only to the extent that it is more likely under success than "
@@ -162,10 +168,13 @@ def render(n: Numbering | None = None) -> None:
         "however convincing it looks.\n\n"
         "The tool answers it in two places, one for each thing the amplitude carries:"
     )
-    rows = [{"Aspect of the observation": "Character: how hydrocarbon-like the amplitude looks",
-             "Answered by": "the two-curve strength model, sub-tab 2.0 §2",
+    rows = [{"Aspect of the observation": ("Character: how hydrocarbon-like the amplitude looks"
+                                           if observation.seen else
+                                           "Absence: nothing shows where a column would have"),
+             "Answered by": ("the two-curve strength model, sub-tab 2.0 §2" if observation.seen
+                             else "P(absent | G) / P(absent | no hydrocarbons), sub-tab 2.0 §3b"),
              "Updates": "P(G), the chance the elements worked",
-             "Gives": f"R = {r_strength:.2f}" if r_strength else "R from strength"},
+             "Gives": f"R = {r_applied:.2f}"},
             {"Aspect of the observation": "Geometry: where the event terminates",
              "Answered by": "the pick likelihood against a flat rival, step 4 below",
              "Updates": "p(h | G), the column given that they worked",
@@ -269,21 +278,26 @@ def render(n: Numbering | None = None) -> None:
         "The odds form above is applied to one factor, the chance the elements worked. The pick "
         "then updates the other factor, the column given that they did, and the two multiply."
     )
-    r_applied = float(r_strength) if (r_strength and observation.seen) else 1.0
     p_g_updated = dhi_core.p_g_given_strength(element_product, r_applied)
     prior_odds, posterior_odds = _odds(element_product), _odds(p_g_updated)
     f_prior, f_post = float(post.pos(posterior=False)), float(post.pos())
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Prior odds on G", f"{prior_odds:.3f}", f"P(G) {element_product:.1%}",
               delta_color="off")
-    c2.metric("× R, amplitude", f"{r_applied:.3f}", "character channel", delta_color="off")
-    c3.metric("= P(G | amplitude)", f"{p_g_updated:.1%}", f"odds {posterior_odds:.3f}",
+    c2.metric("× R, amplitude" if observation.seen else "× R, absence", f"{r_applied:.3f}",
+              "character channel" if observation.seen else "absence channel", delta_color="off")
+    _ev = "amplitude" if observation.seen else "absence"
+    _geo = "pick" if observation.seen else "absence"
+    c3.metric(f"= P(G | {_ev})", f"{p_g_updated:.1%}", f"odds {posterior_odds:.3f}",
               delta_color="off")
-    c4.metric(f"× P(column ≥ {h_min:.0f} m | G, pick)", f"{f_post:.1%}",
+    c4.metric(f"× P(column ≥ {h_min:.0f} m | G, {_geo})", f"{f_post:.1%}",
               f"geological {f_prior:.1%}", delta_color="off")
     st.latex(rf"{prior_odds:.3f} \times {r_applied:.3f} = {posterior_odds:.3f} "
-             rf"\;\Longrightarrow\; P(G \mid \mathrm{{amplitude}}) = {p_g_updated:.3f}"
-             rf"\qquad {p_g_updated:.3f} \times {f_post:.3f} = \mathbf{{{posterior_pos:.1%}}}")
+             rf"\;\Longrightarrow\; P(G \mid \mathrm{{{_ev}}}) = {p_g_updated:.3f}"
+             # `%` opens a comment in LaTeX, so a percentage has to be escaped or KaTeX renders
+             # the whole line as red source.
+             rf"\qquad {p_g_updated:.3f} \times {f_post:.3f} = "
+             rf"\mathbf{{{posterior_pos * 100:.1f}\%}}")
     st.caption(
         f"The prior prospect chance was P(G) × F(h_min) = {element_product:.3f} × "
         f"{f_prior:.3f} = {prior_pos:.1%}. The second factor is read off the same weighted "
@@ -294,9 +308,9 @@ def render(n: Numbering | None = None) -> None:
     if f_prior >= 0.999:
         st.info(
             f"At an assessment minimum of {h_min:.0f} m the column term is 1 before and after "
-            f"the update: every realisation clears it. The pick reshapes the contact "
+            f"the update: every realisation clears it. The {_geo} reshapes the contact "
             f"distribution and cannot move the chance here; the whole move comes from the "
-            f"amplitude. A minimum a real share of realisations miss lets the pick reach the "
+            f"{_ev}. A minimum a real share of realisations miss lets the {_geo} reach the "
             f"chance, and once it sits below the picked contact the pick lowers the chance, which "
             f"is the reading of being asked for more column than the amplitude supports."
         )

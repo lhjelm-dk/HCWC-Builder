@@ -377,9 +377,9 @@ with tab5:
     # **One sequence per sub-tab, not per tab.** Four sub-tabs sharing a flat sequence gave a
     # reader `Figure 5.9` with no way to know which of the four pages to turn to — and the
     # sequence counts in render order, which here is not reading order. Numbered by sub-tab,
-    # `Figure 5.2.1` is the first exhibit on *What you saw*, and it stays that whatever else moves.
+    # `Figure 5.2.1` is the first exhibit on *The observation*, and it stays that whatever else moves.
     _how, _evidence, _contact_dhi, _depth_dhi = st.tabs(
-        ["5.1 · How a DHI moves a chance", "5.2 · What you saw",
+        ["5.1 · How a DHI moves a chance", "5.2 · The observation",
          "5.3 · Contact and chance + DHI", "5.4 · Risk against depth + DHI"])
     for _panel in (_how, _evidence, _contact_dhi, _depth_dhi):
         with _panel:

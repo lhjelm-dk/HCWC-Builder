@@ -194,6 +194,15 @@ That distinction is real and is the thing to claim. Their own hedge — "not con
 industry (e.g. Nixon *et al.*, 2018)" — is the correct level of confidence for the general
 statement.
 
+*Status, 14 September 2026.* The correction above was made, and the audit of the same day
+went further. Under the corrected chain (`docs/DHI_alignment.md` §0) the realisations are
+conditional on G, so `1 − D(h)` reshapes the column and cannot move the chance; the 40.3 % → 6.3 %
+result the article quoted came from a within-G ratio applied as a ratio on the prospect, and is
+withdrawn. The chance-axis route Monigle *et al.* use is now implemented as a separate ratio on
+G, `(1 − d) / (1 − f·d)`, with `f` an elicited relative false-positive rate (audit P1-0,
+`dhi.absence_ratio`). At the maximum-ignorance `f = 0.5` the default prospect goes 40.3 % → 11.0 %.
+The article's §12 states the construction and §17 states that `f` is uncalibrated.
+
 The same trim applies to §1.1's novelty item 4, which says the scenario switch "cannot use an
 absent anomaly". True of the *scenario switch*, but it now needs to say that the chance-axis route
 is published and that what is offered here is the column-height route.
