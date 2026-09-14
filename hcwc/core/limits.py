@@ -309,6 +309,45 @@ class LimitSet:
         return np.array([i for i, limit in enumerate(self.limits) if limit.group is group],
                         dtype=int)
 
+    #: The quantile the declared support is read at. Bounded distributions (PERT, uniform,
+    #: fixed, empirical) are unaffected by it; for a normal it is where the tail is cut, since a
+    #: normal has no end.
+    SUPPORT_TAIL = 0.001
+
+    def contact_support_m(self, tail: float = SUPPORT_TAIL) -> tuple[float, float]:
+        """The depth interval in which this model can place a contact, from its declared inputs.
+
+        Shallow end: the apex, at its ``tail`` quantile. Deep end: the shallowest of the deep
+        ends of the limits that are always active -- a contact cannot lie below a limit that is
+        always there, so the tightest always-active limit bounds the support. A column-stated
+        limit's deep end is the apex's deep quantile plus the limit's; a depth-stated limit's is
+        its own.
+
+        **Declared, not realised.** Until 14 Sep 2026 the spurious-event density in
+        :mod:`hcwc.core.dhi` was ``1 / (max − min)`` of the *sampled* contacts, so the likelihood
+        of a picked flat spot depended on the trial count, the seed and whichever extreme the
+        sampler happened to draw. A likelihood is a statement about the model; it cannot be
+        allowed to change because the Monte Carlo ran longer. This reads the same interval off
+        the distributions themselves, and the same limit set returns the same interval whatever
+        is done with it afterwards.
+        """
+        shallow = float(self.apex.ppf(np.array([tail]))[0])
+        apex_deep = float(self.apex.ppf(np.array([1.0 - tail]))[0])
+        deep_ends = []
+        for limit in self.limits:
+            if not limit.always_active:
+                continue
+            q = float(limit.distribution.ppf(np.array([1.0 - tail]))[0])
+            deep_ends.append(q if limit.is_depth else apex_deep + q)
+        deep = min(deep_ends) if deep_ends else apex_deep
+        if not deep > shallow:
+            raise ValueError(
+                f"{self.name}: the always-active limits reach no deeper than the apex "
+                f"({deep:,.0f} m against {shallow:,.0f} m), so the model has no depth interval "
+                f"in which to place a contact"
+            )
+        return shallow, deep
+
     def to_dict(self) -> dict:
         return {"name": self.name, "apex": self.apex.to_dict(),
                 "min_column_m": self.min_column_m,
