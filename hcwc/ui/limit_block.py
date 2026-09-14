@@ -192,9 +192,9 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
     """
     colour = colour or theme.PILLAR_COLOURS[group.value]
     include = st.toggle("Include this limit", value=True, key=f"{key}_on",
-                        help="Off removes the mechanism from the model entirely. That is different "
-                             "from P(active) = 0, which keeps it in the diagnostic as a mechanism "
-                             "that never bites.")
+                        help="Off removes the mechanism from the model entirely. P(active) = 0 "
+                             "differs: it keeps the mechanism in the diagnostic as one that never "
+                             "applies.")
     if not include:
         st.caption("Excluded from the model.")
         return None
@@ -210,9 +210,8 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
         source = st.radio("Distribution from", ["Typed", *computed], horizontal=True,
                           key=f"{key}_src",
                           format_func=lambda s_: LABELS.get(s_, s_),
-                          help="Each calculator is right here rather than behind a menu — the "
-                               "previous arrangement hid them well enough that they could not be "
-                               "found.")
+                          help="Typed takes the distribution as entered below. A calculator "
+                               "derives it from physical inputs and replaces those controls.")
 
     if source != "Typed":
         result = computed[source](key)
@@ -226,15 +225,15 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
         p_active = c1.number_input("P(active)", 0.0, 1.0, default_p_active, 0.05,
                                    key=f"{key}_pa",
                                    help="The chance the mechanism is present at all. Below 1 the "
-                                        "limit only bites in that share of realisations, and its "
-                                        "curve on tab 4.0 flattens at exactly this value.")
+                                        "limit applies in that share of realisations, and its "
+                                        "curve on tab 4.0 flattens at this value.")
         kind = c2.selectbox("Stated as", [COLUMN, DEPTH], key=f"{key}_kind",
                             index=[COLUMN, DEPTH].index(default_kind),
                             format_func=lambda k: ("m column below apex" if k == COLUMN
                                                    else "m TVDSS (mapped surface)"),
-                            help="A capacity — what a seal holds, what a fault leaks past — is a "
+                            help="A capacity (what a seal holds, what a fault leaks past) is a "
                                  "column height and does not move when the apex pick moves. A "
-                                 "mapped surface — spill, a juxtaposition window, a pinch-out — is "
+                                 "mapped surface (spill, a juxtaposition window, a pinch-out) is "
                                  "a depth.")
         form = c3.selectbox("Distribution", list(FORMS), key=f"{key}_form",
                             index=list(FORMS).index(default_form),
@@ -260,14 +259,14 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
             if not np.isfinite(preview).all():
                 raise ValueError("the parameters give a non-finite value somewhere")
         except ValueError as exc:
-            st.error(f"**{name}** — {exc}")
+            st.error(f"{name}: {exc}")
             return None
         note = ""
 
     try:
         limit = Limit(name, group, float(p_active), distribution, note=note, kind=kind)
     except ValueError as exc:
-        st.error(f"**{name}** — {exc}")
+        st.error(f"{name}: {exc}")
         return None
 
     samples = _preview_samples(distribution.kind, _param_key(distribution.params), n_preview)
@@ -278,9 +277,9 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
     st.plotly_chart(_figure(samples, colour, limit.unit_label),
                     width="stretch", key=f"{key}_fig")
     st.caption(
-        f"**{limit.unit_label}.** Percentiles are exceedance: **P90 is the shallow end** — the "
-        f"value 90 % of realisations come out deeper than — matching the export and every other "
-        f"figure here. This preview is the limit *on its own*; what it does to the contact depends "
-        f"on the others it competes with."
+        f"{limit.unit_label}. Percentiles are exceedance: P90 is the shallow end, the value 90 % "
+        f"of realisations come out deeper than, as in the export and every other figure. This "
+        f"preview is the limit on its own; its effect on the contact depends on the others it "
+        f"competes with."
     )
     return limit
