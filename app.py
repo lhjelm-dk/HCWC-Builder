@@ -149,23 +149,15 @@ Predrill uncertainty in the depth of the hydrocarbon–water contact is often th
 driver of prospect resource potential, and it sets the probability of encountering hydrocarbons at
 a specific well location.
 
-A generic distribution for the contact — uniform from apex to spill point, say — carries
-little connection to the mechanisms that may limit the column. A DHI, where present, may indicate
-the contact directly; the question is with what certainty that indication should enter the
-distribution.
-
 This tool models the contact as a competition between geological limiting mechanisms: charge,
 closure and spill, fault seal, top- and base-seal capacity and continuity, tilt-related spillage,
-reservoir pinch-out.
+reservoir pinch-out. Each is assigned a probability of being active and an uncertainty in depth or
+capacity; in each Monte Carlo realisation the shallowest active limit sets the contact, and the
+simulation records which one it was.
 
-Each limiter is assigned a probability of being active and an uncertainty in depth or capacity. In
-each Monte Carlo realisation the shallowest active limit controls the column.
-
-The simulation records which mechanism controls each realisation, so the result shows what sets
-the contact and how that changes with depth. The distribution is derived from the geological
-assumptions rather than imposed.
-
-Where available, the result can be compared with empirical data and updated with DHI evidence.
+The result answers three questions: where the contact is, which mechanism controls it, and what
+that means for a well drilled to a given depth. Where available, the distribution is compared with
+empirical data and updated with DHI or well evidence. Method: see 8.1.
         """
     )
 
@@ -183,8 +175,7 @@ New here? Start with the tabs in this order.
   probability of hydrocarbons with depth, from the competing limits alone.
 - **5.0 HCWC (DHI + well)** — the same, updated by a DHI or a well penetration and their
   uncertainty.
-- **6.0 Benchmarks** and **8.0 Theory** — empirical reference data and methodological
-  background.
+- **6.0 Benchmarks** and **8.0 Theory** — empirical reference data and the method.
 - **7.0 Export** — contact percentiles for predrill volumetric tools, with the distribution
   basis stated.
 
@@ -204,122 +195,25 @@ New here? Start with the tabs in this order.
         st.image(str(concept_png), width="stretch")
         st.caption(
             "Every mechanism that can stop the column, on one section, with the distribution of "
-            "the depth at which it acts. Charge migrates in from below and follows the top "
-            "reservoir up-dip to the apex; filling then works downward from there, which is why "
-            "every capacity in this tool is measured from the apex. Figure by Lars Hjelm. "
-            "`reference/concept_full.png` is the uncropped version with the depth-axis panel that "
-            "tab 4.0 builds from live data."
+            "the depth at which it acts. Charge enters from below and fills downward from the "
+            "apex, so every capacity is measured from the apex. Figure by Lars Hjelm. "
+            "Method: see 8.1.2."
         )
 
-    theme.heading(1, "2 · The assessment minimum")
+    # Trimmed 16 Sep 2026 to the operational statement. The argument for reading the chance
+    # off the contact distribution, the ranking of effort, the precedent and the limitations
+    # are stated once, on tab 8.1 (docs/EXPLANATION_MAP_2026-09-16.md, tab 1).
     st.markdown(
-        "A probability of success refers to a stated definition of success: the smallest "
-        "accumulation that would make the well a discovery. In this tool that volume corresponds "
-        "to a contact depth, and that depth is the assessment minimum on tab 2.0."
-    )
-    with st.expander("Why the minimum defines the chance, and what that rules out"):
-        st.markdown(
-            """
-The smallest volume that counts is the volume above some contact, so choosing it fixes how far
-down the hydrocarbons must reach: a column height below the apex, or a depth in metres TVDSS.
-That is the assessment minimum. It is the definition of success rather than a run setting.
-
-The chance is then a reading of the contact distribution: POS is the exceedance at that depth,
-`F(h_min)`. Chance and volume come off the same curve, so they cannot refer to different
-thresholds. Moving the minimum moves both.
-
-A trapping element that fails below the crest does not reduce the chance of finding hydrocarbons
-at the well; it reduces the chance of a deeper contact. Folding fault seal, seal capacity or spill
-into the chance chain understates POS and, because volume is conditioned on that chance,
-overstates volume. Beha et al. (2012) describe this error. Here those mechanisms are limits on
-tab 3.0, where they move the contact; only whether an element works at the crest belongs in the
-chance on tab 2.0.
-            """
-        )
-
-    theme.heading(1, "3 · Where the effort goes")
-    st.markdown(
-        "The ranking at the top of tab 3.0 shows which limit is setting the contact, and it "
-        "updates as inputs change. In most cases a few limits control the answer and the rest do "
-        "not move it, so the elicitation effort belongs on the top two or three. Tab 4.0 · 4.1.5 "
-        "gives the same ranking restricted to realisations above the assessment minimum."
+        "Success is a column of at least the assessment minimum set on **2.0 Prospect**; the "
+        "chance of success is the contact distribution read at that depth. Method: see 8.1.3. "
+        "Limitations: see 8.1.9."
     )
     st.markdown(
-        "Tab 6.0 · 8 compares the resulting distribution with 242 NCS discoveries at the same "
-        "structural relief, and states whether it is optimistic or pessimistic against that record."
+        "Related tools: [E-POS](https://e-pos.streamlit.app) supplies the element chances on "
+        "tab 2.0; [SCOPE-HC](https://scope-hc.streamlit.app) computes the volumes; "
+        "[WellVolPOS](https://wellvolpos.streamlit.app) turns the export on tab 7.0 into "
+        "well-location chance and volume. See 8.3.7."
     )
-
-    with st.expander(theme.section_label(1, "4 · Related tools"), expanded=False):
-        st.markdown(
-            "Four open-source tools, each doing one job. Each runs in the browser; *app* opens it "
-            "and *code* shows what it does."
-        )
-        left, mid, right = st.columns(3)
-        left.markdown(
-            "**Upstream — E-POS**\n"
-            "[app](https://e-pos.streamlit.app) · "
-            "[code](https://github.com/lhjelm-dk/E-POS)\n"
-            "Element risk: play and conditional chances for Charge, Closure, Reservoir and "
-            "Retention, evidence support, and the Bayesian DHI update. Supplies the element chances "
-            "on tab 2.0; the DHI strength model on tab 5.0 is adapted from its custom-R tool."
-        )
-        mid.markdown(
-            "**Volumetrics — SCOPE-HC**\n"
-            "[app](https://scope-hc.streamlit.app) · "
-            "[code](https://github.com/lhjelm-dk/SCOPE-HC)\n"
-            "Probabilistic volumes from GRV, reservoir and fluid inputs. It supplies the resource "
-            "column the WellVolPOS export on tab 7.0 leaves out. Planned: it will read the "
-            "101-percentile contact distribution exported there."
-        )
-        right.markdown(
-            "**Downstream — WellVolPOS**\n"
-            "[app](https://wellvolpos.streamlit.app) · "
-            "[code](https://github.com/lhjelm-dk/WellVolPOS)\n"
-            "Turns a contact distribution into well-location chance and at-the-well volume. "
-            "Consumes the trial table and the per-element curves from tab 7.0."
-        )
-
-    with st.expander(theme.section_label(1, "5 · Known limitations"), expanded=False):
-        st.markdown(
-            """
-None of these is a bug. Each is something the model does not do.
-
-Seal capacity is treated as phase-independent. `h_max = P_c / (Δρ · g)` depends on the
-density contrast between hydrocarbon and water, so a gas column and an oil column below the same
-seal differ in height (Sales 1997; Graham et al. 2015). The seal calculator takes a fluid, but a
-mixed-phase prospect needs the gas cap and the oil leg limited by different capacities with a
-gas–oil contact between them, and this tool does not do that. Phases should be run as separate
-cases; a single mixed-phase run is indicative.
-
-Hydrodynamics and tilted contacts are not modelled. A hydrodynamic gradient tilts the contact and
-changes the effective seal capacity; Grant (2020) includes it. The model assumes a hydrostatic,
-horizontal contact. Remigration and hydraulic reconfiguration are absent for the same reason.
-
-Compartmentalisation is out of scope. It turns one contact into several, and this tool builds one.
-A compartmentalised trap needs a contact per compartment.
-
-Whether a mechanism is present is drawn independently for each. The copula correlates the depths
-at which limits act, so two faults may leak at similar depths, but it cannot state that they are
-the same fault and stand or fall together. Beha et al. (2012) make the same independence
-assumption.
-
-The empirical benchmarks are conditioned on discovery, censored above and truncated below. Tab 6.0
-sets out what that does to their use as a predrill prior.
-
-The engine is validated against one published case. Beha et al. (2012) enumerate a two-fault
-closure by hand and obtain 0.60 / 0.12 / 0.28 at three leak points; the engine reproduces all
-three to Monte Carlo error. No published dataset of competing-limit models exists to test
-against, so the engine's behaviour is verified by its test suite and its result by that one
-example.
-
-The competing-limits model is not new. Beha, Christensen and Young (2012) set it out: enumerate
-the combinations of trapping elements sealing or failing, assign each scenario a probability, and
-derive the leak point that follows. Grant (2020) publishes the controlling-limit diagnostic as
-column height control statistics; Lowry et al. (2005) had chance against column height two
-decades earlier. What is new here is the continuous, correlated form, and the censoring
-correction on tab 6.0. The paper on tab 8.2 sets this out.
-            """
-        )
 
     st.divider()
     _left, _mid, _right = st.columns([1, 2, 1])
