@@ -1995,3 +1995,47 @@ class TestTheIndependenceAssumptionsAreStatedWhereTheyBite:
         blob = self._blob(_run(**self.CALCULATORS))
         start = blob.index("cannot reach inside a calculator")
         assert "Modelling choice" in blob[start - 600:start + 200]
+
+
+class TestTabsFourAndFiveOfferTheSameControls:
+    """Lars, 15 Sep 2026: the scale-bars toggle was on 5.3.2 and not on 4.1.2, and the ask was
+    that everything on the two result tabs is on both except what is about the DHI. The two are
+    one renderer, so the check is on what it draws: every widget keyed by tab on 4 has its twin
+    on 5, and the only widget 5 has that 4 does not is the DHI's own basis switch.
+    """
+
+    DHI_ONLY = {"controlling_view_N"}
+
+    def test_the_tab_keyed_widgets_match(self):
+        import re
+        at = _run(dhi_toggle=True)
+        keys = set()
+        for kind in ("radio", "checkbox", "toggle", "slider", "selectbox", "number_input",
+                     "multiselect"):
+            for w in at.get(kind):
+                k = getattr(w, "key", None)
+                if k:
+                    keys.add(k)
+        strip = lambda k: re.sub(r"_[45](_|$)", r"_N\1", k)  # noqa: E731
+        on4 = {strip(k) for k in keys if re.search(r"_4(_|$)", k)}
+        on5 = {strip(k) for k in keys if re.search(r"_5(_|$)", k)}
+        # Tab 5.2's own controls carry a 5 as well; only the ones tab 4 also owns are compared.
+        on5 = {k for k in on5 if not k.startswith(("combo_all", "hcwc_hist"))}
+        assert on4 - on5 == set(), f"on tab 4 only: {sorted(on4 - on5)}"
+        assert on5 - on4 == self.DHI_ONLY, f"on tab 5 only: {sorted(on5 - on4)}"
+
+    def test_the_scale_toggle_is_on_both_tabs(self):
+        at = _run(dhi_toggle=True)
+        keys = {c.key for c in at.checkbox}
+        assert {"controlling_scaled_4", "controlling_scaled_5"} <= keys
+
+    def test_the_exhibit_counts_match(self):
+        import re
+        at = _run(dhi_toggle=True)
+        seen = {}
+        for c in at.caption:
+            m = re.match(r"\*\*(Figure|Table) (\d\.\d)\.(\d+)\*\*", str(c.value))
+            if m:
+                seen.setdefault(m.group(2), []).append(m.group(1))
+        assert seen["4.1"] == seen["5.3"], (seen["4.1"], seen["5.3"])
+        assert seen["4.2"] == seen["5.4"], (seen["4.2"], seen["5.4"])
