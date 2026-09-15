@@ -75,7 +75,9 @@ def render_charge(key: str, n_trials: int, seed: int,
     ntg = c1.slider(
         "Net-to-gross", 0.05, 1.0, (0.50, 0.80), key=f"{key}_ntg",
         help="Fraction of the gross interval that is reservoir. The range is the uncertainty, "
-             "sampled independently in every realisation.")
+             "sampled as a uniform, independently of porosity, saturation and the charge "
+             "volume, in every realisation. The correlation editor on sub-tab E cannot reach "
+             "inside this calculator.")
     por = c2.slider(
         "Porosity", 0.02, 0.45, (0.20, 0.30), key=f"{key}_por",
         help="Of the net rock, the fraction that is pore space. A range from analogues at this "
@@ -273,6 +275,22 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
             f"roughly a third of gas–water, so this pairing understates the capacity rather "
             f"than overstating it; it is still not a fluid."
         )
+
+    # Audit findings P1-2 and P1-3, 14 Sep 2026. The independence of the inputs was stated in
+    # the mechanical calculator's docstring and nowhere a reader could see it; the fluid link
+    # to the charge calculator was stated only in the refusal that fires when the phases differ.
+    st.caption(
+        "The six ranges above are sampled as independent uniforms in every realisation. Some "
+        "are physically coupled: hydrocarbon density and temperature move together with depth, "
+        "and a light fluid at a high temperature is less likely than the independent draw "
+        "allows. Independence overstates the spread of the capacity. The correlation editor on "
+        "sub-tab E couples limits with each other and cannot reach inside a calculator, so a "
+        "coupling between these inputs is not expressible. Modelling choice.\n\n"
+        "The fluid selector is the only link to the charge calculator. Within a realisation the "
+        "density drawn here and the formation volume factor drawn there are separate draws, so "
+        "the seal and the charge share a phase and not a fluid. Tab 3.0 refuses a run in which "
+        "the two phases differ; that check is the whole of the coupling."
+    )
 
     # Hood (2019) slide 18 wants a GOC and an OWC both set by capillary capacity, and this
     # calculator holds one fluid at a time. Flagged rather than silently absent, because an
@@ -979,7 +997,12 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
         f"{np.mean(s_hmin) / crest:.3f} bar/m minimum stress "
         f"({np.mean(s_hmin) / crest / seals.EMW_PER_BAR_PER_M:.2f} s.g.). "
         "A pore-pressure gradient much above 0.105 bar/m is overpressure, and overpressure is "
-        "the reason this mechanism controls a column at all."
+        "the reason this mechanism controls a column at all.\n\n"
+        "Stress and pore pressure are sampled as independent uniforms. They are usually coupled, "
+        "since pore-pressure/stress coupling is most of why fracture gradients rise with "
+        "overpressure, so independence overstates the spread of the headroom and its low tail "
+        "in particular. The correlation editor on sub-tab E cannot reach inside this "
+        "calculator. Modelling choice."
     )
 
     # **Say when it cannot bite.** A normally pressured trap at two kilometres has hundreds of bar
