@@ -33,7 +33,10 @@ Italics are for the titles of theory notes and papers. Never bold a phrase to ma
 **Numbers stay.** A measured value beside a control is content, not rhetoric — keep it, state it
 plainly, and give the unit.
 
-Rewrite status: all eight tabs done, including the tab 8.1 theory notes. `docs/DHI_alignment.md` keeps its voice: it is a signed, dated working note.
+Rewrite status: all eight tabs done. Since 16 Sep 2026 the method is stated once, in
+`docs/THEORY.md` rendered as tab 8.1 (8.1.1 to 8.1.9); tabs 2 to 6 say what is entered, what the
+output means and what to check, and point at "Method: see 8.1.x". The notes 8.1 replaced are
+kept in `docs/superseded/`. `docs/DHI_alignment.md` keeps its voice: it is a signed, dated working note.
 
 ## Structure, 15 Sep 2026
 
@@ -41,7 +44,7 @@ The tabs answer three questions in order: where is the contact (4.1.1), what con
 (4.1.2, 3.1), what does that mean for the well (4.1.3, 4.1.4). A first model needs tab 2
 sections 1–2 and tab 3 defaults; everything else has a default. Every probability shown says
 whether it is conditional on G, whether it includes the element risk, and the threshold it is
-read at. Assumptions are stated in the open (5.2.6), each labelled elicited, heuristic or
+read at. Assumptions are stated in the open (5.1.6), each labelled elicited, heuristic or
 modelling choice; expanders hold diagnostics and derivations, never assumptions.
 
 ## Standing constraints

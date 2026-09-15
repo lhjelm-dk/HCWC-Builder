@@ -76,7 +76,7 @@ the engine and prior art for the level above it. **Buy or borrow it before the m
 paper.** The review lists the four things to check when it arrives.
 
 **A second public benchmark: answered, and the answer is no.** Searched 28 Aug 2026 — see
-`docs/BENCHMARK_SOURCES.md`. Edmundson appears to be the only openly redistributable dataset
+`docs/superseded/BENCHMARK_SOURCES.md` (now 8.1.7 of `docs/THEORY.md`). Edmundson appears to be the only openly redistributable dataset
 relating column height to closure height, for a structural reason rather than an accidental one:
 closure height needs an apex and a spill picked off depth-converted 3D per field, which is months
 of interpretation rather than a database query. **Do not repeat the search without new
