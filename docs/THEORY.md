@@ -286,7 +286,11 @@ less visible when very thick, as the top and base responses separate. `Pick(z | 
 chance the interpreted termination lands at `z` if the contact is at `apex + h`: a normal, PERT
 or uniform shape in metres TVDSS, its width the pick error plus the depth conversion, the second
 usually larger. Partial conformance, an anomaly bright over the crest and reliably absent below
-a depth, is a censored pick: the normal cumulative where a pick's is the density.
+a depth, is a censored pick: the normal cumulative where a pick's is the density. It is a soft,
+censored constraint on the depth of the anomaly's edge and not a forward model of the amplitude
+response; both of its branches are probabilities of the event *edge recorded above the cutoff*,
+so its spurious branch is the constant 1 where the picked case's is the density `s`, which is
+the highest floor the mixture can have and the conservative choice.
 
 `c` is `P(the picked event is the contact | G, contact attributes)`. A flat event can be
 lithology, a diagenetic front, fizz gas read as pay or a processing artefact. Monigle et al.
@@ -297,7 +301,10 @@ whether the picked event is the base of the column. `c` is the second group and 
 of the first: it is conditional on hydrocarbons being present, because every realisation it
 weights was drawn on that assumption, and no expression built from the amplitude strength can
 supply it. The tab offers it typed, opening at 0.36, or as the geometric mean of three graded
-attributes, a heuristic and not a calibration. `s` is the density of a spurious event over the
+attributes, a heuristic and not a calibration. `c` is taken independent of `h`: one number
+weights the mixture for every realisation, and the chance that the picked event is the contact
+is not made to depend on how tall the column is; the column height enters the valid branch
+through `D(h)` only. `s` is the density of a spurious event over the
 model's declared contact range, one over the support width, a property of the model and not of
 the sample.
 
