@@ -176,6 +176,13 @@ class DhiObservation:
     14 Sep 2026 the app passed ``P(G | strength) · c`` and the strength reached the geometry
     posterior through this field.
 
+    **``p_valid`` is taken independent of ``h``** (audit, 16 Sep 2026). One number weights the
+    mixture for every realisation: the chance that the picked event is the contact is not made
+    to depend on how tall the column is. A taller column could make a conformable event more
+    likely to be its base; that dependence is not modelled, and ``D(h)`` is where the column
+    height enters the valid branch instead. Stated in 8.1.6 and pinned by
+    ``tests/test_dhi_audit.py``.
+
     It defaults to 1.0 so that constructing an observation the old way reproduces the old numbers
     exactly. The app never passes 1.0, for Cromwell's rule: at ``p_valid = 1`` a bounded pick shape
     assigns probability zero below its deepest bound, and no later evidence can ever revive a zero.
@@ -305,7 +312,11 @@ def likelihood(result: EngineResult, detection: DetectionFunction,
 
     **Seen**, with ``V`` for *the event I picked really is the hydrocarbon–water contact*::
 
-        L = p_valid · D(h) · Pick(z_DHI | apex + h)   +   (1 - p_valid) · c
+        L = p_valid · D(h) · Pick(z_DHI | apex + h)   +   (1 - p_valid) · s
+
+    with ``s = 1 / span`` from :func:`spurious_density`, the declared contact support. Both
+    branches are densities in depth: ``Pick`` integrates to one over depth and ``s`` integrates to
+    one over the support, so the mixture is a density in depth whatever ``p_valid`` is.
 
     The detection function gates **only** the first branch. "Would a column this tall have produced
     a visible anomaly" is a question that means something only when the anomaly is the column's; in
@@ -314,7 +325,7 @@ def likelihood(result: EngineResult, detection: DetectionFunction,
     In the second branch the likelihood is flat in ``h``, so the geological prior passes through
     untouched. That is what gives the whole update its floor: since ``Pick(·) >= 0``,
 
-        L / c  >=  1 - p_valid
+        L / s  >=  1 - p_valid
 
     so the depth channel can never say more than ``p_valid / (1 - p_valid)`` against any hypothesis,
     whatever shape the pick has. Nothing is ever ruled out by one seismic interpretation — which is
@@ -356,8 +367,13 @@ def likelihood(result: EngineResult, detection: DetectionFunction,
     point 25 m *below* the stated cutoff. The censored form has one parameter, already on the
     observation, meaning what it says.
 
-    The spurious branch is a bare ``1``, not a density, because this likelihood is a probability
-    rather than a density in depth -- and the value is right, not merely convenient. In the world
+    This is a soft, censored constraint on the depth of the anomaly's edge, not a forward model
+    of the amplitude response: nothing in it says how bright the event should be at a depth,
+    only how likely the recorded edge is above ``z_off`` given where the contact is.
+
+    Here both branches are **probabilities** of the event *edge recorded above z_off*, not
+    densities, so the spurious branch is the constant ``1`` rather than the ``s = 1 / span`` of
+    the picked case -- and the value is right, not merely convenient. In the world
     where the bright event is lithology or fizz, its down-dip edge is wherever that thing happens
     to end, so *this observation is what you would have recorded whatever the column did*. The
     branch explains the data perfectly, which is what makes it a floor: ``L >= 1 - p_valid``, and
