@@ -1,8 +1,8 @@
 # References
 
 Every entry below was checked on **25 August 2026**. DOIs were validated against the Crossref API,
-which returned the author, year, journal and pages shown — so the metadata here is the publisher's,
-not mine. Links marked **⚠ bot-blocked** return 403/405 to an automated request but open normally in
+which returned the author, year, journal and pages shown, so the metadata here is the publisher's,
+not this project's. Links marked **⚠ bot-blocked** return 403/405 to an automated request but open normally in
 a browser; that is a publisher anti-scraping setting, not a dead link.
 
 Access is marked from the position of someone with **no institutional subscription**, which is the
@@ -82,7 +82,7 @@ The APPEA Journal **45**(1), 143–158. doi:[10.1071/AJ04012](https://doi.org/10
 🔴 **Paywalled** (USD 40) · reviewed from the abstract only — see `docs/LOWRY_2005_REVIEW.md`
 > **Chance as a function of column height, in print in 2005.** One of their three named shortcomings
 > of conventional risking is that *"prospect risk is dependent on reserve size"*, and the worked case
-> is ours exactly: a mapped closure *"which has suspect seal capacity that may limit the column
+> is this tool's exactly: a mapped closure *"which has suspect seal capacity that may limit the column
 > height to something less than full-to-spill."* Their remedy is to *"build a variable risk array for
 > a range of column heights"* and sum incremental risked NPV over the layers. **The depth-risk curve
 > on tab ④ is therefore not novel, and neither is the rule on tab ① linking the risk criterion to a

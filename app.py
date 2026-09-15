@@ -41,8 +41,14 @@ ROOT = Path(__file__).parent
 DOCS = ROOT / "docs"
 
 
-def _render_with_figures(text: str, base: Path) -> None:
+def _render_with_figures(text: str, base: Path, demote: int = 0) -> None:
     """Render Markdown that carries relative image links.
+
+    ``demote`` pushes every Markdown heading down that many levels (``##`` with ``demote=3``
+    renders as ``#####``), capped at six, and leaves fenced code alone. A document rendered
+    under a numbered sub-heading of its own must not carry headings larger than it: the theory
+    notes' ``##`` sections rendered as h2 under an h4 "8.1.1", so "The construction" was larger
+    than the number it sat under (Lars, 16 Sep 2026).
 
     ``st.markdown`` resolves nothing relative to the file the text came from, so
     ``![](figures/x.png)`` renders as a *broken image* rather than as an error -- the
@@ -72,8 +78,16 @@ def _render_with_figures(text: str, base: Path) -> None:
         if chunk:
             st.markdown(chunk)
 
+    in_fence = False
     for line in text.split("\n"):
         stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+        if demote and not in_fence and stripped.startswith("#"):
+            hashes = len(stripped) - len(stripped.lstrip("#"))
+            if 0 < hashes <= 6 and stripped[hashes:hashes + 1] == " ":
+                line = "#" * min(6, hashes + demote) + stripped[hashes:]
+                stripped = line
         if stripped.startswith("![") and stripped.endswith(")") and "](" in stripped:
             flush()
             src = stripped[stripped.index("](") + 2:-1].strip()
@@ -83,7 +97,9 @@ def _render_with_figures(text: str, base: Path) -> None:
             else:
                 st.caption(f"`{src}` not found — run `scripts/paper_figures.py`.")
             continue
-        if stripped.startswith("## "):
+        # A section boundary is a heading at the document's own top level, wherever the demotion
+        # has put it: `## ` in the source, so `## ` plus `demote` hashes here.
+        if not in_fence and stripped.startswith("#" * (2 + demote) + " "):
             flush()
         buffer.append(line)
     flush()
@@ -701,7 +717,7 @@ with tab8:
             _lines = _target.read_text(encoding="utf-8").split("\n")
             if _lines and _lines[0].startswith("# "):
                 _lines = _lines[1:]
-            _render_with_figures("\n".join(_lines), DOCS)
+            _render_with_figures("\n".join(_lines), DOCS, demote=3)
         else:
             st.info(f"`docs/{_file}` not found in this checkout.")
         if _title == "Prior or likelihood?":
@@ -840,7 +856,7 @@ with tab8:
                 "`docs/figures/` at 200 dpi."
             )
             st.code(_paper_text, language="markdown")
-        _render_with_figures(_paper_text, DOCS)
+        _render_with_figures(_paper_text, DOCS, demote=2)
     else:
         st.info("`docs/ARTICLE.md` not found in this checkout.")
 
@@ -853,15 +869,20 @@ with tab8:
     _refs = DOCS / "REFERENCES.md"
     if _refs.exists():
         # Each `## ` section of the bibliography becomes 8.3.k (Lars, 15 Sep 2026), numbered
-        # here so the document keeps plain headings of its own.
+        # here so the document keeps plain headings of its own. The heading is drawn as an
+        # element and the section under it rendered separately: the renderer escapes HTML, so
+        # an <h4> spliced into the text came out as its own source (16 Sep 2026).
         _k = 0
-        _out = []
-        for _line in _refs.read_text(encoding="utf-8").split("\n"):
+        _part: list[str] = []
+        for _line in _refs.read_text(encoding="utf-8").split("\n") + ["## "]:
             if _line.startswith("## "):
-                _k += 1
-                _out.append(theme.subheading_markdown(8, 3, _k, _line[3:].strip()))
+                if _part:
+                    _render_with_figures("\n".join(_part), DOCS, demote=3)
+                    _part = []
+                if _line.strip() != "##":
+                    _k += 1
+                    theme.subheading(8, 3, _k, _line[3:].strip())
             else:
-                _out.append(_line)
-        _render_with_figures("\n".join(_out), DOCS)
+                _part.append(_line)
     else:
         st.info("`docs/REFERENCES.md` not found in this checkout.")
