@@ -6,6 +6,11 @@
 Reviewed 27 Aug 2026 at Lars's request: *"we need to review how Lowrey et al 2005 does the competing
 limits."*
 
+*Status, 15 Sep 2026.* Lars had the paper and took its lessons into the earlier modelling that
+this tool replaced; the copy is not to hand now. The figures can be seen on the paper's Semantic
+Scholar page, <https://www.semanticscholar.org/paper/d6ab492ea957fe7fc901d9504ae02231002935bb>.
+The reference stays in `docs/REFERENCES.md` as it is; the four checks below still want the text.
+
 ## Read this part first: what I could actually see
 
 **The full text is paywalled** (ConnectSci / Australian Energy Producers Journal, USD 40) and is not
