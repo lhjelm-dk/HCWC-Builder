@@ -258,17 +258,14 @@ def render() -> None:
     st.session_state["min_column"] = float(min_column)
     m2.markdown(
         f"Success is a column of at least {min_column:,.0f} m, a contact at or below "
-        f"{apex_mid + min_column:,.0f} m TVDSS at the mid apex. The prospect chance on tab 4.0 is "
-        f"the element chance times the chance of a column this tall given the elements worked, "
-        f"and the contact percentiles are taken over realisations that reach it. The limits on "
-        f"tab 3.0 say how deep the column could reach; this says how deep it must reach to "
-        f"count. Most operators want tens of metres; the definition used travels with the number."
+        f"{apex_mid + min_column:,.0f} m TVDSS at the mid apex. The limits on tab 3.0 say how "
+        f"deep the column could reach; this says how deep it must reach to count. Method: see "
+        f"8.1.3."
     )
     if min_column == 0:
         st.warning(
-            "At zero every realisation counts as a success. The column term reads 100 % by "
-            "construction and the prospect chance collapses to the element product. Tab 4.0 "
-            "does not print a chance until this is above zero."
+            "At zero every realisation counts as a success and the prospect chance equals the "
+            "element product. Tab 4.0 does not print a chance until this is above zero."
         )
     st.caption(
         f"Structural relief {spill - apex_mid:,.0f} m at the mid apex."
@@ -284,11 +281,9 @@ def render() -> None:
         "These do not move the contact. They scale the chance of success at each depth on tab 4.0."
     )
     st.info(
-        "The chances here are for the element working at the crest, for the minimum volume. A "
-        "trapping element that fails down-dip from the crest does not reduce the chance of "
-        "hydrocarbons at the location; it reduces the chance of a deeper contact (Beha et al. "
-        "2012). Such mechanisms are limits on tab 3.0. Counting them here as well understates POS "
-        "and overstates volume.\n\n"
+        "The chances here are for the element working at the crest. A trapping element that "
+        "fails down-dip from the crest is a limit on tab 3.0, not a reduction of the chance "
+        "here. Method: see 8.1.3.\n\n"
         "Retention here is whether the seal holds anything. How much it holds is the top-seal "
         "capacity on tab 3.0. An E-POS Retention number that already means the full column belongs "
         "on tab 3.0."
@@ -361,15 +356,10 @@ def render() -> None:
         unsafe_allow_html=True)
 
     st.caption(
-        f"P(G) is the chance that every element works at the crest: charge arrived, there is a "
-        f"closure, there is reservoir, there is a seal. It carries no statement about how far down "
-        f"the column reaches.\n\n"
-        f"The geological POS of the prospect is not this number. Success is a column of at least "
-        f"`h_min`, so\n\n"
-        f"`Geological POS = P(G) × P(column ≥ h_min | G)`\n\n"
-        f"Tab 4.0 shows both terms and their product. The second term comes from the competing "
-        f"limits; taken down structure rather than read at one threshold, it is the depth-risk "
-        f"curve on tab 4.0's second sub-tab."
+        "P(G) is the chance that every element works at the crest; it carries no statement about "
+        "how far down the column reaches. The geological POS is "
+        "`P(G) × P(column ≥ h_min | G)`; tab 4.0 shows both terms and their product. Method: see "
+        "8.1.3."
     )
 
     # ------------------------------------------------------------------ DHI
@@ -386,13 +376,11 @@ def render() -> None:
              "and nothing else changes, because a DHI never edits the geological model.")
     st.session_state["dhi_on"] = bool(dhi_on)
     st.caption(
-        "With this on, tab 5.0 HCWC (DHI + well) becomes live, carrying the evidence "
-        "inputs and the Bayesian update. Tab 4.0 stays purely geological either way: a fluid "
-        "indicator senses whether a reservoir exists and what fills it, not which of charge, "
-        "closure or retention failed."
+        "With this on, tab 5.0 HCWC (DHI + well) carries the evidence inputs and the update. "
+        "Tab 4.0 stays geological either way."
         if dhi_on else
         "The geological model on tabs 3.0 to 4.0 stands on its own. With this on, a seismic "
-        "amplitude enters as evidence on two further tabs."
+        "amplitude enters as evidence on tab 5.0."
     )
 
     # ------------------------------------------------------------------ well control
@@ -458,10 +446,8 @@ def render() -> None:
                         float(st.session_state.get("well_in_connected", 0.60)))
         elif use_hc:
             st.warning(
-                "Hydrocarbons proven in this closure make the prospect a discovery, which is a larger "
-                "statement than one about depth. This tool uses the depth only and does not change the "
-                "element chances above; a proven accumulation makes those a statement about an appraisal "
-                "rather than a prospect, and that change is a separate decision."
+                "Hydrocarbons proven in this closure make the prospect a discovery. This tool uses "
+                "the depth only and does not change the element chances above. See 8.1.9."
             )
         if not use_hc and not use_water:
             st.info("At least one is required. A penetration that established neither fluid is not "
