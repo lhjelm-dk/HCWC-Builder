@@ -287,6 +287,21 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     # 1.9×. The gas case keeps its temperature line, which agrees with methane–brine data, so
     # the control is shown for oil only.
     oil_tension = seals.DEFAULT_OIL_TENSION_DYNE_CM
+    gas_tension = None
+    if fluid == "Gas":
+        # The line's value at the prospect's temperature is the opening range, so an untouched
+        # slider reproduces the line to within the rounding, and a measured value overrides it
+        # (open question 4, 15 Sep 2026). Flat in temperature once moved.
+        _line = sorted(round(seals.interfacial_tension_gas_dyne_cm(t), 0) for t in temp)
+        gas_tension = st.slider(
+            "Gas–water interfacial tension (dyne/cm)", 10.0, 80.0,
+            (float(_line[0]), float(_line[1])), 1.0, key=f"{key}_ift_gas",
+            help="Opens on the temperature line, 91.657·exp(−0.0126 T), read at the ends of the "
+                 "temperature range above: methane–brine at reservoir pressure sits there. The "
+                 "line's provenance is unknown; a measured value for this gas overrides it. Once "
+                 "moved the range is used as it stands, flat in temperature.")
+        if tuple(gas_tension) == (float(_line[0]), float(_line[1])):
+            gas_tension = None
     if fluid == "Oil":
         oil_tension = st.slider(
             "Oil–water interfacial tension (dyne/cm)", 5.0, 50.0,
@@ -376,7 +391,9 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
                                   seal_radius_um=r_seal, reservoir_radius_um=r_res,
                                   water_density_g_cm3=rho_w, hc_density_g_cm3=rho_hc,
                                   fluid=fluid, subtract_reservoir=net,
-                                  oil_tension_dyne_cm=tuple(oil_tension))
+                                  oil_tension_dyne_cm=tuple(oil_tension),
+                                  gas_tension_dyne_cm=(None if gas_tension is None
+                                                       else tuple(gas_tension)))
         capacity = seals.sample_max_column_m(inputs, n_trials, seed + 313)
     except ValueError as exc:
         st.error(str(exc))
@@ -636,13 +653,17 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
     # unused and the same default keeps the two paths identical.
     oil_tension = tuple(st.session_state.get(f"{TOP_SEAL_KEY}_ift_oil",
                                              seals.DEFAULT_OIL_TENSION_DYNE_CM))
+    _gas = st.session_state.get(f"{TOP_SEAL_KEY}_ift_gas")
+    _line = sorted(round(seals.interfacial_tension_gas_dyne_cm(t), 0) for t in read("t"))
+    gas_tension = (None if _gas is None or tuple(_gas) == (float(_line[0]), float(_line[1]))
+                   else tuple(_gas))
     try:
         inputs = seals.SealInputs(
             temperature_c=read("t"), contact_angle_deg=read("theta"),
             seal_radius_um=read("rs"), reservoir_radius_um=read("rr"),
             water_density_g_cm3=read("rw"), hc_density_g_cm3=read("rh"),
             fluid=read("fluid"), subtract_reservoir=read("net"),
-            oil_tension_dyne_cm=oil_tension)
+            oil_tension_dyne_cm=oil_tension, gas_tension_dyne_cm=gas_tension)
         capacity = seals.sample_max_column_m(inputs, n_trials, seed + 313)
     except ValueError as exc:
         st.error(str(exc))

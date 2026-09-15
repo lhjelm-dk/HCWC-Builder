@@ -1726,27 +1726,34 @@ class TestTheArgumentsLiveInDocuments:
         missing = sorted(name for name in named if not (root / "docs" / name).exists())
         assert not missing, f"registered but absent from docs/: {missing}"
 
-    #: Tab 8.0 was restructured on 7 Sep 2026 into Theory / The paper / References. The article
-    #: left the picker for a section of its own, so this finds the picker by a note that is
-    #: still in it.
-    PICKER_MARK = "Prior or likelihood?"
-
-    def _picker(self, at):
-        radios = [r for r in at.get("radio") if self.PICKER_MARK in list(r.options)]
-        assert radios, "the tab 8.1 theory picker is gone"
-        return radios[0]
+    #: Tab 8.0 was restructured on 7 Sep 2026 into Theory / The paper / References, and on
+    #: 15 Sep 2026 the theory picker became six numbered sub-sections, 8.1.1 to 8.1.6, so a
+    #: reader can be sent to a number rather than to a radio option.
+    THEORY_ORDER = ("Competing limits", "Prior or likelihood?", "Weight, not Bayes",
+                    "Base rates", "DHI alignment", "Benchmark sources")
 
     def test_the_moved_arguments_are_reachable_and_intact(self):
         at = _run()
-        picker = self._picker(at)
+        _no_exception(at, "tab 8")
+        blob = "\n".join(str(m.value) for m in at.get("markdown"))
+        for k, title in enumerate(self.THEORY_ORDER, start=1):
+            assert f"8.1.{k} · {title}" in blob, f"{title} is not sub-section 8.1.{k}"
         for label, (_, phrase) in self.DOCS.items():
-            assert label in picker.options, f"{label} is not offered on tab 8.1"
-            rendered = picker.set_value(label).run()
-            _no_exception(rendered, f"opening {label!r}")
-            blob = "\n".join(str(m.value) for m in rendered.get("markdown"))
             assert phrase in blob, f"{label} did not render its own text"
-            assert "not found in this checkout" not in blob
-            picker = self._picker(rendered)
+        assert "not found in this checkout" not in blob
+        assert not [r for r in at.get("radio") if "Prior or likelihood?" in list(r.options)], (
+            "the theory picker is back")
+
+    def test_the_references_are_numbered_sub_sections(self):
+        """8.3.1 onward, one per `## ` heading of docs/REFERENCES.md, with Beha in Method and
+        the companion tools naming ArianeLogiX (Lars, 15 Sep 2026)."""
+        at = _run()
+        blob = "\n".join(str(m.value) for m in at.get("markdown"))
+        assert "8.3.1 · Method" in blob
+        assert "8.3.7 · Companion tools" in blob, "the bibliography's sections changed"
+        method = blob[blob.index("8.3.1 · Method"):blob.index("8.3.2 ·")]
+        assert "Beha, A., Christensen, J. E. & Young, R. (2012)" in method
+        assert "ariane-logix.com" in blob
 
     def test_the_paper_has_its_own_section_rather_than_a_picker_entry(self):
         """Lars's restructure, 7 Sep 2026. The article is the thing you hand to someone who does
@@ -1755,9 +1762,7 @@ class TestTheArgumentsLiveInDocuments:
         blob = "\n".join(str(m.value) for m in at.get("markdown"))
         assert "competing geological limits and DHI evidence" in blob, (
             "the paper no longer renders on arrival")
-        assert self.PICKER_MARK in list(self._picker(at).options)
-        assert "The article" not in list(self._picker(at).options), (
-            "the paper is back in the theory picker")
+        assert "8.2 The paper" in blob
 
     def test_the_paper_reviews_are_kept_but_not_shown(self):
         """*Don't delete them, keep them internally* \u2014 Lars, 7 Sep 2026. A user browsing the

@@ -118,6 +118,37 @@ def temperature_range(burial_m: float) -> tuple[float, float]:
     return SURFACE_C + lo * km, SURFACE_C + hi * km
 
 
+def _floor_note(hc_m: float | None, water_m: float | None, sigma_m: float,
+                p_connected: float) -> None:
+    """The contact's P90–P10 under this penetration at the chosen connection chance and at
+    0.95, so the floor's cost is visible beside the slider that sets it."""
+    from hcwc.core import engine
+    from hcwc.core import well as well_core
+    from hcwc.ui import run as engine_run
+    limit_set = st.session_state.get("limit_set")
+    if limit_set is None:
+        return
+    result = engine_run.current(limit_set)
+    keep = result.above_minimum
+    if not keep.any():
+        return
+
+    def spread(p: float) -> float:
+        w = well_core.likelihood(result, well_core.WellControl(
+            hc_down_to_m=hc_m, water_at_m=water_m, depth_sigma_m=sigma_m, p_connected=p))
+        q = engine.weighted_percentiles(result.contact_m[keep], w[keep], [90.0, 10.0])
+        return float(q[1] - q[0])
+
+    prior = float(np.diff(engine.weighted_percentiles(result.contact_m[keep], None,
+                                                      [90.0, 10.0]))[0])
+    st.caption(
+        f"What the connection chance costs on this prospect: the contact's P90–P10 is "
+        f"{prior:,.0f} m before the well, {spread(p_connected):,.0f} m at {p_connected:.2f} and "
+        f"{spread(0.95):,.0f} m at 0.95. The floor under the likelihood is 1 − {p_connected:.2f} "
+        f"= {1 - p_connected:.2f}, and it is what keeps the penetration from ruling a depth out."
+    )
+
+
 def render() -> None:
     n = Numbering(TAB)
     st.subheader("The prospect")
@@ -417,6 +448,14 @@ def render() -> None:
                 f"The hydrocarbons ({hc_depth:,.0f} m) must be above the water ({water_depth:,.0f} m). "
                 f"Reversed, this describes two accumulations rather than one contact."
             )
+        elif use_hc or use_water:
+            # What the floor costs, on this prospect, where the slider is (open question 1,
+            # 15 Sep 2026). The likelihood floor is 1 - p_connected, and at the shipped 0.60 a
+            # tight bracket narrows the contact by almost nothing; the number here is read off
+            # the last run's limit set, so it is one interaction behind on the first render.
+            _floor_note(hc_depth if use_hc else None, water_depth if use_water else None,
+                        float(st.session_state.get("well_in_sigma", 30.0)),
+                        float(st.session_state.get("well_in_connected", 0.60)))
         elif use_hc:
             st.warning(
                 "Hydrocarbons proven in this closure make the prospect a discovery, which is a larger "

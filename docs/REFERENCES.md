@@ -12,6 +12,22 @@ situation this project is in.
 
 ## Method — how to represent column height
 
+**Beha, A., Christensen, J. E. & Young, R. (2012)** · *A general method for the consistent volume assessment of complex hydrocarbon traps.*
+**Journal of Petroleum Geology 35(1), 85–98.** DONG E&P and Rose & Associates.
+
+**The closest published precedent to this tool's engine.** Enumerates every combination of trapping
+elements working or failing, weights each scenario, and collapses the result onto leak-point
+frequencies — which is what the competing-limits argmin computes by simulation. Their worked example
+(0.60 / 0.12 / 0.28 at 2050 / 2100 / 2150 m) is reproduced exactly by
+`tests/test_engine.py::TestBeha2012PublishedExample`, and is the only **external** validation this
+project has.
+
+Also the clearest published statement of the POS/volume split this tool is built on: down-dip
+trapping elements *"will not reduce the probability of finding hydrocarbons at the prospect
+location [but] will influence the probability of deeper hydrocarbon-water contacts"*, and scenario
+weighting is *"normalised to the success rate of the prospect"*. Full review in
+`docs/BEHA_2012_REVIEW.md`.
+
 **Monigle, P.W., Hedayati, T.S. & Goulding, F.J. (2025)** · *Integrated and improved direct
 hydrocarbon indicators: a step forward in petroleum risk discrimination.* AAPG Bulletin
 **109**(5), 617–636. doi:[10.1306/04042524030](https://doi.org/10.1306/04042524030)
@@ -236,21 +252,6 @@ https://factpages.sodir.no/public?/Factpages/external/tableview/<REPORT>&rs:Comm
 - **SLB GeoX** — commercial prospect assessment; the export target.
   https://www.slb.com/products-and-services/delivering-digital-at-scale/software/geox
 - **Rose & Associates RoseRA** — commercial prospect risk. https://www.roseassoc.com/
-
-### Beha, A., Christensen, J. E. & Young, R. (2012)
-*A general method for the consistent volume assessment of complex hydrocarbon traps.*
-**Journal of Petroleum Geology 35(1), 85–98.** DONG E&P and Rose & Associates.
-
-**The closest published precedent to this tool's engine.** Enumerates every combination of trapping
-elements working or failing, weights each scenario, and collapses the result onto leak-point
-frequencies — which is what the competing-limits argmin computes by simulation. Their worked example
-(0.60 / 0.12 / 0.28 at 2050 / 2100 / 2150 m) is reproduced exactly by
-`tests/test_engine.py::TestBeha2012PublishedExample`, and is the only **external** validation this
-project has.
-
-Also the clearest published statement of the POS/volume split this tool is built on: down-dip
-trapping elements *"will not reduce the probability of finding hydrocarbons at the prospect
-location [but] will influence the probability of deeper hydrocarbon-water contacts"*, and scenario
-weighting is *"normalised to the success rate of the prospect"*. Full review in
-`docs/BEHA_2012_REVIEW.md`.
-
+- **ArianeLogiX, Ariane for Oil & Gas** — commercial risk and volume assessment of prospects,
+  integrating subsurface uncertainty, seal integrity, charge and phase prediction across
+  segments. https://ariane-logix.com/oil-gas/

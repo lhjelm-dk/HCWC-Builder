@@ -27,7 +27,7 @@ What follows is not a list of gaps in that. It is a list of things that would ma
 
 ---
 
-## A1b · Small and aligned
+## A1b · Small and aligned (done 15 Sep 2026)
 
 **An MICP displacement-pressure route into the seal calculator.** ZetaWare's quick seal-capacity
 calculator, which Lars likes (15 Sep 2026), takes a mercury–air displacement pressure from MICP
@@ -36,11 +36,11 @@ same balance this calculator does. Ours takes the radius directly. Accepting a d
 as an alternative input is one conversion, `r = 2·γ_Hg·cos θ_Hg / P_d`, beside the radius slider;
 where a lab MICP exists it is the number the assessor has. Small.
 
-## A2 · Planned in detail, not started
+## A2 · Planned in detail, not started, and not wanted yet (Lars, 15 Sep 2026)
 
 **Capillary-controlled two-phase columns** — the one real gap the Hood (2019) review found (`docs/HOOD_2019_REVIEW.md`). The app has no seal-capacity route to a gas–oil contact, and the charge-driven route exists in `hcwc.core.charge` but is wired to no widget. Fully planned in **`docs/PLAN_DUAL_PHASE_SEAL.md`**, including the one thing to settle first: the derivation gives a 45 % gas cap on this app's own interfacial-tension correlations where Hood quotes 20 %, and the disagreement is entirely in oil–water tension.
 
-Its cheap sibling — commodity scenarios from realisation proportions, Hood's slide 19 — needs no new physics and should go first.
+Its cheap sibling — commodity scenarios from realisation proportions, Hood's slide 19 — needs no new physics and would go first. Both wait: Lars, 15 Sep 2026, does not want the two-phase seal implemented yet, and step 0 (the oil–water tension) is closed by `docs/IFT_CHECK_2026-09-15.md`.
 
 ---
 
