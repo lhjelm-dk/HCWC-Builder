@@ -317,7 +317,7 @@ the combinations of trapping elements sealing or failing, assign each scenario a
 derive the leak point that follows. Grant (2020) publishes the controlling-limit diagnostic as
 column height control statistics; Lowry et al. (2005) had chance against column height two
 decades earlier. What is new here is the continuous, correlated form, and the censoring
-correction on tab 6.0. The paper on tab 8.0 sets this out.
+correction on tab 6.0. The paper on tab 8.2 sets this out.
             """
         )
 
@@ -401,16 +401,16 @@ with tab5:
     # reader `Figure 5.9` with no way to know which of the four pages to turn to — and the
     # sequence counts in render order, which here is not reading order. Numbered by sub-tab,
     # `Figure 5.2.1` is the first exhibit on *The observation*, and it stays that whatever else moves.
-    _how, _evidence, _contact_dhi, _depth_dhi = st.tabs(
-        ["5.1 · How a DHI moves a chance", "5.2 · The observation",
-         "5.3 · Contact and chance (DHI + well)", "5.4 · Risk against depth (DHI + well)"])
-    for _panel in (_how, _evidence, _contact_dhi, _depth_dhi):
+    # Three sub-tabs since 16 Sep 2026: the walkthrough that opened this tab is the derivation
+    # and renders under 8.1.5, on the same live numbers.
+    _evidence, _contact_dhi, _depth_dhi = st.tabs(
+        ["5.1 · The observation",
+         "5.2 · Contact and chance (DHI + well)", "5.3 · Risk against depth (DHI + well)"])
+    for _panel in (_evidence, _contact_dhi, _depth_dhi):
         with _panel:
             st.markdown(theme.subtab_marker(5), unsafe_allow_html=True)
     with _evidence:
-        dhi_tab.render(Numbering(5, sub=2))
-    with _how:
-        dhi_walkthrough.render(Numbering(5, sub=1))
+        dhi_tab.render(Numbering(5, sub=1))
     with _contact_dhi:
         # **The posterior, whatever built it.** This asked for `dhi_on` and so hid the page from a
         # prospect updated by an offset penetration alone -- which is exactly the case sub-tab 5.2
@@ -421,14 +421,14 @@ with tab5:
             st.info(
                 "**Nothing to show until the evidence is described.** On tab 2.0, turn on either "
                 "*This is a DHI prospect* or *This closure has been penetrated*, then fill in "
-                "sub-tab 5.2 — the figures here are tab 4.0's, drawn on the updated distribution, "
+                "sub-tab 5.1 — the figures here are tab 4.0's, drawn on the updated distribution, "
                 "so they need an update to draw."
             )
         else:
-            results_tab.render(Numbering(5, sub=3, basis=theme.GIVEN_DHI), posterior=_post)
+            results_tab.render(Numbering(5, sub=2, basis=theme.GIVEN_DHI), posterior=_post)
     with _depth_dhi:
         depth_risk_tab.render(depth_risk_tab.TAB_DHI, with_dhi=True,
-                              n=Numbering(5, sub=4, basis=theme.GIVEN_DHI))
+                              n=Numbering(5, sub=3, basis=theme.GIVEN_DHI))
 
 # Tab 4.0's trust panel, now that tab 5.0 has published the posterior one of its checks reports on.
 # It is written into a container tab 4.0 reserved, so it still appears at the foot of tab 4.0.
@@ -681,47 +681,43 @@ with tab7:
 # --------------------------------------------------------------------------- 8.0 Theory & Guide
 with tab8:
     st.markdown(
-        "The reasoning the tool rests on, the paper that sets it out, and the sources. The "
-        "theory notes are the working behind three places where the tool declines to multiply "
-        "something in, and each is referenced from the tab that declines."
+        "The method, once: the model in one page, then nine sections in the order the model "
+        "runs. The operational tabs refer here by section number. The paper is the long-form "
+        "version and the bibliography carries the sources."
     )
 
-    theme.heading(8, "1 · Theory")
-    # Six notes, each under its own numbered sub-heading (Lars, 15 Sep 2026; they were behind
-    # one radio until then). Until 7 Sep 2026 this section also carried five paper reviews --
-    # whether Beha, Hood, Monigle, Lowry and the seal-capacity literature say what this app
-    # claims they say. Lars's call was that a user does not want to browse those. They are kept
-    # in `docs/` and indexed in `docs/NEXT_PLAN.md`; the bibliography in section 3 names them
-    # where they bear on a citation.
-    st.markdown(
-        "*Competing limits* is the construction the tool rests on: why the contact is derived "
-        "from the mechanisms rather than entered, and why the reference data are censored. "
-        "*Prior or likelihood?*, *Weight, not Bayes* and *Base rates* are three notes on what "
-        "may be treated as evidence, each written against a specific mistake. *DHI alignment* "
-        "is a working note on how POS and the DHI update fit together. *Benchmark sources* is "
-        "a negative result: what was searched for and not found."
-    )
-    THEORY_NOTES = (
-        ("Competing limits", "COMPETING_LIMITS.md"),
-        ("Prior or likelihood?", "LIKELIHOOD_OR_PRIOR.md"),
-        ("Weight, not Bayes", "WEIGHT_NOT_BAYES.md"),
-        ("Base rates", "BASE_RATE_NEGLECT.md"),
-        ("DHI alignment", "DHI_alignment.md"),
-        ("Benchmark sources", "BENCHMARK_SOURCES.md"),
-    )
-    for _k, (_title, _file) in enumerate(THEORY_NOTES, start=1):
-        theme.subheading(8, 1, _k, _title)
-        _target = DOCS / _file
-        if _target.exists():
-            # The note's own title line goes: the sub-heading above is its title here.
-            _lines = _target.read_text(encoding="utf-8").split("\n")
-            if _lines and _lines[0].startswith("# "):
-                _lines = _lines[1:]
-            _render_with_figures("\n".join(_lines), DOCS, demote=3)
-        else:
-            st.info(f"`docs/{_file}` not found in this checkout.")
-        if _title == "Prior or likelihood?":
+    # 8.1 is docs/THEORY.md: one `## ` section per numbered part, rendered in order (Lars's
+    # structure, 16 Sep 2026). The first section is 8.1 itself, the model in one page; the
+    # next nine are 8.1.1 to 8.1.9. Two pieces of the tool render inside it, because they are
+    # the derivation on the live prospect and belong with the text that derives it: the DHI
+    # walkthrough under 8.1.5, and the worked base-rate example under 8.1.7.
+    _theory = DOCS / "THEORY.md"
+    if _theory.exists():
+        _parts: list[tuple[str, list[str]]] = []
+        for _line in _theory.read_text(encoding="utf-8").split("\n"):
+            if _line.startswith("# "):
+                continue
+            if _line.startswith("## "):
+                _parts.append((_line[3:].strip(), []))
+            elif _parts:
+                _parts[-1][1].append(_line)
+            # Lines before the first section are the document's own subtitle and are dropped:
+            # the tab intro above says the same.
+        _worked_example_slot = None
+        for _k, (_title, _body) in enumerate(_parts):
+            if _k == 0:
+                theme.heading(8, f"1 · {_title}")
+            else:
+                theme.subheading(8, 1, _k, _title)
+            _render_with_figures("\n".join(_body), DOCS, demote=3)
+            if _k == 5:
+                dhi_walkthrough.render(Numbering(8, sub=1))
+            if _k == 7:
+                _worked_example_slot = st.container()
+        if _worked_example_slot is None:
             _worked_example_slot = st.container()
+    else:
+        st.info("`docs/THEORY.md` not found in this checkout.")
 
     # The worked example that used to be section 1 in full, on arrival, above everything else.
     # It is one illustration of one of the five notes above and it now sits where an illustration
@@ -736,9 +732,8 @@ with tab8:
             "A likelihood is a use rather than a kind of distribution, and to act as one the data "
             "must have been observed on this prospect.\n\n"
             "The test is therefore not whether the data is a probability but whether it carries "
-            "something the model has not already used. The argument is in *Prior or "
-            "likelihood?* above; the table below shows what getting it wrong does to a real "
-            "prospect."
+            "something the model has not already used. Method: see 8.1.7 above; the table below "
+            "shows what getting it wrong does to a real prospect."
         )
         _t8_limits = st.session_state.get("limit_set")
         _t8_spill = ([i for i, nm in enumerate(_t8_limits.names) if "spill" in nm.lower()]

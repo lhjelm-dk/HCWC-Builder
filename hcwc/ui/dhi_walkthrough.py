@@ -44,7 +44,7 @@ def render(n: Numbering | None = None) -> None:
     if post is None or overlay is None:
         st.info(
             "This page runs on the current prospect's numbers, so it needs an observation first: "
-            "**This is a DHI prospect** on tab 2.0, then the amplitude on sub-tab 2.0. "
+            "**This is a DHI prospect** on tab 2.0, then the amplitude on tab 5.1. "
             "Everything here is explanation; nothing on this page changes a result."
         )
         return
@@ -58,7 +58,7 @@ def render(n: Numbering | None = None) -> None:
                        if element_pos else 1.0)
 
     st.markdown(
-        "Nothing on this page changes a result. It is the update the next sub-tab performs, "
+        "Nothing on this page changes a result. It is the update tab 5.1 performs, "
         "taken apart one term at a time, on the current prospect's numbers.\n\n"
         "The rule as usually taught appears to need something that cannot be estimated:"
     )
@@ -69,7 +69,7 @@ def render(n: Numbering | None = None) -> None:
         "shows why it is never needed.")
 
     # ------------------------------------------------------------------ 1 · the prior
-    st.markdown("#### Step 1 · P(HC): the state of belief before the seismic")
+    st.markdown("##### Step 1 · P(HC): the state of belief before the seismic")
     st.markdown(
         "The prior is everything on tabs 2.0 and 3.0 and nothing else. It has two parts, and "
         "they are kept apart throughout:\n\n"
@@ -103,7 +103,7 @@ def render(n: Numbering | None = None) -> None:
            "repair a prior that has already seen the answer.")
 
     # ------------------------------------------------------------------ 2 · the likelihood
-    st.markdown("#### Step 2 · P(DHI | HC): the chance of this observation if the prospect works")
+    st.markdown("##### Step 2 · P(DHI | HC): the chance of this observation if the prospect works")
     st.markdown(
         "The term is usually found hard because it runs backwards from the question of interest. "
         "The question is about the prospect given the seismic; Bayes' rule asks about the seismic "
@@ -148,7 +148,7 @@ def render(n: Numbering | None = None) -> None:
            "are scaled to a common height; only their shapes carry meaning.")
 
     # ------------------------------------------------------------------ 3 · the rival
-    st.markdown("#### Step 3 · P(DHI | no HC): the chance of the same observation if it does not")
+    st.markdown("##### Step 3 · P(DHI | no HC): the chance of the same observation if it does not")
     # Guarded on `dhi_on` like every other reader of a `dhi_` output. Switching the DHI off clears
     # `dhi_overlay` but leaves this and `dhi_posterior` behind, so an unguarded read is a stale
     # strength waiting for the day this function is called from somewhere that does not return
@@ -171,8 +171,8 @@ def render(n: Numbering | None = None) -> None:
     rows = [{"Aspect of the observation": ("Character: how hydrocarbon-like the amplitude looks"
                                            if observation.seen else
                                            "Absence: nothing shows where a column would have"),
-             "Answered by": ("the two-curve strength model, sub-tab 2.0 §2" if observation.seen
-                             else "P(absent | G) / P(absent | no hydrocarbons), sub-tab 2.0 §3b"),
+             "Answered by": ("the two-curve strength model, tab 5.1 §2" if observation.seen
+                             else "P(absent | G) / P(absent | no hydrocarbons), tab 5.1 §3b"),
              "Updates": "P(G), the chance the elements worked",
              "Gives": f"R = {r_applied:.2f}"},
             {"Aspect of the observation": "Geometry: where the event terminates",
@@ -185,7 +185,7 @@ def render(n: Numbering | None = None) -> None:
             "twice and nothing has to be discounted.")
 
     # ------------------------------------------------------------------ 4 · the two branches
-    st.markdown("#### Step 4 · The case where the picked event is not the contact")
+    st.markdown("##### Step 4 · The case where the picked event is not the contact")
     st.markdown(
         "A flat event can be lithology, a diagenetic front, fizz gas read as pay, or a processing "
         "artefact. Writing `V` for *the picked event really is the contact*, the likelihood is two "
@@ -198,7 +198,7 @@ def render(n: Numbering | None = None) -> None:
     st.markdown(
         f"With `p_valid = {observation.p_valid:.2f}`: the chance the picked event is the "
         "contact, given that there is hydrocarbon for it to be the contact of. It is the "
-        "contact-attribute judgement from sub-tab 2.0 §3 and carries nothing about whether "
+        "contact-attribute judgement from tab 5.1 §3 and carries nothing about whether "
         "there is hydrocarbon, since every realisation it weights already assumes there is.\n\n"
         "The second branch is flat in depth, so the geological prior passes through it "
         "untouched. That is what stops one seismic pick from ever declaring a contact depth "
@@ -251,7 +251,7 @@ def render(n: Numbering | None = None) -> None:
                "contact depth, however sharply the pick is drawn.")
 
     # ------------------------------------------------------------------ 5 · the ratio
-    st.markdown("#### Step 5 · R, and where the intractable term went")
+    st.markdown("##### Step 5 · R, and where the intractable term went")
     st.markdown(
         "Bayes' rule written twice, once for success and once for failure, and divided one by "
         "the other. `P(DHI)` is the same in both, so it cancels:")
@@ -273,7 +273,7 @@ def render(n: Numbering | None = None) -> None:
         f"{1.0 / dhi_core.R_SINGLE_CHANNEL:g} so that it cannot.")
 
     # ------------------------------------------------------------------ 6 · the arithmetic
-    st.markdown("#### Step 6 · The arithmetic, on this prospect")
+    st.markdown("##### Step 6 · The arithmetic, on this prospect")
     st.markdown(
         "The odds form above is applied to one factor, the chance the elements worked. The pick "
         "then updates the other factor, the column given that they did, and the two multiply."
@@ -301,7 +301,7 @@ def render(n: Numbering | None = None) -> None:
     st.caption(
         f"The prior prospect chance was P(G) × F(h_min) = {element_product:.3f} × "
         f"{f_prior:.3f} = {prior_pos:.1%}. The second factor is read off the same weighted "
-        f"realisations that draw the contact distribution on sub-tab 2.0, so the histogram, the "
+        f"realisations that draw the contact distribution on tab 5.1, so the histogram, the "
         f"percentiles and the chance are one object."
     )
 

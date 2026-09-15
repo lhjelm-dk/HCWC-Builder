@@ -71,7 +71,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         "The element chances are unchanged. Evidence about where the contact is may move the "
         "total and may not re-attribute it between elements; only the depth curves respond."
         if with_dhi else
-        "The competing limits alone. The updated version of this tab is 5.4.")
+        "The competing limits alone. The updated version of this tab is 5.3.")
     if with_dhi:
         st.markdown(
             "The same decomposition as tab 4.0, after the Bayesian update on tab 5.0. The "

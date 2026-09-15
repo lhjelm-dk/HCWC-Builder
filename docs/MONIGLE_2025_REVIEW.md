@@ -273,12 +273,12 @@ read that way.
 **Brier score and discrimination as the calibration metrics.** The app's `trust.py` audits whether
 the arithmetic supports the number quoted; it cannot score prediction quality, because it has no
 outcomes. But the paper is the reference for *what a calibrated risking system looks like* —
-Brier 0.15, discrimination 30 % — and `docs/BASE_RATE_NEGLECT.md` is the right place to point at
+Brier 0.15, discrimination 30 % — and `docs/superseded/BASE_RATE_NEGLECT.md` is the right place to point at
 it.
 
 **Base rates, not 50 %.** They begin every element at a database-derived base rate, explicitly
 "avoiding an initial COA of 50 %, common in risk matrices". This supports the argument already made
-in `docs/BASE_RATE_NEGLECT.md` and gives it a 2025 citation.
+in `docs/superseded/BASE_RATE_NEGLECT.md` and gives it a 2025 citation.
 
 **A fluid contact reflection constrains net-to-gross.** From 121 calibration points: reservoirs
 with an FCR run 40–85 % NTG, those without 18–55 %; "the absence of an FCR does not preclude a

@@ -1558,7 +1558,7 @@ def _well_only(result, n: Numbering) -> None:
         f"`1 − {control.p_connected:.2f} = {1 - control.p_connected:.2f}`, which is what stops one "
         f"penetration ruling a contact out altogether.\n\n"
         f"Prospect POS {prior_pos:.1%} → {posterior_pos:.1%}, on an effective sample size of "
-        f"{posterior.effective_sample_size:,.0f} of {result.n:,}. Sub-tabs 5.3 and 5.4 are drawn "
+        f"{posterior.effective_sample_size:,.0f} of {result.n:,}. Sub-tabs 5.2 and 5.3 are drawn "
         f"on this."
     )
     if inside < 0.05:
@@ -1574,6 +1574,6 @@ def _well_only(result, n: Numbering) -> None:
         "There is no R and no tornado on this page. Both are statements about an amplitude, "
         "since E-POS's `r_dfi` compares the seismic likelihood over tall columns against short "
         "ones, and there is no amplitude here. The evidence is a depth bracket, and its effect is "
-        "visible directly in the contact distribution on tab 5.3."
+        "visible directly in the contact distribution on tab 5.2."
     )
 
