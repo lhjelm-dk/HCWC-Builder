@@ -258,7 +258,10 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
 
     fig.update_layout(xaxis_title="Probability", xaxis_range=[0, 1],
                       yaxis_title="Depth (m TVDSS)", yaxis=dict(autorange="reversed"),
-                      height=620, margin=dict(t=20), legend=dict(orientation="h", y=-0.15))
+                      height=620, margin=dict(t=20),
+                      # To the right rather than beneath (Lars, 15 Sep 2026): given the DHI the
+                      # legend carries two entries per element and the row wrapped to three lines.
+                      legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
     n.plot(fig, "Each element's chance curve, derived from the shallowest active limit within "
                 "that element and scaled by the prospect's element POS. This is the input "
                 "WellVolPOS can consume in place of allocating one location factor."

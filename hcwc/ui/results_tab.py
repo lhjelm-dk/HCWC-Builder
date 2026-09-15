@@ -247,25 +247,29 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # changed" is the honest reading of it whichever channel supplied the weights.
     GIVEN = theme.evidence_title()
     GEOLOGICAL, DIFFERENCE = "Geological", "What the evidence changed"
-    view, scaled = GEOLOGICAL, False
+    view = GEOLOGICAL
     if given_dhi:
         view = st.radio("Show", (GIVEN, GEOLOGICAL, DIFFERENCE), horizontal=True,
                         key=f"controlling_view_{tab}",
                         help="A DHI cannot say which element failed. It can say which limit set "
                              "the contact, because roughly where the contact sits is evidence "
                              "about which mechanism put it there.")
-        # **Without this the first two views are indistinguishable, and correctly so.** Normalising
-        # each bin against itself conditions on contact depth, and the detection function is
-        # saturated at its ceiling for every column in every occupied bin — so once the depth is
-        # fixed the amplitude has nothing left to discriminate on. What it does move is *how many
-        # realisations reach each depth*, by up to ten points, and that only shows when the bars
-        # are left as shares of the whole sample.
-        scaled = st.checkbox(
-            "Scale bars by how many realisations reach each depth", value=True,
-            key=f"controlling_scaled_{tab}", disabled=view == DIFFERENCE,
-            help="On: bars are shares of all realisations, so bin height carries the contact "
-                 "distribution and the two bases differ visibly. Off: each bin is normalised "
-                 "against itself, the classic diagnostic, which a DHI cannot move.")
+    # On both tabs, since 15 Sep 2026 (Lars: why was it only on 5.3.2?). Scaled, the bars are
+    # shares of all realisations and bin height carries the contact distribution; unscaled, each
+    # bin is normalised against itself, the classic diagnostic. Given the DHI the scaling is
+    # also what makes the two bases differ visibly: normalising within a bin conditions on
+    # contact depth, and the detection function is saturated at its ceiling for every column in
+    # every occupied bin, so once the depth is fixed the amplitude has nothing left to
+    # discriminate on. What it moves is how many realisations reach each depth.
+    scaled = st.checkbox(
+        "Scale bars by how many realisations reach each depth", value=True,
+        key=f"controlling_scaled_{tab}", disabled=view == DIFFERENCE,
+        help="On: bars are shares of all realisations, so bin height carries the contact "
+             "distribution and the figure reads as a histogram coloured by controlling limit. "
+             "Off: each bin is normalised against itself, so every occupied depth reads as "
+             "100 % and the figure shows the mechanism mix at that depth."
+             + (" Given the DHI the two bases differ visibly only when scaled."
+                if given_dhi else ""))
     basis_weights = weights if view != GEOLOGICAL else None
     if view == DIFFERENCE:
         # **Not the difference of the two views above, and it cannot be.** Those normalise within
@@ -335,7 +339,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                            xaxis_tickformat=".0%" if not scaled else ".1%",
                            yaxis_title="Contact depth (m TVDSS)",
                            yaxis=dict(autorange="reversed"), height=560, margin=dict(t=20),
-                           legend=dict(orientation="h", y=-0.18))
+                           legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
     if view == DIFFERENCE:
         moves = {name: float(shares[name].sum()) for name in ranked}
         gained = max(moves, key=moves.get)
@@ -360,6 +364,12 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      "reservoir, green retention); lightness separates the limits within an "
                      "element. Grant (2020) publishes an equivalent as column height control "
                      "statistics; per-element curves built from it appear to be unpublished."
+                     + ("\n\nBars are shares of all realisations, so bin height carries the "
+                        "contact distribution and each limit's bars sum across depth to its "
+                        "overall share." if scaled else
+                        "\n\nEach bin is normalised against itself, so bar length is the "
+                        "mechanism mix at that depth and says nothing about how many "
+                        "realisations reach it.")
                      + (("\n\nBin height carries the contact distribution here, which is why "
                          f"{GIVEN} and Geological differ visibly: the evidence moves which depths "
                          "are reached far more than it moves the mechanism mix at any one depth."
