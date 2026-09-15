@@ -434,19 +434,15 @@ class DhiPosterior:
 
     def percentiles(self, exceedance_pct: np.ndarray | float, *,
                     posterior: bool = True) -> np.ndarray:
-        """Contact depth at exceedance percentiles. P100 shallowest, P0 deepest."""
-        p = np.atleast_1d(np.asarray(exceedance_pct, dtype=float))
+        """Contact depth at exceedance percentiles. P100 shallowest, P0 deepest.
+
+        :func:`hcwc.core.engine.weighted_percentiles`, the same estimator the engine uses, so
+        the prior read here is the prior tab 4 prints.
+        """
         keep = self.result.above_minimum
-        contacts = self.result.contact_m[keep]
-        if contacts.size == 0:
-            return np.full(p.shape, np.nan)
-        w = self.weights[keep] if posterior else np.ones(contacts.size)
-        if w.sum() <= 0:
-            return np.full(p.shape, np.nan)
-        order = np.argsort(contacts)
-        c, w = contacts[order], w[order]
-        cumulative = (np.cumsum(w) - 0.5 * w) / w.sum()
-        return np.interp((100.0 - p) / 100.0, cumulative, c)
+        return engine.weighted_percentiles(self.result.contact_m[keep],
+                                           self.weights[keep] if posterior else None,
+                                           exceedance_pct)
 
     @property
     def r_dhi(self) -> float:

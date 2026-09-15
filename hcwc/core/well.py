@@ -105,11 +105,16 @@ def likelihood(result: EngineResult, well: WellControl) -> np.ndarray:
 
     Two soft steps and a floor::
 
-        L = p_connected · Φ((z − z_hc)/σ) · Φ((z_w − z)/σ)  +  (1 − p_connected)
+        L = p_connected · [Φ((z − z_hc)/σ) + Φ((z_w − z)/σ) − 1]  +  (1 − p_connected)
 
-    with ``z`` the realisation's contact depth. The first factor is near 1 where the contact is
-    below the proven hydrocarbons and falls away above them; the second is near 1 where the contact
-    is above the water and falls away below it. Either may be absent.
+    with ``z`` the realisation's contact depth. The bracket is the chance that one tie error
+    ``ε ~ N(0, σ)`` puts the contact between the proven hydrocarbons and the water: the well's
+    two depths are tied to the mapped surface by the same error, so the condition is
+    ``z − z_w ≤ ε ≤ z − z_hc`` and its probability is the difference of two normal cumulatives.
+    Until 15 Sep 2026 (audit P3-5) the two steps were multiplied, ``Φ·Φ``, which is the form
+    for two independent tie errors and one well does not have two; the difference is at most
+    0.3 points of chance on the defaults. With one depth absent the bracket is a single step,
+    and the two forms coincide.
 
     **The steps are soft, and σ is not the well's depth error.** A wireline depth is good to a metre
     or two. What is uncertain is the tie between that depth and the *mapped surface* this model
@@ -127,11 +132,19 @@ def likelihood(result: EngineResult, well: WellControl) -> np.ndarray:
     accumulation being assessed, and the arithmetic keeps those two apart.
     """
     z = np.asarray(result.contact_m, dtype=float)
-    valid = np.ones_like(z)
-    if well.hc_down_to_m is not None:
-        valid = valid * norm.cdf((z - well.hc_down_to_m) / well.depth_sigma_m)
-    if well.water_at_m is not None:
-        valid = valid * norm.cdf((well.water_at_m - z) / well.depth_sigma_m)
+    above_hc = (norm.cdf((z - well.hc_down_to_m) / well.depth_sigma_m)
+                if well.hc_down_to_m is not None else None)
+    above_water = (norm.cdf((well.water_at_m - z) / well.depth_sigma_m)
+                   if well.water_at_m is not None else None)
+    if above_hc is not None and above_water is not None:
+        # One error, so the two conditions share it: P(ε in an interval), never below zero.
+        valid = np.clip(above_hc + above_water - 1.0, 0.0, 1.0)
+    elif above_hc is not None:
+        valid = above_hc
+    elif above_water is not None:
+        valid = above_water
+    else:
+        valid = np.ones_like(z)
     if well.p_connected >= 1.0:
         return valid
     return well.p_connected * valid + (1.0 - well.p_connected)
