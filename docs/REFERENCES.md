@@ -246,9 +246,15 @@ https://factpages.sodir.no/public?/Factpages/external/tableview/<REPORT>&rs:Comm
 ## Companion tools
 
 - **E-POS** — evidence-supported probability of success, ESL/Italian-flag, Bayesian DFI update.
-  https://github.com/lhjelm-dk/E-POS
-- **WellVolPOS** — well probability of success and volume from a stochastic prospect model.
-  https://github.com/lhjelm-dk/WellVolPOS
+  Supplies the element chances on tab 2.0; the DHI strength model on tab 5.1 is adapted from its
+  custom-R tool. App https://e-pos.streamlit.app · code https://github.com/lhjelm-dk/E-POS
+- **SCOPE-HC** — probabilistic volumes from GRV, reservoir and fluid inputs; the resource column
+  the WellVolPOS export on tab 7.0 leaves out. Planned: reading the 101-percentile contact
+  distribution exported there. App https://scope-hc.streamlit.app · code
+  https://github.com/lhjelm-dk/SCOPE-HC
+- **WellVolPOS** — well probability of success and volume from a stochastic prospect model;
+  consumes the trial table and the per-element curves from tab 7.0. App
+  https://wellvolpos.streamlit.app · code https://github.com/lhjelm-dk/WellVolPOS
 - **SLB GeoX** — commercial prospect assessment; the export target.
   https://www.slb.com/products-and-services/delivering-digital-at-scale/software/geox
 - **Rose & Associates RoseRA** — commercial prospect risk. https://www.roseassoc.com/

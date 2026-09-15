@@ -86,9 +86,9 @@ The precedent is published. Beha et al. (2012) enumerate every combination of tr
 sealing or failing, weight each scenario and collapse the result onto leak-point frequencies;
 their two-fault example (0.60 / 0.12 / 0.28 at three leak points) is reproduced by this engine to
 Monte Carlo error, and is the one external validation the tool has. Grant (2020) publishes the
-controlling-limit diagnostic as column height control statistics. What is not found in that
-literature is the continuous, correlated sampling and the per-element curves built from the
-controller (8.1.3).
+controlling-limit diagnostic as column height control statistics; Lowry et al. (2005) had chance
+against column height two decades earlier. What is not found in that literature is the
+continuous, correlated sampling and the per-element curves built from the controller (8.1.3).
 
 ## HCWC, column height and POS
 
@@ -391,7 +391,8 @@ Things the model does not do. One fluid at a time: seal capacity depends on the 
 so a gas column and an oil column under the same seal differ in height, and a mixed-phase
 prospect needs the gas cap and the oil leg limited by different capacities with a gas–oil contact
 between them; phases are run as separate cases. No hydrodynamics or tilted contacts; the contact
-is hydrostatic and horizontal. No compartmentalisation; a compartmentalised trap needs a contact
+is hydrostatic and horizontal, and remigration and hydraulic reconfiguration are absent for the
+same reason (Grant 2020 includes the gradient). No compartmentalisation; a compartmentalised trap needs a contact
 per compartment. Presence draws are independent (8.1.4). Calculator inputs are independent
 (8.1.4). The empirical record is discovery-conditioned, censored above and truncated below
 (8.1.7). The seismic likelihoods are elicited, not calibrated, which is why the effective sample
