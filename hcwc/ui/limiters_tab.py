@@ -307,6 +307,15 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
         "the derived closure height a spread of 33 m; correlating them at 0.9 gives 11 m. Two "
         "thirds of that spread comes from the assumption rather than the geology."
     )
+    # Audit finding P1-1, 14 Sep 2026: the presence draws are outside the copula, and the place
+    # to say so is beside the control that a reader would expect to reach them.
+    st.caption(
+        "Correlations couple depths and capacities only. Whether a limit is present, its "
+        "P(active), is drawn independently of everything, including the presence of every other "
+        "limit. Two faults that leak at correlated depths are expressible here; two faults that "
+        "stand or fall together are not, and a pair of rare, severe mechanisms is two independent "
+        "coin flips. Modelling choice; a presence copula is not implemented."
+    )
 
     if CORR_KEY not in st.session_state:
         st.session_state[CORR_KEY] = pd.DataFrame([
@@ -549,7 +558,10 @@ def render() -> None:
                 f"between the hydrocarbon and the water; the same seal holds a much shorter gas "
                 f"column than an oil one. One phase through the charge and the other through the "
                 f"seal produces a contact that belongs to no prospect. Both should be set to the "
-                f"same fluid, or the two phases run as separate cases."
+                f"same fluid, or the two phases run as separate cases.\n\n"
+                f"This check is the only link between the two calculators. Within a realisation "
+                f"the seal's hydrocarbon density and the charge's formation volume factor are "
+                f"drawn from separate streams, so the two do not share a fluid beyond its phase."
             )
 
         always = [x.name for x in limit_set.limits if x.always_active]
