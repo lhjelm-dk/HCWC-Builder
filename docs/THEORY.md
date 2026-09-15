@@ -343,13 +343,40 @@ The published regression measures the wrong quantity. What a predrill model need
 capacity `S`, the column the seal could hold; what is measured is `C = min(S, H)`, with `H` the
 closure height. Underfilled pools observe `S`. Pools filled to spill, 111 of 242, observe only
 `S ≥ H`: they are right-censored, and the seal's capacity was never tested. Hood (2019) states the
-geology; the statistical consequence had not been carried into the published estimators. Fitted
+geology, pools controlled by geometric limits "document the minimum column that the seal can
+support but not the upper limit"; the statistical consequence had not been carried into the
+published estimators. Fitted
 as a Type-I Tobit, the closure-height elasticity falls and the burial-depth elasticity roughly
 doubles, the direction physics expects since seals compact and strengthen with depth; censoring
 hid the depth signal because deep closures fill to spill more often. Dropping the censored points
 does not help: conditioning on `S < H` manufactures the same positive relationship by truncation.
-The corrected model reproduces the observed fill-to-spill rate band by band, which is what
-validates its form. A second bias remains: column height and trap height share the apex pick, so
+Simulated with seal capacity independent of closure height and 242 points to match, naive OLS
+returns a slope of 0.580, OLS after dropping the filled-to-spill points 0.543, and the censored
+MLE −0.009 against a truth of zero, at every correlation tested (`tests/test_censoring.py`). The
+corrected model reproduces the observed fill-to-spill rate band by band, which is what validates
+its form: in the 242 discoveries 45.9 % fill to spill, and drawing a column for every discovery
+at its own closure height and burial depth the corrected fit predicts 47.2 % and the published
+fit 32.1 %, both given the same spread so that only the mean function differs. The published
+estimator overstates the closure-height elasticity, 0.880 against 0.701 corrected, so its family
+fans out too far and goes the opposite way at the two ends: at 2 500 m burial it under-fills
+small closures (P50 82 m of a 100 m closure against 100 m corrected, 37 % filling to spill
+against 59 %) and over-fills the largest (514 m of an 800 m closure against 490 m). Graham et
+al.'s (2015) global 40 % fill-to-spill rate is a population average over closures below 250 m,
+not a value at 250 m; on the same basis the NCS gives 54 %, a regional difference rather
+than a discrepancy, since the NCS is charge-rich, which is Graham's own warning against global
+benchmarks without trap-specific geology.
+
+The published regression's crossing of the 1:1 line is an artefact of fitting a straight line
+to a quantity bounded by `C ≤ H`: it predicts, at small closures, a column the data cannot
+contain, and its intercept says a closure of zero height holds a column. Forcing the line
+through the origin fixes the bound and leaves the wrong model, because a line through the origin
+says the fill fraction is constant, and in the data the median fill fraction declines with
+closure height. The observed column is `min(S, H)`, a minimum of two things, one of which is the
+x-axis, and no straight line represents a minimum; the censored fit is a different model rather
+than a tidied regression, and the declining fill fraction is the signature of capacity growing
+more slowly than closure, the `h^0.70` in the corrected line. The corrected line's own crossing
+is a prediction: above it the model says the closure fills, and the observed fill-to-spill rate
+changes there. A second bias remains: column height and trap height share the apex pick, so
 a depth-conversion error manufactures a relationship no censored estimator can see. The
 corrected elasticity of about 0.70 is an upper bound.
 
@@ -368,14 +395,29 @@ but a capacity that depended on closure size would put geometry into a capillary
 the engine already takes `min(capacity, spill)`; compaction closing pore throats is the part
 with a physical reason to track burial.
 
-The benchmarks cannot be conditioned on a DHI. Graham et al. (2015) state that their synthesis
-is for the case without direct hydrocarbon indicators; Edmundson's discoveries carry no DHI flag
+The benchmarks cannot be conditioned on a DHI. Graham et al. (2015) state in their opening
+sentence that their synthesis is for column-height modelling "in the absence of direct
+hydrocarbon indicators (DHIs) or known fill controls"; Edmundson's discoveries carry no DHI flag
 and, being discoveries, are partly selected by other people's amplitudes, enriched in long
 columns because that is what detectability does. A posterior judged against them counts the DHI
 twice. The geological curve is the like-for-like comparison; the updated one reads as
 displacement.
 
-The comparison is a sanity check, not a score. Every benchmark is conditioned on discovery, so
+A benchmark is used as a curve for a closure of the prospect's size: relief is the family
+parameter, and the axis carries the column, so each curve answers, given a closure of this
+relief, how likely is a column of at least `x`. Relief on the axis would collapse each curve to a
+point, and the built prospect could not be drawn on it. The vertical drop at the right-hand end
+of every curve is the filled-to-spill probability mass, a point mass rather than a tail; no
+smooth distribution typed into a volumetrics package has one, and squashing it into a lognormal
+is the censoring error arriving one step later in the workflow. The families are kept separate
+rather than merged into one empirical prior: they are conditioned differently and disagree
+informatively, and a benchmark that agrees with the others carries less information than one
+that does not. Combined with the model, the two are averaged as quantiles rather than mixed as
+densities, so the answer lies between them rather than coming out as two humps.
+
+The comparison is a sanity check, not a score. A prospect can be optimistic on good grounds: a
+better seal than the average NCS closure, or a charge system that fills reliably, is a
+defensible belief where the evidence for it can be named. Every benchmark is conditioned on discovery, so
 part of "optimistic against the record" is a statement about which wells were written down.
 Every trap in the record had hydrocarbons in it, so the record can inform where a contact sits
 and never the chance of having one. Two selection effects remain uncorrected in every analysis:
@@ -383,7 +425,20 @@ discovery-only conditioning, and left-truncation at the well's reservoir entry, 
 small-column tail. Stacked, the record is truncated below and censored above, and both push it to
 look better filled than reality.
 
-Base rates are shown beside the model and not merged. The rule usually attached to base-rate
+Base rates are shown beside the model and not merged. Edmundson's §5.2 recommends base-rate
+figures integrated with the geological assessment, citing Milkov (2017), and gives no method;
+the part of that recommendation that carries no risk is their matrix for a prospect of the same
+dimensions beside what the limits produced. The matrix is `P(trap fill | discovery)`: used
+against the chance it would condition on success, and moving a chance would need a dataset
+containing dry holes. A cell of a few dozen discoveries is a thin basis, and letting it reshape
+a ten-thousand-realisation mechanistic model would be a strong move on weak evidence; a
+disagreement points back to the limit that causes it. Of the paper's own claims, the dataset,
+closure height as a control, the message that one predrill distribution does not fit all
+prospects, and the band-by-band calibration stand; burial depth as the weaker control does not,
+the magnitude of the closure-height control is overstated and still an upper bound, and the
+four trap-fill bins cannot be read together as a column-height distribution, since the 100 %
+bin is a censoring rate and not a fill outcome like the other three. Used as a predrill prior
+the record is optimistic at both ends. The rule usually attached to base-rate
 neglect, `b·q / (b·q + (1−b)(1−q))`, is symmetric in its two inputs, which no Bayesian update is,
 and moves the number when the two already agree: it is a Fagan nomogram with the base rate
 entered on the axis meant for a test's accuracy. Milkov's (2017) finding stands; the arithmetic
