@@ -121,6 +121,29 @@ def depth_from_porosity(porosity_frac: float) -> float:
 
 
 # --------------------------------------------------------------------------- pressures
+#: Mercury–air interfacial tension and contact angle, the laboratory pair behind every MICP
+#: displacement pressure (Purcell 1949; the values ZetaWare's and most vendors' conversions use).
+MERCURY_AIR_TENSION_DYNE_CM = 480.0
+MERCURY_AIR_CONTACT_ANGLE_DEG = 140.0
+PSI_TO_PA = 6894.757
+
+
+def pore_throat_radius_from_micp_um(displacement_pressure_psi: float) -> float:
+    """The largest connected pore-throat radius, µm, from an MICP displacement pressure.
+
+    The Washburn relation run backwards: ``r = 2·γ_Hg·|cos θ_Hg| / P_d``. A mercury–air
+    displacement pressure is what a laboratory reports for a seal sample, and it is the number
+    an assessor has when a radius is not; the calculator converts it here so the rest of the
+    balance is the same whichever was typed. 1 000 psi is about 0.11 µm; 10 000 psi about
+    0.011 µm.
+    """
+    if displacement_pressure_psi <= 0:
+        raise ValueError("the displacement pressure must be positive")
+    gamma = MERCURY_AIR_TENSION_DYNE_CM * DYNE_PER_CM_TO_N_PER_M
+    cos_theta = abs(math.cos(math.radians(MERCURY_AIR_CONTACT_ANGLE_DEG)))
+    return 2.0 * gamma * cos_theta / (displacement_pressure_psi * PSI_TO_PA) * 1e6
+
+
 def capillary_entry_pressure_pa(interfacial_tension_dyne_cm: float, contact_angle_rad: float,
                                 pore_throat_radius_m: float) -> float:
     """``Pc = 2 gamma cos(theta) / r``, in pascals.

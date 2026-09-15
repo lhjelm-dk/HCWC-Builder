@@ -46,11 +46,14 @@ TAB_COLOURS: dict[int, tuple[str, str]] = {
     1: ("#4C72B0", "Concept"),
     2: ("#DD8452", "Prospect"),
     3: ("#E8A87C", "HCWC limiters"),
-    4: ("#64B5CD", "Results"),
-    # "Results + DHI", not "Results | DHI". The pipe read as the separator between tabs, so the
-    # strip said "4.0 Results | 5.0 Results | DHI" and a first-time reader saw three tabs where
-    # there are two. The plus pairs it with 4.0 instead of splitting it.
-    5: ("#3E8FA3", "Results + DHI"),
+    # Named for the object, the contact, and what conditions it, matching the basis chips the
+    # tabs carry ("geological", "given the DHI", "given the well"). Lars, 15 Sep 2026: "Results"
+    # said nothing about what the result was, and tab 5 applies a well penetration as well as
+    # a DHI, so its name says both. Brackets rather than a pipe: the pipe read as the separator
+    # between tabs, so the strip once said "4.0 Results | 5.0 Results | DHI" and a first-time
+    # reader saw three tabs where there are two.
+    4: ("#64B5CD", "HCWC (geological)"),
+    5: ("#3E8FA3", "HCWC (DHI + well)"),
     # "Benchmarks", not "Empirical". The tab holds the published column-height record this tool
     # compares against; "Empirical" named the *kind* of thing it is rather than what a reader would
     # go there to do, and a first-time reader could not tell it from the theory tab.

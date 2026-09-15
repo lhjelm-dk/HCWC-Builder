@@ -229,12 +229,37 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         help="How strongly the rock prefers water to hydrocarbon. 0° is fully water-wet, which "
              "gives the strongest seal. Rarely measured, so a range from 0 is the usual input.")
 
+    # The seal's throats can be stated as a radius or as an MICP displacement pressure, which
+    # is what a laboratory reports and what ZetaWare's seal calculator takes (plan A1b, 15 Sep
+    # 2026). The pressure is converted to a radius here, so downstream nothing changes; the
+    # converted pair is written to the radius key so the base seal's same-as-top path and a
+    # saved prospect read one value whichever form was typed.
+    throats_from = st.radio(
+        "Seal throats from", ["Pore-throat radius", "MICP displacement pressure"],
+        horizontal=True, key=f"{key}_throats",
+        help="A radius, where one has been estimated; or the mercury–air displacement pressure "
+             "from a mercury-injection test on the seal, converted to the largest connected "
+             "throat with 480 dyne/cm and 140°.")
     c4, c5 = st.columns(2)
-    r_seal = c4.slider("Seal pore-throat radius (µm)", 0.01, 2.0, (0.01, 0.10), 0.01,
-                       key=f"{key}_rs",
-                       help="The most sensitive input, because `P_c` goes as `1/r`; the spread "
-                            "here dominates the calculator. A good shale is at or below 0.1 µm, "
-                            "where the default range ends.")
+    if throats_from == "MICP displacement pressure":
+        p_d = c4.slider("MICP displacement pressure (psi)", 50.0, 20000.0, (1000.0, 10000.0),
+                        50.0, key=f"{key}_pd",
+                        help="Mercury–air, from the laboratory. The pressure at which mercury "
+                             "first enters the connected pore network, which the Washburn "
+                             "relation turns into the largest connected throat. Higher pressure, "
+                             "tighter seal.")
+        # High pressure is a small throat, so the pair inverts; the slider's floor holds it.
+        r_pair = sorted(seals.pore_throat_radius_from_micp_um(p) for p in p_d)
+        r_seal = (max(0.01, round(r_pair[0], 3)), max(0.01, round(r_pair[1], 3)))
+        st.session_state[f"{key}_rs"] = r_seal
+        c4.caption(f"Converted: {r_pair[0]:.3f}–{r_pair[1]:.3f} µm largest connected throat"
+                   + (" (floored at 0.01 µm)." if r_pair[0] < 0.01 else "."))
+    else:
+        r_seal = c4.slider("Seal pore-throat radius (µm)", 0.01, 2.0, (0.01, 0.10), 0.01,
+                           key=f"{key}_rs",
+                           help="The most sensitive input, because `P_c` goes as `1/r`; the spread "
+                                "here dominates the calculator. A good shale is at or below 0.1 µm, "
+                                "where the default range ends.")
     r_res = c5.slider("Reservoir pore-throat radius (µm)", 0.1, 10.0, (2.0, 3.5), 0.1,
                       help="The reservoir's own throats, which set the pressure already in the "
                            "column. They must be wider than the seal's; that difference is what "
