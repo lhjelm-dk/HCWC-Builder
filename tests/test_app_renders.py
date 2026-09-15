@@ -221,11 +221,17 @@ def test_a_bracketing_penetration_is_the_sharpest_evidence_the_tool_takes():
         c = np.asarray(at.session_state["dhi_overlay"]["contact_samples"], float)
         return float(np.percentile(c, 90) - np.percentile(c, 10))
 
-    p90, p50, _ = _contact_quantiles()
-    bracket = _well(well_in_hc_on=True, well_in_hc=p90)
+    # Hydrocarbons proven 40 m above the water, from a well taken as connected: a real bracket.
+    # With the proven depth at the contact's own P90 the bracket excluded almost nothing, and at
+    # the shipped connection chance of 0.6 the floor of 0.4 under the likelihood dominates both
+    # cases, so the two spreads differed by a fraction of a metre and the comparison was decided
+    # by the resample's noise -- which the weaker shipped pick of 15 Sep 2026 (c = 0.36) tipped
+    # the wrong way. The proposition is about the bracket, so the floor is lowered to show it.
+    _, p50, _ = _contact_quantiles()
+    bracket = _well(well_in_hc_on=True, well_in_hc=p50 - 40.0, well_in_connected=0.95)
     _no_exception(bracket, "a bracketing penetration")
-    assert spread(bracket) < spread(_well())
-    assert spread(bracket) < spread(_run())
+    assert spread(bracket) < 0.9 * spread(_well(well_in_connected=0.95))
+    assert spread(bracket) < 0.9 * spread(_run())
 
 
 def test_hydrocarbons_below_the_water_leg_is_refused_where_it_is_typed():

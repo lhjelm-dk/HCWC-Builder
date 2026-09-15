@@ -48,7 +48,7 @@ PICK_M = 2250.0
 #: `P(the picked event is the contact | G, contact attributes)`, the app's own default. This
 #: *is* `p_valid`: conditional on hydrocarbons, because the realisations it weights are. The
 #: chance of hydrocarbons enters once, through `P(G)` updated by the amplitude, and never here.
-CONTACT_GIVEN_HC = 0.70
+CONTACT_GIVEN_HC = 0.36
 #: The app's own default. Figures are drawn at the count a reader would
 #: reproduce, not at a smoother one.
 N = 10_000
