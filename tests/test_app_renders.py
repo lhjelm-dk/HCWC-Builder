@@ -1673,7 +1673,8 @@ class TestThePageIsNotAnEssay:
             "Beha et al. (2012)",                       # 8.1.2, the precedent
             "the elicitation effort belongs on",        # 8.1.2, the ranking
             "A prior and a likelihood are the same kind of object",   # tab 8.1.7, and its worked example
-            "in the absence of direct hydrocarbon",     # tab 6.0 §7, folded
+            # Graham's own words moved from tab 6.0 §7 to 8.1.7 on 16 Sep 2026.
+            "hydrocarbon indicators (DHIs) or known fill controls",
             "The censored MLE crossing is a prediction",  # tab 6.0 §2, folded
         ):
             assert phrase in blob, f"folding lost: {phrase!r}"
