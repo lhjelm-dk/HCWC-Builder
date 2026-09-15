@@ -1,9 +1,20 @@
-# The test suite runs on every push.
+# The test suite runs once per pull-request push and once per merge to main.
+#
+# Until 16 Sep 2026 it ran on every push *and* every pull request, on two Python versions, so
+# one push to a PR branch cost four jobs and the merge two more; that used 90 % of the account's
+# Actions minutes in a fortnight. Now: a pull request runs one job (3.12), a superseded push
+# cancels the run it replaces, and the 3.11 floor is checked on main only. The full suite is run
+# locally before every PR in any case; CI is the confirmation, not the first run.
 name: tests
 
 on:
-  push:
   pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pytest:
@@ -11,8 +22,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The floors in requirements.txt need 3.11 or newer; see the note there.
-        python-version: ["3.11", "3.12"]
+        # The floors in requirements.txt need 3.11 or newer; see the note there. The floor
+        # version is checked on main only.
+        python-version: ${{ github.event_name == 'push' && fromJSON('["3.11", "3.12"]') || fromJSON('["3.12"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
