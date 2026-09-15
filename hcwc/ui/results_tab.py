@@ -95,7 +95,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # Named for the evidence actually in the posterior. A prospect updated by an offset
     # penetration alone reaches this page too, and a heading reading "given the DHI" on it would be
     # simply false -- the one thing a basis label must never be.
-    st.subheader(f"Results | {theme.evidence_basis()}" if given_dhi else "Results")
+    st.subheader(f"HCWC | {theme.evidence_basis()}" if given_dhi else "HCWC | geological")
     if given_dhi:
         theme.basis_banner(
             theme.GIVEN_DHI,

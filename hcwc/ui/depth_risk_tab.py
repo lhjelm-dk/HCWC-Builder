@@ -274,7 +274,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
 
     if show_dhi and overlay is None:
         st.caption(
-            "The DHI update has not been computed yet. Opening tab 5.0 (Results + DHI) once "
+            "The DHI update has not been computed yet. Opening tab 5.0 HCWC (DHI + well) once "
             "enters the evidence; the curve appears here on the next interaction, because that "
             "tab computes it after this one has drawn."
         )

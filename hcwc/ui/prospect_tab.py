@@ -355,7 +355,7 @@ def render() -> None:
              "and nothing else changes, because a DHI never edits the geological model.")
     st.session_state["dhi_on"] = bool(dhi_on)
     st.caption(
-        "With this on, Results + DHI and Depth risk + DHI become live, carrying the evidence "
+        "With this on, tab 5.0 HCWC (DHI + well) becomes live, carrying the evidence "
         "inputs and the Bayesian update. Tab 4.0 stays purely geological either way: a fluid "
         "indicator senses whether a reservoir exists and what fills it, not which of charge, "
         "closure or retention failed."
