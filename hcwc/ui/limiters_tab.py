@@ -298,23 +298,16 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
         "correlation is weaker than the one stated."
     )
     st.info(
-        "Apex to a depth-stated limit is the pair most worth setting. A spill point and the apex "
-        "are picked off the same depth-converted surface, so a depth-conversion error moves both "
-        "together. Left independent, a realisation can put the spill above the apex; it is also "
-        "the errors-in-variables coupling that inflates the published column-height regression "
-        "on tab 6.0.\n\n"
-        "On a 120 m apex uncertainty with a mapped spill, treating the two as independent gives "
-        "the derived closure height a spread of 33 m; correlating them at 0.9 gives 11 m. Two "
-        "thirds of that spread comes from the assumption rather than the geology."
+        "Apex to a depth-stated limit is the pair most worth setting: the spill point and the "
+        "apex are picked off the same surface, and left independent a realisation can put the "
+        "spill above the apex. Method: see 8.1.4."
     )
     # Audit finding P1-1, 14 Sep 2026: the presence draws are outside the copula, and the place
     # to say so is beside the control that a reader would expect to reach them.
     st.caption(
-        "Correlations couple depths and capacities only. Whether a limit is present, its "
-        "P(active), is drawn independently of everything, including the presence of every other "
-        "limit. Two faults that leak at correlated depths are expressible here; two faults that "
-        "stand or fall together are not, and a pair of rare, severe mechanisms is two independent "
-        "coin flips. Modelling choice; a presence copula is not implemented."
+        "Correlations couple depths and capacities only. Whether a limit is present is drawn "
+        "independently of everything, including the presence of every other limit. Modelling "
+        "choice; a presence copula is not implemented. Method: see 8.1.4."
     )
 
     if CORR_KEY not in st.session_state:
@@ -386,13 +379,9 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
                       showlegend=False, xaxis_tickformat=".0%")
     n.plot(fig,
            f"The share of realisations in which each limit set the contact, at the current "
-           f"inputs. {live[0][0]} sets it in {live[0][1]:.0%} of realisations. Limits near the "
-           f"bottom do not move the answer and can stay at rough values; the elicitation effort "
-           f"belongs on the top two or three.\n\n"
-           f"All realisations, not successes only. At elicitation time the question is what "
-           f"controls this closure, and a limit that usually fails the prospect outright is the "
-           f"one least suited to a default. The view restricted to successes, and the shift "
-           f"between the two, is on tab 4.0 → Contact and chance §5.")
+           f"inputs. {live[0][0]} sets it in {live[0][1]:.0%} of realisations; limits near the "
+           f"bottom can stay at rough values. All realisations, not successes only; the view "
+           f"restricted to successes is on tab 4.1.5. Method: see 8.1.2.")
     idle = [name for name, share in ranking if share <= 0.0005]
     if idle:
         st.caption(
@@ -409,10 +398,8 @@ def render() -> None:
         "Every mechanism that may stop the column going deeper, grouped by the risk element it "
         "belongs to. Each has a probability of being present and, given that it is, a "
         "distribution of the depth or capacity at which it applies. In every realisation the "
-        "shallowest active limit sets the contact.\n\n"
-        "Limits are sampled, not blended. Merging a leak into the background column-height "
-        "distribution suppresses realisations above the leak, and can raise apparent prospect "
-        "volume when a leak is added (Hood 2024). Method: see 8.1.2."
+        "shallowest active limit sets the contact. Limits are sampled, not blended. Method: "
+        "see 8.1.1 and 8.1.2."
     )
 
     summary_slot = st.container()
