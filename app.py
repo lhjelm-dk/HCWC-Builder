@@ -671,11 +671,12 @@ with tab8:
     )
 
     theme.heading(8, "1 · Theory")
-    # Five notes, one picker. Until 7 Sep 2026 this section also carried five *paper reviews* --
-    # whether Beha, Hood, Monigle, Lowry and the seal-capacity literature say what this app claims
-    # they say. Lars's call was that a user does not want to browse those. They are kept in
-    # `docs/` and indexed in `docs/NEXT_PLAN.md`, which is the internal document by design; the
-    # bibliography in section 3 names them where they bear on a citation.
+    # Six notes, each under its own numbered sub-heading (Lars, 15 Sep 2026; they were behind
+    # one radio until then). Until 7 Sep 2026 this section also carried five paper reviews --
+    # whether Beha, Hood, Monigle, Lowry and the seal-capacity literature say what this app
+    # claims they say. Lars's call was that a user does not want to browse those. They are kept
+    # in `docs/` and indexed in `docs/NEXT_PLAN.md`; the bibliography in section 3 names them
+    # where they bear on a citation.
     st.markdown(
         "*Competing limits* is the construction the tool rests on: why the contact is derived "
         "from the mechanisms rather than entered, and why the reference data are censored. "
@@ -684,34 +685,33 @@ with tab8:
         "is a working note on how POS and the DHI update fit together. *Benchmark sources* is "
         "a negative result: what was searched for and not found."
     )
-
-    _theory = st.radio(
-        "Theory note",
-        ["Competing limits", "Prior or likelihood?", "Weight, not Bayes", "Base rates",
-         "DHI alignment", "Benchmark sources"],
-        captions=["the construction, and why limits are not blended",
-                  "why a base rate is not evidence",
-                  "why tab 6.0 §8 weights rather than multiplies",
-                  "the symmetric rule, and why it cannot be Bayes",
-                  "working note · POS and the DHI update",
-                  "whether a second public dataset exists"],
-        horizontal=True, label_visibility="collapsed", key="theory_doc")
-    _theory_path = {"Competing limits": "COMPETING_LIMITS.md",
-                    "Prior or likelihood?": "LIKELIHOOD_OR_PRIOR.md",
-                    "Weight, not Bayes": "WEIGHT_NOT_BAYES.md",
-                    "Base rates": "BASE_RATE_NEGLECT.md",
-                    "DHI alignment": "DHI_alignment.md",
-                    "Benchmark sources": "BENCHMARK_SOURCES.md"}[_theory]
-    _theory_target = DOCS / _theory_path
-    if _theory_target.exists():
-        _render_with_figures(_theory_target.read_text(encoding="utf-8"), DOCS)
-    else:
-        st.info(f"`docs/{_theory_path}` not found in this checkout.")
+    THEORY_NOTES = (
+        ("Competing limits", "COMPETING_LIMITS.md"),
+        ("Prior or likelihood?", "LIKELIHOOD_OR_PRIOR.md"),
+        ("Weight, not Bayes", "WEIGHT_NOT_BAYES.md"),
+        ("Base rates", "BASE_RATE_NEGLECT.md"),
+        ("DHI alignment", "DHI_alignment.md"),
+        ("Benchmark sources", "BENCHMARK_SOURCES.md"),
+    )
+    for _k, (_title, _file) in enumerate(THEORY_NOTES, start=1):
+        theme.subheading(8, 1, _k, _title)
+        _target = DOCS / _file
+        if _target.exists():
+            # The note's own title line goes: the sub-heading above is its title here.
+            _lines = _target.read_text(encoding="utf-8").split("\n")
+            if _lines and _lines[0].startswith("# "):
+                _lines = _lines[1:]
+            _render_with_figures("\n".join(_lines), DOCS)
+        else:
+            st.info(f"`docs/{_file}` not found in this checkout.")
+        if _title == "Prior or likelihood?":
+            _worked_example_slot = st.container()
 
     # The worked example that used to be section 1 in full, on arrival, above everything else.
     # It is one illustration of one of the five notes above and it now sits where an illustration
     # belongs -- behind its own summary, after the note it illustrates.
-    with st.expander("Worked: what multiplying a base rate in would do to this prospect"):
+    with _worked_example_slot, st.expander(
+            "Worked: what multiplying a base rate in would do to this prospect"):
         st.markdown(
             "A base rate is a prior over column height, and the tool already has one, so "
             "multiplying it in counts the same belief twice. A DHI can be a likelihood because "
@@ -852,6 +852,16 @@ with tab8:
     )
     _refs = DOCS / "REFERENCES.md"
     if _refs.exists():
-        _render_with_figures(_refs.read_text(encoding="utf-8"), DOCS)
+        # Each `## ` section of the bibliography becomes 8.3.k (Lars, 15 Sep 2026), numbered
+        # here so the document keeps plain headings of its own.
+        _k = 0
+        _out = []
+        for _line in _refs.read_text(encoding="utf-8").split("\n"):
+            if _line.startswith("## "):
+                _k += 1
+                _out.append(theme.subheading_markdown(8, 3, _k, _line[3:].strip()))
+            else:
+                _out.append(_line)
+        _render_with_figures("\n".join(_out), DOCS)
     else:
         st.info("`docs/REFERENCES.md` not found in this checkout.")

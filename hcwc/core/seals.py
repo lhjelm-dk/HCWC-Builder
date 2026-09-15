@@ -374,9 +374,13 @@ class SealInputs:
     hc_density_g_cm3: tuple[float, float] = (0.70, 0.85)
     fluid: str = "Gas"
     subtract_reservoir: bool = True
-    #: Oil–water tension, used for ``fluid == "Oil"`` only; the gas case follows its
-    #: temperature line. Elicited, and flat in temperature: see :data:`DEFAULT_OIL_TENSION_DYNE_CM`.
+    #: Oil–water tension, used for ``fluid == "Oil"`` only. Elicited, and flat in
+    #: temperature: see :data:`DEFAULT_OIL_TENSION_DYNE_CM`.
     oil_tension_dyne_cm: tuple[float, float] = DEFAULT_OIL_TENSION_DYNE_CM
+    #: Gas–water tension, used for ``fluid == "Gas"`` only. ``None`` follows the temperature
+    #: line :func:`interfacial_tension_gas_dyne_cm` per realisation, the default; a range
+    #: overrides it, flat in temperature, where a measured value exists (15 Sep 2026).
+    gas_tension_dyne_cm: tuple[float, float] | None = None
 
     def __post_init__(self) -> None:
         for name in ("temperature_c", "contact_angle_deg", "seal_radius_um",
@@ -387,6 +391,12 @@ class SealInputs:
                 raise ValueError(f"{name}: the high value must not be below the low one")
         if self.oil_tension_dyne_cm[0] <= 0:
             raise ValueError("the oil–water tension must be positive")
+        if self.gas_tension_dyne_cm is not None:
+            lo, hi = self.gas_tension_dyne_cm
+            if hi < lo:
+                raise ValueError("gas_tension_dyne_cm: the high value must not be below the low one")
+            if lo <= 0:
+                raise ValueError("the gas–water tension must be positive")
         if self.seal_radius_um[1] >= self.reservoir_radius_um[0]:
             raise ValueError(
                 "the seal's pore throats overlap the reservoir's. A seal is a seal because its "
@@ -417,7 +427,8 @@ def sample_max_column_m(inputs: SealInputs, n: int, seed: int = 20260825) -> np.
 
     temperature = u(inputs.temperature_c)
     if inputs.fluid == "Gas":
-        gamma = 91.657 * np.exp(-0.0126 * temperature)
+        gamma = (91.657 * np.exp(-0.0126 * temperature) if inputs.gas_tension_dyne_cm is None
+                 else u(inputs.gas_tension_dyne_cm))
     else:
         # Elicited and flat in temperature; the line this replaced is recorded at
         # DEFAULT_OIL_TENSION_DYNE_CM. The temperature draw still happens, so the gas and oil
