@@ -1330,7 +1330,7 @@ class TestTheCalibrationComparesBothBases:
 class TestEveryResultExhibitDeclaresItsBasis:
     """Lars, 4 Sep 2026: *"check is geological and |dhi represented! ok?"* On tabs 4.0 and 5.0 it
     was not: 3 of 32 exhibits carried a basis chip, and nineteen of the rest were **byte-identical
-    captions across the two tabs** — `Figure 4.1.1` and `Figure 5.3.1` were the same words over two
+    captions across the two tabs** — `Figure 4.1.1` and `Figure 5.2.1` (then 5.3.1) were the same words over two
     different distributions.
 
     The tab-level banner said which, and its own docstring says why that was the fix: *"a reader who
@@ -1353,13 +1353,13 @@ class TestEveryResultExhibitDeclaresItsBasis:
 
     @staticmethod
     def _sequence(label):
-        """`Figure 5.3.6` -> `5.3` — the sub-tab sequence it belongs to."""
+        """`Figure 5.2.6` -> `5.2` — the sub-tab sequence it belongs to."""
         parts = label.split()[-1].split(".")
         return ".".join(parts[:2])
 
     @pytest.mark.parametrize("sequence,expected", [("4.1", "GEOLOGICAL"), ("4.2", "GEOLOGICAL"),
-                                                   ("5.3", "GIVEN THE DHI"),
-                                                   ("5.4", "GIVEN THE DHI")])
+                                                   ("5.2", "GIVEN THE DHI"),
+                                                   ("5.3", "GIVEN THE DHI")])
     def test_every_exhibit_on_a_result_sub_tab_carries_its_chip(self, sequence, expected):
         captions = self._captions(_run())
         mine = {k: v for k, v in captions.items() if self._sequence(k) == sequence}
@@ -1371,14 +1371,14 @@ class TestEveryResultExhibitDeclaresItsBasis:
         """The precise defect: same words, two distributions, nothing to tell them apart."""
         captions = self._captions(_run())
         # Renumbered 15 Sep 2026 when 4.1 gained the chance curve (3) and the well (4).
-        for a, b in (("Figure 4.1.1", "Figure 5.3.1"), ("Figure 4.1.4", "Figure 5.3.4"),
-                     ("Table 4.1.6", "Table 5.3.6"), ("Figure 4.2.2", "Figure 5.4.2")):
+        for a, b in (("Figure 4.1.1", "Figure 5.2.1"), ("Figure 4.1.4", "Figure 5.2.4"),
+                     ("Table 4.1.6", "Table 5.2.6"), ("Figure 4.2.2", "Figure 5.3.2")):
             assert captions[a] != captions[b], f"{a} and {b} still read identically"
 
     def test_the_chip_follows_the_evidence_on_a_well_only_prospect(self):
         """The sequence is handed the token; the chip renders whatever the weights actually hold."""
         captions = self._captions(_run(**WELL_ONLY))
-        updated = [v for k, v in captions.items() if self._sequence(k) in ("5.3", "5.4")]
+        updated = [v for k, v in captions.items() if self._sequence(k) in ("5.2", "5.3")]
         assert updated
         assert all("GIVEN THE WELL" in v for v in updated)
         assert not any("GIVEN THE DHI" in v for v in updated)
@@ -1391,7 +1391,7 @@ class TestEveryResultExhibitDeclaresItsBasis:
             sequence = self._sequence(label)
             if sequence in ("4.1", "4.2"):
                 assert "GEOLOGICAL" in caption, f"{label} exports with no basis"
-            elif sequence in ("5.3", "5.4"):
+            elif sequence in ("5.2", "5.3"):
                 assert "GIVEN THE DHI" in caption, f"{label} exports with no basis"
 
     def test_a_sequence_with_no_basis_adds_no_chip(self):
@@ -1538,7 +1538,7 @@ class TestTheFullReportCarriesTheTables:
 
         tables = _run().session_state[numbering.TABLES_KEY]
         assert "GEOLOGICAL" in tables["Table 4.1.6"][1]
-        assert "GIVEN THE DHI" in tables["Table 5.3.6"][1]
+        assert "GIVEN THE DHI" in tables["Table 5.2.6"][1]
 
     def test_a_failed_figure_is_still_reported_and_the_tables_survive_it(self):
         """The missing-figure path had to keep working once the loop walked both kinds."""
@@ -1675,7 +1675,7 @@ class TestThePageIsNotAnEssay:
             # when tab 1 moved to the report tone. The claim that section exists to make is
             # the one pinned now.
             "the elicitation effort belongs on the top two or three",
-            "A prior and a likelihood are the same kind of object",   # tab 8.0 §1, folded
+            "A prior and a likelihood are the same kind of object",   # tab 8.1.7, and its worked example
             "in the absence of direct hydrocarbon",     # tab 6.0 §7, folded
             "The censored MLE crossing is a prediction",  # tab 6.0 §2, folded
         ):
@@ -1698,19 +1698,21 @@ class TestThePageIsNotAnEssay:
 
 
 class TestTheArgumentsLiveInDocuments:
-    """The docs split, 5 Sep 2026. Three essays that were pure reasoning — no figure, no computed
-    number — moved out of the tabs into `docs/`, rendered by the tab 8.0 viewer and referenced from
-    the tab that refuses to do the thing they argue against.
+    """The docs split, 5 Sep 2026, moved three essays that were pure reasoning out of the tabs
+    into `docs/`. On 15 Sep 2026 they and the other theory notes were folded into one document,
+    `docs/THEORY.md`, rendered on tab 8 as 8.1 and 8.1.1 to 8.1.9, with the superseded notes kept
+    under `docs/superseded/`. The tabs state a conclusion and point at a number.
 
     **The viewer fails silently by design.** A missing file gets *"not found in this checkout"*
     rather than an exception, which is right for a deployment without the docs folder and wrong as
     the only check that a registered document exists.
     """
 
+    #: One phrase per argument that used to be its own essay, now a paragraph of 8.1.x.
     DOCS = {
-        "Prior or likelihood?": ("LIKELIHOOD_OR_PRIOR.md", "the same kind of object"),
-        "Weight, not Bayes": ("WEIGHT_NOT_BAYES.md", "removes 81 % of the spread"),
-        "Base rates": ("BASE_RATE_NEGLECT.md", "The rule is symmetric"),
+        "Prior or likelihood?": ("THEORY.md", "the same kind of object"),
+        "Weight, not Bayes": ("THEORY.md", "conditions on the geometry twice"),
+        "Base rates": ("THEORY.md", "is symmetric in its two inputs"),
     }
 
     def test_every_registered_document_exists(self):
@@ -1726,16 +1728,21 @@ class TestTheArgumentsLiveInDocuments:
         missing = sorted(name for name in named if not (root / "docs" / name).exists())
         assert not missing, f"registered but absent from docs/: {missing}"
 
-    #: Tab 8.0 was restructured on 7 Sep 2026 into Theory / The paper / References, and on
-    #: 15 Sep 2026 the theory picker became six numbered sub-sections, 8.1.1 to 8.1.6, so a
-    #: reader can be sent to a number rather than to a radio option.
-    THEORY_ORDER = ("Competing limits", "Prior or likelihood?", "Weight, not Bayes",
-                    "Base rates", "DHI alignment", "Benchmark sources")
+    #: Tab 8.0 was restructured on 7 Sep 2026 into Theory / The paper / References; on
+    #: 15 Sep 2026 the theory became one document with nine numbered sub-sections, so a reader
+    #: can be sent to "8.1.5" rather than to a radio option.
+    THEORY_ORDER = ("Why HCWC is an output, not a generic distribution",
+                    "Competing geological limits", "HCWC, column height and POS",
+                    "Correlation and dependence", "DHI updating",
+                    "Detection, contact attribution and absence",
+                    "Empirical benchmarks and censoring", "Validation and numerical checks",
+                    "Assumptions and limitations")
 
     def test_the_moved_arguments_are_reachable_and_intact(self):
         at = _run()
         _no_exception(at, "tab 8")
         blob = "\n".join(str(m.value) for m in at.get("markdown"))
+        assert "8.1 The model in one page" in blob
         for k, title in enumerate(self.THEORY_ORDER, start=1):
             assert f"8.1.{k} · {title}" in blob, f"{title} is not sub-section 8.1.{k}"
         for label, (_, phrase) in self.DOCS.items():
@@ -1743,6 +1750,32 @@ class TestTheArgumentsLiveInDocuments:
         assert "not found in this checkout" not in blob
         assert not [r for r in at.get("radio") if "Prior or likelihood?" in list(r.options)], (
             "the theory picker is back")
+
+    def test_the_walkthrough_and_the_worked_example_sit_under_their_sections(self):
+        """Two live pieces of the tool render inside the theory: the DHI walkthrough under
+        8.1.5 and the base-rate worked example under 8.1.7. Order on the page is the check."""
+        at = _run(dhi_toggle=True)
+        blob = "\n".join(str(m.value) for m in at.get("markdown"))
+        i5, i6 = blob.index("8.1.5 · DHI updating"), blob.index("8.1.6 · Detection")
+        assert i5 < blob.index("Step 1", i5) < i6, "the walkthrough is not under 8.1.5"
+        i7, i8 = blob.index("8.1.7 · Empirical"), blob.index("8.1.8 · Validation")
+        assert i7 < blob.index("counts the same belief twice", i7) < i8, (
+            "the worked example is not under 8.1.7")
+
+    def test_the_superseded_notes_are_kept_off_screen(self):
+        """*Files are moved, not deleted.* The five notes 8.1 replaced stay readable in
+        docs/superseded/, indexed by a README, and none is registered on tab 8 any more."""
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parent.parent
+        notes = ["COMPETING_LIMITS.md", "LIKELIHOOD_OR_PRIOR.md", "WEIGHT_NOT_BAYES.md",
+                 "BASE_RATE_NEGLECT.md", "BENCHMARK_SOURCES.md"]
+        missing = [n for n in notes if not (root / "docs" / "superseded" / n).exists()]
+        assert not missing, f"a superseded note was deleted rather than moved: {missing}"
+        readme = (root / "docs" / "superseded" / "README.md").read_text(encoding="utf-8")
+        assert all(n in readme for n in notes), "docs/superseded/README.md does not list every note"
+        source = (root / "app.py").read_text(encoding="utf-8")
+        assert not [n for n in notes if n in source], "a superseded note is back on screen"
 
     def test_the_references_are_numbered_sub_sections(self):
         """8.3.1 onward, one per `## ` heading of docs/REFERENCES.md, with Beha in Method and
@@ -1788,18 +1821,21 @@ class TestTheArgumentsLiveInDocuments:
 
     def test_the_tabs_still_state_the_conclusion_and_say_where_to_read_it(self):
         """A pointer with no conclusion is worse than the essay: the reader at the slider has to
-        leave the page to find out whether it matters to them."""
+        leave the page to find out whether it matters to them. Since 15 Sep 2026 the pointer is a
+        section number, "Method: see 8.1.x", not an essay title."""
         at = _run()
         blob = "\n".join(str(e.value) for kind in ("markdown", "caption", "info", "warning")
                           for e in at.get(kind))
-        for conclusion, pointer in (
-            ("would count the geometry twice", "*Weight, not Bayes*"),
-            ("returning the same answer when its two inputs are swapped", "*Base rates*"),
-            ("whether it carries something the model has not already used",
-             "*Prior or likelihood?*"),
+        for conclusion in (
+            "would count the geometry twice",
+            "returning the same answer when its two inputs are swapped",
+            "whether it carries something the model has not already used",
         ):
             assert conclusion in blob, f"the conclusion went with the essay: {conclusion!r}"
-            assert pointer in blob, f"nothing points at {pointer}"
+        assert "Method: see 8.1.7" in blob, "nothing points at 8.1.7"
+        for stale in ("*Weight, not Bayes*", "*Base rates*", "*Prior or likelihood?*",
+                      "tab 8.0", "Tab 8.0"):
+            assert stale not in blob, f"a pointer still names the old essay or tab: {stale!r}"
 
     def test_no_moved_essay_is_still_duplicated_in_a_tab(self):
         """The split has to be a move, not a copy — two versions of one argument drift."""
@@ -2003,9 +2039,11 @@ class TestTheIndependenceAssumptionsAreStatedWhereTheyBite:
     def test_the_seal_note_is_labelled_a_modelling_choice(self):
         """CLAUDE.md, 15 Sep 2026: every assumption in the open is labelled elicited, heuristic
         or modelling choice."""
-        blob = self._blob(_run(**self.CALCULATORS))
-        start = blob.index("cannot reach inside a calculator")
-        assert "Modelling choice" in blob[start - 600:start + 200]
+        # The same sentence opens a paragraph of 8.1.4, so the search is over the captions, where
+        # the note on tab 3.0 is, rather than over everything on screen.
+        captions = "\n".join(str(c.value) for c in _run(**self.CALCULATORS).caption)
+        start = captions.index("cannot reach inside a calculator")
+        assert "Modelling choice" in captions[start - 600:start + 200]
 
 
 class TestTabsFourAndFiveOfferTheSameControls:
@@ -2048,5 +2086,5 @@ class TestTabsFourAndFiveOfferTheSameControls:
             m = re.match(r"\*\*(Figure|Table) (\d\.\d)\.(\d+)\*\*", str(c.value))
             if m:
                 seen.setdefault(m.group(2), []).append(m.group(1))
-        assert seen["4.1"] == seen["5.3"], (seen["4.1"], seen["5.3"])
-        assert seen["4.2"] == seen["5.4"], (seen["4.2"], seen["5.4"])
+        assert seen["4.1"] == seen["5.2"], (seen["4.1"], seen["5.2"])
+        assert seen["4.2"] == seen["5.3"], (seen["4.2"], seen["5.3"])

@@ -278,7 +278,7 @@ def subheading_markdown(tab: int, section: int, item: int, text: str) -> str:
     """``8.3.2 · Empirical column-height data`` as a level-4 Markdown heading in the tab's colour.
 
     A third level, for a section that is itself a list of documents or notes: tab 8's theory
-    notes (8.1.1 to 8.1.6) and its bibliography's parts (8.3.1 onward), added 15 Sep 2026 so a
+    sections (8.1.1 to 8.1.9) and its bibliography's parts (8.3.1 onward), added 15 Sep 2026 so a
     reader can be sent to "8.1.4" rather than to a radio option.
     """
     return (f"<h4 style='color:{accent(tab)};margin-top:1.4rem'>"

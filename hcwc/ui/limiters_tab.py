@@ -412,7 +412,7 @@ def render() -> None:
         "shallowest active limit sets the contact.\n\n"
         "Limits are sampled, not blended. Merging a leak into the background column-height "
         "distribution suppresses realisations above the leak, and can raise apparent prospect "
-        "volume when a leak is added (Hood 2024). The theory note on tab 8.0 sets this out."
+        "volume when a leak is added (Hood 2024). Method: see 8.1.2."
     )
 
     summary_slot = st.container()
