@@ -1953,3 +1953,40 @@ class TestThePaperAgreesWithTheAppItDescribes:
         assert "_render_with_figures" in source, (
             "the article is being passed straight to st.markdown, which cannot load its figures")
         assert "st.image(str(target)" in source
+
+
+class TestTheIndependenceAssumptionsAreStatedWhereTheyBite:
+    """Audit findings P1-1, P1-2 and P1-3, 14 Sep 2026.
+
+    Three independence assumptions were stated once, on tab 1 or in a docstring, and nowhere a
+    reader setting the affected control would see them: presence draws are outside the copula,
+    calculator inputs are independent uniforms the correlation editor cannot reach, and the
+    seal and charge calculators share a phase and not a fluid. Each is now beside its control.
+    """
+
+    @staticmethod
+    def _blob(at):
+        return "\n".join(str(e.value) for kind in ("markdown", "caption", "info", "warning",
+                                                     "error")
+                         for e in at.get(kind))
+
+    #: The seal and fracture blocks open typed, so their calculators, and the notes inside
+    #: them, render only when chosen.
+    CALCULATORS = {"lim_Top seal (capillary)_src": "seal", "lim_Top seal (fracture)_src": "fracture"}
+
+    def test_each_assumption_is_beside_its_control(self):
+        blob = self._blob(_run(**self.CALCULATORS))
+        for phrase in (
+            "drawn independently of everything, including the presence of every other",  # P1-1
+            "cannot reach inside a calculator",                                          # P1-2 seal
+            "Stress and pore pressure are sampled as independent uniforms",              # P1-2 mech
+            "share a phase and not a fluid",                                             # P1-3
+        ):
+            assert phrase in blob, f"not stated where it bites: {phrase!r}"
+
+    def test_the_seal_note_is_labelled_a_modelling_choice(self):
+        """CLAUDE.md, 15 Sep 2026: every assumption in the open is labelled elicited, heuristic
+        or modelling choice."""
+        blob = self._blob(_run(**self.CALCULATORS))
+        start = blob.index("cannot reach inside a calculator")
+        assert "Modelling choice" in blob[start - 600:start + 200]
