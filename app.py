@@ -171,9 +171,15 @@ New here? Start with the tabs in this order.
 - **7.0 Export** — contact percentiles for predrill volumetric tools, with the distribution
   basis stated.
 
-The worked example on **2.0 Prospect** fills every input for a real prospect.
         """
     )
+    # Plan item A3, 15 Sep 2026: the examples were a sentence here pointing at a collapsed
+    # expander on tab 2. One click on the first screen is the difference between meeting the
+    # tool and reading about it.
+    st.markdown("Two shipped examples fill every input for a real prospect: one seal-limited, "
+                "one spill-limited. Either loads with one click and can be edited on **2.0 "
+                "Prospect** and **3.0 HCWC limiters**.")
+    prospect_tab.example_buttons("tab1_example")
 
     theme.heading(1, "1 · What can set a hydrocarbon–water contact")
     concept_png = ROOT / "reference" / "concept.png"
