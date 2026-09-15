@@ -32,6 +32,9 @@ FORMAT_VERSION = 1
 #: Deliberately an allow-list. A deny-list would let every future widget into the file by default,
 #: including caches and one-shot UI state, and a saved file would then restore things like an open
 #: expander or a stale DHI overlay.
+#: Keys an older build wrote that name no widget in any build. Ignored on read.
+LEGACY_DEAD_KEYS: frozenset[str] = frozenset({"stack_space", "stack_mode"})
+
 EXACT: frozenset[str] = frozenset({
     "prospect_name", "apex_p1", "apex_p99", "spill_input", "burial_input",
     "dhi_toggle", "min_column_input", "n_trials_input", "seed_input", "gradient_range",
@@ -173,6 +176,10 @@ def read(text: str) -> dict:
     inputs = doc["inputs"]
     if not isinstance(inputs, dict):
         raise ValueError("`inputs` must be an object of widget keys")
+    # Two keys written by builds before the stack views became per-tab. They matched no widget
+    # then and match none now, so they are dropped rather than refused: a file that carried
+    # them, including the shipped worked example until 15 Sep 2026, could not be opened at all.
+    inputs = {k: v for k, v in inputs.items() if k not in LEGACY_DEAD_KEYS}
     unknown = [k for k in inputs if not (k in EXACT or k.startswith(PREFIXES))]
     if unknown:
         raise ValueError(

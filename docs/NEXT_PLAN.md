@@ -23,9 +23,7 @@ What follows is not a list of gaps in that. It is a list of things that would ma
 
 | | Item | Why | Cost |
 |---|---|---|---|
-| **1** | **A second worked prospect** | One example teaches the mechanics; two teach the *judgement*, because the interesting question is what changes between them. A spill-limited closure beside the seal-limited one would show the controlling-limit diagnostic actually doing its job — which the current example, seal-dominated at 79 %, demonstrates only in one direction. | small |
 | **2** | **Move the estimator's defence off tab ⑥** | §§3–5 — why the published regression measures the wrong thing, whether the corrected model fits, and the second bias — argue for *the method*. They are about half of the largest tab in the app and they are not the user's question. Tab ⑧ Theory is where they belong; tab ⑥ then answers "am I optimistic?" in four sections instead of nine. | small |
-| **3** | **A *load the worked example* button on tab ①** | It is currently a sentence on ① pointing at a collapsed expander on ②. One click, on the first screen, is the difference between meeting the tool and reading about it. | small |
 | **4** | **Caption density** | Three paragraphs under every figure is reassuring on the first prospect and noise on the tenth, and there is no way to turn it down. A single *brief / full* control in the header would let the tool be both. | medium |
 
 ---
@@ -109,6 +107,13 @@ the result.
 ---
 
 ## Done, so it stops being asked for
+
+- **A second worked prospect**, spill-limited (`reference/example_prospect_spill.hcwc.json`,
+  "Vestre Low"): the spill point sets the contact in about seven realisations in ten where the
+  first example is seal-dominated. 15 Sep 2026.
+- **One-click example loading on tab ①**, both examples, beside the tab list. The shipped
+  example had been unreadable since the stack views became per-tab (two dead keys the reader
+  refused); the reader now drops them. 15 Sep 2026.
 
 Kept short deliberately. The commit history has the detail.
 

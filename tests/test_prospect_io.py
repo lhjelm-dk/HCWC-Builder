@@ -153,7 +153,8 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
                  "fuse_benchmark", "fuse_source",
                  # A one-shot action, not state: saving "the user pressed a button once" would
                  # reload the example every time the file was opened.
-                 "load_example",
+                 "load_example", "load_example_0", "load_example_1",
+                 "tab1_example_0", "tab1_example_1",
                  # A display choice on the export, and one that must NOT persist: a saved
                  # geological prospect reopened with a stale "given the DHI" selection would
                  # export the wrong distribution, which is the defect B exists to prevent.
@@ -306,3 +307,54 @@ class TestTheBasisEnumerationMatchesTheThemes:
 
         saved = prospect.document({"calibration_basis": "given the DHI"})
         assert prospect.read(json.dumps(saved))["calibration_basis"] == "given the DHI"
+
+
+class TestTheShippedExamplesLoad:
+    """Two files under `reference/` that the buttons on tabs 1 and 2 read.
+
+    The first one could not be opened at all between the stack views becoming per-tab and 15 Sep
+    2026: it carried the two dead keys and the reader refused it. Nothing tested the file, so the
+    button on tab 2 raised for anyone who pressed it. Both files are read here, and the reader
+    drops the dead keys rather than refusing a file that carries them.
+    """
+    import pathlib
+
+    ROOT = pathlib.Path(__file__).resolve().parent.parent
+    FILES = ("example_prospect.hcwc.json", "example_prospect_spill.hcwc.json")
+
+    @pytest.mark.parametrize("name", FILES)
+    def test_it_reads(self, name):
+        text = (self.ROOT / "reference" / name).read_text(encoding="utf-8")
+        inputs = prospect.read(text)
+        assert inputs["prospect_name"]
+        assert "stack_mode" not in inputs and "stack_space" not in inputs
+
+    def test_the_dead_keys_are_dropped_not_refused(self):
+        import json
+        text = (self.ROOT / "reference" / self.FILES[0]).read_text(encoding="utf-8")
+        doc = json.loads(text)
+        doc["inputs"]["stack_mode"] = "Exceedance curves"
+        doc["inputs"]["stack_space"] = "depth"
+        inputs = prospect.read(json.dumps(doc))
+        assert "stack_mode" not in inputs
+
+    def test_the_two_examples_are_controlled_by_different_mechanisms(self):
+        """The reason there are two: seal-dominated against spill-dominated."""
+        from streamlit.testing.v1 import AppTest
+        from hcwc.core import engine
+
+        winners = {}
+        for name in self.FILES:
+            at = AppTest.from_file(str(self.ROOT / "app.py"), default_timeout=900)
+            at.session_state["_pending_load"] = prospect.read(
+                (self.ROOT / "reference" / name).read_text(encoding="utf-8"))
+            at.run()
+            assert not at.exception, name
+            ls = at.session_state["limit_set"]
+            r = engine.run(ls, n=4_000, seed=1)
+            shares = {n: float((r.controller == j).mean()) for j, n in enumerate(ls.names)}
+            winners[name] = max(shares, key=shares.get)
+            if "spill" in name:
+                assert shares["Closure / spill point"] > 0.5, shares
+        assert "spill" in winners[self.FILES[1]].lower()
+        assert "seal" in winners[self.FILES[0]].lower()

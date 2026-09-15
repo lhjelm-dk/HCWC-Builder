@@ -1,15 +1,15 @@
 {
   "format": 1,
   "tool": "HCWC Distribution Builder",
-  "name": "Tofte North (worked example)",
+  "name": "Vestre Low (spill-limited example)",
   "inputs": {
     "lim_Closure / spill point_kind": "depth",
     "lim_Base seal (capillary)_on": true,
     "lim_Fault geometry 2_pert_mode": 2318.0,
     "lim_Closure / spill point_pa": 1.0,
     "lim_Fault leakage 2_pert_minimum": 140.0,
-    "lim_Top seal (continuity)_pa": 0.5,
-    "lim_Fault geometry 1_pert_minimum": 2250.0,
+    "lim_Top seal (continuity)_pa": 0.3,
+    "lim_Fault geometry 1_pert_minimum": 2150.0,
     "lim_Charge_kind": "column",
     "lim_Top seal (capillary)_rw": {
       "__tuple__": [
@@ -17,8 +17,8 @@
         1.1
       ]
     },
-    "lim_Fault geometry 1_pert_maximum": 2370.0,
-    "lim_Closure / spill point_pert_minimum": 2340.0,
+    "lim_Fault geometry 1_pert_maximum": 2210.0,
+    "lim_Closure / spill point_pert_minimum": 2190.0,
     "lim_Base seal (capillary)_kind": "column",
     "lim_Preservation / tilt_kind": "column",
     "lim_Base seal (capillary)_pert_mode": 160.0,
@@ -34,35 +34,35 @@
     "lim_Preservation / tilt_pert_mode": 250.0,
     "lim_Base seal (continuity)_kind": "column",
     "cond_Reservoir": 0.7,
-    "prospect_name": "Tofte North (worked example)",
+    "prospect_name": "Vestre Low (spill-limited example)",
     "lim_Base seal (continuity)_pert_maximum": 380.0,
-    "lim_Closure / spill point_pert_mode": 2372.0,
-    "lim_Fault geometry 1_pert_mode": 2298.0,
+    "lim_Closure / spill point_pert_mode": 2200.0,
+    "lim_Fault geometry 1_pert_mode": 2185.0,
     "lim_Top seal (capillary)_theta": {
       "__tuple__": [
         0.0,
         30.0
       ]
     },
-    "lim_Charge_pert_minimum": 100.0,
+    "lim_Charge_pert_minimum": 250.0,
     "lim_Fault geometry 2_form": "pert",
     "lim_Top seal (capillary)_rr": {
       "__tuple__": [
-        0.8,
-        3.0
+        2.0,
+        3.5
       ]
     },
     "lim_Base seal (continuity)_pert_mode": 224.0,
-    "lim_Fault geometry 1_pa": 0.5,
+    "lim_Fault geometry 1_pa": 0.2,
     "lim_Preservation / tilt_form": "pert",
     "lim_Top seal (capillary)_on": true,
-    "spill_input": 2400.0,
+    "spill_input": 2200.0,
     "lim_Fault leakage 2_pert_maximum": 320.0,
     "lim_Base seal (capillary)_pert_minimum": 80.0,
     "dhi_toggle": false,
     "lim_Fault leakage 2_pa": 0.4,
     "lim_Top seal (continuity)_kind": "column",
-    "lim_Top seal (capillary)_fluid": "Gas",
+    "lim_Top seal (capillary)_fluid": "Oil",
     "cond_Retention": 0.8,
     "lim_Top seal (continuity)_pert_minimum": 100.0,
     "play_Closure": 1.0,
@@ -70,7 +70,7 @@
     "lim_Charge_src": "Typed",
     "n_trials_input": 10000,
     "lim_Fault geometry 2_kind": "depth",
-    "lim_Preservation / tilt_pa": 0.2,
+    "lim_Preservation / tilt_pa": 0.1,
     "lim_Top seal (continuity)_pert_mode": 200.0,
     "lim_Fault leakage 1_kind": "column",
     "lim_Fault leakage 2_src": "Typed",
@@ -79,10 +79,10 @@
     "seed_input": 20260825,
     "play_Reservoir": 0.9,
     "lim_Fault leakage 2_kind": "column",
-    "lim_Charge_pert_mode": 220.0,
+    "lim_Charge_pert_mode": 400.0,
     "lim_Fault leakage 1_pert_minimum": 120.0,
     "lim_Wedge geometry_form": "pert",
-    "lim_Fault leakage 1_pert_mode": 192.0,
+    "lim_Fault leakage 1_pert_mode": 190.0,
     "burial_input": 2050.0,
     "lim_Fault geometry 2_pert_minimum": 2270.0,
     "lim_Wedge geometry_pa": 0.0,
@@ -102,22 +102,22 @@
     "lim_Wedge geometry_pert_maximum": 2410.0,
     "lim_Base seal (capillary)_pa": 0.0,
     "lim_Base seal (continuity)_form": "pert",
-    "min_column_input": 120.0,
+    "min_column_input": 100.0,
     "lim_Fault geometry 1_kind": "depth",
     "lim_Top seal (capillary)_rs": {
       "__tuple__": [
-        0.03,
-        0.2
+        0.01,
+        0.05
       ]
     },
-    "lim_Closure / spill point_pert_maximum": 2420.0,
+    "lim_Closure / spill point_pert_maximum": 2212.0,
     "lim_Top seal (capillary)_t": {
       "__tuple__": [
         56.0,
         87.0
       ]
     },
-    "lim_Fault leakage 1_pa": 0.6,
+    "lim_Fault leakage 1_pa": 0.3,
     "lim_Fault leakage 1_src": "Typed",
     "lim_Closure / spill point_form": "pert",
     "lim_Preservation / tilt_pert_minimum": 150.0,
@@ -140,7 +140,7 @@
       ]
     },
     "lim_Top seal (capillary)_src": "seal",
-    "lim_Charge_pert_maximum": 400.0,
+    "lim_Charge_pert_maximum": 600.0,
     "lim_Preservation / tilt_pert_maximum": 400.0,
     "lim_Fault leakage 2_on": true,
     "lim_Wedge geometry_pert_mode": 2344.0
