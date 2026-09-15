@@ -507,12 +507,17 @@ class TestTheSealDensitiesAreInSitu:
         assert fired is should_warn
 
     def test_the_shipped_capacity_matches_the_elicited_ranges(self):
-        """Pins the calculator's own defaults: 79 / 148 / 433 m. The block no longer opens
+        """Pins the calculator's own defaults: 162 / 302 / 880 m. The block no longer opens
         on it -- the capillary limit is typed at PERT(100, 250, 500) since 8 Sep -- but the
-        calculator is still what the *Computed* source runs."""
+        calculator is still what the *Computed* source runs.
+
+        Until 15 Sep 2026 these were 79 / 148 / 433 m, from an oil-water tension line that gave
+        11.7 dyne/cm at 70 C; the elicited 18-28 dyne/cm that replaced it (docs/IFT_CHECK_2026-09-15.md)
+        roughly doubles the capacity, which is the finding.
+        """
         at = _run(**TOP_SEAL_COMPUTED)
         got = [m.value for m in at.metric if m.label.endswith("capacity")]
-        assert got == ["79 m", "148 m", "433 m"], got
+        assert got == ["162 m", "302 m", "880 m"], got
 
 
 class TestTheBenchmarkFiguresCanShowWhatTheToolProduced:

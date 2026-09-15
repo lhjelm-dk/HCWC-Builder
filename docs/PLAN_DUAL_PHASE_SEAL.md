@@ -112,8 +112,9 @@ discontinuity to guard.
 *Status, 15 Sep 2026.* Checked; see `docs/IFT_CHECK_2026-09-15.md`. Reading 2 holds, and the
 line's provenance is unknown: Yang & Aplin (1998) is a pore-size paper and carries no tension
 correlation. With a sourced oil tension of 21–25 mN/m the gas share is 16–24 %, bracketing
-Hood's 20 %. The choice between replacing the line and bounding it is Lars's; the recommendation
-is to replace it with an elicited, temperature-flat range.
+Hood's 20 %. Lars chose to replace it: since 15 Sep 2026 the oil tension is an elicited, temperature-flat
+range (default 18–28 dyne/cm), and the gas share from §3 is computed against that. Step 0 is
+closed.
 
 
 Run the closed form on the app's own Aplin & Yang correlations and the gas share comes out at
