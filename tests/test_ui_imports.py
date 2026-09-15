@@ -71,7 +71,7 @@ def test_no_two_sub_tabs_can_produce_the_same_figure_number():
     app now uses both:
 
     Both tabs with sub-tabs stamp each one with its own ``sub=``, so a label carries the page it is
-    on: `Figure 5.2.1` is the first exhibit on *The observation*, and `Figure 4.1.6` and `Figure 5.3.6`
+    on: `Figure 5.1.1` is the first exhibit on *The observation*, and `Figure 4.1.6` and `Figure 5.2.6`
     are the same figure on the two bases. A flat sequence gave the reader `Figure 5.9` with no way
     to know which of four pages to turn to, and matching tab 4.0 to it means someone comparing the two
     bases reads one numbering scheme rather than two.
@@ -83,7 +83,8 @@ def test_no_two_sub_tabs_can_produce_the_same_figure_number():
     root = pathlib.Path(__file__).resolve().parent.parent
     source = (root / "app.py").read_text(encoding="utf-8")
 
-    for tab, count in ((4, 2), (5, 4)):
+    # Tab 5 had four sub-tabs until 16 Sep 2026, when the walkthrough moved to 8.1.5.
+    for tab, count in ((4, 2), (5, 3)):
         # The sequence carries a `basis=` as well since 4 Sep 2026, so the pattern stops at the
         # sub number rather than at a closing bracket that is no longer there.
         subs = re.findall(rf"Numbering\({tab},\s*sub=(\d)", source)

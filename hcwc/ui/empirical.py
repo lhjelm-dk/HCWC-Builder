@@ -579,7 +579,7 @@ What follows differs from the published analysis in one estimator, not in the da
     with st.expander("Why there is one such dataset: what a search found, and why the older compilations cannot answer this question"):
         st.warning(
             "A search for a public non-NCS dataset relating column height to closure height "
-            "(28 Aug 2026) found none; tab 8.0, Benchmark sources, records what was checked. "
+            "(28 Aug 2026) found none; 8.1.7 records what was checked. "
             "Edmundson et al. give the reason in their introduction: picking an apex and a spill "
             "point for every field needs 3D seismic and a velocity model, so \"few studies of this "
             "kind have been carried out before\". The earlier compilations, Gulf of Mexico and "
@@ -1152,7 +1152,7 @@ What follows differs from the published analysis in one estimator, not in the da
             "A weight, not a Bayesian update. The model is already built out of relief and burial, "
             "since the spill point is the relief, so multiplying in a record conditioned on both "
             "would count the geometry twice. Two priors combine by weighting, which is why this is "
-            "a slider starting at zero. Tab 8.0, *Weight, not Bayes*."
+            "a slider starting at zero. Method: see 8.1.7."
         )
 
         bench_draw = _samples_for(bench_source, (round(own_relief, 1),), float(burial))
@@ -1372,13 +1372,13 @@ What follows differs from the published analysis in one estimator, not in the da
 
             # Seven hundred words of argument about somebody else's arithmetic, with a
             # sourcing paragraph and a fixed-point table, and nothing on this page depends
-            # on it. Moved to `docs/BASE_RATE_NEGLECT.md` on 5 Sep 2026. The sentence that
+            # on it. Moved to docs on 5 Sep 2026, now 8.1.7 of docs/THEORY.md. The sentence that
             # governs what the reader does next stays here.
             st.caption(
                 "Side by side, not merged. The rule usually attached to base-rate neglect is "
                 "symmetric, returning the same answer when its two inputs are swapped, which no "
                 "Bayesian update does, and it moves the number even when the two already agree. "
-                "Tab 8.0, *Base rates*, has the derivation. None of it touches Milkov\u2019s "
+                "Method: see 8.1.7. None of it touches Milkov\u2019s "
                 "finding, which stands on its own."
             )
 
@@ -1416,5 +1416,5 @@ better filled than reality. Used as a pre-drill prior it is optimistic at both e
         "Data: Edmundson, I., Davies, R., Frette, L.U., Mackie, S., Kavli, E.A., Rotevatn, A., "
         "Yielding, G. & Dunbar, A. (2021), AAPG Bulletin 105(12), 2381–2403, "
         "doi:10.1306/03122119223. Raw table https://osf.io/6ysbv/ under CC-BY 4.0. "
-        "Full references in tab 8.0."
+        "Full references in 8.3."
     )
