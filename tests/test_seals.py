@@ -27,14 +27,13 @@ class TestAplinYang:
     def test_gas_interfacial_tension_matches_O8(self):
         assert seals.interfacial_tension_gas_dyne_cm(80.0) == pytest.approx(33.45005225957953)
 
-    def test_oil_interfacial_tension_matches_O10(self):
-        assert seals.interfacial_tension_oil_dyne_cm(80.0) == pytest.approx(9.778)
-
-    def test_the_oil_fit_is_refused_where_it_goes_negative(self):
-        """Linear, so it crosses zero near 132 C. Unguarded, it returns a negative tension."""
-        assert seals.interfacial_tension_oil_dyne_cm(130.0) > 0
-        with pytest.raises(ValueError, match="132 C"):
-            seals.interfacial_tension_oil_dyne_cm(140.0)
+    def test_the_oil_line_is_gone(self):
+        """Replaced 15 Sep 2026 by an elicited range (docs/IFT_CHECK_2026-09-15.md): the line
+        gave 9.8 dyne/cm at 80 °C against a measured envelope of about 15–30, and understated
+        the shipped oil seal capacity by about 1.9×."""
+        assert not hasattr(seals, "interfacial_tension_oil_dyne_cm")
+        lo, hi = seals.DEFAULT_OIL_TENSION_DYNE_CM
+        assert 15.0 <= lo < hi <= 30.0
 
     def test_pore_throat_radius_matches_O17(self):
         assert seals.pore_throat_radius_nm(0.4) == pytest.approx(32.4842144)
@@ -352,13 +351,43 @@ class TestSampledCapacity:
         with pytest.raises(ValueError, match="must not be below"):
             seals.SealInputs(temperature_c=(90.0, 70.0))
 
-    def test_the_oil_correlation_refuses_the_temperature_where_it_breaks_down(self):
-        """Aplin & Yang's oil fit goes non-positive near 132 °C. Silently returning a negative
-        interfacial tension there would produce a negative column, so it raises instead."""
+    def test_oil_tension_is_elicited_and_flat_in_temperature(self):
+        """A hot oil prospect no longer hits the old line's zero crossing: the tension is a
+        range the assessor states, and the temperature draw does not touch it."""
+        cool = seals.SealInputs(temperature_c=(60.0, 70.0), fluid="Oil",
+                                hc_density_g_cm3=(0.70, 0.85))
         hot = seals.SealInputs(temperature_c=(120.0, 145.0), fluid="Oil",
                                hc_density_g_cm3=(0.70, 0.85))
-        with pytest.raises(ValueError, match="132"):
-            seals.sample_max_column_m(hot, 1_000)
+        a = seals.sample_max_column_m(cool, 4_000, 7)
+        b = seals.sample_max_column_m(hot, 4_000, 7)
+        assert np.allclose(a, b), "oil capacity must not depend on temperature"
+
+    def test_oil_capacity_scales_with_the_elicited_tension(self):
+        base = seals.SealInputs(fluid="Oil", hc_density_g_cm3=(0.70, 0.85),
+                                oil_tension_dyne_cm=(20.0, 20.0))
+        doubled = seals.SealInputs(fluid="Oil", hc_density_g_cm3=(0.70, 0.85),
+                                   oil_tension_dyne_cm=(40.0, 40.0))
+        a = seals.sample_max_column_m(base, 2_000, 3)
+        b = seals.sample_max_column_m(doubled, 2_000, 3)
+        assert np.allclose(b, 2.0 * a)
+
+    def test_the_same_seal_holds_a_taller_oil_column_than_gas_column(self):
+        """Schowalter's own result, and the reverse of what the old line produced: with oil at
+        11.7 dyne/cm the app held a shorter oil column (P50 148 m) than gas column (167 m)."""
+        common = dict(temperature_c=(56.0, 87.0), contact_angle_deg=(0.0, 30.0),
+                      seal_radius_um=(0.01, 0.10), reservoir_radius_um=(2.0, 3.5),
+                      water_density_g_cm3=(1.00, 1.10))
+        oil = seals.sample_max_column_m(
+            seals.SealInputs(fluid="Oil", hc_density_g_cm3=(0.70, 0.85), **common), 20_000, 1)
+        gas = seals.sample_max_column_m(
+            seals.SealInputs(fluid="Gas", hc_density_g_cm3=(0.20, 0.35), **common), 20_000, 1)
+        assert np.median(oil) > 1.3 * np.median(gas)
+
+    def test_an_invalid_tension_range_is_refused(self):
+        with pytest.raises(ValueError, match="must not be below"):
+            seals.SealInputs(oil_tension_dyne_cm=(28.0, 18.0))
+        with pytest.raises(ValueError, match="positive"):
+            seals.SealInputs(oil_tension_dyne_cm=(0.0, 10.0))
 
     def test_the_same_seed_gives_the_same_answer(self):
         inputs = seals.SealInputs()

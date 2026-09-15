@@ -225,30 +225,20 @@ class TestBurialDepthDrivesSealTemperature:
         from hcwc.ui.prospect_tab import SURFACE_C, temperature_range
         assert temperature_range(0.0) == (SURFACE_C, SURFACE_C)
 
-    def test_a_deep_oil_prospect_reaches_where_the_correlation_breaks_down(self):
-        """Not a bug to fix — a physical limit the default now surfaces.
+    def test_a_deep_oil_prospect_no_longer_hits_a_zero_crossing(self):
+        """The oil tension line that went non-positive near 132 °C was replaced on 15 Sep 2026
+        by an elicited range, so a deep oil prospect computes a capacity rather than raising.
+        The temperature still follows the burial depth; it drives the gas line only."""
+        import numpy as np
 
-        Aplin & Yang's oil interfacial-tension fit goes non-positive near 132 °C. At 3 500 m the
-        derived range already reaches 128 °C, so a deep oil prospect will hit the refusal in
-        `sample_max_column_m` rather than silently returning a negative column. That is the right
-        outcome, and it is only reachable *because* the temperature now follows the burial depth.
-        """
         from hcwc.core import seals
         from hcwc.ui.prospect_tab import temperature_range
         deep = temperature_range(4000.0)
         assert deep[1] > 132.0
-        with pytest.raises(ValueError, match="132"):
-            seals.sample_max_column_m(
-                seals.SealInputs(temperature_c=deep, fluid="Oil"), 500)
-
-
-class TestSliderDefaultsAreValid:
-    """`sources._slider_default`, and the two ways a derived slider default breaks Streamlit.
-
-    Both of these shipped and both reached Lars as a red traceback on the seal calculator. They are
-    the kind of failure a type checker would not catch and a smoke test would only catch if it
-    happened to open that expander, so they are pinned directly.
-    """
+        capacity = seals.sample_max_column_m(
+            seals.SealInputs(temperature_c=deep, fluid="Oil", hc_density_g_cm3=(0.70, 0.85)),
+            1_000)
+        assert np.isfinite(capacity).all() and (capacity > 0).all()
 
     def test_the_result_is_always_floats(self):
         """`round()` with no ndigits returns an int, and Streamlit refuses a slider whose value type
