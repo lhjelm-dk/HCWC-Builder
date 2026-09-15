@@ -32,6 +32,41 @@ TAB = 2
 
 #: A complete prospect to load rather than read twelve limit blocks cold.
 _EXAMPLE = Path(__file__).resolve().parents[2] / "reference" / "example_prospect.hcwc.json"
+#: A second one, spill-limited, so the controlling-limit diagnostic is seen going the other
+#: way: the first example is seal-dominated, this one fills to spill in about seven
+#: realisations in ten. Two examples teach the judgement where one teaches the mechanics.
+_EXAMPLE_SPILL = (Path(__file__).resolve().parents[2] / "reference"
+                  / "example_prospect_spill.hcwc.json")
+
+#: (label, file, one sentence) for every shipped example, in the order they are offered.
+EXAMPLES = (
+    ("Load the worked example (seal-limited)", _EXAMPLE,
+     "A 350 m closure at 2 050 m with a 120 m assessment minimum. Its top seal is computed "
+     "rather than typed, and three limits share control of the contact, so the ranking on tab "
+     "3.0 is informative."),
+    ("Load the second example (spill-limited)", _EXAMPLE_SPILL,
+     "A 150 m closure at 2 050 m with a tight, computed top seal and a 100 m assessment minimum. "
+     "The spill point sets the contact in about seven realisations in ten, so the contact "
+     "distribution is narrow and the geometry, not the seal, is what an elicitation would "
+     "refine."),
+)
+
+
+def example_buttons(key: str) -> None:
+    """One button per shipped example, on any tab. Loading stashes the file's inputs for the
+    top of the next run, since the widgets of this run already exist."""
+    shipped = [(i, label, path) for i, (label, path, _) in enumerate(EXAMPLES) if path.exists()]
+    if not shipped:
+        return
+    for col, (i, label, path) in zip(st.columns(len(shipped)), shipped):
+        if col.button(label, width="stretch", key=f"{key}_{i}"):
+            try:
+                st.session_state["_pending_load"] = prospect_io.read(
+                    path.read_text(encoding="utf-8"))
+            except ValueError as exc:
+                st.error(str(exc))
+            else:
+                st.rerun()
 
 #: Element -> (play, conditional) starting values. The product is the element chance.
 #: Lars's values, 26 Aug 2026. Geological POS = 0.408.
@@ -112,23 +147,13 @@ def render() -> None:
             mime="application/json", width="stretch")
         loaded = s2.file_uploader("Load a saved prospect", type=["json"], key="prospect_upload")
 
-        example = _EXAMPLE
-        if example.exists():
+        if any(path.exists() for _, path, _ in EXAMPLES):
             st.markdown("---")
-            st.markdown(
-                "The worked example is a 350 m closure at 2 050 m with a 120 m assessment minimum, "
-                "so the risk criterion applies. Its top seal is computed rather than typed, and three "
-                "limits share control of the contact, so the ranking on tab 3.0 is informative."
-            )
-            if st.button("Load the worked example", width="stretch",
-                         key="load_example"):
-                try:
-                    st.session_state["_pending_load"] = prospect_io.read(
-                        example.read_text(encoding="utf-8"))
-                except ValueError as exc:
-                    st.error(str(exc))
-                else:
-                    st.rerun()
+            st.markdown("Two shipped examples, one seal-limited and one spill-limited. What "
+                        "changes between them is the judgement the tool exists to support.")
+            for _, _, sentence in EXAMPLES:
+                st.caption(sentence)
+            example_buttons("load_example")
         if loaded is not None:
             try:
                 inputs = prospect_io.read(loaded.getvalue().decode("utf-8-sig"))
