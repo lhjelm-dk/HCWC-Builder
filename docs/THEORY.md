@@ -157,7 +157,11 @@ rise with overpressure. Independence overstates the spread of a capacity and, fo
 seal, the low tail of the headroom. The correlation editor couples limits with each other and
 cannot reach inside a calculator. The seal and charge calculators share a phase and not a fluid:
 the seal's density and the charge's formation volume factor are separate draws, and the phase
-check on tab 3 is the whole of the coupling.
+check on tab 3 is the whole of the coupling. A base seal entered as the top seal offset by the
+reservoir thickness has identical inputs and not an identical outcome: sampled independently,
+the two fail at different columns in the same realisation, which claims that one shale can be
+tight above and leaky below at once; where it is one unit the pair is correlated, and the
+default correlation table lists it.
 
 The elements share the apex draw. Every element's contact is `apex + h`, so in depth space the
 element curves are dependent even under independent limits, and their product is not the
@@ -320,7 +324,10 @@ zero, as quantiles rather than densities, so the result lies between them. Where
 live in the dataset is its outcomes as evidence about the parameters the prospect shares with the
 population, the seal-capacity relationship, which is the shrinkage prior on the top-seal limit:
 empirical Bayes on a shared parameter, not an update of one prospect with other prospects'
-answers.
+answers. The fit is used against burial depth alone. Its trap-height term is real in the data,
+but a capacity that depended on closure size would put geometry into a capillary property, and
+the engine already takes `min(capacity, spill)`; compaction closing pore throats is the part
+with a physical reason to track burial.
 
 The benchmarks cannot be conditioned on a DHI. Graham et al. (2015) state that their synthesis
 is for the case without direct hydrocarbon indicators; Edmundson's discoveries carry no DHI flag
@@ -390,11 +397,18 @@ follows a temperature line of unknown provenance that agrees with methane–brin
 Things the model does not do. One fluid at a time: seal capacity depends on the density contrast,
 so a gas column and an oil column under the same seal differ in height, and a mixed-phase
 prospect needs the gas cap and the oil leg limited by different capacities with a gas–oil contact
-between them; phases are run as separate cases. No hydrodynamics or tilted contacts; the contact
-is hydrostatic and horizontal, and remigration and hydraulic reconfiguration are absent for the
-same reason (Grant 2020 includes the gradient). No compartmentalisation; a compartmentalised trap needs a contact
-per compartment. Presence draws are independent (8.1.4). Calculator inputs are independent
-(8.1.4). The empirical record is discovery-conditioned, censored above and truncated below
+between them; phases are run as separate cases. A separate-case answer is not a two-phase answer,
+and the difference is not conservative: a single seal sees gas at the crest and oil on the flanks
+between the two contacts, the oil leg is unchanged by the gas above it, and the total column is
+taller than either single-phase answer rather than between them. On the shipped defaults that is
+roughly 150 m of oil under 130 m of gas, against 150 m pure oil or 183 m pure gas; spill and
+every other limit still apply. The numbers follow from the physics in `hcwc/core/seals.py`; the
+tool does not compute them, and the charge-driven route to a gas–oil contact in
+`hcwc.core.charge` is not wired to a control either (docs/PLAN_DUAL_PHASE_SEAL.md). No
+hydrodynamics or tilted contacts; the contact is hydrostatic and horizontal, and remigration and
+hydraulic reconfiguration are absent for the same reason (Grant 2020 includes the gradient). No
+compartmentalisation; a compartmentalised trap needs a contact per compartment. Presence draws
+are independent (8.1.4). Calculator inputs are independent (8.1.4). The empirical record is discovery-conditioned, censored above and truncated below
 (8.1.7). The seismic likelihoods are elicited, not calibrated, which is why the effective sample
 size and the sensitivity to each seismic input are reported: when a typed assumption moves the
 contact further than the geology does, that is a finding about the assumption. A proven column in
