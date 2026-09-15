@@ -24,7 +24,6 @@ What follows is not a list of gaps in that. It is a list of things that would ma
 | | Item | Why | Cost |
 |---|---|---|---|
 | **2** | **Move the estimator's defence off tab ⑥** | §§3–5 — why the published regression measures the wrong thing, whether the corrected model fits, and the second bias — argue for *the method*. They are about half of the largest tab in the app and they are not the user's question. Tab ⑧ Theory is where they belong; tab ⑥ then answers "am I optimistic?" in four sections instead of nine. | small |
-| **4** | **Caption density** | Three paragraphs under every figure is reassuring on the first prospect and noise on the tenth, and there is no way to turn it down. A single *brief / full* control in the header would let the tool be both. | medium |
 
 ---
 
@@ -107,6 +106,11 @@ the result.
 ---
 
 ## Done, so it stops being asked for
+
+- **Caption density (was A4): not to be built.** A Full/Brief control folds the second half of
+  every caption, and Lars removed exactly that on 28 Aug 2026: the second half is where the
+  caveats are, and a caption that can be half-read is one whose second half nobody reads. The
+  tone pass of 14 Sep 2026 shortened the captions instead, which was the answer. 15 Sep 2026.
 
 - **A second worked prospect**, spill-limited (`reference/example_prospect_spill.hcwc.json`,
   "Vestre Low"): the spill point sets the contact in about seven realisations in ten where the
