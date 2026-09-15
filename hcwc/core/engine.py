@@ -173,11 +173,31 @@ class EngineResult:
         P100 is the shallowest contact, P0 the deepest — the industry convention, and the one the
         GeoX importer expects.
         """
-        p = np.atleast_1d(np.asarray(exceedance_pct, dtype=float))
-        contacts = self.contact_m[self.above_minimum]
-        if contacts.size == 0:
-            return np.full(p.shape, np.nan)
-        return np.percentile(contacts, 100.0 - p)
+        return weighted_percentiles(self.contact_m[self.above_minimum], None, exceedance_pct)
+
+
+def weighted_percentiles(samples: np.ndarray, weights: np.ndarray | None,
+                         exceedance_pct: np.ndarray | float) -> np.ndarray:
+    """Values at **exceedance** percentiles of a weighted sample: P100 smallest, P0 largest.
+
+    One estimator for the engine and the DHI posterior. Until 15 Sep 2026 (audit P3-4) the
+    engine used ``np.percentile``'s linear order statistics and the posterior a
+    midpoint-weighted cumulative, so tabs 4 and 5 could print a prior P50 differing in the
+    second decimal. The midpoint form is the one that takes weights, so it is the one kept:
+    each sorted sample sits at the middle of its own weight, and the value at a probability is
+    interpolated between neighbours. At unit weights it is Hazen's plotting position.
+    """
+    p = np.atleast_1d(np.asarray(exceedance_pct, dtype=float))
+    x = np.asarray(samples, dtype=float)
+    if x.size == 0:
+        return np.full(p.shape, np.nan)
+    w = np.ones(x.size) if weights is None else np.asarray(weights, dtype=float)
+    if w.sum() <= 0:
+        return np.full(p.shape, np.nan)
+    order = np.argsort(x)
+    x, w = x[order], w[order]
+    cumulative = (np.cumsum(w) - 0.5 * w) / w.sum()
+    return np.interp((100.0 - p) / 100.0, cumulative, x)
 
 
 def run(limit_set: LimitSet, n: int = 10_000, seed: int = 20260825) -> EngineResult:
@@ -299,6 +319,10 @@ def controlling_share_by_depth(result: EngineResult, edges: np.ndarray,
     w = np.ones(result.n) if weights is None else np.asarray(weights, dtype=float)
     which = np.digitize(result.contact_m, edges) - 1
     n_bins = edges.size - 1
+    # `digitize` puts a value equal to the last edge one bin past the end, so a realisation
+    # whose contact is exactly the deepest edge fell out of every figure (audit P3-3, 15 Sep
+    # 2026). The last bin is right-inclusive; the shares then sum to one over the edges' span.
+    which[result.contact_m == edges[-1]] = n_bins - 1
     out = {name: np.zeros(n_bins) for name in result.limit_set.names}
     grand = float(w.sum())
     for b in range(n_bins):

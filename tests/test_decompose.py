@@ -408,3 +408,22 @@ class TestWeightedDecomposition:
         honest response is the prior, not a NaN curve that renders as a blank figure."""
         zeros = decompose.decompose(result, weights=np.zeros(result.n))
         assert np.allclose(zeros.direct_depth, decompose.decompose(result).direct_depth)
+
+
+class TestTiesAndInterpolation:
+    """Audit findings P3-2 and P3-6, 15 Sep 2026."""
+
+    def test_the_shallowest_grid_point_counts_every_realisation(self):
+        """`>=`, as the engine: at the shallowest contact the exceedance is 1, not `1 − 1/n`."""
+        d = decompose.decompose(engine.run(reference_prospect(), 2_000))
+        assert d.direct_depth[0] == pytest.approx(1.0)
+
+    def test_the_entry_depth_is_interpolated_rather_than_snapped(self):
+        d = decompose.decompose(engine.run(reference_prospect(), 5_000))
+        i = len(d.depths_m) // 2
+        z0, z1 = float(d.depths_m[i]), float(d.depths_m[i + 1])
+        r0 = decompose.allocation_comparison(d, {}, z0)["r_location"]
+        r1 = decompose.allocation_comparison(d, {}, z1)["r_location"]
+        mid = decompose.allocation_comparison(d, {}, 0.5 * (z0 + z1))["r_location"]
+        assert r0 == pytest.approx(float(d.direct_depth[i]))
+        assert mid == pytest.approx(0.5 * (r0 + r1))

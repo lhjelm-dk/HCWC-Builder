@@ -702,3 +702,32 @@ class TestTheSharedExceedance:
         assert peak < matrix_bytes / 4, (
             f"peaked at {peak/1e6:.1f} MB; the broadcast would have needed "
             f"{matrix_bytes/1e6:.1f} MB")
+
+
+class TestTheEstimatorsAgreeAtTies:
+    """Audit findings P3-3 and P3-4, 15 Sep 2026."""
+
+    def test_a_contact_on_the_last_edge_is_counted(self):
+        """`np.digitize` put a value equal to the last edge past the end, so one realisation
+        per figure was missing whenever the edges ran to the sample maximum."""
+        r = engine.run(reference_prospect(), 2_000)
+        edges = np.linspace(r.contact_m.min(), r.contact_m.max(), 8)
+        shares = engine.controlling_share_by_depth(r, edges, within_bin=False)
+        assert np.vstack(list(shares.values())).sum() == pytest.approx(1.0)
+
+    def test_the_engine_and_the_posterior_read_the_same_prior_percentile(self):
+        """One estimator, so tabs 4 and 5 print the same prior P50."""
+        from hcwc.core import dhi
+        r = engine.run(reference_prospect(), 3_000)
+        post = dhi.update(r, dhi.DetectionFunction(),
+                          dhi.DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=15.0,
+                                             p_valid=0.7))
+        for p in (90.0, 50.0, 10.0):
+            assert r.percentiles(p)[0] == post.percentiles(p, posterior=False)[0]
+
+    def test_unit_weights_are_hazen_plotting_positions(self):
+        x = np.array([10.0, 20.0, 30.0, 40.0])
+        # Exceedance P50 at four points: the middle of the sorted sample, 25.
+        assert engine.weighted_percentiles(x, None, 50.0)[0] == pytest.approx(25.0)
+        # Weight on the last point pulls the median toward it.
+        assert engine.weighted_percentiles(x, np.array([1, 1, 1, 5.0]), 50.0)[0] > 25.0
