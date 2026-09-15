@@ -1,6 +1,6 @@
 """Which elicited number actually moves the answer?
 
-Tab 4.0 §3 ranks limits by how often they **control** the contact. That is a different question from
+Tab 4.0 §2b ranks limits by how often they **control** the contact. That is a different question from
 how much they **move** it, and the difference matters: a limit can control 60 % of realisations and
 still be worth no elicitation effort, because it always bites at nearly the same depth. What an
 assessor wants before spending an afternoon is the number whose *uncertainty* the answer is
