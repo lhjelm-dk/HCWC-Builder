@@ -23,8 +23,10 @@ from typing import Callable
 
 import numpy as np
 
-#: Standard gravity, m/s^2.
-G = 9.81
+#: Standard gravity, m/s^2. One value for the whole module: until 15 Sep 2026 the capillary
+#: path used 9.81 and the mechanical path 9.80665 through its bar-per-metre constant (audit
+#: P3-1), a 0.03 % disagreement that no elicitation could notice and no module should carry.
+G = 9.80665
 
 #: 1 dyne/cm = 1e-5 N / 1e-2 m = 1e-3 N/m. Identical to 1 mN/m, which is how modern
 #: laboratory reports quote interfacial tension.
@@ -404,13 +406,13 @@ def sample_max_column_m(inputs: SealInputs, n: int, seed: int = 20260825) -> np.
 
 # --------------------------------------------------------------------------- mechanical top seal
 #: Pressure gradient of a fluid of unit density, in **bar per metre**. One g/cm3 under gravity is
-#: 9806.65 Pa/m, and a bar is 1e5 Pa.
-BAR_PER_M_PER_G_CM3 = 0.0980665
+#: 9806.65 Pa/m, and a bar is 1e5 Pa. Derived from :data:`G` so the two paths cannot disagree.
+BAR_PER_M_PER_G_CM3 = G * 1000.0 / 1e5
 
 #: Equivalent mud weight of a gradient, in specific gravity, is the gradient divided by this.
 #: Same number, kept under its own name because the two readings are used for different things and
 #: `gradient / BAR_PER_M_PER_G_CM3` reads as arithmetic rather than as a unit conversion.
-EMW_PER_BAR_PER_M = 0.0980665
+EMW_PER_BAR_PER_M = BAR_PER_M_PER_G_CM3
 
 
 def fracture_headroom_bar(s_hmin_bar, pore_pressure_bar):

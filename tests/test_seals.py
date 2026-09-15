@@ -74,8 +74,13 @@ class TestHansenPorosityDepth:
 
 
 class TestBuoyancy:
+    #: Cached values from the original sheet were computed at g = 9.81; the module uses standard
+    #: gravity since 15 Sep 2026 (audit P3-1), so each parity check allows the 0.034 % between them.
+    G_ROUNDING = 5e-4
+
     def test_matches_C14(self):
-        assert seals.buoyancy_pressure_pa(H, RHO_W, RHO_HC) == pytest.approx(858375.0)
+        assert seals.buoyancy_pressure_pa(H, RHO_W, RHO_HC) == pytest.approx(
+            858375.0, rel=self.G_ROUNDING)
 
     def test_denser_hydrocarbon_than_water_is_refused(self):
         with pytest.raises(ValueError, match="buoyant"):
@@ -98,8 +103,8 @@ class TestTheDyneCmConversion:
     def test_seal_only_column_height_is_a_tenth_of_C22(self):
         misconverted_seal_m = 787.4574586908024
         got = seals.max_column_height_m(GAMMA, THETA, R_SEAL, RHO_W, RHO_HC)
-        assert got == pytest.approx(misconverted_seal_m / 10.0)
-        assert got == pytest.approx(78.75, abs=0.01)
+        assert got == pytest.approx(misconverted_seal_m / 10.0, rel=TestBuoyancy.G_ROUNDING)
+        assert got == pytest.approx(78.75, abs=0.05)
 
 
 class TestTheMissingGravityTerm:
@@ -154,7 +159,7 @@ class TestTheSheetContradictsItself:
         pe = seals.ENTRY_PRESSURE_MODELS["Ibrahim"](1.0)
         assert pe == pytest.approx(47.1525697)
         assert seals.column_height_from_entry_pressure_m(pe, 1.04, 0.70) == pytest.approx(
-            1413.700596630089, rel=1e-9)
+            1413.700596630089, rel=TestBuoyancy.G_ROUNDING)
 
 
 class TestEntryPressureModels:
@@ -416,29 +421,19 @@ class TestTheBarPerMetreConversion:
         assert seals.BAR_PER_M_PER_G_CM3 == pytest.approx(0.0980665)
         assert seals.BAR_PER_M_PER_G_CM3 * 1e5 / 1000.0 == pytest.approx(9.80665)
 
-    def test_this_module_carries_two_values_of_gravity_and_they_disagree(self):
-        """Found by writing this file, 8 Sep 2026. Pinned rather than fixed.
+    def test_this_module_carries_one_value_of_gravity(self):
+        """Found 8 Sep 2026 and pinned as a disagreement; unified 15 Sep 2026 (audit P3-1).
 
-        `seals.G` is 9.81 and is commented *Standard gravity*; it drives the capillary path.
-        `BAR_PER_M_PER_G_CM3` is 0.0980665, which implies **9.80665** -- the actual standard
-        value -- and it drives the mechanical path. So one module computes two limits under two
-        gravities, and the one labelled *standard* is the rounded one.
-
-        The size of it is 0.034 %: 1.2 m on the 3 523 m mechanical column, and 0.017 m on the
-        49 m capillary one. Immaterial to any answer this tool gives.
-
-        It is asserted rather than corrected because unifying them is a decision with a cost.
-        `G = 9.81` is what the original workbook used, and several tests above are parity checks
-        against that sheet's cached numbers; changing it moves every capillary capacity in the
-        app by 0.03 % for no gain in accuracy that any seal elicitation could notice. If it is
-        ever unified, this test is what will say so out loud.
+        `seals.G` was 9.81 and drove the capillary path; `BAR_PER_M_PER_G_CM3` was 0.0980665,
+        implying 9.80665, and drove the mechanical path, so one module computed two limits under
+        two gravities. The size of it was 0.034 %: 1.2 m on the 3 523 m mechanical column and
+        0.017 m on the 49 m capillary one. Both paths now read standard gravity from one
+        constant, and the parity checks against the original sheet's cached values, which were
+        computed at 9.81, allow that rounding.
         """
         implied_by_the_mechanical_path = seals.BAR_PER_M_PER_G_CM3 * 1e5 / 1000.0
-        assert seals.G == 9.81
-        assert implied_by_the_mechanical_path == pytest.approx(9.80665)
-        assert seals.G != pytest.approx(implied_by_the_mechanical_path, rel=1e-6)
-        disagreement = abs(seals.G - implied_by_the_mechanical_path) / seals.G
-        assert disagreement < 0.001, "the two gravities have drifted further apart"
+        assert seals.G == 9.80665
+        assert implied_by_the_mechanical_path == pytest.approx(seals.G, rel=1e-12)
 
     def test_equivalent_mud_weight_is_the_same_number_under_another_name(self):
         assert seals.EMW_PER_BAR_PER_M == seals.BAR_PER_M_PER_G_CM3

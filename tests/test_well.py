@@ -190,3 +190,40 @@ class TestTheDepthIsTiedToTheApexTheModelUses:
         deeper = dataclasses.replace(result, apex_m=result.apex_m + 80.0)
         assert not np.allclose(w, well.likelihood(deeper, WellControl(water_at_m=2250.0,
                                                                      p_connected=1.0)))
+
+
+class TestOneWellHasOneTieError:
+    """Audit finding P3-5, 15 Sep 2026.
+
+    The bracket was `Φ(a) · Φ(b)`, the form for two independent tie errors. A well's two depths
+    are tied to the mapped surface by the same error, so the chance the contact lies between
+    them is `P(z − z_w ≤ ε ≤ z − z_hc) = Φ(a) + Φ(b) − 1`. The difference is small on the
+    defaults and it is the right expression.
+    """
+
+    def test_the_bracket_is_the_difference_of_two_cumulatives(self, result):
+        from scipy.stats import norm
+        control = WellControl(hc_down_to_m=2200.0, water_at_m=2260.0, depth_sigma_m=20.0,
+                              p_connected=1.0)
+        got = well.likelihood(result, control)
+        a = (result.contact_m - 2200.0) / 20.0
+        b = (2260.0 - result.contact_m) / 20.0
+        expected = np.clip(norm.cdf(a) + norm.cdf(b) - 1.0, 0.0, 1.0)
+        assert np.allclose(got, expected)
+
+    def test_the_shared_form_is_never_above_the_product_form(self, result):
+        """`Φa + Φb − 1 ≤ Φa·Φb` because `(1 − Φa)(1 − Φb) ≥ 0`: one error cannot make the
+        bracket more likely than two independent ones would."""
+        from scipy.stats import norm
+        control = WellControl(hc_down_to_m=2200.0, water_at_m=2260.0, depth_sigma_m=20.0,
+                              p_connected=1.0)
+        got = well.likelihood(result, control)
+        a = (result.contact_m - 2200.0) / 20.0
+        b = (2260.0 - result.contact_m) / 20.0
+        assert np.all(got <= norm.cdf(a) * norm.cdf(b) + 1e-12)
+
+    def test_a_single_depth_is_a_single_step_either_way(self, result):
+        from scipy.stats import norm
+        got = well.likelihood(result, WellControl(water_at_m=2250.0, depth_sigma_m=15.0,
+                                                  p_connected=1.0))
+        assert np.allclose(got, norm.cdf((2250.0 - result.contact_m) / 15.0))
