@@ -163,9 +163,10 @@ New here? Start with the tabs in this order.
   column that qualifies as a discovery at the well.
 - **3.0 HCWC Limiters** — the mechanisms that may limit the column, each with its probability
   and its depth or capacity uncertainty.
-- **4.0 Results** — the contact distribution, the controlling mechanism, and the probability of
-  hydrocarbons with depth.
-- **5.0 DHI** — the geological model updated with a DHI indication and its uncertainty.
+- **4.0 HCWC (geological)** — the contact distribution, the controlling mechanism, and the
+  probability of hydrocarbons with depth, from the competing limits alone.
+- **5.0 HCWC (DHI + well)** — the same, updated by a DHI or a well penetration and their
+  uncertainty.
 - **6.0 Benchmarks** and **8.0 Theory** — empirical reference data and methodological
   background.
 - **7.0 Export** — contact percentiles for predrill volumetric tools, with the distribution
@@ -333,7 +334,7 @@ with tab2:
 with tab3:
     limiters_tab.render()
 
-# --------------------------------------------------------------------------- 4.0 Results
+# --------------------------------------------------------------------------- 4.0 HCWC (geological)
 #
 # **The contact and its depth decomposition are two readings of one run, so they are two sub-tabs
 # of one tab.** They were separate tabs until the strip outgrew its own rule — `theme.tab_labels`
@@ -358,7 +359,7 @@ with tab4:
     with _depth:
         depth_risk_tab.render(n=Numbering(4, sub=2, basis=theme.GEOLOGICAL))
 
-# --------------------------------------------------------------------------- 5.0 Results + DHI
+# --------------------------------------------------------------------------- 5.0 HCWC (DHI + well)
 #
 # **Three sub-tabs, because the first one was doing two jobs.** It elicited the DHI evidence AND
 # presented the result, so the result half never grew the structure tab 4.0 has -- six of tab 4.0's
@@ -386,7 +387,7 @@ with tab5:
     # `Figure 5.2.1` is the first exhibit on *The observation*, and it stays that whatever else moves.
     _how, _evidence, _contact_dhi, _depth_dhi = st.tabs(
         ["5.1 · How a DHI moves a chance", "5.2 · The observation",
-         "5.3 · Contact and chance + DHI", "5.4 · Risk against depth + DHI"])
+         "5.3 · Contact and chance (DHI + well)", "5.4 · Risk against depth (DHI + well)"])
     for _panel in (_how, _evidence, _contact_dhi, _depth_dhi):
         with _panel:
             st.markdown(theme.subtab_marker(5), unsafe_allow_html=True)

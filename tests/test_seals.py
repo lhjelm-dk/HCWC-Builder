@@ -583,3 +583,30 @@ class TestSampledMechanicalColumn:
                                             hc_density_g_cm3=(0.775, 0.775))
         got = seals.sample_mechanical_column_m(inputs, 50, seed=3)
         assert got == pytest.approx(3522.66, abs=0.01)
+
+
+class TestTheMicpRoute:
+    """Plan A1b, 15 Sep 2026: a mercury-injection displacement pressure as the seal input,
+    converted to the largest connected throat with the laboratory pair (480 dyne/cm, 140°)."""
+
+    def test_a_thousand_psi_is_about_a_tenth_of_a_micron(self):
+        assert seals.pore_throat_radius_from_micp_um(1000.0) == pytest.approx(0.1067, abs=0.001)
+
+    def test_tighter_pressure_is_a_smaller_throat(self):
+        r = [seals.pore_throat_radius_from_micp_um(p) for p in (500.0, 1000.0, 5000.0, 20000.0)]
+        assert r == sorted(r, reverse=True)
+
+    def test_it_inverts_the_entry_pressure_it_came_from(self):
+        """Washburn both ways: the radius the conversion gives, put back through the entry
+        pressure with mercury's pair, is the pressure that was typed."""
+        import math
+        p_psi = 2500.0
+        r_m = seals.pore_throat_radius_from_micp_um(p_psi) * 1e-6
+        back = seals.capillary_entry_pressure_pa(
+            seals.MERCURY_AIR_TENSION_DYNE_CM,
+            math.radians(180.0 - seals.MERCURY_AIR_CONTACT_ANGLE_DEG), r_m) / seals.PSI_TO_PA
+        assert back == pytest.approx(p_psi, rel=1e-9)
+
+    def test_a_non_positive_pressure_is_refused(self):
+        with pytest.raises(ValueError):
+            seals.pore_throat_radius_from_micp_um(0.0)
