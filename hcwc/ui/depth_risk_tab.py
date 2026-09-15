@@ -74,31 +74,22 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         "The competing limits alone. The updated version of this tab is 5.3.")
     if with_dhi:
         st.markdown(
-            "The same decomposition as tab 4.0, after the Bayesian update on tab 5.0. The "
-            "geological curves are drawn underneath unchanged, because the DHI may move the "
-            "total and may not re-attribute it between elements. That is E-POS's resolution "
-            "ceiling: a fluid indicator senses whether a reservoir exists and what fluid fills "
-            "it, not which of charge, closure or retention failed."
+            "The same decomposition as tab 4.0, after the update on tab 5.1. The geological "
+            "curves are drawn underneath unchanged: the evidence may move the total and may not "
+            "re-attribute it between elements. Method: see 8.1.5."
         )
     st.markdown(
-        "WellVolPOS computes one location factor, `r = P(contact > z_entry | success)`, and "
-        "spreads it across the elements by a weighting rule. Its docstring states what that "
-        "gives: *\"Spreading a single number across four elements presents it differently; it "
-        "does not add information about charge or closure.\"*\n\n"
-        "The competing-limits model knows which element bound the column in each realisation. "
-        "Taking the shallowest active limit within each element, its group minimum, gives each "
-        "element its own curve. That is a derivation; the allocation is a presentation."
+        "Each element's curve is derived from the shallowest active limit within that element, "
+        "its group minimum. WellVolPOS allocates one location factor across the elements by a "
+        "rule; the derived curves say which element binds at each depth. Method: see 8.1.3."
     )
 
     # ------------------------------------------------------------------ reservoir effectiveness
     theme.heading(tab, sub=n.sub, text="1 · Reservoir effectiveness")
     st.markdown(
-        "Two effects are called reservoir versus depth, and only one moves the contact. R2, the "
-        "base or pinch-out, ends the reservoir so the column cannot continue; that is a "
-        "geometric limit like spill and belongs on tab 3.0. R1, effectiveness (diagenesis, "
-        "cementation, a net-to-gross trend), does not move the contact; it changes the chance of "
-        "success at a depth. Conflating them breaks the consistency identity below, so R1 is "
-        "here and the identity is checked over the contact-controlling elements only."
+        "A reservoir that ends at a surface (base or pinch-out) is a limit on tab 3.0 and moves "
+        "the contact; a reservoir that degrades with depth is entered here and lowers the chance "
+        "without moving it. Method: see 8.1.3."
     )
     use_r1 = st.toggle(
         "Apply a reservoir-effectiveness decline", value=False, key=f"r1_on_{tab}",
@@ -285,23 +276,16 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         o2.metric("At the assessment minimum", f"{limit_set.min_column_m:.0f} m column",
                   "both read at the same threshold", delta_color="off")
         st.caption(
-            "The DHI moves the whole curve, not a scalar beside it. The updated POS and the "
-            "updated contact distribution are one object, so a DHI that raises the chance of "
-            "success also moves where the contact is, and both readings come from this one "
-            "curve.\n\n"
-            "The element curves below it are not updated. A fluid indicator senses whether a "
-            "reservoir exists and what fills it, not which of charge, closure or retention "
-            "failed, so the DHI may move the total and may not re-attribute it between "
-            "elements."
+            "The updated POS and the updated contact distribution are one object, read off this "
+            "one curve. The element curves below it are not updated. Method: see 8.1.5."
         )
 
     # ------------------------------------------------------------------ consistency
     theme.heading(tab, sub=n.sub, text="3 · Consistency test")
     st.markdown(
         "Under independent limits, `∏ₑ Pₑ(z) = P(contact > z)`: the product of the element "
-        "curves reproduces the contact distribution. Where it does not, the elements are not "
-        "independent, and the gap is the double-count the three-tool architecture exists to "
-        "avoid. The test runs on every rerun rather than assuming independence."
+        "curves reproduces the contact distribution. The test runs on every rerun. Method: see "
+        "8.1.8."
     )
     c1, c2, c3 = st.columns(3)
     c1.metric("Max gap, column space", f"{d.max_abs_residual_column:.3f}",
@@ -328,13 +312,9 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                  "depends on depth.")
 
     st.info(
-        "Two spaces, because every element's contact is `apex + h`, so the elements share the "
-        "apex draw: even with independent limits, the depth-space curves are dependent and "
-        "their product is not the contact distribution. The identity is exact only in "
-        "column-height space. The difference between the two residuals is the apex's "
-        "contribution, and it says whether the depth-space test can be read at face value. On a "
-        "tightly picked apex the two residuals are nearly identical; a prospect with real "
-        "depth-conversion uncertainty needs the distinction."
+        "The identity is exact in column-height space and approximate in depth space, where the "
+        "elements share the apex draw; the difference between the two residuals is the apex's "
+        "contribution. Method: see 8.1.4."
     )
 
     # ------------------------------------------------------------------ allocation comparison
@@ -435,10 +415,6 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         f"at {z_entry:,.0f} m, finds hydrocarbon: the prospect chance times the chance the "
         f"contact lies below that depth. The prospect POS above it asks whether there is a "
         f"commercial column anywhere, and is always the larger. `r` is the depth term only and "
-        f"carries no element risk; quoted as a chance of success it overstates the well by "
-        f"`1 / P(G)`.\n\n"
-        "An element with no limit in the model never controls the contact, so its derived value "
-        "is its element chance unchanged with depth; on this model that is Reservoir, and an R2 "
-        "pinch-out limit on tab 3.0 would give it a depth curve of its own. Its effectiveness "
-        "decline (§1) applies either way."
+        f"carries no element risk. An element with no limit in the model has its element "
+        f"chance unchanged with depth. Method: see 8.1.3."
     )
