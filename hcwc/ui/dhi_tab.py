@@ -51,14 +51,25 @@ OPENING_STRENGTH = 5.0
 #: `P(the picked event is the contact | there is hydrocarbon)` — the conditional factor the
 #: geophysicist supplies. `p_valid` is this times the amplitude-updated `P(G)`, so the two
 #: judgements stay separate and the product cannot exceed the chance of any hydrocarbon.
-DEFAULT_CONTACT_GIVEN_HC = 0.70
+#: 0.36 since 15 Sep 2026 (Lars), from 0.70: a cautious opening value, the geometric mean of an
+#: ambiguous fit to structure, diffuse terminations and an absent fluid-contact reflection. The
+#: floor under the pick is then 0.64, so an untouched slider lets the pick say at most 0.56 : 1
+#: against any contact depth; a well-conformed event is claimed by moving it.
+DEFAULT_CONTACT_GIVEN_HC = 0.36
 
 #: The three **contact** attributes, after Monigle et al. (2025), who separate them from the
 #: *body* attributes that grade the amplitude. These answer whether the picked event is the
 #: base of the column; the strength slider answers whether there is a column. The numbers are
 #: elicited judgements, not a calibration -- which is why the result is offered rather than
-#: applied. Shipped defaults are the middle options and give c = 0.70, so the suggestion
-#: agrees with the slider's own default and applying it moves nothing.
+#: applied. The shipped selections (:data:`DEFAULT_ATTRIBUTE_LEVELS`) give c = 0.36, the
+#: slider's own default, so applying the suggestion on an untouched tab moves nothing.
+#: The option each attribute opens on: the levels whose geometric mean is the shipped c.
+DEFAULT_ATTRIBUTE_LEVELS: dict[str, str] = {
+    "Fit to structure": "Ambiguous",
+    "Amplitude terminations": "Diffuse or long",
+    "Fluid contact reflection": "Absent, where one was expected",
+}
+
 CONTACT_ATTRIBUTES: dict[str, dict[str, float]] = {
     "Fit to structure": {
         "Flat, conformable, cuts dipping structure": 0.95,
@@ -736,7 +747,8 @@ def render(n: Numbering | None = None) -> None:
         cols = st.columns(len(CONTACT_ATTRIBUTES))
         for col, (attribute, levels) in zip(cols, CONTACT_ATTRIBUTES.items()):
             picked_levels[attribute] = col.selectbox(
-                attribute, list(levels), index=1,
+                attribute, list(levels),
+                index=list(levels).index(DEFAULT_ATTRIBUTE_LEVELS[attribute]),
                 key=f"dhi_in_attr_{attribute.replace(' ', '_').lower()}")
         scores = [CONTACT_ATTRIBUTES[a][lv] for a, lv in picked_levels.items()]
         suggested_c = float(np.prod(scores) ** (1.0 / len(scores)))
@@ -786,9 +798,10 @@ def render(n: Numbering | None = None) -> None:
         "- 0.9 and up: a flat, conformable event that cuts dipping structure, with a clear "
         "fluid contact reflection.\n"
         "- 0.6 to 0.8: conformable and plausibly a contact, with something missing: no FCR, or "
-        "terminations that are not sharp. The shipped default sits here.\n"
+        "terminations that are not sharp.\n"
         "- 0.3 to 0.5: the event is there and flat, and so is a plausible lithological "
-        "explanation.\n"
+        "explanation. The shipped default of 0.36 sits here; a well-conformed event is "
+        "claimed by moving the slider rather than by leaving it.\n"
         "- Below 0.2: the event would not have been picked on a less interesting prospect. "
         "Whether there is a DHI at all is the question at this level."
     )
