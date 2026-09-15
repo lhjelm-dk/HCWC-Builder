@@ -327,3 +327,25 @@ what to check. Each control keeps its help. Each section opens with at most two 
 5. **Order of work.** Write 8.1 first (all nine sections, from the sources above), then trim
    the tabs against it, one tab per PR, with the render tests updated as each tab changes. The
    250-word-per-block test stays and will pass more easily.
+
+---
+
+## 6 · Done, 16 September 2026
+
+Decisions 1–5 taken as recommended (1 move, 2 keep list, 3 confirm, 4 confirm, 5 go), and
+carried out in eight PRs:
+
+| PR | Scope |
+|---|---|
+| #21 | `docs/THEORY.md` written and rendered as 8.1, 8.1.1–8.1.9; walkthrough under 8.1.5, worked example under 8.1.7; tab 5 becomes 5.1 / 5.2 / 5.3; the five notes to `docs/superseded/`. |
+| #22 | Tab 1. |
+| #23 | Tab 2. |
+| #24 | Tab 3 (limiters, calculators). |
+| #25 | Tabs 4, 5.2, 5.3 and the trust panel. |
+| #26 | Tab 5.1. |
+| #27 | Tab 6. |
+| #28 | Tab 7, and this section. |
+
+Facts that only a tab held were carried into THEORY.md rather than dropped; each PR's commit
+message lists them. No mathematical behaviour changed. The map above records the state before
+the work and is kept as written.
