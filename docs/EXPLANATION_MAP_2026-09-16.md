@@ -345,6 +345,8 @@ carried out in eight PRs:
 | #26 | Tab 5.1. |
 | #27 | Tab 6. |
 | #28 | Tab 7, and this section. |
+| #29 | Mathematical audit of the DHI chain (`docs/DHI_AUDIT_2026-09-16.md`). |
+| #30 | Workflow order: tab 4.1 answers where / what controls / chance with depth / minimum and well, run checks last; tab 5.1 answers evidence present / strength → P(G) / contact attribution → HCWC \| G / distribution / POS / ESS / assumptions, diagnostics folded; the two DHI channels named on the tab. |
 
 Facts that only a tab held were carried into THEORY.md rather than dropped; each PR's commit
 message lists them. No mathematical behaviour changed. The map above records the state before

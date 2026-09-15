@@ -125,7 +125,7 @@ def element_curve_table(decomposition: Decomposition,
     ``direct`` is the whole-prospect curve read from the contact distribution itself. Under
     independent limits the four element columns multiply to it; where they do not, the elements
     share something and the columns must not be multiplied by anything else that also depends on
-    depth. Tab 4.0 §3 quantifies that gap, and it travels with the file rather than being left
+    depth. Tab 4.2 §3 quantifies that gap, and it travels with the file rather than being left
     behind.
     """
     curves = decomposition.element_pos_at_depth(element_pos)

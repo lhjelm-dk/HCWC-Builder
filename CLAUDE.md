@@ -40,8 +40,11 @@ kept in `docs/superseded/`. `docs/DHI_alignment.md` keeps its voice: it is a sig
 
 ## Structure, 15 Sep 2026
 
-The tabs answer three questions in order: where is the contact (4.1.1), what controls it
-(4.1.2, 3.1), what does that mean for the well (4.1.3, 4.1.4). A first model needs tab 2
+The tabs answer four questions in order: where is the contact (4.1.1), what controls it
+(4.1.2, 3.1), how the chance changes with depth (4.1.3), what that means for the assessment
+minimum and the well (4.1.4); run checks close the tab (4.1.5). Tab 5.1 answers seven: evidence
+present, evidence strength (updates P(G)), contact attribution (updates HCWC | G), the HCWC
+distribution, POS, effective sample size, assumptions; diagnostics are folded after them. A first model needs tab 2
 sections 1–2 and tab 3 defaults; everything else has a default. Every probability shown says
 whether it is conditional on G, whether it includes the element risk, and the threshold it is
 read at. Assumptions are stated in the open (5.1.6), each labelled elicited, heuristic or

@@ -162,19 +162,13 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         for col, p in ((m3, 90), (m4, 50), (m5, 10)):
             col.metric(f"Contact P{p}", f"{pct(p):,.0f} m",
                        "success cases only", delta_color="off")
-        st.markdown(
-            f"`Prospect POS = P(G) × P(column ≥ h | G)` = "
-            f"{p_geological:.3f} × {column_pos:.3f} = {prospect_pos:.3f}\n\n"
-            f"`P(G)` is the element chance from tab 2.0; `P(column ≥ h | G)` is what this tab "
-            f"computes, from the competing limits, conditional on the elements having worked."
-        )
         st.caption(
             "Every chance here carries its threshold and the conditioning it was computed under; "
             "the contact percentiles are success cases only. Method: see 8.1.3."
         )
 
     # ------------------------------------------------------------------ 1 · exceedance
-    theme.heading(tab, sub=n.sub, text="1 · Contact depth")
+    theme.heading(tab, sub=n.sub, text="1 · Where the contact is")
     # A cumulative curve hides where the mass is: two quite different contact distributions can
     # trace nearly the same exceedance. The histogram is the same object read the other way, so it
     # is on by default and switchable off rather than the reverse.
@@ -225,7 +219,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                 "curve is the risk output; POS at any threshold is a reading of it.")
 
     # ------------------------------------------------------------------ 2 · which limit controls
-    theme.heading(tab, sub=n.sub, text="2 · Controlling limit by depth")
+    theme.heading(tab, sub=n.sub, text="2 · What controls the contact")
     edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 26)
     centres = 0.5 * (edges[:-1] + edges[1:])
 
@@ -364,80 +358,8 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                          "the half the evidence does move.")
                         if given_dhi else ""))
 
-    # ------------------------------------------------------------------ 3 · the chance
-    # The third question. Every point on this curve is a prospect chance: the element chance
-    # times the chance of a column at least this tall given the elements worked. On the
-    # geological tab the first factor is P(G) from tab 2.0; given the DHI it is P(G) updated by
-    # the amplitude, which tab 5.0 has already written into the overlay by the time its results
-    # sub-tab draws this.
-    theme.heading(tab, sub=n.sub, text="3 · Prospect chance against threshold")
-    _overlay = st.session_state.get("dhi_overlay") if given_dhi else None
-    _p_g_applied = (float(_overlay.get("p_g_given_amplitude", p_geological))
-                    if _overlay else p_geological)
-    _chance = _p_g_applied * np.asarray(exceed(grid), dtype=float)
-    _chance_prior = p_geological * np.asarray(result.exceedance(grid), dtype=float)
-    figp = go.Figure()
-    if given_dhi:
-        figp.add_scatter(x=_chance_prior, y=apex_med + grid, mode="lines",
-                         name="geological", line=dict(color="#7d8794", width=2, dash="dash"))
-    figp.add_scatter(x=_chance, y=apex_med + grid, mode="lines",
-                     name=(theme.evidence_basis() if given_dhi else "geological"),
-                     line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI if given_dhi
-                                                        else theme.GEOLOGICAL], width=3))
-    if h_min > 0:
-        figp.add_hline(y=apex_med + h_min, line=dict(color="#C44E52", dash="dash"),
-                       annotation_text=f"assessment minimum: {prospect_pos if not given_dhi else _p_g_applied * column_pos:.1%}",
-                       annotation_position="bottom right")
-    figp.update_layout(xaxis_title="Prospect chance  =  P(G) × P(column ≥ h | G)",
-                       xaxis_range=[0, min(1.0, max(_p_g_applied, p_geological, 0.05) * 1.15)],
-                       yaxis_title="Contact at least this deep (m TVDSS)",
-                       yaxis=dict(autorange="reversed"), height=420, margin=dict(t=20),
-                       legend=dict(orientation="h", y=-0.18))
-    n.plot(figp, f"The prospect chance at every threshold. Includes the element risk: each "
-                 f"point is P(G) = {_p_g_applied:.3f} times the chance of a column at least that "
-                 f"tall given the elements worked, so it starts at P(G) at the apex and falls with "
-                 f"depth. Read at the assessment minimum it is the headline above; read at any "
-                 f"other depth it is the chance of a column reaching that depth. Method: see "
-                 f"8.1.3.")
-
-    # ------------------------------------------------------------------ 4 · the well
-    # The last question: a well entering the reservoir at a depth finds hydrocarbon if the
-    # elements worked and the contact lies below that depth. The entry depth is shared with the
-    # per-element reading on the sibling sub-tab through session state, so the two agree.
-    theme.heading(tab, sub=n.sub, text="4 · The well")
-    from hcwc.ui.depth_risk_tab import DEFAULT_ENTRY_DEPTH_M
-    _lo_z, _hi_z = float(result.contact_m.min()), float(result.contact_m.max())
-    _open_z = min(max(DEFAULT_ENTRY_DEPTH_M, _lo_z), _hi_z)
-    _zkey, _zhead = f"z_entry_{tab}", f"z_entry_headline_{tab}"
-    st.session_state.setdefault(_zkey, _open_z)
-    st.session_state.setdefault(_zhead, float(st.session_state[_zkey]))
-
-    def _push_entry(zkey=_zkey, zhead=_zhead):
-        st.session_state[zkey] = st.session_state[zhead]
-        st.session_state[f"z_entry_num_{tab}"] = st.session_state[zhead]
-
-    w1, w2, w3 = st.columns([1, 1, 1])
-    z_entry = w1.number_input("Reservoir entry depth (m TVDSS)", _lo_z, _hi_z, step=5.0,
-                              key=_zhead, on_change=_push_entry,
-                              help="Where the well enters the reservoir. The same depth is used "
-                                   "by the per-element reading on the Risk against depth "
-                                   "sub-tab.")
-    _r_well = float(engine.exceedance(result.contact_m, np.array([z_entry]), weights)[0])
-    _p_well = _p_g_applied * _r_well
-    w2.metric("P(well finds hydrocarbon)", f"{_p_well:.1%}",
-              f"P(G) {_p_g_applied:.3f} × P(contact ≥ {z_entry:,.0f} m | G) {_r_well:.3f}",
-              delta_color="off")
-    w3.metric("Column at the well, P50", f"{max(pct(50) - z_entry, 0.0):,.0f} m",
-              f"P50 contact {pct(50):,.0f} m", delta_color="off")
-    st.caption(
-        f"P(well) includes the element risk and is read at the entry depth, not at the "
-        f"assessment minimum; it is at most the prospect chance. The column at the well is the "
-        f"contact depth minus the entry depth. The per-element reading is on the Risk against "
-        f"depth sub-tab. Method: see 8.1.3."
-    )
-
     # ------------------------------------------------------------------ 3 · ranking
-    theme.heading(tab, sub=n.sub, text="5 · Limit ranking and sensitivity")
+    theme.heading(tab, sub=n.sub, text="2b · Limit ranking and sensitivity")
     successes_only = st.toggle(
         "Restrict to realisations above the assessment minimum", value=False,
         key=f"restrict_successes_{tab}",
@@ -550,93 +472,178 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                 "among the survivors. Both columns are needed; neither alone is the answer. "
                 "Method: see 8.1.2.")
 
-    # ------------------------------------------------------------------ group minima
-    theme.heading(tab, sub=n.sub, text="6 · By risk element")
-    rows = []
-    for group in Group:
-        gm = result.group_minimum(group)
-        finite = gm[np.isfinite(gm)]
-        if finite.size == 0:
-            continue
-        rows.append({"Element": group.value,
-                     # Counted with `is`, not through numpy: `np.array` on a str-Enum stringifies each
-# member to "Group.CHARGE" and truncates to the array width, so the comparison
-# silently returns nonsense rather than failing.
-                     "Limits": sum(1 for x in limit_set.groups if x is group),
-                     "Binds in": f"{np.isfinite(gm).mean():.0%} of realisations",
-                     "Median column when it binds": f"{np.median(finite):,.0f} m",
-                     "Controls the contact": f"{sum(s for nm, s in ranking if group_of[nm] is group):.1%}"})
-    n.table(pd.DataFrame(rows),
-            "Group minima: the shallowest active limit within each element. The per-element "
-            "chance-versus-depth curves on the Risk against depth sub-tab are derived from "
-            "these.")
+    # ------------------------------------------------------------------ 2c, 2d · folded
+    # Two further readings of the controls. Moved behind a fold on 16 Sep 2026 so the default
+    # view answers the four questions in order; the figures and their numbers are unchanged
+    # and the export report carries them as before.
+    with st.expander("Further readings of the controls: by risk element, and all limits on one "
+                     "axis", expanded=False):
+        # ------------------------------------------------------------------ group minima
+        theme.heading(tab, sub=n.sub, text="2c · By risk element")
+        rows = []
+        for group in Group:
+            gm = result.group_minimum(group)
+            finite = gm[np.isfinite(gm)]
+            if finite.size == 0:
+                continue
+            rows.append({"Element": group.value,
+                         # Counted with `is`, not through numpy: `np.array` on a str-Enum stringifies each
+    # member to "Group.CHARGE" and truncates to the array width, so the comparison
+    # silently returns nonsense rather than failing.
+                         "Limits": sum(1 for x in limit_set.groups if x is group),
+                         "Binds in": f"{np.isfinite(gm).mean():.0%} of realisations",
+                         "Median column when it binds": f"{np.median(finite):,.0f} m",
+                         "Controls the contact": f"{sum(s for nm, s in ranking if group_of[nm] is group):.1%}"})
+        n.table(pd.DataFrame(rows),
+                "Group minima: the shallowest active limit within each element. The per-element "
+                "chance-versus-depth curves on the Risk against depth sub-tab are derived from "
+                "these.")
 
-    # ------------------------------------------------------------------ 5 · one axis
-    theme.heading(tab, sub=n.sub, text="7 · All limits on one axis")
-    st.markdown(
-        "The competition drawn. A limit that is only sometimes present flattens at its "
-        "`P(active)`, which can be read off the right-hand end of its curve. The result is the "
-        "lower envelope, because the contact is the shallowest active limit. A curve far to the "
-        "right of the bold line is a mechanism that never controlled."
-        + (f"\n\nBoth answers are on the axis. The bold red line is the contact "
-           f"{theme.evidence_basis()}, the answer on this tab; the dashed blue one is the purely "
-           f"geological contact from tab 4.0, kept beside it because the gap between them is "
-           f"what the evidence changed. Every thin limit curve is drawn under the same weights, "
-           f"which keeps the lower-envelope reading true."
-           if given_dhi else ""))
-    c1, c2, c3 = st.columns([2, 2, 1])
-    space = c1.radio(
-        "Show depths as", [limits_mod.DEPTH, limits_mod.COLUMN], horizontal=True,
-        key=f"stack_space_{tab}",
-        format_func=lambda s_: "m TVDSS" if s_ == limits_mod.DEPTH else "m column below apex",
-        help="Display only. The model always competes in column height, because that is the space "
-             "where comparing a seal capacity with a spill point means anything.")
-    mode = c2.selectbox(
-        # **Violin, not the exceedance curves.** Lars's call, 3 Sep 2026, and it is the right one
-        # for an opening view: the curves are the analytic reading and reward knowing what a
-        # flattening level means, while the violins show where each limit's mass actually sits,
-        # which is the question a reader arrives with. Both tabs open the same way — a default that
-        # differed between 4.0 and 5.0 would make flipping between them a hunt rather than a
-        # comparison.
-        "Draw as", limit_stack.MODES, index=limit_stack.MODES.index("Violin"),
-        key=f"stack_mode_{tab}",
-        help="Exceedance curves read as probabilities; the violins and the histogram show where "
-             "each limit lands; points show the individual realisations behind them.")
-    every = c3.number_input(
-        "Every n-th point", 1, 500, 10, 1, key=f"stack_every_{tab}",
-        disabled=mode != "Points",
-        help="Thinning, so the cloud stays readable: 10 draws every tenth realisation. Applies "
-             "to Points only.")
+        # ------------------------------------------------------------------ 5 · one axis
+        theme.heading(tab, sub=n.sub, text="2d · All limits on one axis")
+        st.markdown(
+            "The competition drawn. A limit that is only sometimes present flattens at its "
+            "`P(active)`, which can be read off the right-hand end of its curve. The result is the "
+            "lower envelope, because the contact is the shallowest active limit. A curve far to the "
+            "right of the bold line is a mechanism that never controlled."
+            + (f"\n\nBoth answers are on the axis. The bold red line is the contact "
+               f"{theme.evidence_basis()}, the answer on this tab; the dashed blue one is the purely "
+               f"geological contact from tab 4.0, kept beside it because the gap between them is "
+               f"what the evidence changed. Every thin limit curve is drawn under the same weights, "
+               f"which keeps the lower-envelope reading true."
+               if given_dhi else ""))
+        c1, c2, c3 = st.columns([2, 2, 1])
+        space = c1.radio(
+            "Show depths as", [limits_mod.DEPTH, limits_mod.COLUMN], horizontal=True,
+            key=f"stack_space_{tab}",
+            format_func=lambda s_: "m TVDSS" if s_ == limits_mod.DEPTH else "m column below apex",
+            help="Display only. The model always competes in column height, because that is the space "
+                 "where comparing a seal capacity with a spill point means anything.")
+        mode = c2.selectbox(
+            # **Violin, not the exceedance curves.** Lars's call, 3 Sep 2026, and it is the right one
+            # for an opening view: the curves are the analytic reading and reward knowing what a
+            # flattening level means, while the violins show where each limit's mass actually sits,
+            # which is the question a reader arrives with. Both tabs open the same way — a default that
+            # differed between 4.0 and 5.0 would make flipping between them a hunt rather than a
+            # comparison.
+            "Draw as", limit_stack.MODES, index=limit_stack.MODES.index("Violin"),
+            key=f"stack_mode_{tab}",
+            help="Exceedance curves read as probabilities; the violins and the histogram show where "
+                 "each limit lands; points show the individual realisations behind them.")
+        every = c3.number_input(
+            "Every n-th point", 1, 500, 10, 1, key=f"stack_every_{tab}",
+            disabled=mode != "Points",
+            help="Thinning, so the cloud stays readable: 10 draws every tenth realisation. Applies "
+                 "to Points only.")
 
-    apex_med = float(np.median(result.apex_m))
-    lo_def, hi_def = limit_stack.default_window(result, space, apex_med,
-                                                limit_stack._spill(result, apex_med))
-    lo_def, hi_def = float(min(lo_def, hi_def)), float(max(lo_def, hi_def))
-    pad = 0.35 * (hi_def - lo_def)
-    window = st.slider(  # keyed below, by tab and space
-        f"Depth range ({limits_mod.Limit.label_for(space)})",
-        float(lo_def - pad), float(hi_def + pad), (lo_def, hi_def), key=f"stack_window_{tab}_{space}",
-        help="Defaults to 1 % above the apex and 1 % below the spill point. Several limits carry "
-             "tails reaching far below anything the structure contains, and letting those set the "
-             "range squeezes the part that matters into the top of the plot.")
+        apex_med = float(np.median(result.apex_m))
+        lo_def, hi_def = limit_stack.default_window(result, space, apex_med,
+                                                    limit_stack._spill(result, apex_med))
+        lo_def, hi_def = float(min(lo_def, hi_def)), float(max(lo_def, hi_def))
+        pad = 0.35 * (hi_def - lo_def)
+        window = st.slider(  # keyed below, by tab and space
+            f"Depth range ({limits_mod.Limit.label_for(space)})",
+            float(lo_def - pad), float(hi_def + pad), (lo_def, hi_def), key=f"stack_window_{tab}_{space}",
+            help="Defaults to 1 % above the apex and 1 % below the spill point. Several limits carry "
+                 "tails reaching far below anything the structure contains, and letting those set the "
+                 "range squeezes the part that matters into the top of the plot.")
 
-    n.plot(limit_stack.figure(result, space=space, mode=mode, window=window,
-                              every=int(every), posterior=weights),
-           "One axis, five views. Exceedance curves is the analytic view: flattening levels are "
-           "`P(active)`, and the bold line is the lower envelope. Violin and half violin show "
-           "where each limit's mass sits, better for overlap and worse for reading a "
-           "probability. Histogram is the same unsmoothed, for where a kernel would invent a "
-           "shape the samples do not have. Points shows the sample itself."
-           + ("\n\nThree groups of three kinds. Competing limits are the mechanisms. The "
-              "evidence alone is not one of them and is drawn hollow because it is a likelihood, "
-              "not a count of realisations; its shape carries the information, not its area. "
-              "Result carries both answers, "
-              + theme.basis_tag(theme.GEOLOGICAL) + " and " + theme.basis_tag(theme.GIVEN_DHI)
-              + ", so the middle group is what turns the first into the second.\n\n"
-                "Points is the exception: the evidence lane's markers are drawn from its shape "
-                "rather than observed, and the updated result lane is an importance resample, so "
-                "a favoured realisation appears more than once."
-              if given_dhi else ""))
+        n.plot(limit_stack.figure(result, space=space, mode=mode, window=window,
+                                  every=int(every), posterior=weights),
+               "One axis, five views. Exceedance curves is the analytic view: flattening levels are "
+               "`P(active)`, and the bold line is the lower envelope. Violin and half violin show "
+               "where each limit's mass sits, better for overlap and worse for reading a "
+               "probability. Histogram is the same unsmoothed, for where a kernel would invent a "
+               "shape the samples do not have. Points shows the sample itself."
+               + ("\n\nThree groups of three kinds. Competing limits are the mechanisms. The "
+                  "evidence alone is not one of them and is drawn hollow because it is a likelihood, "
+                  "not a count of realisations; its shape carries the information, not its area. "
+                  "Result carries both answers, "
+                  + theme.basis_tag(theme.GEOLOGICAL) + " and " + theme.basis_tag(theme.GIVEN_DHI)
+                  + ", so the middle group is what turns the first into the second.\n\n"
+                    "Points is the exception: the evidence lane's markers are drawn from its shape "
+                    "rather than observed, and the updated result lane is an importance resample, so "
+                    "a favoured realisation appears more than once."
+                  if given_dhi else ""))
+
+    # ------------------------------------------------------------------ 3 · the chance
+    # The third question. Every point on this curve is a prospect chance: the element chance
+    # times the chance of a column at least this tall given the elements worked. On the
+    # geological tab the first factor is P(G) from tab 2.0; given the DHI it is P(G) updated by
+    # the amplitude, which tab 5.0 has already written into the overlay by the time its results
+    # sub-tab draws this.
+    theme.heading(tab, sub=n.sub, text="3 · How the chance changes with depth")
+    _overlay = st.session_state.get("dhi_overlay") if given_dhi else None
+    _p_g_applied = (float(_overlay.get("p_g_given_amplitude", p_geological))
+                    if _overlay else p_geological)
+    _chance = _p_g_applied * np.asarray(exceed(grid), dtype=float)
+    _chance_prior = p_geological * np.asarray(result.exceedance(grid), dtype=float)
+    figp = go.Figure()
+    if given_dhi:
+        figp.add_scatter(x=_chance_prior, y=apex_med + grid, mode="lines",
+                         name="geological", line=dict(color="#7d8794", width=2, dash="dash"))
+    figp.add_scatter(x=_chance, y=apex_med + grid, mode="lines",
+                     name=(theme.evidence_basis() if given_dhi else "geological"),
+                     line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI if given_dhi
+                                                        else theme.GEOLOGICAL], width=3))
+    if h_min > 0:
+        figp.add_hline(y=apex_med + h_min, line=dict(color="#C44E52", dash="dash"),
+                       annotation_text=f"assessment minimum: {prospect_pos if not given_dhi else _p_g_applied * column_pos:.1%}",
+                       annotation_position="bottom right")
+    figp.update_layout(xaxis_title="Prospect chance  =  P(G) × P(column ≥ h | G)",
+                       xaxis_range=[0, min(1.0, max(_p_g_applied, p_geological, 0.05) * 1.15)],
+                       yaxis_title="Contact at least this deep (m TVDSS)",
+                       yaxis=dict(autorange="reversed"), height=420, margin=dict(t=20),
+                       legend=dict(orientation="h", y=-0.18))
+    n.plot(figp, f"The prospect chance at every threshold. Includes the element risk: each "
+                 f"point is P(G) = {_p_g_applied:.3f} times the chance of a column at least that "
+                 f"tall given the elements worked, so it starts at P(G) at the apex and falls with "
+                 f"depth. Read at the assessment minimum it is the headline above; read at any "
+                 f"other depth it is the chance of a column reaching that depth. Method: see "
+                 f"8.1.3.")
+
+    # ------------------------------------------------------------------ 4 · the well
+    # The last question: a well entering the reservoir at a depth finds hydrocarbon if the
+    # elements worked and the contact lies below that depth. The entry depth is shared with the
+    # per-element reading on the sibling sub-tab through session state, so the two agree.
+    theme.heading(tab, sub=n.sub, text="4 · The assessment minimum and the well")
+    if h_min > 0:
+        st.markdown(
+            f"`Prospect POS = P(G) × P(column ≥ h | G)` = "
+            f"{p_geological:.3f} × {column_pos:.3f} = {prospect_pos:.3f}. `P(G)` is the element "
+            f"chance from tab 2.0; `P(column ≥ h | G)` is read off Figure 1 at the assessment "
+            f"minimum, from the competing limits, conditional on the elements having worked."
+        )
+    from hcwc.ui.depth_risk_tab import DEFAULT_ENTRY_DEPTH_M
+    _lo_z, _hi_z = float(result.contact_m.min()), float(result.contact_m.max())
+    _open_z = min(max(DEFAULT_ENTRY_DEPTH_M, _lo_z), _hi_z)
+    _zkey, _zhead = f"z_entry_{tab}", f"z_entry_headline_{tab}"
+    st.session_state.setdefault(_zkey, _open_z)
+    st.session_state.setdefault(_zhead, float(st.session_state[_zkey]))
+
+    def _push_entry(zkey=_zkey, zhead=_zhead):
+        st.session_state[zkey] = st.session_state[zhead]
+        st.session_state[f"z_entry_num_{tab}"] = st.session_state[zhead]
+
+    w1, w2, w3 = st.columns([1, 1, 1])
+    z_entry = w1.number_input("Reservoir entry depth (m TVDSS)", _lo_z, _hi_z, step=5.0,
+                              key=_zhead, on_change=_push_entry,
+                              help="Where the well enters the reservoir. The same depth is used "
+                                   "by the per-element reading on the Risk against depth "
+                                   "sub-tab.")
+    _r_well = float(engine.exceedance(result.contact_m, np.array([z_entry]), weights)[0])
+    _p_well = _p_g_applied * _r_well
+    w2.metric("P(well finds hydrocarbon)", f"{_p_well:.1%}",
+              f"P(G) {_p_g_applied:.3f} × P(contact ≥ {z_entry:,.0f} m | G) {_r_well:.3f}",
+              delta_color="off")
+    w3.metric("Column at the well, P50", f"{max(pct(50) - z_entry, 0.0):,.0f} m",
+              f"P50 contact {pct(50):,.0f} m", delta_color="off")
+    st.caption(
+        f"P(well) includes the element risk and is read at the entry depth, not at the "
+        f"assessment minimum; it is at most the prospect chance. The column at the well is the "
+        f"contact depth minus the entry depth. The per-element reading is on the Risk against "
+        f"depth sub-tab. Method: see 8.1.3."
+    )
 
     # ------------------------------------------------------------------ 6 · trust
     # Geological only. The panel audits the run -- realisation counts, seed

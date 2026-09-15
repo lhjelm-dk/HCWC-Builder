@@ -76,7 +76,7 @@ limit is always active, since every prospect has a spill point; the engine refus
 the column could be unbounded.
 
 The controlling mechanism is recorded per realisation as the index of the shallowest active
-limit. Its share over the sample is the ranking on tab 3.1 and 4.1.5: in most cases two or three
+limit. Its share over the sample is the ranking on tab 3.1 and 4.1.2b: in most cases two or three
 limits set the contact and the rest do not move the answer, so the elicitation effort belongs on
 those. The ranking is reported over all realisations and over the successes: a limit that
 usually fails the prospect outright is under-represented among the survivors because it is the
