@@ -555,22 +555,14 @@ with tab7:
                                f"{_name.replace(' ', '_')}_HCWC_report.html", "text/html",
                                key="download_full_report")
         st.caption(
-            "Two documents, two moments. The one-pager is what is handed across a table: one "
-            "sheet, two charts drawn at report size, every number on it one that will be quoted. "
-            "The full report is the working record: the same summary followed by every figure "
-            "and every table the app drew, interleaved in number order, each with the caption "
-            "that says what it means and what it cannot tell. It exists so a number quoted six "
-            "months from now can be traced to the exhibit it came from, and so a reviewer can "
-            "disagree with a specific chart rather than with the tool.\n\n"
-            "Figures embed as vector SVG, a few kilobytes each and sharp at any zoom, which "
-            "matters because the arguments about a column-height distribution happen in the tails."
+            "The one-pager is one sheet with two charts at report size and the numbers that "
+            "will be quoted. The full report is the working record: the same summary followed "
+            "by every figure and table the app drew, in number order, each with its caption, so "
+            "a number quoted later can be traced to its exhibit. Figures embed as vector SVG."
         )
         st.caption(
-            "HTML rather than PDF. A PDF would need a rendering engine the app cannot rely on "
-            "having; the browser has one, and its print dialogue makes a better PDF than a "
-            "library would. The file is self-contained, with no stylesheet, font or script, so it "
-            "survives being emailed, and the figures are vector, so they print at the printer's "
-            "resolution rather than the screenshot's.")
+            "HTML rather than PDF: the browser's print dialogue makes the PDF. The file is "
+            "self-contained, with no stylesheet, font or script, and the figures are vector.")
 
 # --------------------------------------------------------------------------- 8.0 Theory & Guide
 with tab8:
