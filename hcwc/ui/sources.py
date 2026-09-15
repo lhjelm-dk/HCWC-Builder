@@ -256,6 +256,28 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
              "Typical in-situ values: gas 0.15–0.35, rising with depth; live oil 0.60–0.85, "
              "lighter than stock-tank oil because the dissolved gas is still in it. "
              "Surface-condition gas, around 0.0008, is not on this scale.")
+    # Oil–water tension is elicited rather than read off a line in temperature (15 Sep 2026,
+    # docs/IFT_CHECK_2026-09-15.md): the line the calculator carried fell below every measured
+    # reservoir-condition value above about 60 °C and understated the oil capacity by about
+    # 1.9×. The gas case keeps its temperature line, which agrees with methane–brine data, so
+    # the control is shown for oil only.
+    oil_tension = seals.DEFAULT_OIL_TENSION_DYNE_CM
+    if fluid == "Oil":
+        oil_tension = st.slider(
+            "Oil–water interfacial tension (dyne/cm)", 5.0, 50.0,
+            seals.DEFAULT_OIL_TENSION_DYNE_CM, 1.0, key=f"{key}_ift_oil",
+            help="Elicited, and held flat in temperature. Dead crudes against brine measure "
+                 "about 20–35 dyne/cm at ambient; a 796-point compilation over 25–140 °C has a "
+                 "median of 23; Schowalter (1979) took 21 for 30–40 °API oils; live-oil studies "
+                 "find the tension flat or rising with temperature. A measured value for this "
+                 "oil overrides the range. Gas–water tension follows a temperature line and "
+                 "has no control.")
+        st.caption(
+            "The tension enters the entry pressure directly, so the capacity scales with it: "
+            "a range of 18–28 dyne/cm is a factor of 1.6 on the column before any other input "
+            "moves. Elicited judgement; no calibration to this basin is known to the tool."
+        )
+
     # The one pairing that is quietly wrong. The fluid selector drives the interfacial-tension
     # correlation and the density slider drives the buoyancy, and nothing tied them together: the
     # shipped default used to be gas tension against an oil density contrast, which is the most
@@ -328,7 +350,8 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         inputs = seals.SealInputs(temperature_c=temp, contact_angle_deg=theta,
                                   seal_radius_um=r_seal, reservoir_radius_um=r_res,
                                   water_density_g_cm3=rho_w, hc_density_g_cm3=rho_hc,
-                                  fluid=fluid, subtract_reservoir=net)
+                                  fluid=fluid, subtract_reservoir=net,
+                                  oil_tension_dyne_cm=tuple(oil_tension))
         capacity = seals.sample_max_column_m(inputs, n_trials, seed + 313)
     except ValueError as exc:
         st.error(str(exc))
@@ -584,12 +607,17 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
              "its capacity is measured from there and its limit lands that much deeper.")
 
     read = lambda suffix: st.session_state[f"{TOP_SEAL_KEY}_{suffix}"]  # noqa: E731
+    # The oil tension slider exists only while the top seal is on oil; on gas the default is
+    # unused and the same default keeps the two paths identical.
+    oil_tension = tuple(st.session_state.get(f"{TOP_SEAL_KEY}_ift_oil",
+                                             seals.DEFAULT_OIL_TENSION_DYNE_CM))
     try:
         inputs = seals.SealInputs(
             temperature_c=read("t"), contact_angle_deg=read("theta"),
             seal_radius_um=read("rs"), reservoir_radius_um=read("rr"),
             water_density_g_cm3=read("rw"), hc_density_g_cm3=read("rh"),
-            fluid=read("fluid"), subtract_reservoir=read("net"))
+            fluid=read("fluid"), subtract_reservoir=read("net"),
+            oil_tension_dyne_cm=oil_tension)
         capacity = seals.sample_max_column_m(inputs, n_trials, seed + 313)
     except ValueError as exc:
         st.error(str(exc))
