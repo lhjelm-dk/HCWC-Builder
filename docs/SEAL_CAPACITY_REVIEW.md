@@ -96,6 +96,9 @@ envelope is wrong, and it is worth knowing which.
 
 The Aplin & Yang interfacial-tension correlations (`91.657·exp(−0.0126 T)` for gas,
 `−0.1886 T + 24.866` for oil) are reproduced as given and have not been traced to their
-source. The oil one is known to go non-positive near 132 °C, which the code refuses rather than
+source. *15 Sep 2026:* checked against the literature in `docs/IFT_CHECK_2026-09-15.md`. The gas
+line is consistent with methane–brine data; the oil line falls below every measured
+reservoir-condition value above about 60 °C and understates the shipped oil seal capacity by
+about 1.9×. Yang & Aplin (1998) is not its source. The oil one is known to go non-positive near 132 °C, which the code refuses rather than
 silently returning a negative column — a real physical limit, now reachable by default since burial
 depth drives temperature.
