@@ -117,11 +117,13 @@ def render_charge(key: str, n_trials: int, seed: int,
               "m³. Large because gas is compressed at reservoir pressure, which is why a gas "
               "charge quoted in surface units fills much less rock than the number suggests."))
 
-    def tri(pair):
+    def uniform(pair):
+        """A uniform draw over a slider's range. Named `tri` until 15 Sep 2026 (audit P3-7)
+        while drawing uniforms, which is the distribution the help text states."""
         lo, hi = pair
         return rng.uniform(lo, hi, n_trials)
 
-    k = tri(ntg) * tri(por) * tri(sat)
+    k = uniform(ntg) * uniform(por) * uniform(sat)
     volume = rng.normal(mean, sd, n_trials).clip(0.0)
     result = (ch.oil_contact(table, volume, np.full(n_trials, factor), k) if case == "Pure oil"
               else ch.gas_contact(table, volume, np.full(n_trials, factor), k))

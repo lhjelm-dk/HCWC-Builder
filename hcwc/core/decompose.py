@@ -189,12 +189,17 @@ def limit_curves_at_depth(result: EngineResult, depths_m: np.ndarray,
     for j, name in enumerate(result.limit_set.names):
         effective = np.where(result.active[:, j], result.sampled_m[:, j], np.inf)
         contact_j = result.apex_m + effective
-        out[name] = _share(contact_j[None, :] > depths_m[:, None], weights)
+        out[name] = _share(contact_j[None, :] >= depths_m[:, None], weights)
     return out
 
 
 def _share(indicator: np.ndarray, weights: np.ndarray | None) -> np.ndarray:
     """The share of realisations satisfying ``indicator``, weighted or not.
+
+    Every indicator in this module is ``>=``, the engine's own convention in
+    :func:`hcwc.core.engine.exceedance`, so a curve read at a depth a realisation lands on
+    exactly counts it. Until 15 Sep 2026 (audit P3-2) this module used ``>``, which differed
+    at ties only and put ``direct_depth[0]`` at ``1 - 1/n`` rather than 1.
 
     One line, but it is the whole of the DHI-against-depth feature: every curve in this module is a
     mean over realisations, so giving that mean a weight vector turns the entire decomposition into
@@ -244,7 +249,7 @@ def decompose(result: EngineResult, *, n_points: int = 200,
             continue
         h_e = result.group_minimum(element)          # inf where the element never binds
         contact_e = result.apex_m + h_e              # inf stays inf
-        by_depth[element] = _share(contact_e[None, :] > depths[:, None], weights)
+        by_depth[element] = _share(contact_e[None, :] >= depths[:, None], weights)
         by_column[element] = _share(h_e[None, :] > columns[:, None], weights)
 
     product_depth = np.ones_like(depths)
@@ -254,8 +259,8 @@ def decompose(result: EngineResult, *, n_points: int = 200,
     for element, curve in by_column.items():
         product_column = product_column * curve
 
-    direct_depth = _share(contact[None, :] > depths[:, None], weights)
-    direct_column = _share(result.column_m[None, :] > columns[:, None], weights)
+    direct_depth = _share(contact[None, :] >= depths[:, None], weights)
+    direct_column = _share(result.column_m[None, :] >= columns[:, None], weights)
 
     return Decomposition(
         depths_m=depths, columns_m=columns,
@@ -275,14 +280,22 @@ def allocation_comparison(decomposition: Decomposition, element_pos: dict[Group,
     disagree with every scheme, because they carry information about which element actually binds
     at that depth rather than a rule for dividing one number.
     """
-    i = int(np.argmin(np.abs(decomposition.depths_m - z_entry_m)))
-    derived = {e: float(c[i]) for e, c in decomposition.element_pos_at_depth(element_pos).items()}
+    # Interpolated on the grid rather than read at the nearest of its points: the grid is about
+    # 1.6 m apart, so the nearest point was up to 0.8 m off the typed entry depth (audit P3-6,
+    # 15 Sep 2026). Exceedance curves are monotone between grid points, so linear interpolation
+    # is the natural read; outside the grid the end value holds.
+    depths = decomposition.depths_m
+
+    def _at(curve: np.ndarray) -> float:
+        return float(np.interp(z_entry_m, depths, curve))
+
+    derived = {e: _at(c) for e, c in decomposition.element_pos_at_depth(element_pos).items()}
     p_well_derived = float(np.prod(list(derived.values()))) if derived else float("nan")
 
     pos_total = 1.0
     for element in ELEMENTS:
         pos_total *= float(element_pos.get(element, 1.0))
-    r = float(decomposition.direct_depth[i])
+    r = _at(decomposition.direct_depth)
 
     out = {f"derived::{e.value}": v for e, v in derived.items()}
     out["derived::P_well"] = p_well_derived
