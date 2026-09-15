@@ -150,10 +150,8 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                        "all realisations — no minimum set", delta_color="off")
         st.caption(
             "The contact distribution stands; only the chance is undefined. With no minimum "
-            "every realisation counts as a success, so these percentiles are the whole "
-            "distribution rather than its success cases, and there is no threshold to read a "
-            "chance at. Everything below this point is unaffected: the chance needs the minimum, "
-            "the contact does not."
+            "these percentiles are the whole distribution rather than its success cases, and "
+            "there is no threshold to read a chance at. Method: see 8.1.3."
         )
     else:
         m1, m2, m3, m4, m5 = st.columns(5)
@@ -165,21 +163,14 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             col.metric(f"Contact P{p}", f"{pct(p):,.0f} m",
                        "success cases only", delta_color="off")
         st.markdown(
-            f"The prospect chance is a product of two terms, and this tab computes one of "
-            f"them.\n\n"
             f"`Prospect POS = P(G) × P(column ≥ h | G)` = "
             f"{p_geological:.3f} × {column_pos:.3f} = {prospect_pos:.3f}\n\n"
-            f"`P(G)` is the element chance from tab 2.0: the product of the four element chances, "
-            f"the chance the prospect works at all, and E-POS's headline number. It says nothing "
-            f"about how tall the column is. `P(column ≥ h | G)` is what this tab computes: the "
-            f"competing limits, conditional on the elements having worked."
+            f"`P(G)` is the element chance from tab 2.0; `P(column ≥ h | G)` is what this tab "
+            f"computes, from the competing limits, conditional on the elements having worked."
         )
         st.caption(
-            "Every chance here carries its threshold and the conditioning it was computed under. "
-            "The contact percentiles are success cases only. The distribution is the primary "
-            "object and the chance multiplies it. A chance from one threshold beside a volume "
-            "from another is the error tab 6.0 is written to prevent; the conditional term quoted "
-            "as the prospect chance is the same error one level up."
+            "Every chance here carries its threshold and the conditioning it was computed under; "
+            "the contact percentiles are success cases only. Method: see 8.1.3."
         )
 
     # ------------------------------------------------------------------ 1 · exceedance
@@ -348,22 +339,14 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      "is a limit the evidence promoted; left is one it demoted. Bars are shares "
                      "of all realisations, so each limit's bars sum across depth to its change in "
                      f"overall controlling share: here {gained} {moves[gained]:+.1%} and {lost} "
-                     f"{moves[lost]:+.1%}.\n\n"
-                     "This is not the difference of the two views above. Those normalise within "
-                     "each depth bin, which conditions on where the contact is, and that is "
-                     "almost all a DHI knows; their difference is 0.9 points at most, against 3.9 "
-                     "here. A DHI moves the depth distribution, and only through it the mechanism "
-                     "mix.\n\n"
-                     "This is a claim about geometry, not about elements. The amplitude says "
-                     "roughly where the contact is, and some mechanisms explain that depth better "
-                     "than others. It is not evidence about which element failed, and the element "
-                     "chances on tab 2.0 are unchanged by it.")
+                     f"{moves[lost]:+.1%}. The evidence moves the depth distribution, and only "
+                     "through it the mechanism mix; the element chances on tab 2.0 are unchanged. "
+                     "Method: see 8.1.5.")
     else:
         n.plot(fig2, "The controlling mechanism at each depth, which changes down structure. Hue "
                      "is the risk element in E-POS's colours (salmon charge, blue closure, yellow "
                      "reservoir, green retention); lightness separates the limits within an "
-                     "element. Grant (2020) publishes an equivalent as column height control "
-                     "statistics; per-element curves built from it appear to be unpublished."
+                     "element. Method: see 8.1.2."
                      + ("\n\nBars are shares of all realisations, so bin height carries the "
                         "contact distribution and each limit's bars sum across depth to its "
                         "overall share." if scaled else
@@ -377,9 +360,8 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                          f"\n\n{GIVEN} and Geological are near-identical here, by "
                          f"{_within_bin_move(result, edges, weights):.1%} at most, and that is a "
                          "property of the evidence rather than of the control. Normalising each "
-                         "bin against itself conditions on contact depth, and the evidence moves "
-                         "which depths are reached, not what stops the column at a given depth. "
-                         "The box above shows the half it does move.")
+                         "bin against itself conditions on contact depth. The box above shows "
+                         "the half the evidence does move.")
                         if given_dhi else ""))
 
     # ------------------------------------------------------------------ 3 · the chance
@@ -415,8 +397,8 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                  f"point is P(G) = {_p_g_applied:.3f} times the chance of a column at least that "
                  f"tall given the elements worked, so it starts at P(G) at the apex and falls with "
                  f"depth. Read at the assessment minimum it is the headline above; read at any "
-                 f"other depth it is the chance of a column reaching that depth. A chance quoted "
-                 f"without its threshold is not a number.")
+                 f"other depth it is the chance of a column reaching that depth. Method: see "
+                 f"8.1.3.")
 
     # ------------------------------------------------------------------ 4 · the well
     # The last question: a well entering the reservoir at a depth finds hydrocarbon if the
@@ -449,11 +431,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
               f"P50 contact {pct(50):,.0f} m", delta_color="off")
     st.caption(
         f"P(well) includes the element risk and is read at the entry depth, not at the "
-        f"assessment minimum. It is the prospect chance times the chance the contact lies "
-        f"below {z_entry:,.0f} m given the elements worked, and is at most the prospect chance. "
-        f"The column at the well is the contact depth minus the entry depth; the per-element "
-        f"reading and the comparison with an allocated location factor are on the Risk against "
-        f"depth sub-tab."
+        f"assessment minimum; it is at most the prospect chance. The column at the well is the "
+        f"contact depth minus the entry depth. The per-element reading is on the Risk against "
+        f"depth sub-tab. Method: see 8.1.3."
     )
 
     # ------------------------------------------------------------------ 3 · ranking
@@ -548,18 +528,10 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             barmode="overlay", legend=dict(orientation="h", y=-0.22))
         n.plot(fig4,
                f"How much each elicited number moves the mean, which is a different question "
-               f"from how often it controls the contact (the figure above). A limit can set the "
-               f"contact in most realisations and still be worth no effort, because it always "
-               f"applies at nearly the same depth.\n\n"
-               f"Each bar is a conditional mean: the average outcome when that input came out in "
-               f"its top tenth, against its bottom tenth, taken from the run on screen. The "
-               f"slices come from the joint sample, so the bars respect the correlations; "
-               f"coupling the apex to the spill changes the spill's bar.\n\n"
-               f"Two kinds of bar. Where it applies is the distribution; whether it is there is "
-               f"`P(active)`. They are different elicitations, and the longer one says whether "
-               f"the question is a depth or a probability. The mean rather than the median, "
-               f"because a volume is built from the mean and a median can sit still while the "
-               f"tail moves.")
+               f"from how often it controls the contact (the figure above). Each bar is the "
+               f"mean outcome with that input in its top tenth against its bottom tenth, from "
+               f"the run on screen. Two kinds of bar: where a limit applies is its distribution; "
+               f"whether it is there is `P(active)`. Method: see 8.1.8.")
     else:
         st.info("Too few realisations to slice into deciles for a sensitivity.")
 
@@ -574,10 +546,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         # Optional: it exists only when an assessment minimum is set, so numbering it in the main
         # sequence would renumber everything below whenever that minimum went to zero.
         n.table(table, optional=True,
-                caption="The same selection effect the tool identifies in the empirical "
-                "literature, one level up: a limit that usually fails the prospect outright is "
-                "under-represented among the survivors because it is the most severe. Both "
-                "columns are needed; neither alone is the answer.")
+                caption="A limit that usually fails the prospect outright is under-represented "
+                "among the survivors. Both columns are needed; neither alone is the answer. "
+                "Method: see 8.1.2.")
 
     # ------------------------------------------------------------------ group minima
     theme.heading(tab, sub=n.sub, text="6 · By risk element")
