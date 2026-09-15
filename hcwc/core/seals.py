@@ -9,7 +9,12 @@ entirely plausible on a chart. They are stated there and asserted in ``tests/tes
 
 Sources:
 
-* **Aplin & Yang (1998)** — interfacial tension against temperature; pore-throat radius against void ratio.
+* **Yang & Aplin (1998)** — pore-throat radius against void ratio. The gas–water tension line
+  below is of unknown provenance and is consistent with methane–brine data; the oil–water line
+  that stood beside it was not, and was replaced on 15 Sep 2026 by an elicited range
+  (``docs/IFT_CHECK_2026-09-15.md``).
+* **Schowalter (1979)**, **Buckley & Fan (2005)**, **Hjelmeland & Larrondo (1986)** — the
+  oil–water tension range and its weak temperature dependence.
 * **Hansen (1996)** — the porosity–depth calibration.
 * **Sperrevik et al. (2002)**, **Manzocchi et al. (1999)** — fault-rock permeability.
 * Entry-pressure-against-porosity curves from four independent datasets, reproduced as published:
@@ -52,24 +57,24 @@ in the hundreds or thousands does not.
 
 # --------------------------------------------------------------------------- fluid properties
 def interfacial_tension_gas_dyne_cm(temperature_c: float) -> float:
-    """Gas/water interfacial tension, after Aplin & Yang (1998)."""
+    """Gas/water interfacial tension against temperature.
+
+    ``91.657·exp(−0.0126 T)``: 63 dyne/cm at 30 °C, 38 at 70 °C, 23 at 110 °C. Attributed to
+    Aplin & Yang (1998) in the original workbook; that paper carries no such correlation, so the
+    line's source is unknown. It is kept because it sits where measured methane–brine tension
+    sits at reservoir pressure (``docs/IFT_CHECK_2026-09-15.md``).
+    """
     return 91.657 * math.exp(-0.0126 * temperature_c)
 
 
-def interfacial_tension_oil_dyne_cm(temperature_c: float) -> float:
-    """Oil/water interfacial tension, after Aplin & Yang (1998).
-
-    Linear, so it goes negative above about 132 C. Guarded here, because a negative interfacial
-    tension would silently produce a negative column height.
-    """
-    gamma = -0.1886 * temperature_c + 24.866
-    if gamma <= 0:
-        raise ValueError(
-            f"the Aplin & Yang oil correlation gives a non-positive interfacial tension "
-            f"({gamma:.3g} dyne/cm) at {temperature_c} C; it is a linear fit and is not valid "
-            f"above about 132 C"
-        )
-    return gamma
+#: Oil–water interfacial tension, dyne/cm, as an elicited range rather than a line in
+#: temperature. Dead crudes against brine measure about 20–35 at ambient (Buckley & Fan 2005),
+#: a 796-point compilation over 25–140 °C has a median of 23 (Sci. Rep. 2024), Schowalter
+#: (1979) took 21 for 30–40 °API oils, and live-oil studies find the tension flat or rising
+#: with temperature (Hjelmeland & Larrondo 1986; Sauerer et al. 2017). The line this replaced,
+#: ``−0.1886 T + 24.866``, gave 11.7 at 70 °C and 4 at 110 °C, below every source found, and
+#: understated the shipped oil seal capacity by about 1.9×.
+DEFAULT_OIL_TENSION_DYNE_CM: tuple[float, float] = (18.0, 28.0)
 
 
 # --------------------------------------------------------------------------- pore geometry
@@ -346,13 +351,19 @@ class SealInputs:
     hc_density_g_cm3: tuple[float, float] = (0.70, 0.85)
     fluid: str = "Gas"
     subtract_reservoir: bool = True
+    #: Oil–water tension, used for ``fluid == "Oil"`` only; the gas case follows its
+    #: temperature line. Elicited, and flat in temperature: see :data:`DEFAULT_OIL_TENSION_DYNE_CM`.
+    oil_tension_dyne_cm: tuple[float, float] = DEFAULT_OIL_TENSION_DYNE_CM
 
     def __post_init__(self) -> None:
         for name in ("temperature_c", "contact_angle_deg", "seal_radius_um",
-                     "reservoir_radius_um", "water_density_g_cm3", "hc_density_g_cm3"):
+                     "reservoir_radius_um", "water_density_g_cm3", "hc_density_g_cm3",
+                     "oil_tension_dyne_cm"):
             lo, hi = getattr(self, name)
             if hi < lo:
                 raise ValueError(f"{name}: the high value must not be below the low one")
+        if self.oil_tension_dyne_cm[0] <= 0:
+            raise ValueError("the oil–water tension must be positive")
         if self.seal_radius_um[1] >= self.reservoir_radius_um[0]:
             raise ValueError(
                 "the seal's pore throats overlap the reservoir's. A seal is a seal because its "
@@ -385,12 +396,10 @@ def sample_max_column_m(inputs: SealInputs, n: int, seed: int = 20260825) -> np.
     if inputs.fluid == "Gas":
         gamma = 91.657 * np.exp(-0.0126 * temperature)
     else:
-        gamma = -0.1886 * temperature + 24.866
-        if np.any(gamma <= 0):
-            raise ValueError(
-                "the Aplin & Yang oil correlation goes non-positive above about 132 C, and the "
-                "temperature range reaches it"
-            )
+        # Elicited and flat in temperature; the line this replaced is recorded at
+        # DEFAULT_OIL_TENSION_DYNE_CM. The temperature draw still happens, so the gas and oil
+        # cases consume the stream identically and a fluid switch changes one factor only.
+        gamma = u(inputs.oil_tension_dyne_cm)
     theta = np.radians(u(inputs.contact_angle_deg))
     r_seal = u(inputs.seal_radius_um) * 1e-6
     rho_w = u(inputs.water_density_g_cm3)

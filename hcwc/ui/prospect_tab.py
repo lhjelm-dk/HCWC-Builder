@@ -458,9 +458,10 @@ def render() -> None:
         f"<span style='opacity:0.7'> &nbsp;— {g_lo:.1f}–{g_hi:.1f} °C/km from "
         f"{SURFACE_C:.0f} °C surface</span></div>", unsafe_allow_html=True)
     st.caption(
-        "The temperature seeds the seal calculator on tab 3.0 → Retention; interfacial tension "
-        "falls with temperature, so a deeper prospect has a weaker seal. The seal block may "
-        "override the temperature where it is measured."
+        "The temperature seeds the seal calculator on tab 3.0 → Retention. Gas–water tension "
+        "falls with temperature, so a deeper gas prospect has a weaker seal; oil–water tension "
+        "is elicited there and does not follow the temperature. The seal block may override the "
+        "temperature where it is measured."
     )
 
     r1, r2 = st.columns(2)
