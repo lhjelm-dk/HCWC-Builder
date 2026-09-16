@@ -654,7 +654,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.8.
         _trace.x, _trace.y = _trace.y, _trace.x
     fam.update_layout(xaxis_title="Probability the column is at least this tall",
                       yaxis=dict(title="Hydrocarbon column (m)", autorange="reversed"),
-                      height=560, margin=dict(t=20),
+                      height=700, margin=dict(t=20),
                       legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
     if probit:
         # Ticked in probability and positioned in normal score, so the reader never has to think
