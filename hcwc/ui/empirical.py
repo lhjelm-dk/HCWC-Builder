@@ -228,16 +228,10 @@ def render() -> None:
     st.markdown(
         """
 Edmundson et al. (2021) assembled 242 measured discoveries across the Norwegian Continental
-Shelf, each needing an apex and a spill point picked from depth-converted top-reservoir maps, and
-published the raw table under CC-BY 4.0. That is rare, and everything on this tab is possible
-because they did it.
-
-What follows differs from the published analysis in one estimator, not in the data.
-
-> A note on names. Edmundson measures trap height; this tool calls the same quantity closure
-> height, and its risk element Closure, matching E-POS. Apex to spill, one measurement, two names.
-> Their term is kept wherever their data or figures are quoted, so the numbers here can be checked
-> against the paper without translation.
+Shelf, each with an apex and a spill point picked from depth-converted maps, and published the
+raw table under CC-BY 4.0. What follows differs from the published analysis in one estimator,
+not in the data. Edmundson's trap height is this tool's closure height, one measurement under
+two names; their term is kept where their data are quoted. Method: see 8.1.7.
 """
     )
 
@@ -337,9 +331,8 @@ What follows differs from the published analysis in one estimator, not in the da
                  "seal. The censored fit sits below the OLS line because it estimates seal "
                  "capacity rather than the observed column. Both `r` values are correlations with "
                  "the observed column; the MLE's is computed over the uncensored discoveries "
-                 "only, since those are the ones it predicts.\n\n"
-                 "Both lines rise above the 1:1 at the left-hand end, where no data point can. "
-                 "It means something different for each line; the note below works through it.")
+                 "only, since those are the ones it predicts. Both lines cross the 1:1 at the "
+                 "left-hand end; the note below gives the two crossings.")
 
     # Computed, not typed. These were hard-coded as "63 %", "35 %" and "144 m" inside an f-string
     # whose crossing was already being calculated a line above -- so the prose could drift away from
@@ -351,38 +344,15 @@ What follows differs from the published analysis in one estimator, not in the da
     below, above = h < mle_cross, h >= mle_cross
     with st.expander("Both lines cross the 1:1 line, and the two crossings mean different things"):
         st.info(
-            f"The censored MLE crossing is a prediction. The line estimates seal capacity, which "
-            f"may exceed the closure; that is what filling to spill is, and above the 1:1 line the "
-            f"model says the closure will fill. It crosses at {mle_cross:.0f} m, and in the data "
-            f"{filled[below].mean():.0%} of closures below that filled to spill against "
-            f"{filled[above].mean():.0%} above, so the crossing lands where the filling behaviour "
-            f"changes.\n\n"
-            f"The published OLS crossing is an artefact. The line is fitted to the observed "
-            f"column, which cannot exceed the closure, so below {ols_cross:.0f} m it predicts "
-            f"something the data cannot contain; {int((h < ols_cross).sum())} of {h.size} "
-            f"discoveries ({(h < ols_cross).mean():.0%}) sit there. Its intercept is "
-            f"{intercept:+.0f} m, which says a closure of zero height holds {intercept:.0f} m of "
-            f"column.\n\n"
-            f"This is separate from the censoring point and needs no estimator theory: a straight "
-            f"line through data bounded by `c ≤ h` does this unless it is forced through the origin "
-            f"with a slope below one. It is kept here as published.\n\n"
-            f"Forcing it through the origin fixes the bound and leaves the wrong model. Least "
-            f"squares through (0, 0) gives `c = {float(np.sum(h * c) / np.sum(h * h)):.2f} h`, "
-            f"which cannot exceed the closure, but a line through the origin says the fill "
-            f"fraction is constant, and in this data the median fill runs "
-            + ", ".join(
-                f"{np.median(c[m] / h[m]):.2f} at {q0:,.0f}–{q1:,.0f} m"
-                for q0, q1, m in (
-                    (qq[i], qq[i + 1], (h >= qq[i]) & (h <= qq[i + 1]))
-                    for qq in [np.quantile(h, [0, 0.25, 0.5, 0.75, 1.0])] for i in range(4)))
-            + ".\n\n"
-            f"The underlying point is that the observed column is not a function of closure. It is "
-            f"`min(seal capacity, closure)`, a minimum of two things, one of which is the x-axis, "
-            f"and no straight line represents a minimum. The censored fit is therefore a different "
-            f"model rather than a tidied regression: it estimates the capacity and lets the minimum "
-            f"produce the observation. The declining fill fraction above is the signature of "
-            f"capacity growing more slowly than closure, which is the "
-            f"`h^{fit.coefficients['trap_height']:.2f}` in the green line."
+            f"The censored MLE crossing is a prediction: seal capacity may exceed the closure, "
+            f"and above the 1:1 line the model says the closure will fill. It crosses at "
+            f"{mle_cross:.0f} m, and in the data {filled[below].mean():.0%} of closures below "
+            f"that filled to spill against {filled[above].mean():.0%} above.\n\n"
+            f"The published OLS crossing is an artefact of fitting a line to a bounded quantity: "
+            f"below {ols_cross:.0f} m it predicts a column the data cannot contain, and "
+            f"{int((h < ols_cross).sum())} of {h.size} discoveries ({(h < ols_cross).mean():.0%}) "
+            f"sit there; its intercept is {intercept:+.0f} m. Kept as published. Method: see "
+            f"8.1.7."
         )
 
     # -------- Figure: their Fig 6B equivalent -------------------------------------------
@@ -436,9 +406,7 @@ What follows differs from the published analysis in one estimator, not in the da
     * Filled to spill (`C = H`): geometry bound it. All that is learned is `S ≥ H`. The observation
       is right-censored; the seal's capacity was not tested.
 
-    Hood (2019) states the geology: pools controlled by geometric limits "document the minimum column
-    that the seal can support but not the upper limit". The statistical consequence has not been
-    carried into the published estimators. 111 of 242 rows, 46 %, are of this kind.
+    111 of 242 rows, 46 %, are of the second kind. Method: see 8.1.7.
     """
         )
 
@@ -456,23 +424,15 @@ What follows differs from the published analysis in one estimator, not in the da
         )
 
         st.markdown(
-            """
-    For the paper's conclusions: the primary finding, that closure height matters, stands and is
-    overstated. The secondary finding, that burial depth is the weaker control, does not survive;
-    corrected, it roughly doubles. That is the direction physics expects, since seals compact and
-    strengthen with depth. Censoring hid the depth signal because deep closures fill to spill more
-    often and so contribute censored rather than informative observations.
-    """
+            "Corrected, closure height matters less than published and burial depth roughly "
+            "twice as much. Method: see 8.1.7."
         )
 
         with st.expander("Why not simply drop the filled-to-spill points?"):
             st.markdown(
                 """
-    Dropping them trades censoring bias for truncation bias: conditioning on `S < H` keeps only low
-    capacity at low closure height, which manufactures the same positive relationship a second way.
-
-    Simulated with seal capacity independent of closure height, no physics by construction, 242
-    points to match:
+    Dropping them trades censoring bias for truncation bias. Simulated with seal capacity
+    independent of closure height, 242 points to match:
 
     | Estimator | Slope (truth = 0.000) |
     |---|---:|
@@ -480,8 +440,8 @@ What follows differs from the published analysis in one estimator, not in the da
     | OLS after dropping filled-to-spill | 0.543 |
     | Censored MLE | −0.009 |
 
-    Only the censored likelihood recovers the truth, at every correlation tested. Asserted in
-    `tests/test_censoring.py`.
+    Only the censored likelihood recovers the truth (`tests/test_censoring.py`). Method: see
+    8.1.7.
     """
             )
 
@@ -505,32 +465,25 @@ What follows differs from the published analysis in one estimator, not in the da
         n.plot(cal, "Calibration by closure-height band. The fitted model reproduces the observed "
                     "fill rate throughout, which is what validates the parametric form.")
 
-        st.warning(
-            f"""An earlier draft of this tab claimed the model's 39 % fill rate at 250 m matched Graham
-    et al.'s independent global 40 %. It did not: Graham states a population average over closures
-    below 250 m, not the value at 250 m. Compared on the same basis the NCS gives
-    {filled[h < 250].mean():.0%} against Graham's 40 %. The gap is a regional difference rather than
-    a discrepancy: Edmundson et al. note the NCS is charge-rich, so its closures fill more often
-    than the global average, which is Graham's own warning against global benchmarks without
-    trap-specific geology."""
+        st.caption(
+            f"Graham et al.'s global 40 % is a population average over closures below 250 m; on "
+            f"the same basis the NCS gives {filled[h < 250].mean():.0%}, a regional difference, "
+            f"since the NCS is charge-rich. Method: see 8.1.7."
         )
 
-        # ------------------------------------------------------------------ second bias
         theme.heading(TAB, "5 · A second bias, which the correction does not remove")
         st.markdown(
             """
     The corrected closure-height elasticity is still about 0.70, higher than a rock property should
-    be, since seal capacity has no reason to depend on how tall the closure is. The reason is
-    measurement rather than selection, and it applies to every study of this kind:
+    be. The reason is measurement rather than selection:
 
     ```
     column  height = contact − apex
     closure height = spill   − apex        ← the same apex pick
     ```
 
-    The two share the apex. A depth-conversion error moves both in the same direction and
-    manufactures a relationship, and a censored estimator cannot see it, because it is handed the
-    mismeasured numbers. It is errors-in-variables on top of censoring, pointing the same way.
+    A depth-conversion error moves both the same way and manufactures a relationship no censored
+    estimator can see. Method: see 8.1.7.
     """
         )
         sigmas = (0.0, 10.0, 25.0, 50.0, 75.0, 100.0)
@@ -571,49 +524,22 @@ What follows differs from the published analysis in one estimator, not in the da
             "Status": ["open, CC-BY 4.0", "abstract only — distributions never published",
                        f"source: {imported.source}" if imported else "load one below"],
         }),
-        "Kept separate rather than merged into one empirical prior. They are conditioned "
-        "differently and disagree informatively; the NCS/global gap in §8 is an example, and a "
-        "benchmark that agrees with the others carries less information than one that does not.",
+        "Kept separate rather than merged into one empirical prior: they are conditioned "
+        "differently and disagree informatively.",
     )
-    st.markdown("The measured dataset is Norwegian, and there is no second one. Picking an apex and a spill point for every field needs 3D seismic and a velocity model, which is why few studies of this kind exist.")
-    with st.expander("Why there is one such dataset: what a search found, and why the older compilations cannot answer this question"):
-        st.warning(
-            "A search for a public non-NCS dataset relating column height to closure height "
-            "(28 Aug 2026) found none; 8.1.7 records what was checked. "
-            "Edmundson et al. give the reason in their introduction: picking an apex and a spill "
-            "point for every field needs 3D seismic and a velocity model, so \"few studies of this "
-            "kind have been carried out before\". The earlier compilations, Gulf of Mexico and "
-            "Malay Basin, report column-height distributions with no trap geometry, which cannot "
-            "answer the question this tab asks."
-            "\n\n"
-            "A prospect outside the NCS is therefore compared against Norwegian rock. The physics "
-            "travels further than the stratigraphy, but it is a limitation and belongs in any "
-            "document that quotes these curves. An in-house trap-fill database, loaded below, is "
-            "the only way to a benchmark conditioned on the prospect's own basin."
-        )
+    st.markdown("The measured dataset is Norwegian, and there is no second one; a prospect "
+                "outside the NCS is compared against Norwegian rock, and an in-house trap-fill "
+                "database, loaded below, is the only way to a benchmark conditioned on its own "
+                "basin. Method: see 8.1.7.")
     _render_import()
 
     # ------------------------------------------------------------------ family curves
     theme.heading(TAB, "7 · The prior a benchmark gives")
-    st.info(
-        "The x-axis is column height rather than structural relief. Relief picks the curve: it is "
-        "the family parameter, one curve per value, and it labels the legend. The axis carries the "
-        "quantity whose probability is read, the column, so each curve answers: given a closure of "
-        "this relief, how likely is a column of at least x?\n\n"
-        "Relief on the axis would answer a different question, how column varies with relief, and "
-        "would collapse each curve to a point, so the built prospect could not be drawn on it. On "
-        "these axes it can: it has a column distribution, so it has an exceedance curve, and it "
-        "goes on the same axis as the benchmark for its own relief."
-    )
     st.markdown(
-        "A benchmark is useful as a curve for a closure of the prospect's size, and the families "
-        "below are what each one delivers. One curve reads: for a closure of this relief, the "
-        "probability that the column is at least x metres.\n\n"
-        "The vertical drop at the right-hand end of every curve is the filled-to-spill probability "
-        "mass: the share of prospects of that relief whose column is set by the closure rather than "
-        "by the seal. It is a point mass, not a tail, and no smooth distribution typed into a "
-        "volumetrics package has one. Squashing it into a lognormal is the error §3 identifies, "
-        "arriving one step later in the workflow."
+        "The x-axis is column height; relief picks the curve. Each curve reads: for a closure of "
+        "this relief, the probability that the column is at least x metres. The vertical drop at "
+        "the right-hand end is the filled-to-spill probability mass, a point mass rather than a "
+        "tail. Method: see 8.1.7."
     )
 
     options = ["NCS, censoring-corrected", "NCS, as the paper fits it", "Graham et al. (2015)"]
@@ -779,27 +705,9 @@ What follows differs from the published analysis in one estimator, not in the da
             "large closures is not what the data shows.")
 
     if st.session_state.get("dhi_on") and st.session_state.get("dhi_overlay") is not None:
-        st.markdown("The geological curve is the like-for-like comparison. The DHI curve shows how far the evidence moved the prospect, not whether the model is calibrated: judging a posterior against a record partly selected by other people's amplitudes counts the DHI twice.")
-        with st.expander("Why the benchmarks cannot be conditioned on a DHI: Graham's own words, the selection effect in the 242, and the direction of the bias"):
-            st.warning(
-                "The benchmarks cannot be conditioned on a DHI the way the posterior is.\n\n"
-                "Graham et al. settle it for their own data in their opening sentence: the "
-                "synthesis is for column-height modelling “in the absence of direct hydrocarbon "
-                "indicators (DHIs) or known fill controls”. It is the no-DHI prior, so a "
-                "DHI-updated distribution judged against it is evidence held compared with a curve "
-                "built for not having it.\n\n"
-                "Edmundson's 242 rows carry no DHI flag; there is no such column, and the paper "
-                "does not discuss it. The population is discoveries, and a prospect with a "
-                "supportive amplitude is more likely to have been drilled, so DHI-supported wells "
-                "are over-represented by selection.\n\n"
-                "The bias has a direction. Detectability rises with column height, which is the "
-                "detection function `D(h)` on tab 5.0, so whatever share of these discoveries was "
-                "DHI-driven is enriched in large columns, because short columns do not produce "
-                "mappable anomalies. A posterior compared against them risks counting the DHI "
-                "twice, once in the update and once in a population partly selected by other "
-                "people's DHIs, and reads as less optimistic than it is.\n\n"
-                "The geological curve is the like-for-like comparison."
-            )
+        st.markdown("The geological curve is the like-for-like comparison; the DHI curve shows "
+                    "how far the evidence moved the prospect, not whether the model is "
+                    "calibrated. Method: see 8.1.7.")
 
     if imported is not None and source == imported_label(imported):
         st.info(
@@ -815,27 +723,10 @@ What follows differs from the published analysis in one estimator, not in the da
         )
 
     if source == "NCS, as the paper fits it":
-        st.markdown("This is the published estimator, drawn for comparison and not for use. Fitted without treating the filled-to-spill discoveries as censored, it reads each closure's own ceiling as evidence about the seal.")
-        with st.expander("What fitting without censoring does to the family, and at which end it goes wrong"):
-            st.warning(
-                "Fitted to observed columns without treating the filled-to-spill discoveries as "
-                "censored, the published estimator reads each closure's own ceiling as evidence "
-                "about the seal, and so overstates how strongly closure height controls column "
-                "height: elasticity 0.880 against 0.701 corrected.\n\n"
-                "The family therefore fans out too far, and goes the opposite way at the two ends. "
-                "At 2 500 m burial it under-fills small closures (P50 82 m of a 100 m closure, "
-                "against 100 m corrected; 37 % filling to spill against 59 %) and over-fills the "
-                "largest (514 m of an 800 m closure, against 490 m). A prior built from it is "
-                "pessimistic on the small closures where the spill point is the binding control, "
-                "which is where the omitted censoring does its damage.\n\n"
-                "The check that needs no simulated data: each fit asked to reproduce how often a "
-                "discovery fills to spill. In the 242 discoveries, 45.9 % do. Drawing a column for "
-                "every discovery at its own closure height and burial depth, the corrected fit "
-                "predicts 47.2 % and the published fit 32.1 %, both computed exactly and both given "
-                "the same spread so that only the mean function differs. The published estimator "
-                "does not reproduce the filling behaviour of the dataset it was fitted to, and it "
-                "fails in the direction the omitted censoring predicts."
-            )
+        st.markdown("This is the published estimator, drawn for comparison and not for use. "
+                    "Fitted without treating the filled-to-spill discoveries as censored, it "
+                    "under-fills small closures and over-fills the largest, and does not "
+                    "reproduce the dataset's own fill-to-spill rate. Method: see 8.1.7.")
 
     # ------------------------------------------------------------------ summary
     # -------- Are we optimistic or pessimistic? ------------------------------------------
@@ -1204,15 +1095,9 @@ What follows differs from the published analysis in one estimator, not in the da
                        f"each with its own combined curve in the same colour, dotted.\n\n"
                        if len(bases) > 1 else "&nbsp; ")
                     + "Every curve is conditional on the prospect working: these are column "
-                   "distributions, not chances. The benchmark is discoveries only and carries no "
-                   "chance.\n\n"
-                   "The combined curve is a weighted fusion, not a Bayesian update. Bayes needs a "
-                   "likelihood, data whose probability depends on the unknown, and the Norwegian "
-                   "record is not one: those discoveries were what they were before this prospect "
-                   "was mapped. These are two priors on one unknown, and two priors combine by "
-                   "weighting, which is why there is a slider and why it starts at zero. Averaged "
-                   "as quantiles rather than mixed as densities, so the answer lies between them "
-                   "rather than coming out as two humps."))
+                   "distributions, not chances. The combined curve is a weighted average of "
+                   "quantiles, not a Bayesian update, so it lies between the two. Method: see "
+                   "8.1.7."))
 
             for basis, columns in bases:
                 if len(bases) > 1:
@@ -1225,24 +1110,16 @@ What follows differs from the published analysis in one estimator, not in the da
                                f"model {mine_v:,.0f} m", delta_color="off")
 
         st.warning(
-            "This is a sanity check rather than a score, for a structural reason. Every benchmark "
-            "is conditioned on discovery: the prospect is not one yet and every closure in these "
-            "datasets is. Part of \"optimistic against the NCS record\" is a statement about which "
-            "wells were written down, not about the model.\n\n"
-            "A prospect can be optimistic on good grounds. A better seal than the average NCS "
-            "closure, or a charge system that fills reliably, is a defensible belief where the "
-            "evidence for it can be named. The comparison shows which case applies."
+            "A sanity check rather than a score: every benchmark is conditioned on discovery. A "
+            "prospect can be optimistic on good grounds where the evidence for it can be named. "
+            "Method: see 8.1.7."
         )
 
     theme.heading(TAB, "9 · The base rate for a comparable prospect")
     st.markdown(
-        "Edmundson's §5.2 recommends including base-rate figures and integrating them with the "
-        "geological assessment, citing Milkov (2017) on base-rate neglect, and gives no method for "
-        "the combination. This section is the part of that recommendation that carries no risk: "
-        "their matrix for a prospect of these dimensions, beside what the limits produced, with "
-        "the sample size in view.\n\n"
-        "Nothing here changes a number. The two are not merged, because merging them needs a "
-        "weight that cannot yet be defended; see the note under the table."
+        "Edmundson's §5.2 recommends base-rate figures beside the geological assessment: their "
+        "matrix for a prospect of these dimensions, beside what the limits produced, with the "
+        "sample size in view. Nothing here changes a number. Method: see 8.1.7."
     )
 
     matrix_limits = st.session_state.get("limit_set")
@@ -1351,23 +1228,14 @@ What follows differs from the published analysis in one estimator, not in the da
 
             if len(fill_bases) > 1:
                 st.caption(
-                    "The updated bars are displacement, not calibration. Every one of these "
-                    f"{int(cell.n)} traps is a discovery, and discoveries are partly selected by "
-                    "amplitudes, so the cell is not a DHI-free base rate any more than the "
-                    "benchmarks in §8 are. The second bar shows how far the evidence moved the "
-                    "fill distribution against a fixed backdrop, which is not the same claim as "
-                    "being better calibrated."
+                    "The updated bars are displacement against a fixed backdrop, not "
+                    "calibration. Method: see 8.1.7."
                 )
             st.warning(
-                f"This informs the contact distribution and never the chance. The matrix is "
-                f"`P(trap fill | discovery)`: all {int(cell.n)} of those traps had hydrocarbons "
-                "in them. Used against POS it would condition on success, which is the error the "
-                "rest of the tool is arranged to prevent. Moving a chance would need a dataset "
-                "containing dry holes, and this one has none.\n\n"
-                f"{int(cell.n)} discoveries is a thin basis. Letting a cell this size reshape a "
-                "ten-thousand-realisation mechanistic model would be a strong move on weak "
-                "evidence, which is why the two are shown side by side and not combined. A "
-                "disagreement points back to the limit that causes it."
+                f"This informs the contact distribution and never the chance: the matrix is "
+                f"`P(trap fill | discovery)`, and all {int(cell.n)} of those traps had "
+                f"hydrocarbons in them. {int(cell.n)} discoveries is a thin basis, which is why "
+                f"the two are shown side by side and not combined. Method: see 8.1.7."
             )
 
             # Seven hundred words of argument about somebody else's arithmetic, with a
@@ -1375,42 +1243,18 @@ What follows differs from the published analysis in one estimator, not in the da
             # on it. Moved to docs on 5 Sep 2026, now 8.1.7 of docs/THEORY.md. The sentence that
             # governs what the reader does next stays here.
             st.caption(
-                "Side by side, not merged. The rule usually attached to base-rate neglect is "
+                "Side by side, not merged: the rule usually attached to base-rate neglect is "
                 "symmetric, returning the same answer when its two inputs are swapped, which no "
-                "Bayesian update does, and it moves the number even when the two already agree. "
-                "Method: see 8.1.7. None of it touches Milkov\u2019s "
-                "finding, which stands on its own."
+                "Bayesian update does. Method: see 8.1.7."
             )
 
     theme.heading(TAB, "10 · Scope of the claims")
-    left, right = st.columns(2)
-    left.success(
-        "Stands\n\n"
-        "- The dataset itself, and the decision to publish it openly.\n"
-        "- Closure height is a control on column height.\n"
-        "- The core message: one pre-drill distribution does not fit all prospects.\n"
-        "- The fitted correction is calibrated band by band."
-    )
-    right.error(
-        "Does not stand, or needs qualifying\n\n"
-        "- Burial depth as the weaker control: corrected, it roughly doubles.\n"
-        "- The magnitude of the closure-height control: overstated, and still an upper bound.\n"
-        "- Reading the four trap-fill bins together as a column-height distribution: the 100 % bin "
-        "is a censoring rate, not a fill outcome like the other three."
-    )
     st.markdown(
-        """
-Two selection effects remain uncorrected in every analysis on this page, the corrected one included:
-
-1. Discovery-only conditioning. Dry wells are excluded by construction, as the paper states. This
-   is `P(column | discovery)`, not `P(column)`.
-2. Left-truncation at the well's reservoir entry depth. Where the true contact sits above the
-   point at which the well entered the reservoir, the well finds water and is logged as a dry
-   hole. The small-column tail is missing from every discovery dataset.
-
-Stacked, the empirical record is truncated below and censored above, and both push it to look
-better filled than reality. Used as a pre-drill prior it is optimistic at both ends.
-"""
+        "Two selection effects remain uncorrected in every analysis on this page: discovery-only "
+        "conditioning, so this is `P(column | discovery)`, and left-truncation at the well's "
+        "reservoir entry, which removes the small-column tail. Stacked, the record is truncated "
+        "below and censored above, and both push it to look better filled than reality. "
+        "Method: see 8.1.7; limitations: 8.1.9."
     )
     st.caption(
         "Data: Edmundson, I., Davies, R., Frette, L.U., Mackie, S., Kavli, E.A., Rotevatn, A., "
