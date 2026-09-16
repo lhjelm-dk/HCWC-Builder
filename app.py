@@ -718,26 +718,20 @@ with tab8:
 
     theme.heading(8, "2 · The paper")
     st.markdown(
-        "The method written up for a journal rather than for this screen: competing limits, the "
-        "survival function every POS is read from, and the likelihood formulation of DHI "
-        "evidence. It is the document for a reader who does not use the tool."
+        "The article, for a reader who does not use the tool: why the contact distribution is "
+        "derived rather than chosen, what the controlling mechanism adds, and how a DHI updates "
+        "the distribution rather than replacing it. The method in full is 8.1."
     )
     _paper = DOCS / "ARTICLE.md"
     if _paper.exists():
         _paper_text = _paper.read_text(encoding="utf-8")
         st.info(
-            "Every number below is computed rather than typed. The worked prospect is the app's "
-            "own default read at a 120 m assessment minimum, the calibration figures come from "
-            "the shipped NCS table, and the five figures are regenerated from the engine by "
-            "`scripts/paper_figures.py`."
+            "Every number in it is computed rather than typed: the worked prospect is the app's "
+            "own default read at a 120 m assessment minimum, and the figure is regenerated from "
+            "the engine by `scripts/paper_figures.py`. The long-form manuscript it shortens is "
+            "kept as `docs/ARTICLE_LONG_2026-09.md`."
         )
-        with st.expander("The source: Markdown, for a manuscript or a document"):
-            st.caption(
-                "Written for a journal rather than a post: numbered sections, an abstract, "
-                "figure captions and LaTeX maths. A submission would want the equations "
-                "rebuilt in the publisher's template and the figures taken from "
-                "`docs/figures/` at 200 dpi."
-            )
+        with st.expander("The source: Markdown, for posting or for a document"):
             st.code(_paper_text, language="markdown")
         _render_with_figures(_paper_text, DOCS, demote=2)
     else:
