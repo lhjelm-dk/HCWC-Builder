@@ -731,3 +731,82 @@ class TestTheEstimatorsAgreeAtTies:
         assert engine.weighted_percentiles(x, None, 50.0)[0] == pytest.approx(25.0)
         # Weight on the last point pulls the median toward it.
         assert engine.weighted_percentiles(x, np.array([1, 1, 1, 5.0]), 50.0)[0] > 25.0
+
+
+class TestTheShippedSpillIsADepthCoupledToTheApex:
+    """Audit finding P2-6, 14 Sep 2026, closed 16 Sep. The core fixture states the spill as a
+    column; the app's shipped prospect states it as a depth (a PERT at 2340 / 2372 / 2420 m
+    TVDSS) and offers the apex-to-spill correlation on the Correlations sub-tab. That is the
+    mechanism most argued about on tab 3, and until this class it was tested only through the
+    UI. The fixture is the shipped spill under a 120 m apex uncertainty, so the coupling has
+    something to act on.
+    """
+
+    SPILL = "Closure / spill point"
+
+    @staticmethod
+    def _fixture(rho: float) -> LimitSet:
+        pairs = {f"{limits_mod.APEX}|{__class__.SPILL}": rho} if rho else {}
+        return LimitSet(
+            apex=DepthDistribution("normal_alt", {"p1": 0.01, "x1": 1990.0,
+                                                  "p2": 0.99, "x2": 2110.0}),
+            limits=(Limit(__class__.SPILL, Group.CLOSURE, 1.0,
+                          DepthDistribution("pert", {"minimum": 2340.0, "mode": 2372.0,
+                                                     "maximum": 2420.0}),
+                          kind=limits_mod.DEPTH),
+                    Limit("Top seal (capillary)", Group.RETENTION, 1.0,
+                          DepthDistribution("normal_alt", {"p1": 0.01, "x1": 250.0,
+                                                           "p2": 0.99, "x2": 450.0}), "")),
+            name="P2-6", correlations=pairs)
+
+    def _closure_m(self, rho: float, n: int = 40_000):
+        """The closure height each realisation drew: the spill's column, `spill − apex`."""
+        r = engine.run(self._fixture(rho), n, 7)
+        return r, r.sampled_m[:, 0]
+
+    def test_the_realised_spearman_is_the_requested_one(self):
+        """Requested 0.9, realised 0.90 -- the Spearman-to-Gaussian conversion and the copula do
+        what the Correlations sub-tab says they do, on the shipped configuration."""
+        for rho in (0.5, 0.9):
+            r, _ = self._closure_m(rho)
+            assert r.realised_pairs()[f"{limits_mod.APEX}|{self.SPILL}"] == pytest.approx(
+                rho, abs=0.02)
+
+    def test_the_spill_surface_does_not_move_with_the_correlation(self):
+        """A depth-stated limit is a mapped surface. Coupling it to the apex changes which apex
+        it is drawn beside, not where it is: its depth distribution is the same at every rho."""
+        depths = {}
+        for rho in (0.0, 0.9):
+            r, closure = self._closure_m(rho)
+            depths[rho] = closure + r.apex_m
+        assert depths[0.0].std() == pytest.approx(depths[0.9].std(), rel=0.03)
+        assert np.median(depths[0.0]) == pytest.approx(np.median(depths[0.9]), abs=2.0)
+
+    def test_the_closure_height_spread_falls_with_the_correlation(self):
+        """The claim the Correlations sub-tab makes, and 8.1.4 states: independent, the derived
+        closure height carries the apex error and the spill error in quadrature; at 0.9 most of
+        the apex error cancels. About 30 m against about 14 m here."""
+        _, independent = self._closure_m(0.0)
+        _, half = self._closure_m(0.5)
+        _, coupled = self._closure_m(0.9)
+        assert independent.std() > half.std() > coupled.std()
+        assert independent.std() == pytest.approx(30.0, abs=3.0)
+        assert coupled.std() == pytest.approx(14.0, abs=3.0)
+        assert coupled.std() < 0.5 * independent.std()
+
+    def test_no_realisation_puts_the_spill_above_the_apex(self):
+        """The refusal is exact, and on this fixture it never fires: the 1 % apex tail at 2110 m
+        stays above the spill's shallowest 2340 m, so every closure is a positive column."""
+        for rho in (0.0, 0.9):
+            _, closure = self._closure_m(rho)
+            assert closure.min() > 200.0
+
+    def test_the_spill_competes_as_a_column_on_the_same_axis_as_the_seal(self):
+        """Mixed kinds on the shipped shape: the seal (250-450 m of column) and the depth-stated
+        spill (about 300-430 m of column under this apex) overlap, so both control a real share,
+        and the contact is never below the spill surface."""
+        r, closure = self._closure_m(0.9)
+        shares = r.controlling_shares()
+        assert 0.2 < shares[self.SPILL] < 0.8
+        assert 0.2 < shares["Top seal (capillary)"] < 0.8
+        assert np.all(r.contact_m <= closure + r.apex_m + 1e-9)
