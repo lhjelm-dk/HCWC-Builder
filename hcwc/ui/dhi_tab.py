@@ -732,8 +732,8 @@ def render(n: Numbering | None = None) -> None:
     theme.heading(TAB, sub=n.sub, text="3b · Detection model D(h)")
     st.markdown(
         "The chance a column of height h produces a detectable anomaly. It is what makes an "
-        "absent anomaly usable evidence; the fourth input sets how much absence says about the "
-        "chance. Method: see 8.1.6."
+        "absent anomaly usable evidence; the false-positive assumption sets how much absence "
+        "says about the chance. Method: see 8.1.6."
     )
     d1, d2, d3, d4 = st.columns(4)
     h50 = d1.number_input("50 % detection column (m)", 1.0, 500.0, 25.0, 1.0,
