@@ -271,6 +271,9 @@ def render(n: Numbering | None = None) -> None:
         "P(G), the chance of hydrocarbons; the contact geometry (§1, §3) updates the HCWC "
         "distribution given G. Each enters the chance once. Method: see 8.1.6."
     )
+    # The update at a glance (master brief §27): what moved, before and after, filled once the
+    # chain below has run. The four numbers a reader wants first, above the inputs that set them.
+    _glance = st.container()
 
     # The geometry enters the chance as P(h ≥ h_min | G, geometry). At an assessment minimum
     # that every realisation clears, that factor is 1 before and after the update, so the pick
@@ -406,6 +409,19 @@ def render(n: Numbering | None = None) -> None:
     area = (o3 if partial else o4 if shape != dhi_core.NORMAL else o3).number_input(
         "Anomaly area (km²), optional", 0.0, 1000.0, 0.0, 0.5, key="dhi_in_area",
         help="Used for the cross-check in §9. Leave at zero to skip.")
+    if seen and area:
+        # Containment, A(h_min) ≤ A_DHI, beside the input rather than only in the diagnostics
+        # fold (master brief §16): if it fails, the DHI and the success case being risked are
+        # not the same object, and the reader should see that before reading any update.
+        try:
+            _table = sources.current_area_depth()
+            if _table is not None:
+                _ok, _msg = dhi_core.containment_ok(_table.depths_m, _table.top_area_km2,
+                                                    _table.apex_m, h_min, area)
+                if not _ok:
+                    st.error(f"Containment fails: {_msg}")
+        except (FileNotFoundError, ValueError):
+            pass
 
     if partial and absent_below <= apex:
         st.error(
@@ -514,7 +530,8 @@ def render(n: Numbering | None = None) -> None:
         "The first channel. §1 recorded where the anomaly terminates; this section grades its "
         "character: how bright, how consistent with the expected fluid response. The strength "
         "updates the chance of hydrocarbons and does not enter the contact distribution; §5 "
-        "multiplies the two."
+        "multiplies the two. A strong reading raises P(G) and does not narrow the contact: the "
+        "spread stays with the pick (§1), the attribution (§3) and the detection model (3b)."
     )
     st.caption(
         "R is the ratio of the heights of two elicited curves, hydrocarbon-bearing and not, at "
@@ -860,6 +877,25 @@ def render(n: Numbering | None = None) -> None:
     prior_pos = element_product * geometric_prior
     posterior_pos = dhi_core.prospect_pos(element_product, r_applied, post)
 
+    with _glance:
+        _p50_before = float(post.percentiles(50.0, posterior=False)[0])
+        _p50_after = float(post.percentiles(50.0)[0])
+        _sp_before = float(np.diff(post.percentiles(np.array([90.0, 10.0]), posterior=False))[0])
+        _sp_after = float(np.diff(post.percentiles(np.array([90.0, 10.0])))[0])
+        g1, g2, g3, g4 = st.columns(4)
+        g1.metric("P(G)", f"{p_g_updated:.0%}", f"from {element_product:.0%}", delta_color="off")
+        g2.metric("HCWC P50", f"{_p50_after:,.0f} m", f"from {_p50_before:,.0f} m",
+                  delta_color="off")
+        g3.metric("P90–P10", f"{_sp_after:,.0f} m", f"from {_sp_before:,.0f} m",
+                  delta_color="off")
+        g4.metric("Effective sample size", f"{post.effective_sample_size:,.0f}",
+                  f"from {result.n:,}", delta_color="off")
+        st.caption(
+            "The update at a glance: the strength channel moved P(G); the geometry channel moved "
+            "the contact and its spread; the effective sample size says how many realisations "
+            "carry the answer. Contact percentiles are conditional on the assessment minimum."
+        )
+
     # ---- what each control is worth, into the placeholders reserved beside them -----------
     # Everything the tab reads is known by this line and not one line earlier, which is why
     # the captions are placeholders: the detection function is read below the pick. A caption
@@ -909,9 +945,9 @@ def render(n: Numbering | None = None) -> None:
     # ------------------------------------------------------------------ 4 · the contact
     theme.heading(TAB, sub=n.sub, text="4 · The HCWC distribution, updated")
     st.markdown(
-        "The contact distribution given the elements worked, reweighted by the pick. "
-        "Percentiles are over the realisations that reach the assessment minimum, in the "
-        "exceedance convention: P90 is the shallow end."
+        "The posterior is the same weighted geological sample. The histogram shows every "
+        "realisation given G; the reported contact percentiles are conditional on the "
+        "assessment minimum. Exceedance convention: P90 is the shallow end."
     )
     c1, c2, c3 = st.columns(3)
     for _col, _p in ((c1, 90), (c2, 50), (c3, 10)):
@@ -1300,10 +1336,10 @@ def render(n: Numbering | None = None) -> None:
         theme.heading(TAB, sub=n.sub,
                       text=f"8b · Which mechanism set the contact, {theme.evidence_basis()}")
         st.markdown(
-            "This table re-attributes the shallowest active limit, not the risk: the element "
-            "chances on tab 2.0 are untouched. Given the contact is where the amplitude says, "
-            "which mechanism stopped it there is what the evidence can answer. Method: see "
-            "8.1.6."
+            "Among the realisations the evidence favours, which mechanisms are more frequent. "
+            "It is not the DHI saying which element failed: the element chances on tab 2.0 are "
+            "untouched, and the shares move only because the favoured contact depths do. "
+            "Method: see 8.1.6."
         )
         weights = post.weights
         total_w = float(weights.sum())
@@ -1344,7 +1380,8 @@ def render(n: Numbering | None = None) -> None:
                 c2.metric("Disagreement", f"{cross['disagreement_m']:+,.0f} m",
                           "area minus termination", delta_color="off")
                 if abs(cross["disagreement_m"]) < 25:
-                    st.success("The two readings agree and count as one observation with a tighter σ.")
+                    st.success("The two readings agree. They are two measurements of one "
+                               "anomaly and are compared, not multiplied.")
                 elif cross["disagreement_m"] < 0:
                     st.warning(
                         "The anomaly is narrower than its down-dip limit implies. It may not fill "
