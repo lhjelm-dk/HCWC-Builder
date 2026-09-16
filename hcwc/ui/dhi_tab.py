@@ -146,7 +146,7 @@ def _resample(values: np.ndarray, weights: np.ndarray, n: int) -> np.ndarray:
     export on tab 7.0 takes this sample when the basis is "given the DHI", so the setting has to
     reach it.
 
-    Its cost is honest and already reported: the effective sample size, in §5. A posterior
+    Its cost is honest and already reported: the effective sample size, in §6. A posterior
     resting on 300 distinct realisations resampled to 20 000 is still a posterior resting on
     300, and the number that says so is on the same tab.
     """
@@ -266,6 +266,11 @@ def render(n: Numbering | None = None) -> None:
         theme.GIVEN_DHI,
         "Every contact distribution below carries the amplitude evidence. The purely geological "
         "model is on tab 4.0 and is unchanged by anything here.")
+    st.markdown(
+        "One observation, two DHI information channels. The evidence strength (§2) updates "
+        "P(G), the chance of hydrocarbons; the contact geometry (§1, §3) updates the HCWC "
+        "distribution given G. Each enters the chance once. Method: see 8.1.5."
+    )
 
     # The geometry enters the chance as P(h ≥ h_min | G, geometry). At an assessment minimum
     # that every realisation clears, that factor is 1 before and after the update, so the pick
@@ -289,7 +294,7 @@ def render(n: Numbering | None = None) -> None:
         )
 
     # ------------------------------------------------------------------ observation
-    theme.heading(TAB, sub=n.sub, text="1 · What was observed")
+    theme.heading(TAB, sub=n.sub, text="1 · DHI evidence present")
     # Keyed -- as is every widget in this section. Without keys these values exist only inside
     # Streamlit's own widget store, under generated ids: they survive a rerun, and they cannot be
     # read out by name, so `prospect.document` could not see them and a saved prospect carried
@@ -327,7 +332,7 @@ def render(n: Numbering | None = None) -> None:
     default_contact = (PROSPECT_PICK_M if lo_prior <= PROSPECT_PICK_M <= hi_prior
                        else float(np.percentile(result.contact_m, 50)))
     shape = st.radio(
-        "How is the pick shaped?", dhi_core.PICK_SHAPES, horizontal=True,
+        "Pick uncertainty: shape", dhi_core.PICK_SHAPES, horizontal=True,
         disabled=not seen or partial,
         key="dhi_in_shape",
         format_func=lambda k: {dhi_core.NORMAL: "Normal — an unbiased estimate",
@@ -340,7 +345,7 @@ def render(n: Numbering | None = None) -> None:
     absent_below = None
     if partial:
         # No pick, by definition: the bound is the whole observation. `contact` is still assigned
-        # because the area cross-check in §8 reads it, and for this case the cutoff is the only
+        # because the area cross-check in §9 reads it, and for this case the cutoff is the only
         # depth the anomaly gives.
         o1, o2, o3 = st.columns(3)
         absent_below = o1.number_input(
@@ -364,7 +369,7 @@ def render(n: Numbering | None = None) -> None:
         if seen:
             _lev["contact"] = o1.empty()
         sigma = o2.number_input(
-            "Pick σ (m)", 1.0, 500.0, DEFAULT_SIGMA_M, 1.0, key="dhi_in_sigma",
+            "Pick uncertainty σ (m)", 1.0, 500.0, DEFAULT_SIGMA_M, 1.0, key="dhi_in_sigma",
             help="Flat-spot pick uncertainty plus depth-conversion error. The second is usually "
                  "the larger, and it is the same uncertainty that moves the well's entry depth.")
         if seen:
@@ -400,7 +405,7 @@ def render(n: Numbering | None = None) -> None:
             o3.metric("Bracket centre", f"{contact:,.0f} m")
     area = (o3 if partial else o4 if shape != dhi_core.NORMAL else o3).number_input(
         "Anomaly area (km²), optional", 0.0, 1000.0, 0.0, 0.5, key="dhi_in_area",
-        help="Used for the cross-check in §8. Leave at zero to skip.")
+        help="Used for the cross-check in §9. Leave at zero to skip.")
 
     if partial and absent_below <= apex:
         st.error(
@@ -497,15 +502,19 @@ def render(n: Numbering | None = None) -> None:
                f"The pick is {sharper:,.0f} times sharper than the geology, centred where "
                f"{sits_at:.0%} of it lies shallower. Far narrower than the geology, the pick "
                "dominates the answer; centred in its tail, the posterior rests on few "
-               "realisations, which §4 reports as the effective sample size. Method: see 8.1.6.")
+               "realisations, which §6 reports as the effective sample size. Method: see 8.1.6.")
+
+    # A penetration described on tab 2.0 is evidence present too, and its note belongs in §1;
+    # it is computed after the update below, so the slot is reserved here and filled there.
+    _well_slot = st.container()
 
     # ------------------------------------------------------------------ strength channel
-    theme.heading(TAB, sub=n.sub, text="2 · Amplitude character")
+    theme.heading(TAB, sub=n.sub, text="2 · DHI evidence strength: updates P(G)")
     st.markdown(
-        "The amplitude carries two kinds of evidence. §1 recorded where the anomaly terminates; "
-        "this section grades its character: how bright, how consistent with the expected fluid "
-        "response. The character updates the chance of hydrocarbons and does not enter the "
-        "contact distribution; §5 multiplies the two."
+        "The first channel. §1 recorded where the anomaly terminates; this section grades its "
+        "character: how bright, how consistent with the expected fluid response. The strength "
+        "updates the chance of hydrocarbons and does not enter the contact distribution; §5 "
+        "multiplies the two."
     )
     st.caption(
         "R is the ratio of the heights of two elicited curves, hydrocarbon-bearing and not, at "
@@ -547,7 +556,7 @@ def render(n: Numbering | None = None) -> None:
     _clamped = _was is not None and float(_was) != st.session_state["dhi_in_strength"]
 
     strength = st.slider(
-        "DHI strength", _s_lo, _s_hi, float(np.clip(OPENING_STRENGTH, _s_lo, _s_hi)), 1.0,
+        "DHI evidence strength", _s_lo, _s_hi, float(np.clip(OPENING_STRENGTH, _s_lo, _s_hi)), 1.0,
         key="dhi_in_strength",
         help=f"Opens at {OPENING_STRENGTH:.0f}, just above the crossing point, so an untouched "
              f"slider states a barely supportive DHI rather than a neutral one. E-POS's default "
@@ -650,12 +659,12 @@ def render(n: Numbering | None = None) -> None:
     _elements = st.session_state.get("element_pos") or {}
     _p_g = float(np.prod([float(v) for v in _elements.values()])) if _elements else 1.0
 
-    theme.heading(TAB, sub=n.sub, text="3 · Is the picked event the contact?")
+    theme.heading(TAB, sub=n.sub, text="3 · Contact attribution: updates HCWC | G")
     st.markdown(
-        "A flat event can be lithology, a diagenetic front, fizz gas read as pay, or a "
-        "processing artefact. This section states the chance that it is none of those, given a "
-        "column here; §2 answers whether there is hydrocarbon at all, and the two enter the "
-        "chance as separate factors. Method: see 8.1.6."
+        "The second channel. A flat event can be lithology, a diagenetic front, fizz gas read "
+        "as pay, or a processing artefact; this section states the chance that it is none of "
+        "those, given a column here. With the pick (§1) and the detection model (3b) it "
+        "reweights the HCWC distribution within G. Method: see 8.1.6."
     )
     picked_levels = {}
     with st.expander("Grade the three contact attributes, for a suggested value of c"):
@@ -685,7 +694,7 @@ def render(n: Numbering | None = None) -> None:
              "the combination rule is a heuristic, and a stated value is easier to defend than "
              "one a rule chose.")
     stated_c = st.slider(
-        "Given there is hydrocarbon here, is the picked event its base?",
+        "Contact attribution: given hydrocarbons, is the picked event the HCWC?",
         0.05, 1.0, DEFAULT_CONTACT_GIVEN_HC, 0.01, key="dhi_in_contact_given_hc",
         disabled=use_attributes,
         help="P(the picked event is the contact | hydrocarbon present). A question about the "
@@ -720,7 +729,7 @@ def render(n: Numbering | None = None) -> None:
     )
 
     # ------------------------------------------------------------------ combining
-    theme.heading(TAB, sub=n.sub, text="3b · Detection function D(h)")
+    theme.heading(TAB, sub=n.sub, text="3b · Detection model D(h)")
     st.markdown(
         "The chance a column of height h produces a detectable anomaly. It is what makes an "
         "absent anomaly usable evidence; the fourth input sets how much absence says about the "
@@ -739,7 +748,8 @@ def render(n: Numbering | None = None) -> None:
                                    "a function reaching certainty would make an absent anomaly "
                                    "infinitely strong evidence.")
     false_positive = d4.number_input(
-        "Barren trap shows, relative", 0.0, 1.0, 0.5, 0.05, key="dhi_in_false_positive",
+        "False-positive assumption (barren trap shows, relative)", 0.0, 1.0, 0.5, 0.05,
+        key="dhi_in_false_positive",
         help="How often a trap with no hydrocarbons shows an anomaly of this class, as a fraction "
              "of how often a hydrocarbon-filled trap of this geometry does. 0 says a barren trap "
              "never shows; 1 says it shows as readily as a filled one, and absence then says "
@@ -792,46 +802,39 @@ def render(n: Numbering | None = None) -> None:
         except ValueError as exc:
             st.error(str(exc))
             return
-        theme.heading(TAB, sub=n.sub, text="3c · Well control")
-        lo, hi = control.bracket()
-        bits = []
-        if control.hc_down_to_m is not None:
-            bits.append(f"hydrocarbons proven to {control.hc_down_to_m:,.0f} m")
-        if control.water_at_m is not None:
-            bits.append(f"water at {control.water_at_m:,.0f} m")
-        inside = float(((result.contact_m > lo) & (result.contact_m < hi)).mean())
-        st.markdown(
-            f"The penetration described on tab 2.0 is multiplied into the weights: "
-            f"{' and '.join(bits)}, tied to the mapped surface with σ = "
-            f"{control.depth_sigma_m:,.0f} m, and a {control.p_connected:.0%} chance it samples "
-            f"this accumulation.\n\n"
-            f"{inside:.0%} of the geological realisations already sit inside what the well "
-            f"allows. The update pushes the rest toward the floor of "
-            f"`1 − {control.p_connected:.2f} = {1 - control.p_connected:.2f}`, which stops one "
-            f"penetration ruling a contact out altogether."
-        )
-        if inside < 0.05:
-            st.warning(
-                "The well and the geological model disagree almost completely. Nearly every "
-                "realisation falls outside what the penetration allows, so all are penalised by "
-                "roughly the same amount, the likelihood is flat, and the posterior comes out "
-                "close to the prior. That is a disagreement, not a well that said nothing: "
-                "either the depths are tied to a different datum than the apex, or the limits on "
-                "tab 3.0 let the column go where this well has ruled it out."
+        with _well_slot:
+            theme.heading(TAB, sub=n.sub, text="1b · Well control")
+            lo, hi = control.bracket()
+            bits = []
+            if control.hc_down_to_m is not None:
+                bits.append(f"hydrocarbons proven to {control.hc_down_to_m:,.0f} m")
+            if control.water_at_m is not None:
+                bits.append(f"water at {control.water_at_m:,.0f} m")
+            inside = float(((result.contact_m > lo) & (result.contact_m < hi)).mean())
+            st.markdown(
+                f"The penetration described on tab 2.0 is multiplied into the weights: "
+                f"{' and '.join(bits)}, tied to the mapped surface with σ = "
+                f"{control.depth_sigma_m:,.0f} m, and a {control.p_connected:.0%} chance it samples "
+                f"this accumulation.\n\n"
+                f"{inside:.0%} of the geological realisations already sit inside what the well "
+                f"allows. The update pushes the rest toward the floor of "
+                f"`1 − {control.p_connected:.2f} = {1 - control.p_connected:.2f}`, which stops one "
+                f"penetration ruling a contact out altogether."
             )
+            if inside < 0.05:
+                st.warning(
+                    "The well and the geological model disagree almost completely. Nearly every "
+                    "realisation falls outside what the penetration allows, so all are penalised by "
+                    "roughly the same amount, the likelihood is flat, and the posterior comes out "
+                    "close to the prior. That is a disagreement, not a well that said nothing: "
+                    "either the depths are tied to a different datum than the apex, or the limits on "
+                    "tab 3.0 let the column go where this well has ruled it out."
+                )
 
     # Published for the trust panel on tab 4.0, which reports the effective sample size behind this
     # update. Same one-frame lag as `dhi_overlay` below and for the same reason: tab 4.0 renders
     # first, so it reads the posterior built on the previous run. Every interaction reruns both.
     st.session_state["dhi_posterior"] = post
-
-    if post.effective_sample_size < 300:
-        st.warning(
-            f"Effective sample size {post.effective_sample_size:,.0f}. The picked contact sits "
-            f"far out in the tail of the geological prior, so the posterior rests on very few "
-            f"realisations. That is a finding about the model or the pick, not a number to "
-            f"read off."
-        )
 
     # --------------------------------------------------------------- the chain
     # POS(h_min) = P(G | strength) x P(h >= h_min | G, geometry). The first factor is the
@@ -904,19 +907,17 @@ def render(n: Numbering | None = None) -> None:
         )
 
     # ------------------------------------------------------------------ 4 · the contact
-    theme.heading(TAB, sub=n.sub, text="4 · Posterior contact distribution")
+    theme.heading(TAB, sub=n.sub, text="4 · The HCWC distribution, updated")
     st.markdown(
         "The contact distribution given the elements worked, reweighted by the pick. "
         "Percentiles are over the realisations that reach the assessment minimum, in the "
         "exceedance convention: P90 is the shallow end."
     )
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3 = st.columns(3)
     for _col, _p in ((c1, 90), (c2, 50), (c3, 10)):
         _col.metric(f"Contact P{_p}", f"{post.percentiles(float(_p))[0]:,.0f} m",
                     f"geological {post.percentiles(float(_p), posterior=False)[0]:,.0f} m",
                     delta_color="off")
-    c4.metric("Effective sample size", f"{post.effective_sample_size:,.0f}",
-              f"of {result.n:,}", delta_color="off")
     _edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 61)
     _centres = 0.5 * (_edges[:-1] + _edges[1:])
     figh = go.Figure()
@@ -945,7 +946,7 @@ def render(n: Numbering | None = None) -> None:
                  "hydrocarbons, not where the contact is given that there are.")
 
     # ------------------------------------------------------------------ 5 · the chance
-    theme.heading(TAB, sub=n.sub, text="5 · Prospect chance against threshold")
+    theme.heading(TAB, sub=n.sub, text="5 · Prospect POS, updated")
     m1, m2, m3 = st.columns(3)
     m1.metric(f"Prospect POS at h ≥ {h_min:.0f} m", f"{posterior_pos:.1%}",
               f"prior {prior_pos:.1%}")
@@ -1188,10 +1189,29 @@ def render(n: Numbering | None = None) -> None:
         "h_min": float(h_min),
     }
 
-    # ------------------------------------------------------------------ 6 · assumptions
+    # ------------------------------------------------------------------ 6 · effective sample size
+    theme.heading(TAB, sub=n.sub, text="6 · Effective sample size")
+    e1, e2 = st.columns([1, 2])
+    e1.metric("Effective sample size", f"{post.effective_sample_size:,.0f}",
+              f"of {result.n:,}", delta_color="off")
+    e2.caption(
+        "Kish's (Σw)² / Σw²: how many of the realisations the updated distribution rests on. "
+        "A low value does not mean the interpretation is wrong; it means the answer depends "
+        "heavily on it. The geometry channel only; the strength updates one number and discards "
+        "nothing. Method: see 8.1.5."
+    )
+    if post.effective_sample_size < 300:
+        st.warning(
+            f"Effective sample size {post.effective_sample_size:,.0f}. The picked contact sits "
+            f"far out in the tail of the geological prior, so the posterior rests on very few "
+            f"realisations. That is a finding about the model or the pick, not a number to "
+            f"read off."
+        )
+
+    # ------------------------------------------------------------------ 7 · assumptions
     # In the open, not behind a fold. Each is labelled for what it is: an elicited judgement,
     # a heuristic, or a modelling choice. None is solved by wording.
-    theme.heading(TAB, sub=n.sub, text="6 · Assumptions and limitations")
+    theme.heading(TAB, sub=n.sub, text="7 · Assumptions driving the update")
     _d_at = detection.at(result.column_m)
     _d_flat = float(_d_at.max() - _d_at.min()) < 1e-3
     st.markdown(
@@ -1232,7 +1252,7 @@ def render(n: Numbering | None = None) -> None:
             "does not need them."
         )
 
-        theme.heading(TAB, sub=n.sub, text="7 · What is this answer most sensitive to?")
+        theme.heading(TAB, sub=n.sub, text="8 · What is this answer most sensitive to?")
         st.markdown(
             "Geological inputs are sliced by decile as on tab 4.0, with likelihood-weighted "
             "means; the DHI's typed numbers are moved one at a time and the realisations "
@@ -1278,7 +1298,7 @@ def render(n: Numbering | None = None) -> None:
             st.info("Not enough weight spread to slice a sensitivity from this posterior.")
 
         theme.heading(TAB, sub=n.sub,
-                      text=f"7 · Which mechanism set the contact, {theme.evidence_basis()}")
+                      text=f"8b · Which mechanism set the contact, {theme.evidence_basis()}")
         st.markdown(
             "This table re-attributes the shallowest active limit, not the risk: the element "
             "chances on tab 2.0 are untouched. Given the contact is where the amplitude says, "
@@ -1305,7 +1325,7 @@ def render(n: Numbering | None = None) -> None:
                 f"share; one that naturally produces that contact gains it. The column reads as what "
                 f"stopped the column, not as where the risk is.")
 
-        theme.heading(TAB, sub=n.sub, text="8 · Cross-checks")
+        theme.heading(TAB, sub=n.sub, text="9 · Cross-checks")
         if not (seen and area):
             st.caption("The area cross-check needs an anomaly area in §1.")
         else:
@@ -1343,7 +1363,7 @@ def render(n: Numbering | None = None) -> None:
             )
 
         # ------------------------------------------------------------------ formulation A
-        theme.heading(TAB, sub=n.sub, text="9 · What the scenario switch would have said")
+        theme.heading(TAB, sub=n.sub, text="10 · What the scenario switch would have said")
         st.markdown(
             "`IF(DHI valid, DHI contact, geological contact)` is the older method; it moves the "
             "contact and not the chance. A comparison, not an alternative model: its one "

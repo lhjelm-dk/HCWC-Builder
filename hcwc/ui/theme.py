@@ -235,7 +235,10 @@ def accent(tab: int) -> str:
 
 
 #: A leading section number, in the form the tabs write it: ``"1 · Geometry"``.
-_SECTION = re.compile(r"^(\d+)\s*·\s*(.*)$", re.DOTALL)
+#: A section number with an optional letter suffix: ``"2b · Ranking"`` is a part of section 2,
+#: and renders as ``4.1.2b Ranking`` (the letter suffix was silently unnumbered until 16 Sep 2026,
+#: so tab 5's ``3b`` sat under ``5.1.3`` as a bare "3b ·").
+_SECTION = re.compile(r"^(\d+[a-z]?)\s*·\s*(.*)$", re.DOTALL)
 
 
 def section_label(tab: int, text: str, sub: int | None = None) -> str:
