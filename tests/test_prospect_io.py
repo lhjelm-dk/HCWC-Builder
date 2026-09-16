@@ -338,6 +338,7 @@ class TestTheShippedExamplesLoad:
         inputs = prospect.read(json.dumps(doc))
         assert "stack_mode" not in inputs
 
+    @pytest.mark.render
     def test_the_two_examples_are_controlled_by_different_mechanisms(self):
         """The reason there are two: seal-dominated against spill-dominated."""
         from streamlit.testing.v1 import AppTest
