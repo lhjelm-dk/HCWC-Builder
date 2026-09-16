@@ -180,7 +180,7 @@ class DhiObservation:
     mixture for every realisation: the chance that the picked event is the contact is not made
     to depend on how tall the column is. A taller column could make a conformable event more
     likely to be its base; that dependence is not modelled, and ``D(h)`` is where the column
-    height enters the valid branch instead. Stated in 8.1.6 and pinned by
+    height enters the valid branch instead. Stated in 8.1.7 and pinned by
     ``tests/test_dhi_audit.py``.
 
     It defaults to 1.0 so that constructing an observation the old way reproduces the old numbers

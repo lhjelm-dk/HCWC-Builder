@@ -332,6 +332,12 @@ what to check. Each control keeps its help. Each section opens with at most two 
 
 ## 6 · Done, 16 September 2026
 
+Section numbers above are those of the 16 Sep plan. The shipped structure follows the master
+brief of the same day and is one higher from 8.1.1 on: 8.1.1 Model overview, 8.1.2 Why HCWC is an
+output, 8.1.3 Competing geological limits, 8.1.4 HCWC, column height and POS, 8.1.5 Correlation
+and dependence, 8.1.6 DHI updating, 8.1.7 Detection, contact attribution and absence, 8.1.8
+Empirical benchmarks and censoring, 8.1.9 Validation, assumptions and limitations.
+
 Decisions 1–5 taken as recommended (1 move, 2 keep list, 3 confirm, 4 confirm, 5 go), and
 carried out in eight PRs:
 

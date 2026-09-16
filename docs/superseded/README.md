@@ -6,8 +6,8 @@ signed working note of 25 August 2026, stays where it is for the same reason.
 
 | Note | Now in |
 |---|---|
-| COMPETING_LIMITS.md | 8.1.2 Competing geological limits |
-| LIKELIHOOD_OR_PRIOR.md | 8.1.7 Empirical benchmarks and censoring |
-| WEIGHT_NOT_BAYES.md | 8.1.7 Empirical benchmarks and censoring |
-| BASE_RATE_NEGLECT.md | 8.1.7 Empirical benchmarks and censoring |
-| BENCHMARK_SOURCES.md | 8.1.7 Empirical benchmarks and censoring |
+| COMPETING_LIMITS.md | 8.1.3 Competing geological limits |
+| LIKELIHOOD_OR_PRIOR.md | 8.1.8 Empirical benchmarks and censoring |
+| WEIGHT_NOT_BAYES.md | 8.1.8 Empirical benchmarks and censoring |
+| BASE_RATE_NEGLECT.md | 8.1.8 Empirical benchmarks and censoring |
+| BENCHMARK_SOURCES.md | 8.1.8 Empirical benchmarks and censoring |
