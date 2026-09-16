@@ -50,10 +50,37 @@ suppresses the realisations above the leak and leaves the rest untouched, so the
 distribution corresponds to no geology, and adding a leak can raise the apparent volume. Taking
 the minimum keeps every realisation a column some mechanism can produce.
 
+## One realisation, step by step
+
+Take realisation 64 of the worked prospect, at the shipped seed. The apex is drawn first, at
+2 050 m, because every capacity is measured down from it. The spill point is a mapped surface,
+and on this draw it sits 348 m below the apex. The charge calculator has delivered enough oil to
+fill 263 m of that. The top seal's capillary capacity comes out at 150 m: a throat radius, an
+interfacial tension and a density contrast drawn from their ranges and turned into a column.
+Fault leakage 1 is present in a quarter of realisations, and in this one it is present, with a
+leak capacity of 146 m. Seal continuity is present too, at 184 m; a fault juxtaposition window
+sits at 265 m. Preservation, the base seal and the second fault are drawn absent, so the columns
+sampled for them, 247, 139 and 261 m, sit in the record and take no part.
+
+Six limits are active. The shallowest is fault leakage 1 at 146 m, so the contact in this
+realisation is 2 050 + 146 = 2 196 m and the controller is fault leakage. The seal would have
+held 4 m more; the charge would have filled 117 m more; nobody asks the spill. Had the leakage
+been drawn absent, the top seal would have set the contact at 2 200 m, and the record would say
+seal. That the two sit 4 m apart is why both appear near the top of the controlling table:
+on this prospect the seal and the leak are the competition.
+
+Ten thousand of these, and the tally is the controlling-mechanism table below; the contacts are
+the distribution; and each realisation still carries its own apex, so a well entering at
+2 230 m can be tested against every one of them. Two draws per limit are the model's whole
+vocabulary: whether the mechanism is there, and where it acts if it is. Correlation between
+limits, where it is elicited, enters through a Gaussian copula on the depth draws; presence
+draws stay independent, which is stated rather than hidden.
+
 ## The model shows why the column stops
 
 On the worked prospect, a 350 m closure at 2 050 m with a computed seal capacity and a computed
-charge, the contact comes out at 2 191 / 2 245 / 2 321 m (P90 / P50 / P10). Top-seal capillary
+charge, the contact comes out at 2 191 / 2 246 / 2 322 m (P90 / P50 / P10), read over the
+realisations that reach the assessment minimum. Top-seal capillary
 capacity sets it in 32 % of realisations, fault leakage in 23 %, seal continuity in 16 %, fault
 geometry in 12 %, charge in 9 %, spill in 3 %. The share is not constant down the structure:
 shallow contacts are seal-controlled, deep ones pass to fault geometry and spill (panel b).
