@@ -844,7 +844,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                     "discoveries are partly selected by other people's amplitudes, enriched in "
                     "long columns because that is what detectability does. A posterior judged "
                     "against them counts the DHI twice and reads as less optimistic than it is. "
-                    "§7 sets this out.\n\n"
+                    "Method: see 8.1.7.\n\n"
                     "The updated row reads as displacement rather than as a score: how far the "
                     "evidence moved the prospect against a fixed backdrop. The distance between "
                     "the two rows is the quantity to quote."
