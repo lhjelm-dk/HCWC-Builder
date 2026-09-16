@@ -1701,7 +1701,7 @@ class TestThePageIsNotAnEssay:
 class TestTheArgumentsLiveInDocuments:
     """The docs split, 5 Sep 2026, moved three essays that were pure reasoning out of the tabs
     into `docs/`. On 15 Sep 2026 they and the other theory notes were folded into one document,
-    `docs/THEORY.md`, rendered on tab 8 as 8.1 and 8.1.2 to 8.1.9, with the superseded notes kept
+    `docs/THEORY.md`, rendered on tab 8 as 8.1 and 8.1.1 to 8.1.9, with the superseded notes kept
     under `docs/superseded/`. The tabs state a conclusion and point at a number.
 
     **The viewer fails silently by design.** A missing file gets *"not found in this checkout"*
@@ -1823,7 +1823,7 @@ class TestTheArgumentsLiveInDocuments:
     def test_the_tabs_still_state_the_conclusion_and_say_where_to_read_it(self):
         """A pointer with no conclusion is worse than the essay: the reader at the slider has to
         leave the page to find out whether it matters to them. Since 15 Sep 2026 the pointer is a
-        section number, "Method: see 8.1.1.x", not an essay title."""
+        section number, "Method: see 8.1.x", not an essay title."""
         at = _run()
         blob = "\n".join(str(e.value) for kind in ("markdown", "caption", "info", "warning")
                           for e in at.get(kind))
