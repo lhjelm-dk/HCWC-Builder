@@ -155,8 +155,9 @@ reservoir pinch-out. Each is assigned a probability of being active and an uncer
 capacity; in each Monte Carlo realisation the shallowest active limit sets the contact, and the
 simulation records which one it was.
 
-The result answers three questions: where the contact is, which mechanism controls it, and what
-that means for a well drilled to a given depth. Where available, the distribution is compared with
+The result answers four questions: where the contact is, which mechanism controls it, how the
+chance changes with depth, and what that means for the assessment minimum and a well drilled to a
+given depth. Where available, the distribution is compared with
 empirical data and updated with DHI or well evidence. Method: see 8.1.
         """
     )
