@@ -151,7 +151,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         st.caption(
             "The contact distribution stands; only the chance is undefined. With no minimum "
             "these percentiles are the whole distribution rather than its success cases, and "
-            "there is no threshold to read a chance at. Method: see 8.1.3."
+            "there is no threshold to read a chance at. Method: see 8.1.4."
         )
     else:
         m1, m2, m3, m4, m5 = st.columns(5)
@@ -164,7 +164,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                        "success cases only", delta_color="off")
         st.caption(
             "Every chance here carries its threshold and the conditioning it was computed under; "
-            "the contact percentiles are success cases only. Method: see 8.1.3."
+            "the contact percentiles are success cases only. Method: see 8.1.4."
         )
 
     # ------------------------------------------------------------------ 1 · exceedance
@@ -335,12 +335,12 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      f"overall controlling share: here {gained} {moves[gained]:+.1%} and {lost} "
                      f"{moves[lost]:+.1%}. The evidence moves the depth distribution, and only "
                      "through it the mechanism mix; the element chances on tab 2.0 are unchanged. "
-                     "Method: see 8.1.5.")
+                     "Method: see 8.1.6.")
     else:
         n.plot(fig2, "The controlling mechanism at each depth, which changes down structure. Hue "
                      "is the risk element in E-POS's colours (salmon charge, blue closure, yellow "
                      "reservoir, green retention); lightness separates the limits within an "
-                     "element. Method: see 8.1.2."
+                     "element. Method: see 8.1.3."
                      + ("\n\nBars are shares of all realisations, so bin height carries the "
                         "contact distribution and each limit's bars sum across depth to its "
                         "overall share." if scaled else
@@ -454,7 +454,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                f"from how often it controls the contact (the figure above). Each bar is the "
                f"mean outcome with that input in its top tenth against its bottom tenth, from "
                f"the run on screen. Two kinds of bar: where a limit applies is its distribution; "
-               f"whether it is there is `P(active)`. Method: see 8.1.8.")
+               f"whether it is there is `P(active)`. Method: see 8.1.9.")
     else:
         st.info("Too few realisations to slice into deciles for a sensitivity.")
 
@@ -471,7 +471,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         n.table(table, optional=True,
                 caption="A limit that usually fails the prospect outright is under-represented "
                 "among the survivors. Both columns are needed; neither alone is the answer. "
-                "Method: see 8.1.2.")
+                "Method: see 8.1.3.")
 
     # ------------------------------------------------------------------ 2c, 2d · folded
     # Two further readings of the controls. Moved behind a fold on 16 Sep 2026 so the default
@@ -604,7 +604,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                  f"tall given the elements worked, so it starts at P(G) at the apex and falls with "
                  f"depth. Read at the assessment minimum it is the headline above; read at any "
                  f"other depth it is the chance of a column reaching that depth. Method: see "
-                 f"8.1.3.")
+                 f"8.1.4.")
 
     # ------------------------------------------------------------------ 4 · the well
     # The last question: a well entering the reservoir at a depth finds hydrocarbon if the
@@ -647,7 +647,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         f"P(well) includes the element risk and is read at the entry depth, not at the "
         f"assessment minimum; it is at most the prospect chance. The column at the well is the "
         f"contact depth minus the entry depth. The per-element reading is on the Risk against "
-        f"depth sub-tab. Method: see 8.1.3."
+        f"depth sub-tab. Method: see 8.1.4."
     )
 
     # ------------------------------------------------------------------ 6 · trust

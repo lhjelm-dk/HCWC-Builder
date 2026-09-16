@@ -348,7 +348,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         "overstates the spread of the capacity; the correlation editor on sub-tab E cannot reach "
         "inside a calculator. Modelling choice. The seal and the charge calculator share a phase "
         "and not a fluid; tab 3.0 refuses a run in which the two phases differ. Method: see "
-        "8.1.4."
+        "8.1.5."
     )
 
     # Hood (2019) slide 18 wants a GOC and an OWC both set by capillary capacity, and this
@@ -401,7 +401,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         st.markdown(
             "The censoring-corrected NCS fit predicts the same quantity this calculator "
             "computes, a seal capacity in metres of column, so the two can be averaged. The fit "
-            "is used against burial depth alone. Method: see 8.1.7."
+            "is used against burial depth alone. Method: see 8.1.8."
         )
         weight = 0.0
         if not burial:
@@ -673,7 +673,7 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
     st.caption(
         "Sampled independently, top and base seal fail at different columns in the same "
         "realisation. Where it is one unit, the pair should be correlated on the Correlations "
-        "sub-tab, where it is already listed. Method: see 8.1.4."
+        "sub-tab, where it is already listed. Method: see 8.1.5."
     )
     return Handover(DepthDistribution.from_samples(limit), 1.0,
                     f"as top seal +{thickness:,.0f} m — {read('fluid').lower()}, "
@@ -1052,7 +1052,7 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
         "the reason this mechanism controls a column at all.\n\n"
         "Stress and pore pressure are sampled as independent uniforms, which overstates the "
         "spread of the headroom and its low tail; the correlation editor on sub-tab E cannot "
-        "reach inside this calculator. Modelling choice. Method: see 8.1.4."
+        "reach inside this calculator. Modelling choice. Method: see 8.1.5."
     )
 
     # **Say when it cannot bite.** A normally pressured trap at two kilometres has hundreds of bar
