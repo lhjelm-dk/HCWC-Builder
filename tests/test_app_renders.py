@@ -1902,9 +1902,12 @@ class TestThePaperAgreesWithTheAppItDescribes:
     """
 
     ARTICLE = "docs/ARTICLE.md"
-    FIGURES = ("fig1_competing_limits.png", "fig2_controlling_mechanism.png",
-               "fig3_survival_curve.png", "fig4_dhi_update.png",
-               "fig5_truncate_vs_terminate.png")
+    #: The short article carries one combined figure (16 Sep 2026); the long manuscript,
+    #: kept as docs/ARTICLE_LONG_2026-09.md, carries the five it was written with.
+    FIGURES = ("fig6_paper.png",)
+    LONG_FIGURES = ("fig1_competing_limits.png", "fig2_controlling_mechanism.png",
+                    "fig3_survival_curve.png", "fig4_dhi_update.png",
+                    "fig5_truncate_vs_terminate.png")
 
     @staticmethod
     def _root():
@@ -1920,6 +1923,11 @@ class TestThePaperAgreesWithTheAppItDescribes:
         text = self._text()
         for name in self.FIGURES:
             assert f"figures/{name}" in text, f"the paper no longer references {name}"
+            assert (self._root() / "docs" / "figures" / name).exists(), \
+                f"docs/figures/{name} is missing -- run scripts/paper_figures.py"
+        long_text = (self._root() / "docs" / "ARTICLE_LONG_2026-09.md").read_text(encoding="utf-8")
+        for name in self.LONG_FIGURES:
+            assert f"figures/{name}" in long_text, f"the manuscript no longer references {name}"
             assert (self._root() / "docs" / "figures" / name).exists(), \
                 f"docs/figures/{name} is missing -- run scripts/paper_figures.py"
 
