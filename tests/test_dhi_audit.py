@@ -313,6 +313,7 @@ class TestTheCriticalConsistencyIdentity:
         # exact weighted share to within one bin's worth of contacts.
         assert abs(mass_below_edge - f_post) < 0.06
 
+    @pytest.mark.render
     def test_the_identity_holds_on_the_rendered_tab(self):
         """The app's own numbers: the overlay tab 5.1 writes for tabs 4 and 6 carries the
         headline, the updated element chance, the threshold and the weights. The headline must be

@@ -3,6 +3,9 @@
 Streamlit app deriving hydrocarbon–water contact distributions from competing geological limits.
 Core in `hcwc/core/`, tabs in `hcwc/ui/` and `app.py`, tests in `tests/` (run with the anaconda
 interpreter at `C:/Users/lhjel/anaconda3/python.exe`; the Store `python` stub on PATH is not one).
+The full suite runs locally before every PR; CI runs `-m "not render"` on pull requests and
+everything on `main`, because Actions minutes are scarce. A test that renders `app.py` through
+AppTest carries `@pytest.mark.render`.
 
 ## Tone of user-facing text
 

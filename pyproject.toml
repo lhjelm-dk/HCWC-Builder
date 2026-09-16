@@ -24,6 +24,11 @@ dev = ["pytest>=8.0"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
+markers = [
+    # Tests that render the whole app through streamlit's AppTest. They are most of the suite's
+    # wall time, so a pull request runs everything except them and a push to main runs all.
+    "render: renders app.py through AppTest (slow; run on main, not on pull requests)",
+]
 filterwarnings = [
     "error::RuntimeWarning",
     "ignore::DeprecationWarning",
