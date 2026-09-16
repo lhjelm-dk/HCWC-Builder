@@ -162,9 +162,16 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         for col, p in ((m3, 90), (m4, 50), (m5, 10)):
             col.metric(f"Contact P{p}", f"{pct(p):,.0f} m",
                        "success cases only", delta_color="off")
+        # The main controls beside the headline (master brief §27): a P50 with the three
+        # mechanisms that set it is a result a reader can question; a P50 alone is not.
+        _top = sorted(result.controlling_shares(successes_only=True, weights=weights).items(),
+                      key=lambda kv: -kv[1])[:3]
         st.caption(
-            "Every chance here carries its threshold and the conditioning it was computed under; "
-            "the contact percentiles are success cases only. Method: see 8.1.4."
+            "Main controls, success cases: "
+            + ", ".join(f"{name} {share:.0%}" for name, share in _top)
+            + ". Every chance here carries its threshold and the conditioning it was computed "
+            "under; the contact percentiles are conditional on the assessment minimum. Method: "
+            "see 8.1.4."
         )
 
     # ------------------------------------------------------------------ 1 · exceedance
