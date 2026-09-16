@@ -100,13 +100,20 @@ class DepthDistribution:
         return func(u, *(self.params[k] for k in needed))
 
     @classmethod
-    def from_samples(cls, samples: np.ndarray, n_points: int = 101) -> "DepthDistribution":
+    def from_samples(cls, samples: np.ndarray, n_points: int = 201) -> "DepthDistribution":
         """Summarise a computed column-height distribution into a quantile table.
 
         The charge branch does not have a closed-form distribution — it comes out of an area–depth
         integration against a sampled charge volume. Reducing it to quantiles lets it enter the
         engine as an ordinary limit, and loses nothing, because charge is not correlated with any
         other limit in this model.
+
+        **201 points, half-percent resolution** (audit P2-5, closed 16 Sep 2026; 101 until then).
+        The table's ends are the calculator's sampled minimum and maximum, so tails beyond the
+        20 000 draws behind it are unreachable and the ends move slightly with the draw; the
+        resolution between them is what this number sets. Every calculator-fed limit passes
+        through here, so the engine's own percentiles of such a limit change in their last
+        digit with this change and nowhere else.
 
         Non-finite samples are dropped: an infinite charge-limited contact means *charge is not a
         limit in that realisation*, which is a statement about the limit's probability of being
