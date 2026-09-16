@@ -78,7 +78,10 @@ the column could be unbounded.
 The controlling mechanism is recorded per realisation as the index of the shallowest active
 limit. Its share over the sample is the ranking on tab 3.1 and 4.1.5: in most cases two or three
 limits set the contact and the rest do not move the answer, so the elicitation effort belongs on
-those. The share is not constant down the structure. On the shipped prospect shallow contacts
+those. The ranking is reported over all realisations and over the successes: a limit that
+usually fails the prospect outright is under-represented among the survivors because it is the
+most severe, which is the selection effect of the empirical record (8.1.7) one level up, so
+neither view alone is the answer. The share is not constant down the structure. On the shipped prospect shallow contacts
 are seal-controlled and deep contacts pass to fault geometry and spill; tab 4.1.2 draws this,
 scaled either as a share of all realisations or as the mechanism mix at each depth.
 
@@ -122,8 +125,15 @@ checked against the direct distribution on every run (8.1.8). WellVolPOS compute
 factor, `r = P(contact > z_entry | success)`, and spreads it across the elements by a weighting
 rule; the derived curves say which element binds at that depth, which the allocation cannot.
 Reservoir enters the depth dependence twice, as a base or pinch-out limit that moves the contact
-and as an effectiveness decline that lowers the chance without moving it; only the first is a
-competing limit.
+and as an effectiveness decline (diagenesis, cementation, a net-to-gross trend) that lowers the
+chance without moving it; only the first is a competing limit, and conflating them breaks the
+consistency identity, so the identity is checked over the contact-controlling elements only.
+An element with no limit in the model never controls the contact, and its derived curve is its
+element chance unchanged with depth. Spreading one location factor across four elements by a
+rule presents the same number differently and adds no information about charge or closure;
+the allocation reproduces `P(well)` whatever rule is chosen, and the derived curves can disagree
+with it because they carry which element binds at that depth. `r` quoted as a chance of success
+overstates the well by `1 / P(G)`.
 
 A well entering at `z_entry` reads three numbers off the same curves: `P(well)`, the chance it
 finds hydrocarbons at its entry depth, including the element risk; the geological chance at the
@@ -210,6 +220,14 @@ The effective sample size, Kish's `(Σw)² / Σw²`, reports how many of the rea
 posterior rests on. A low value does not mean the interpretation is wrong; it means the answer
 depends heavily on it and should be presented as such. The ESS reports the geometry channel only:
 the character channel updates one number and discards nothing.
+
+The evidence moves the depth distribution, and only through it the mechanism mix. Drawn as
+shares of all realisations, the controlling mechanism by depth differs visibly between the
+geological and the updated result, because the evidence moves which depths are reached; drawn
+as the mix within each depth bin, the two are near-identical, because normalising a bin
+conditions on contact depth, which is almost all a DHI knows. The amplitude says roughly where
+the contact is, and some mechanisms explain that depth better than others; it is not evidence
+about which element failed.
 
 A DHI cannot re-attribute risk between elements. Given the prospect failed, which element
 failed, a fluid indicator cannot say; the element chances on tab 2.0 are untouched by the update
@@ -370,7 +388,14 @@ where the shared apex makes it approximate. A residual near zero says the elemen
 independently and the derived per-element chances are consistent with the contact they came
 from.
 
-The sensitivity figures state their support. A tornado bar resting on fewer than a hundred
+The tornado asks how much each elicited number moves the mean, a different question from how
+often the limit controls the contact: a limit can set the contact in most realisations and be
+worth no effort, because it always applies at nearly the same depth. Each bar is a conditional
+mean, the average outcome with that input in its top tenth against its bottom tenth, sliced
+from the joint sample so the bars respect the correlations. A limit has two kinds of bar, where
+it applies and whether it is present, and the longer says whether the question is a depth or a
+probability. The mean rather than the median, because a volume is built from the mean and a
+median can sit still while the tail moves. The sensitivity figures state their support. A tornado bar resting on fewer than a hundred
 effective realisations is reported as thin rather than drawn as though it were as well supported
 as the rest.
 
