@@ -20,6 +20,9 @@ import pathlib
 
 import pytest
 
+#: Every test here renders the app, so the whole module carries the marker CI keys on.
+pytestmark = pytest.mark.render
+
 APP = pathlib.Path(__file__).resolve().parent.parent / "app.py"
 
 

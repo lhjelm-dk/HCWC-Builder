@@ -1,10 +1,11 @@
-# The test suite runs once per pull-request push and once per merge to main.
+# Two sizes of run, because the account's Actions minutes are the scarce resource.
 #
-# Until 16 Sep 2026 it ran on every push *and* every pull request, on two Python versions, so
-# one push to a PR branch cost four jobs and the merge two more; that used 90 % of the account's
-# Actions minutes in a fortnight. Now: a pull request runs one job (3.12), a superseded push
-# cancels the run it replaces, and the 3.11 floor is checked on main only. The full suite is run
-# locally before every PR in any case; CI is the confirmation, not the first run.
+# A pull request runs the unit half of the suite, `-m "not render"`: 830 tests in about two
+# minutes. A push to main runs everything, the 181 tests that render app.py through AppTest
+# included, on both supported Pythons: about ten minutes a job. Until 16 Sep 2026 every pull
+# request ran the full suite, which spent the month's minutes in a fortnight. The full suite is
+# run locally before every PR in any case (CLAUDE.md); CI on the PR is the fast confirmation and
+# CI on main is the complete one.
 name: tests
 
 on:
@@ -35,5 +36,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-      - name: Run the tests
+      - name: Unit tests (pull request)
+        if: github.event_name == 'pull_request'
+        run: pytest -q -m "not render"
+      - name: Full suite, renders included (main)
+        if: github.event_name == 'push'
         run: pytest -q
