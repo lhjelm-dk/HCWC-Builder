@@ -250,7 +250,7 @@ def render(n: Numbering | None = None) -> None:
         st.markdown(
             "This prospect is not marked as a DHI prospect. The switch is on tab 2.0; with it on, "
             "a seismic amplitude enters as evidence here, and the geological model on tabs 3.0 "
-            "to 4.0 stands on its own either way. Method: see 8.1.5."
+            "to 4.0 stands on its own either way. Method: see 8.1.6."
         )
         # Otherwise a curve computed before the toggle was turned off would go on being drawn on
         # tab 4.0, which is the worst kind of stale: plausible, labelled, and wrong.
@@ -269,7 +269,7 @@ def render(n: Numbering | None = None) -> None:
     st.markdown(
         "One observation, two DHI information channels. The evidence strength (§2) updates "
         "P(G), the chance of hydrocarbons; the contact geometry (§1, §3) updates the HCWC "
-        "distribution given G. Each enters the chance once. Method: see 8.1.5."
+        "distribution given G. Each enters the chance once. Method: see 8.1.6."
     )
 
     # The geometry enters the chance as P(h ≥ h_min | G, geometry). At an assessment minimum
@@ -450,7 +450,7 @@ def render(n: Numbering | None = None) -> None:
                f"{below:.0%} of the geological realisations fall in the shaded side, and those "
                "are the ones the update acts on. A share near zero means the observation adds "
                "nothing the model did not already hold. The likelihood falls away below the "
-               "line at the rate the pick error sets. Method: see 8.1.6.")
+               "line at the rate the pick error sets. Method: see 8.1.7.")
 
         # Once the cutoff is above essentially the whole prior, every realisation is penalised
         # by the same saturated amount, the likelihood is flat apart from the floor, the
@@ -502,7 +502,7 @@ def render(n: Numbering | None = None) -> None:
                f"The pick is {sharper:,.0f} times sharper than the geology, centred where "
                f"{sits_at:.0%} of it lies shallower. Far narrower than the geology, the pick "
                "dominates the answer; centred in its tail, the posterior rests on few "
-               "realisations, which §6 reports as the effective sample size. Method: see 8.1.6.")
+               "realisations, which §6 reports as the effective sample size. Method: see 8.1.7.")
 
     # A penetration described on tab 2.0 is evidence present too, and its note belongs in §1;
     # it is computed after the update below, so the slot is reserved here and filled there.
@@ -518,7 +518,7 @@ def render(n: Numbering | None = None) -> None:
     )
     st.caption(
         "R is the ratio of the heights of two elicited curves, hydrocarbon-bearing and not, at "
-        "the prospect's reading on an axis without units (E-POS). Method: see 8.1.5."
+        "the prospect's reading on an axis without units (E-POS). Method: see 8.1.6."
     )
 
     with st.expander("The two populations (E-POS defaults)"):
@@ -588,7 +588,7 @@ def render(n: Numbering | None = None) -> None:
             "Kjønsberg, Hauge, Kolbjørnsen and Buland (2010), *Bayesian Monte Carlo method for "
             "seismic predrill prospect assessment*, Geophysics 75(5), O9–O19: the strongest "
             "anomaly bought a factor of 29 and absence at the outskirts 0.70, carrying the "
-            "amplitude and the geometry together. Method: see 8.1.5."
+            "amplitude and the geometry together. Method: see 8.1.6."
         )
 
     r_strength = model.r_at(strength)
@@ -633,7 +633,7 @@ def render(n: Numbering | None = None) -> None:
         f"so they can be compared: how typical a reading of {strength:,.0f} is for a prospect "
         f"that works, and for one that does not. Their ratio is R exactly "
         f"({_l_hc:.3f} / {_l_no:.3f} = {r_strength:.2f}). Likelihoods, not probabilities; "
-        f"only the ratio survives the arbitrary axis. Method: see 8.1.5."
+        f"only the ratio survives the arbitrary axis. Method: see 8.1.6."
     )
     # Worked from OPENING_STRENGTH rather than typed. The caption below used to quote a
     # default of 7 and the 37.5 % that follows from it; the slider moved to 5 on 6 Sep and
@@ -643,7 +643,7 @@ def render(n: Numbering | None = None) -> None:
     st.caption(
         f"{band}: {band_note} At the opening reading of {OPENING_STRENGTH:.0f} the band is "
         f"{dhi_core.strength_bands(_opening_r)[0]}, and a 30 % prior becomes "
-        f"{_opening_shift:.1%}. The volume weight `R / (R + 1)` is not a POS. Method: see 8.1.5."
+        f"{_opening_shift:.1%}. The volume weight `R / (R + 1)` is not a POS. Method: see 8.1.6."
     )
 
     # ------------------------------------------------------------------ p_valid
@@ -664,14 +664,14 @@ def render(n: Numbering | None = None) -> None:
         "The second channel. A flat event can be lithology, a diagenetic front, fizz gas read "
         "as pay, or a processing artefact; this section states the chance that it is none of "
         "those, given a column here. With the pick (§1) and the detection model (3b) it "
-        "reweights the HCWC distribution within G. Method: see 8.1.6."
+        "reweights the HCWC distribution within G. Method: see 8.1.7."
     )
     picked_levels = {}
     with st.expander("Grade the three contact attributes, for a suggested value of c"):
         st.markdown(
             "Contact attributes bear on whether the picked event is the base of the column; "
             "body attributes, graded in §2, on whether there is hydrocarbon (Monigle et al. "
-            "2025). Method: see 8.1.6."
+            "2025). Method: see 8.1.7."
         )
         cols = st.columns(len(CONTACT_ATTRIBUTES))
         for col, (attribute, levels) in zip(cols, CONTACT_ATTRIBUTES.items()):
@@ -684,7 +684,7 @@ def render(n: Numbering | None = None) -> None:
         st.caption(
             f"Suggested c = {suggested_c:.2f}, the geometric mean of "
             f"{', '.join(f'{s:.2f}' for s in scores)}, so that one poor attribute pulls the "
-            f"value down. A heuristic, not a calibration. Method: see 8.1.6."
+            f"value down. A heuristic, not a calibration. Method: see 8.1.7."
         )
 
     use_attributes = st.checkbox(
@@ -711,7 +711,7 @@ def render(n: Numbering | None = None) -> None:
         f"The remaining {1 - p_valid:.2f} goes to a branch in which the pick says nothing about "
         f"depth, so the depth channel can say at most {p_valid / (1 - p_valid):.1f} : 1 against "
         f"any contact depth. It does not carry the chance of hydrocarbons, which enters once, "
-        f"in §5. Method: see 8.1.6."
+        f"in §5. Method: see 8.1.7."
     )
 
     st.caption(
@@ -733,7 +733,7 @@ def render(n: Numbering | None = None) -> None:
     st.markdown(
         "The chance a column of height h produces a detectable anomaly. It is what makes an "
         "absent anomaly usable evidence; the false-positive assumption sets how much absence "
-        "says about the chance. Method: see 8.1.6."
+        "says about the chance. Method: see 8.1.7."
     )
     d1, d2, d3, d4 = st.columns(4)
     h50 = d1.number_input("50 % detection column (m)", 1.0, 500.0, 25.0, 1.0,
@@ -771,7 +771,7 @@ def render(n: Numbering | None = None) -> None:
                        yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
                        height=380, margin=dict(t=20), showlegend=False)
     n.plot(figd, "The detection function, logistic in column height. Its shape is a modelling "
-                 "choice, exposed rather than hard-coded. Method: see 8.1.6.")
+                 "choice, exposed rather than hard-coded. Method: see 8.1.7.")
 
     # ------------------------------------------------------------------ the update
     observation = DhiObservation(
@@ -961,7 +961,7 @@ def render(n: Numbering | None = None) -> None:
         f"against {geometric_prior:.3f} from the geology alone (§1, §3). `Prospect POS` = "
         f"{p_g_updated:.3f} × {posterior_geometric:.3f} = {posterior_pos:.3f}. The chance and "
         f"the contact distribution below are read off the same weighted realisations. Method: "
-        f"see 8.1.5."
+        f"see 8.1.6."
     )
 
     # **Multiplied through by the element product.** Drawn as the bare exceedance this figure read
@@ -1122,7 +1122,7 @@ def render(n: Numbering | None = None) -> None:
                 "F(h | G, pick) updated. The amplitude scales the whole curve; the pick reshapes "
                 "it, raising the chance near and above the picked contact and lowering it below. "
                 "The open circle is the posterior median, which lands on the pick. Method: see "
-                "8.1.5."
+                "8.1.6."
                 + _pooled_note(pooled_gap, floor_part))
 
     n.table(
@@ -1143,7 +1143,7 @@ def render(n: Numbering | None = None) -> None:
         "hydrocarbons, the pick updates the column distribution. Each enters once, and no "
         "dependence parameter is applied between them; the two judgements are related at "
         "elicitation, which is a heuristic and not a fitted joint distribution. Method: see "
-        "8.1.5."
+        "8.1.6."
     )
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("R, amplitude character" if seen else "R, absent anomaly", _fmt_r(r_applied),
@@ -1198,7 +1198,7 @@ def render(n: Numbering | None = None) -> None:
         "Kish's (Σw)² / Σw²: how many of the realisations the updated distribution rests on. "
         "A low value does not mean the interpretation is wrong; it means the answer depends "
         "heavily on it. The geometry channel only; the strength updates one number and discards "
-        "nothing. Method: see 8.1.5."
+        "nothing. Method: see 8.1.6."
     )
     if post.effective_sample_size < 300:
         st.warning(
@@ -1237,7 +1237,7 @@ def render(n: Numbering | None = None) -> None:
         "rule).\n"
         "- Where every realisation clears the assessment minimum, the pick cannot move the "
         "chance.\n\n"
-        "Method: see 8.1.6 and 8.1.9."
+        "Method: see 8.1.7 and 8.1.9."
     )
 
     # ------------------------------------------------------------------ cross-checks
@@ -1256,7 +1256,7 @@ def render(n: Numbering | None = None) -> None:
         st.markdown(
             "Geological inputs are sliced by decile as on tab 4.0, with likelihood-weighted "
             "means; the DHI's typed numbers are moved one at a time and the realisations "
-            "reweighted. Method: see 8.1.8."
+            "reweighted. Method: see 8.1.9."
         )
         dhi_space = st.radio(
             "Swing measured on", ["Column below apex", "Contact depth"], horizontal=True,
@@ -1293,7 +1293,7 @@ def render(n: Numbering | None = None) -> None:
                    f"pin down.\n\n"
                    f"Where a typed DHI number moves the answer further than the geology does, the "
                    f"posterior is a statement about the seismic assumptions rather than about the "
-                   f"prospect. Method: see 8.1.8.")
+                   f"prospect. Method: see 8.1.9.")
         else:
             st.info("Not enough weight spread to slice a sensitivity from this posterior.")
 
@@ -1303,7 +1303,7 @@ def render(n: Numbering | None = None) -> None:
             "This table re-attributes the shallowest active limit, not the risk: the element "
             "chances on tab 2.0 are untouched. Given the contact is where the amplitude says, "
             "which mechanism stopped it there is what the evidence can answer. Method: see "
-            "8.1.5."
+            "8.1.6."
         )
         weights = post.weights
         total_w = float(weights.sum())
@@ -1368,7 +1368,7 @@ def render(n: Numbering | None = None) -> None:
             "`IF(DHI valid, DHI contact, geological contact)` is the older method; it moves the "
             "contact and not the chance. A comparison, not an alternative model: its one "
             f"parameter lives inside the likelihood in §3 at p_valid = {p_valid:.2f}. Method: "
-            "see 8.1.5."
+            "see 8.1.6."
         )
         if seen:
             switched = dhi_core.scenario_switch(result, p_valid, contact, sigma)

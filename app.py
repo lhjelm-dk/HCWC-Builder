@@ -47,7 +47,7 @@ def _render_with_figures(text: str, base: Path, demote: int = 0) -> None:
     ``demote`` pushes every Markdown heading down that many levels (``##`` with ``demote=3``
     renders as ``#####``), capped at six, and leaves fenced code alone. A document rendered
     under a numbered sub-heading of its own must not carry headings larger than it: the theory
-    notes' ``##`` sections rendered as h2 under an h4 "8.1.1", so "The construction" was larger
+    notes' ``##`` sections rendered as h2 under an h4 "8.1.2", so "The construction" was larger
     than the number it sat under (Lars, 16 Sep 2026).
 
     ``st.markdown`` resolves nothing relative to the file the text came from, so
@@ -158,7 +158,7 @@ simulation records which one it was.
 The result answers four questions: where the contact is, which mechanism controls it, how the
 chance changes with depth, and what that means for the assessment minimum and a well drilled to a
 given depth. Where available, the distribution is compared with
-empirical data and updated with DHI or well evidence. Method: see 8.1.
+empirical data and updated with DHI or well evidence. Method: see 8.1.1.
         """
     )
 
@@ -198,7 +198,7 @@ New here? Start with the tabs in this order.
             "Every mechanism that can stop the column, on one section, with the distribution of "
             "the depth at which it acts. Charge enters from below and fills downward from the "
             "apex, so every capacity is measured from the apex. Figure by Lars Hjelm. "
-            "Method: see 8.1.2."
+            "Method: see 8.1.3."
         )
 
     # Trimmed 16 Sep 2026 to the operational statement. The argument for reading the chance
@@ -206,7 +206,7 @@ New here? Start with the tabs in this order.
     # are stated once, on tab 8.1 (docs/EXPLANATION_MAP_2026-09-16.md, tab 1).
     st.markdown(
         "Success is a column of at least the assessment minimum set on **2.0 Prospect**; the "
-        "chance of success is the contact distribution read at that depth. Method: see 8.1.3. "
+        "chance of success is the contact distribution read at that depth. Method: see 8.1.4. "
         "Limitations: see 8.1.9."
     )
     st.markdown(
@@ -297,7 +297,7 @@ with tab5:
     # sequence counts in render order, which here is not reading order. Numbered by sub-tab,
     # `Figure 5.2.1` is the first exhibit on *The observation*, and it stays that whatever else moves.
     # Three sub-tabs since 16 Sep 2026: the walkthrough that opened this tab is the derivation
-    # and renders under 8.1.5, on the same live numbers.
+    # and renders under 8.1.6, on the same live numbers.
     _evidence, _contact_dhi, _depth_dhi = st.tabs(
         ["5.1 · The observation",
          "5.2 · Contact and chance (DHI + well)", "5.3 · Risk against depth (DHI + well)"])
@@ -568,21 +568,24 @@ with tab7:
 # --------------------------------------------------------------------------- 8.0 Theory & Guide
 with tab8:
     st.markdown(
-        "The method, once: the model in one page, then nine sections in the order the model "
+        "The method, once: an overview of the model, then the sections in the order the model "
         "runs. The operational tabs refer here by section number. The paper is the long-form "
         "version and the bibliography carries the sources."
     )
 
-    # 8.1 is docs/THEORY.md: one `## ` section per numbered part, rendered in order (Lars's
-    # structure, 16 Sep 2026). The first section is 8.1 itself, the model in one page; the
-    # next nine are 8.1.1 to 8.1.9. Two pieces of the tool render inside it, because they are
-    # the derivation on the live prospect and belong with the text that derives it: the DHI
-    # walkthrough under 8.1.5, and the worked base-rate example under 8.1.7.
+    # 8.1 is docs/THEORY.md: one `## ` section per numbered part, rendered in order (the master
+    # brief, 16 Sep 2026). The document's H1 is the 8.1 heading; its nine sections are 8.1.1
+    # Model overview to 8.1.9 Validation, assumptions and limitations. Two pieces of the tool
+    # render inside it, because they are the derivation on the live prospect and belong with
+    # the text that derives it: the DHI walkthrough under 8.1.6, and the worked base-rate
+    # example under 8.1.8.
     _theory = DOCS / "THEORY.md"
     if _theory.exists():
         _parts: list[tuple[str, list[str]]] = []
+        _h1 = "Theory and methods"
         for _line in _theory.read_text(encoding="utf-8").split("\n"):
             if _line.startswith("# "):
+                _h1 = _line[2:].strip()
                 continue
             if _line.startswith("## "):
                 _parts.append((_line[3:].strip(), []))
@@ -591,11 +594,9 @@ with tab8:
             # Lines before the first section are the document's own subtitle and are dropped:
             # the tab intro above says the same.
         _worked_example_slot = None
+        theme.heading(8, f"1 · {_h1}")
         for _k, (_title, _body) in enumerate(_parts):
-            if _k == 0:
-                theme.heading(8, f"1 · {_title}")
-            else:
-                theme.subheading(8, 1, _k, _title)
+            theme.subheading(8, 1, _k + 1, _title)
             _render_with_figures("\n".join(_body), DOCS, demote=3)
             if _k == 5:
                 dhi_walkthrough.render(Numbering(8, sub=1))
@@ -619,7 +620,7 @@ with tab8:
             "A likelihood is a use rather than a kind of distribution, and to act as one the data "
             "must have been observed on this prospect.\n\n"
             "The test is therefore not whether the data is a probability but whether it carries "
-            "something the model has not already used. Method: see 8.1.7 above; the table below "
+            "something the model has not already used. Method: see 8.1.8 above; the table below "
             "shows what getting it wrong does to a real prospect."
         )
         _t8_limits = st.session_state.get("limit_set")
