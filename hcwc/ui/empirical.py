@@ -231,7 +231,7 @@ Edmundson et al. (2021) assembled 242 measured discoveries across the Norwegian 
 Shelf, each with an apex and a spill point picked from depth-converted maps, and published the
 raw table under CC-BY 4.0. What follows differs from the published analysis in one estimator,
 not in the data. Edmundson's trap height is this tool's closure height, one measurement under
-two names; their term is kept where their data are quoted. Method: see 8.1.7.
+two names; their term is kept where their data are quoted. Method: see 8.1.8.
 """
     )
 
@@ -352,7 +352,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
             f"below {ols_cross:.0f} m it predicts a column the data cannot contain, and "
             f"{int((h < ols_cross).sum())} of {h.size} discoveries ({(h < ols_cross).mean():.0%}) "
             f"sit there; its intercept is {intercept:+.0f} m. Kept as published. Method: see "
-            f"8.1.7."
+            f"8.1.8."
         )
 
     # -------- Figure: their Fig 6B equivalent -------------------------------------------
@@ -406,7 +406,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     * Filled to spill (`C = H`): geometry bound it. All that is learned is `S ≥ H`. The observation
       is right-censored; the seal's capacity was not tested.
 
-    111 of 242 rows, 46 %, are of the second kind. Method: see 8.1.7.
+    111 of 242 rows, 46 %, are of the second kind. Method: see 8.1.8.
     """
         )
 
@@ -425,7 +425,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
 
         st.markdown(
             "Corrected, closure height matters less than published and burial depth roughly "
-            "twice as much. Method: see 8.1.7."
+            "twice as much. Method: see 8.1.8."
         )
 
         with st.expander("Why not simply drop the filled-to-spill points?"):
@@ -441,7 +441,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     | Censored MLE | −0.009 |
 
     Only the censored likelihood recovers the truth (`tests/test_censoring.py`). Method: see
-    8.1.7.
+    8.1.8.
     """
             )
 
@@ -468,7 +468,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         st.caption(
             f"Graham et al.'s global 40 % is a population average over closures below 250 m; on "
             f"the same basis the NCS gives {filled[h < 250].mean():.0%}, a regional difference, "
-            f"since the NCS is charge-rich. Method: see 8.1.7."
+            f"since the NCS is charge-rich. Method: see 8.1.8."
         )
 
         theme.heading(TAB, "5 · A second bias, which the correction does not remove")
@@ -483,7 +483,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     ```
 
     A depth-conversion error moves both the same way and manufactures a relationship no censored
-    estimator can see. Method: see 8.1.7.
+    estimator can see. Method: see 8.1.8.
     """
         )
         sigmas = (0.0, 10.0, 25.0, 50.0, 75.0, 100.0)
@@ -530,7 +530,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     st.markdown("The measured dataset is Norwegian, and there is no second one; a prospect "
                 "outside the NCS is compared against Norwegian rock, and an in-house trap-fill "
                 "database, loaded below, is the only way to a benchmark conditioned on its own "
-                "basin. Method: see 8.1.7.")
+                "basin. Method: see 8.1.8.")
     _render_import()
 
     # ------------------------------------------------------------------ family curves
@@ -539,7 +539,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         "The x-axis is column height; relief picks the curve. Each curve reads: for a closure of "
         "this relief, the probability that the column is at least x metres. The vertical drop at "
         "the right-hand end is the filled-to-spill probability mass, a point mass rather than a "
-        "tail. Method: see 8.1.7."
+        "tail. Method: see 8.1.8."
     )
 
     options = ["NCS, censoring-corrected", "NCS, as the paper fits it", "Graham et al. (2015)"]
@@ -707,7 +707,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     if st.session_state.get("dhi_on") and st.session_state.get("dhi_overlay") is not None:
         st.markdown("The geological curve is the like-for-like comparison; the DHI curve shows "
                     "how far the evidence moved the prospect, not whether the model is "
-                    "calibrated. Method: see 8.1.7.")
+                    "calibrated. Method: see 8.1.8.")
 
     if imported is not None and source == imported_label(imported):
         st.info(
@@ -726,7 +726,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         st.markdown("This is the published estimator, drawn for comparison and not for use. "
                     "Fitted without treating the filled-to-spill discoveries as censored, it "
                     "under-fills small closures and over-fills the largest, and does not "
-                    "reproduce the dataset's own fill-to-spill rate. Method: see 8.1.7.")
+                    "reproduce the dataset's own fill-to-spill rate. Method: see 8.1.8.")
 
     # ------------------------------------------------------------------ summary
     # -------- Are we optimistic or pessimistic? ------------------------------------------
@@ -844,7 +844,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                     "discoveries are partly selected by other people's amplitudes, enriched in "
                     "long columns because that is what detectability does. A posterior judged "
                     "against them counts the DHI twice and reads as less optimistic than it is. "
-                    "Method: see 8.1.7.\n\n"
+                    "Method: see 8.1.8.\n\n"
                     "The updated row reads as displacement rather than as a score: how far the "
                     "evidence moved the prospect against a fixed backdrop. The distance between "
                     "the two rows is the quantity to quote."
@@ -1043,7 +1043,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
             "A weight, not a Bayesian update. The model is already built out of relief and burial, "
             "since the spill point is the relief, so multiplying in a record conditioned on both "
             "would count the geometry twice. Two priors combine by weighting, which is why this is "
-            "a slider starting at zero. Method: see 8.1.7."
+            "a slider starting at zero. Method: see 8.1.8."
         )
 
         bench_draw = _samples_for(bench_source, (round(own_relief, 1),), float(burial))
@@ -1097,7 +1097,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                     + "Every curve is conditional on the prospect working: these are column "
                    "distributions, not chances. The combined curve is a weighted average of "
                    "quantiles, not a Bayesian update, so it lies between the two. Method: see "
-                   "8.1.7."))
+                   "8.1.8."))
 
             for basis, columns in bases:
                 if len(bases) > 1:
@@ -1112,14 +1112,14 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         st.warning(
             "A sanity check rather than a score: every benchmark is conditioned on discovery. A "
             "prospect can be optimistic on good grounds where the evidence for it can be named. "
-            "Method: see 8.1.7."
+            "Method: see 8.1.8."
         )
 
     theme.heading(TAB, "9 · The base rate for a comparable prospect")
     st.markdown(
         "Edmundson's §5.2 recommends base-rate figures beside the geological assessment: their "
         "matrix for a prospect of these dimensions, beside what the limits produced, with the "
-        "sample size in view. Nothing here changes a number. Method: see 8.1.7."
+        "sample size in view. Nothing here changes a number. Method: see 8.1.8."
     )
 
     matrix_limits = st.session_state.get("limit_set")
@@ -1229,23 +1229,23 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
             if len(fill_bases) > 1:
                 st.caption(
                     "The updated bars are displacement against a fixed backdrop, not "
-                    "calibration. Method: see 8.1.7."
+                    "calibration. Method: see 8.1.8."
                 )
             st.warning(
                 f"This informs the contact distribution and never the chance: the matrix is "
                 f"`P(trap fill | discovery)`, and all {int(cell.n)} of those traps had "
                 f"hydrocarbons in them. {int(cell.n)} discoveries is a thin basis, which is why "
-                f"the two are shown side by side and not combined. Method: see 8.1.7."
+                f"the two are shown side by side and not combined. Method: see 8.1.8."
             )
 
             # Seven hundred words of argument about somebody else's arithmetic, with a
             # sourcing paragraph and a fixed-point table, and nothing on this page depends
-            # on it. Moved to docs on 5 Sep 2026, now 8.1.7 of docs/THEORY.md. The sentence that
+            # on it. Moved to docs on 5 Sep 2026, now 8.1.8 of docs/THEORY.md. The sentence that
             # governs what the reader does next stays here.
             st.caption(
                 "Side by side, not merged: the rule usually attached to base-rate neglect is "
                 "symmetric, returning the same answer when its two inputs are swapped, which no "
-                "Bayesian update does. Method: see 8.1.7."
+                "Bayesian update does. Method: see 8.1.8."
             )
 
     theme.heading(TAB, "10 · Scope of the claims")
@@ -1254,7 +1254,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         "conditioning, so this is `P(column | discovery)`, and left-truncation at the well's "
         "reservoir entry, which removes the small-column tail. Stacked, the record is truncated "
         "below and censored above, and both push it to look better filled than reality. "
-        "Method: see 8.1.7; limitations: 8.1.9."
+        "Method: see 8.1.8; limitations: 8.1.9."
     )
     st.caption(
         "Data: Edmundson, I., Davies, R., Frette, L.U., Mackie, S., Kavli, E.A., Rotevatn, A., "

@@ -76,12 +76,12 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         st.markdown(
             "The same decomposition as tab 4.0, after the update on tab 5.1. The geological "
             "curves are drawn underneath unchanged: the evidence may move the total and may not "
-            "re-attribute it between elements. Method: see 8.1.5."
+            "re-attribute it between elements. Method: see 8.1.6."
         )
     st.markdown(
         "Each element's curve is derived from the shallowest active limit within that element, "
         "its group minimum. WellVolPOS allocates one location factor across the elements by a "
-        "rule; the derived curves say which element binds at each depth. Method: see 8.1.3."
+        "rule; the derived curves say which element binds at each depth. Method: see 8.1.4."
     )
 
     # ------------------------------------------------------------------ reservoir effectiveness
@@ -89,7 +89,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.markdown(
         "A reservoir that ends at a surface (base or pinch-out) is a limit on tab 3.0 and moves "
         "the contact; a reservoir that degrades with depth is entered here and lowers the chance "
-        "without moving it. Method: see 8.1.3."
+        "without moving it. Method: see 8.1.4."
     )
     use_r1 = st.toggle(
         "Apply a reservoir-effectiveness decline", value=False, key=f"r1_on_{tab}",
@@ -277,7 +277,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                   "both read at the same threshold", delta_color="off")
         st.caption(
             "The updated POS and the updated contact distribution are one object, read off this "
-            "one curve. The element curves below it are not updated. Method: see 8.1.5."
+            "one curve. The element curves below it are not updated. Method: see 8.1.6."
         )
 
     # ------------------------------------------------------------------ consistency
@@ -285,7 +285,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.markdown(
         "Under independent limits, `∏ₑ Pₑ(z) = P(contact > z)`: the product of the element "
         "curves reproduces the contact distribution. The test runs on every rerun. Method: see "
-        "8.1.8."
+        "8.1.9."
     )
     c1, c2, c3 = st.columns(3)
     c1.metric("Max gap, column space", f"{d.max_abs_residual_column:.3f}",
@@ -314,7 +314,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.info(
         "The identity is exact in column-height space and approximate in depth space, where the "
         "elements share the apex draw; the difference between the two residuals is the apex's "
-        "contribution. Method: see 8.1.4."
+        "contribution. Method: see 8.1.5."
     )
 
     # ------------------------------------------------------------------ allocation comparison
@@ -416,5 +416,5 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         f"contact lies below that depth. The prospect POS above it asks whether there is a "
         f"commercial column anywhere, and is always the larger. `r` is the depth term only and "
         f"carries no element risk. An element with no limit in the model has its element "
-        f"chance unchanged with depth. Method: see 8.1.3."
+        f"chance unchanged with depth. Method: see 8.1.4."
     )

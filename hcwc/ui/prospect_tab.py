@@ -260,7 +260,7 @@ def render() -> None:
         f"Success is a column of at least {min_column:,.0f} m, a contact at or below "
         f"{apex_mid + min_column:,.0f} m TVDSS at the mid apex. The limits on tab 3.0 say how "
         f"deep the column could reach; this says how deep it must reach to count. Method: see "
-        f"8.1.3."
+        f"8.1.4."
     )
     if min_column == 0:
         st.warning(
@@ -283,7 +283,7 @@ def render() -> None:
     st.info(
         "The chances here are for the element working at the crest. A trapping element that "
         "fails down-dip from the crest is a limit on tab 3.0, not a reduction of the chance "
-        "here. Method: see 8.1.3.\n\n"
+        "here. Method: see 8.1.4.\n\n"
         "Retention here is whether the seal holds anything. How much it holds is the top-seal "
         "capacity on tab 3.0. An E-POS Retention number that already means the full column belongs "
         "on tab 3.0."
@@ -359,7 +359,7 @@ def render() -> None:
         "P(G) is the chance that every element works at the crest; it carries no statement about "
         "how far down the column reaches. The geological POS is "
         "`P(G) × P(column ≥ h_min | G)`; tab 4.0 shows both terms and their product. Method: see "
-        "8.1.3."
+        "8.1.4."
     )
 
     # ------------------------------------------------------------------ DHI
