@@ -399,7 +399,9 @@ def render() -> None:
         "belongs to. Each has a probability of being present and, given that it is, a "
         "distribution of the depth or capacity at which it applies. In every realisation the "
         "shallowest active limit sets the contact. Limits are sampled, not blended. Method: "
-        "see 8.1.1 and 8.1.2."
+        "see 8.1.1 and 8.1.2.\n\n"
+        "The ranking (3.1) and the summary (3.2) are the result and update as the inputs below "
+        "change; the checks (3.3) follow them."
     )
 
     summary_slot = st.container()
@@ -536,6 +538,14 @@ def render() -> None:
                 "and a capacity in metres of column, with no conversion for display. Percentiles "
                 "are exceedance; P90 is the shallow end.",
                 height=min(60 + 35 * len(rows), 480))
+        # ------------------------------------------------------------ checks
+        theme.heading(TAB, "3 · Checks")
+        if charge_phase and seal_fluid and not phase_clash:
+            st.success(f"Phases agree: the charge and seal calculators both hold "
+                       f"{seal_fluid.lower()}.")
+        elif not (charge_phase and seal_fluid):
+            st.caption("The phase check runs once both the charge and the seal calculators are "
+                       "in use; with one or neither, there is nothing to compare.")
         if phase_clash:
             st.error(
                 f"Phase mismatch: the charge calculator is filling with "
@@ -552,9 +562,8 @@ def render() -> None:
             )
 
         always = [x.name for x in limit_set.limits if x.always_active]
-        st.caption(
-            f"{len(limit_set.limits)} limits, of which "
-            f"{len(always)} always active ({', '.join(always) if always else 'none'}). "
-            f"At least one must always be active, because every prospect has a spill point; the "
-            f"engine refuses a set in which the column could be unbounded."
+        st.success(
+            f"Bounded: {len(limit_set.limits)} limits, of which {len(always)} always active "
+            f"({', '.join(always)}). At least one must be, because every prospect has a spill "
+            f"point; the engine refuses a set in which the column could be unbounded."
         )
