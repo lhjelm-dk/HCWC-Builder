@@ -1131,9 +1131,17 @@ def render(n: Numbering | None = None) -> None:
         "it. The chance to quote is the one at the row the volume was computed at.")
 
     theme.heading(TAB, sub=n.sub, text="5b · The two factors")
+    # The two channels multiply as separate factors and no dependence parameter is applied
+    # (the blended `CombinedUpdate.dependence` is retained only for the teaching comparison and
+    # never reaches a number on this tab). The relation between the two is at elicitation --
+    # body and contact attributes both improve with impedance contrast -- and that is a
+    # heuristic judgement made by the assessor, not a fitted joint distribution. Audit item 7,
+    # 16 Sep 2026.
     st.markdown(
         "Two questions, two factors: the character updates the element chance; given "
-        "hydrocarbons, the pick updates the column distribution. Each enters once. Method: see "
+        "hydrocarbons, the pick updates the column distribution. Each enters once, and no "
+        "dependence parameter is applied between them; the two judgements are related at "
+        "elicitation, which is a heuristic and not a fitted joint distribution. Method: see "
         "8.1.5."
     )
     c1, c2, c3, c4 = st.columns(4)
