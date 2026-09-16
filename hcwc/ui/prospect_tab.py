@@ -507,6 +507,10 @@ def render() -> None:
         + ("" if tail >= 20 else " Raise the trial count; that estimate will move between runs.")
     )
 
+    # ------------------------------------------------------------------ result
+    # The tab's result: the prospect as stated, every number of it used downstream. Its own
+    # section rather than the tail of the further inputs, so a reader finds it by number.
+    theme.heading(TAB, "6 · The prospect as stated")
     n.table(
         pd.DataFrame([
             {"Property": "Apex", "Value": f"{apex_lo:,.0f}–{apex_hi:,.0f} m TVDSS"},
