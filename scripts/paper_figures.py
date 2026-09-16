@@ -417,6 +417,145 @@ def figure_5_truncate_vs_terminate() -> None:
     save(fig, "fig5_truncate_vs_terminate.png")
 
 
+# --------------------------------------------------------------------------- 6
+def figure_6_paper(result: engine.EngineResult, p_g: float) -> None:
+    """The one figure the short paper carries, four panels in the order of its argument.
+
+    (a) the competition in forty realisations; (b) which mechanism controls, and how that
+    changes with depth; (c) the hero: the geological HCWC against the DHI-updated one, with the
+    pick and its uncertainty; (d) the chance against depth, geological and updated, read at the
+    assessment minimum and at a well's entry depth. Every number is the app's own chain.
+    """
+    ls = result.limit_set
+    apex = float(np.median(result.apex_m))
+    names = _live(result)
+    fig, axes = plt.subplots(2, 2, figsize=(8.2, 8.4))
+    (ax_a, ax_b), (ax_c, ax_d) = axes
+
+    # (a) --------------------------------------------------------------- competing limits
+    n_show = 40
+    rng = np.random.default_rng(11)
+    pick = np.sort(rng.choice(result.n, n_show, replace=False))
+    apx = result.apex_m[pick]
+    shown = []
+    for name in names:
+        j = ls.names.index(name)
+        depth = apx + result.sampled_m[pick, j]
+        on = result.active[pick, j]
+        if on.any():
+            ax_a.scatter(np.arange(n_show)[on], depth[on], s=9, alpha=0.65,
+                         color=COLOURS.get(name, "#999"), linewidths=0, zorder=2, label=name)
+            shown.append(depth[on])
+    won = apx + result.column_m[pick]
+    ax_a.scatter(np.arange(n_show), won, s=44, facecolors="none", edgecolors="#111",
+                 linewidths=0.9, zorder=4, label="shallowest active limit = HCWC")
+    ax_a.plot(np.arange(n_show), won, color="#111", lw=0.7, alpha=0.35, zorder=3)
+    shown = np.concatenate(shown)
+    ax_a.set_ylim(float(np.percentile(shown, 0.5)) - 15, float(np.percentile(shown, 97)) + 15)
+    ax_a.invert_yaxis()
+    ax_a.set_xlabel("realisation")
+    ax_a.set_ylabel("depth (m TVDSS)")
+    ax_a.set_title("(a) competing limits: the shallowest active one wins", loc="left")
+    ax_a.legend(loc="upper center", bbox_to_anchor=(0.5, -0.17), fontsize=6.4, frameon=False,
+                ncol=3, handletextpad=0.3, columnspacing=1.0)
+
+    # (b) --------------------------------------------------------------- controlling mechanism
+    contact = result.contact_m
+    edges = np.linspace(np.percentile(contact, 0.5), np.percentile(contact, 99.5), 26)
+    centres = 0.5 * (edges[:-1] + edges[1:])
+    idx = np.clip(np.digitize(contact, edges) - 1, 0, len(centres) - 1)
+    bottom = np.zeros(len(centres))
+    for name in names:
+        j = ls.names.index(name)
+        share = np.array([
+            float((result.controller[idx == b] == j).mean()) if (idx == b).any() else 0.0
+            for b in range(len(centres))])
+        overall = float((result.controller == j).mean())
+        ax_b.barh(centres, share, left=bottom, height=float(np.diff(edges).mean()) * 0.95,
+                  color=COLOURS.get(name, "#999"), edgecolor="none",
+                  label=f"{name}  {overall:.0%}")
+        bottom += share
+    ax_b.axhline(apex + HMIN, color="#111", lw=1.0, ls="--")
+    ax_b.annotate("assessment minimum", (0.03, apex + HMIN), xycoords=("axes fraction", "data"),
+                  xytext=(0, 3), textcoords="offset points", fontsize=7)
+    ax_b.set_xlim(0, 1)
+    ax_b.invert_yaxis()
+    ax_b.set_xlabel("share of realisations in that depth bin")
+    ax_b.set_ylabel("HCWC depth (m TVDSS)")
+    ax_b.set_title("(b) which limit controls, and how that changes with depth", loc="left")
+    ax_b.legend(loc="upper center", bbox_to_anchor=(0.5, -0.17), fontsize=6.4, frameon=False,
+                ncol=3, title="overall share", title_fontsize=6.5, handletextpad=0.3,
+                columnspacing=1.0)
+
+    # (c) --------------------------------------------------------------- the DHI update (hero)
+    detection = dhi_core.DetectionFunction()
+    strength, sigma = 20.0, 10.0
+    r_strength = dhi_core.StrengthModel().r_at(strength)
+    obs = dhi_core.DhiObservation(seen=True, contact_m=PICK_M, pick_sigma_m=sigma,
+                                  p_valid=_p_valid(p_g, r_strength))
+    post = dhi_core.update(result, detection, obs)
+    w = post.weights / post.weights.sum()
+    bins = np.linspace(np.percentile(contact, 0.5), np.percentile(contact, 99.5), 70)
+    ax_c.hist(contact, bins=bins, orientation="horizontal", color="#CBD5E1", edgecolor="none",
+              density=True, label="geological HCWC, the competing limits")
+    ax_c.hist(contact, bins=bins, weights=w, orientation="horizontal", color=POST_C,
+              alpha=0.45, edgecolor="none", density=True, label="DHI-updated HCWC")
+    ax_c.axhspan(PICK_M - sigma, PICK_M + sigma, color="#B45309", alpha=0.12, lw=0)
+    ax_c.axhline(PICK_M, color="#B45309", lw=1.0, ls=":")
+    ax_c.annotate(f"picked contact {PICK_M:,.0f} m, σ {sigma:.0f} m", (0.98, PICK_M - sigma),
+                  xycoords=("axes fraction", "data"), xytext=(0, 3), textcoords="offset points",
+                  fontsize=7, color="#B45309", ha="right", va="bottom")
+    keep = result.above_minimum
+    spread_b = float(np.diff(engine.weighted_percentiles(contact[keep], None,
+                                                          np.array([90.0, 10.0])))[0])
+    spread_a = float(np.diff(engine.weighted_percentiles(contact[keep], post.weights[keep],
+                                                          np.array([90.0, 10.0])))[0])
+    ax_c.text(0.98, 0.03,
+              f"P90–P10: {spread_b:.0f} m before, {spread_a:.0f} m after\n"
+              f"effective sample size {post.effective_sample_size:,.0f} of {result.n:,}\n"
+              f"c = {CONTACT_GIVEN_HC:.2f}, strength {strength:.0f}",
+              transform=ax_c.transAxes, fontsize=7, va="bottom", ha="right")
+    ax_c.invert_yaxis()
+    ax_c.set_xlabel("density")
+    ax_c.set_ylabel("HCWC depth (m TVDSS)")
+    ax_c.set_title("(c) the DHI updates the distribution; it does not replace it", loc="left")
+    ax_c.legend(loc="upper right", fontsize=6.6, frameon=False)
+    ax_c.tick_params(labelbottom=False)
+
+    # (d) --------------------------------------------------------------- chance against depth
+    grid = np.linspace(0, float(np.percentile(result.column_m, 99.5)), 400)
+    prior_f = np.array([float((result.column_m >= h).mean()) for h in grid])
+    updated = dhi_core.prospect_pos_curve(p_g, r_strength, post, grid)
+    p_g_upd = dhi_core.p_g_given_strength(p_g, r_strength)
+    ax_d.plot(p_g * prior_f, grid + apex, color=PRIOR_C, lw=2.0,
+              label=f"geological, P(G) = {p_g:.2f}")
+    ax_d.plot(updated, grid + apex, color=POST_C, lw=2.0,
+              label=f"DHI-updated, P(G | strength) = {p_g_upd:.2f}")
+    pos_b = p_g * float((result.column_m >= HMIN).mean())
+    pos_a = dhi_core.prospect_pos(p_g, r_strength, post)
+    ax_d.axhline(apex + HMIN, color="#111", lw=0.9, ls="--")
+    ax_d.annotate(f"assessment minimum: POS {pos_b:.0%} before, {pos_a:.0%} after",
+                  (0.02, apex + HMIN), xycoords=("axes fraction", "data"), xytext=(0, 4),
+                  textcoords="offset points", fontsize=7, ha="left", va="bottom")
+    z_well = 2230.0
+    r_b = float((result.contact_m >= z_well).mean())
+    r_a = float(post.exceedance(z_well - apex)[0])
+    ax_d.axhline(z_well, color="#0369A1", lw=0.9, ls=":")
+    ax_d.annotate(f"well entry {z_well:,.0f} m: P(well) {p_g * r_b:.0%} before, "
+                  f"{p_g_upd * r_a:.0%} after",
+                  (0.02, z_well), xycoords=("axes fraction", "data"), xytext=(0, -4),
+                  textcoords="offset points", fontsize=7, color="#0369A1", ha="left", va="top")
+    ax_d.invert_yaxis()
+    ax_d.set_xlim(0, 1.0)
+    ax_d.set_xlabel("prospect chance of a contact at least this deep")
+    ax_d.set_ylabel("HCWC depth (m TVDSS)")
+    ax_d.set_title("(d) the chance against depth, read at the minimum and at a well", loc="left")
+    ax_d.legend(loc="upper left", fontsize=6.6, frameon=False)
+
+    fig.tight_layout(h_pad=1.6, w_pad=1.2)
+    save(fig, "fig6_paper.png")
+
+
 def main() -> None:
     print("lifting the app's default prospect...")
     limit_set, p_g = from_the_app()
@@ -431,6 +570,7 @@ def main() -> None:
     figure_3_survival(result, p_g)
     figure_4_dhi_update(result, p_g)
     figure_5_truncate_vs_terminate()
+    figure_6_paper(result, p_g)
 
     f = float((result.column_m >= HMIN).mean())
     contact = result.contact_m
