@@ -421,7 +421,8 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                 + ", ".join(f"{e.name} ({e.support:,})" for e in _thin[:4])
                 + ("…" if len(_thin) > 4 else "")
                 + ".\n\nMore realisations do not change this. The update concentrates on fewer "
-                "of them, and §5's effective sample size shows the same for the whole posterior."
+                "of them, and the effective sample size on tab 5.1 §6 shows the same for the whole "
+                "posterior."
             )
 
     if effects:
@@ -476,8 +477,11 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # Two further readings of the controls. Moved behind a fold on 16 Sep 2026 so the default
     # view answers the four questions in order; the figures and their numbers are unchanged
     # and the export report carries them as before.
-    with st.expander("Further readings of the controls: by risk element, and all limits on one "
-                     "axis", expanded=False):
+    # The label names the exhibits inside, so the jump in numbering a reader sees from the last
+    # open figure to the next section is accounted for on the fold itself.
+    with st.expander(f"Further readings of the controls, folded: by risk element (Table "
+                     f"{n.stem}.{n._count + 1}) and all limits on one axis (Figure "
+                     f"{n.stem}.{n._count + 2})", expanded=False):
         # ------------------------------------------------------------------ group minima
         theme.heading(tab, sub=n.sub, text="2c · By risk element")
         rows = []
@@ -611,8 +615,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         st.markdown(
             f"`Prospect POS = P(G) × P(column ≥ h | G)` = "
             f"{p_geological:.3f} × {column_pos:.3f} = {prospect_pos:.3f}. `P(G)` is the element "
-            f"chance from tab 2.0; `P(column ≥ h | G)` is read off Figure 1 at the assessment "
-            f"minimum, from the competing limits, conditional on the elements having worked."
+            f"chance from tab 2.0; `P(column ≥ h | G)` is read off the exceedance curve in "
+            f"section 1 at the assessment minimum, from the competing limits, conditional on "
+            f"the elements having worked."
         )
     from hcwc.ui.depth_risk_tab import DEFAULT_ENTRY_DEPTH_M
     _lo_z, _hi_z = float(result.contact_m.min()), float(result.contact_m.max())
