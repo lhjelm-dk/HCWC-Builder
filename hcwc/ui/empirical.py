@@ -323,9 +323,11 @@ two names; their term is kept where their data are quoted. Method: see 8.1.8.
                          line=dict(color=FITTED, width=3))
     _add_prospect_violin(figA, closure, prior, width=45.0)
     drawn_a = _overlay_models(figA, closure, 45.0) if show_models else []
+    # Column height increases downward (Lars, 16 Sep 2026): a column is a depth below the apex,
+    # and every other depth axis in the tool reads that way.
     figA.update_layout(xaxis_title="Closure height (m)",
-                       yaxis_title="Hydrocarbon column height (m)", height=560,
-                       legend=dict(orientation="h", y=-0.16), margin=dict(t=20))
+                       yaxis=dict(title="Hydrocarbon column height (m)", autorange="reversed"),
+                       height=560, legend=dict(orientation="h", y=-0.16), margin=dict(t=20))
     n.plot(figA, "Column height against closure height, after Edmundson et al. Fig. 6A. Red "
                  "diamonds lie on the 1:1 line by definition: they record the closure, not the "
                  "seal. The censored fit sits below the OLS line because it estimates seal "
@@ -374,7 +376,8 @@ two names; their term is kept where their data are quoted. Method: see 8.1.8.
     _add_prospect_violin(figB, burial, prior, width=260.0)
     if show_models:
         _overlay_models(figB, burial, 260.0)
-    figB.update_layout(xaxis_title="Burial depth (m)", yaxis_title="Hydrocarbon column height (m)",
+    figB.update_layout(xaxis_title="Burial depth (m)",
+                       yaxis=dict(title="Hydrocarbon column height (m)", autorange="reversed"),
                        height=560, legend=dict(orientation="h", y=-0.16), margin=dict(t=20))
     n.plot(figB, "Column height against burial depth, after Edmundson et al. Fig. 6B. This is "
                  "the panel where the two analyses disagree most: the corrected fit is roughly "
@@ -536,10 +539,10 @@ two names; their term is kept where their data are quoted. Method: see 8.1.8.
     # ------------------------------------------------------------------ family curves
     theme.heading(TAB, "7 · The prior a benchmark gives")
     st.markdown(
-        "The x-axis is column height; relief picks the curve. Each curve reads: for a closure of "
-        "this relief, the probability that the column is at least x metres. The vertical drop at "
-        "the right-hand end is the filled-to-spill probability mass, a point mass rather than a "
-        "tail. Method: see 8.1.8."
+        "Column height runs down the page and relief picks the curve. Each curve reads: for a "
+        "closure of this relief, the probability that the column is at least this tall. The "
+        "horizontal step at the bottom of each curve is the filled-to-spill probability mass, a "
+        "point mass rather than a tail. Method: see 8.1.8."
     )
 
     options = ["NCS, censoring-corrected", "NCS, as the paper fits it", "Graham et al. (2015)"]
@@ -563,7 +566,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.8.
                                   "does an imported dataset that carries one \u2014 disabled here when "
                                   "it does not.")
     scale = f3.radio(
-        "Vertical scale", ["Linear", "Probit"], horizontal=True, key="family_scale",
+        "Probability scale", ["Linear", "Probit"], horizontal=True, key="family_scale",
         help="Probit plots the normal score of the probability, so a lognormal column-height "
              "distribution becomes a straight line. Curvature then means departure from "
              "lognormal, and the tails stop being squashed against the top and bottom.")
@@ -644,29 +647,36 @@ two names; their term is kept where their data are quoted. Method: see 8.1.8.
                         marker=dict(color=PROSPECT, size=11, symbol="diamond"),
                         hovertemplate="built P50 %{x:,.0f} m<extra></extra>")
 
-    fam.update_layout(xaxis_title="Hydrocarbon column (m)",
-                      yaxis_title="Probability the column is at least this tall",
-                      height=460, margin=dict(t=20), legend=dict(orientation="h", y=-0.18))
+    # Column height down the page and probability across (Lars, 16 Sep 2026), so the family
+    # reads like every other exceedance figure in the tool. The traces were built with the
+    # column on x; they are transposed here in one place rather than at each of the nine sites.
+    for _trace in fam.data:
+        _trace.x, _trace.y = _trace.y, _trace.x
+    fam.update_layout(xaxis_title="Probability the column is at least this tall",
+                      yaxis=dict(title="Hydrocarbon column (m)", autorange="reversed"),
+                      height=560, margin=dict(t=20),
+                      legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
     if probit:
         # Ticked in probability and positioned in normal score, so the reader never has to think
         # in z: the axis still says 0.9, it is just no longer evenly spaced.
-        fam.update_yaxes(tickmode="array",
+        fam.update_xaxes(tickmode="array",
                          tickvals=[float(_probit(p)) for p in PROBIT_TICKS],
                          ticktext=[f"{p:.2f}".rstrip("0").rstrip(".") for p in PROBIT_TICKS],
                          range=[float(_probit(PROBIT_TICKS[0])) - 0.3,
                                 float(_probit(PROBIT_TICKS[-1])) + 0.3],
                          title_text="P(column at least this tall) \u2014 probit scale")
-        # **And the x-axis goes logarithmic with it.** A lognormal is straight on probit-y against
-        # LOG-x, not against linear x -- measured on a pure lognormal, r = -1.00000 against log x
-        # and only -0.921 against linear. Offering probit with a linear x would be offering the
-        # scale without the property it exists for, and the reader would read the residual
-        # curvature as a finding.
-        fam.update_xaxes(type="log", title_text="Hydrocarbon column (m) — log scale")
+        # **And the column axis goes logarithmic with it.** A lognormal is straight on probit
+        # against LOG column, not against linear -- measured on a pure lognormal, r = -1.00000
+        # against log and only -0.921 against linear. Offering probit with a linear column axis
+        # would be offering the scale without the property it exists for, and the reader would
+        # read the residual curvature as a finding.
+        fam.update_yaxes(type="log", autorange="reversed",
+                         title_text="Hydrocarbon column (m) — log scale")
     else:
-        fam.update_yaxes(range=[0, 1.02])
+        fam.update_xaxes(range=[0, 1.02])
     if probit:
         st.caption(
-            "Probit, with the x-axis logarithmic to match. A lognormal column-height distribution "
+            "Probit, with the column axis logarithmic to match. A lognormal column-height distribution "
             "is a straight line on these axes, so curvature is a departure from lognormal, and the "
             "tails, squashed into a few pixels on a linear axis, open up. The benchmark families "
             "are lognormal capacities clipped at the closure, so each runs straight and then turns "
@@ -674,16 +684,16 @@ two names; their term is kept where their data are quoted. Method: see 8.1.8.
         )
     n.plot(fam, ("Orange is the prospect built on tab 3.0; the dashed grey beside it is the "
                  "benchmark at the same structural relief. Those two are the like-for-like pair; "
-                 "the six coloured curves are the family it sits inside, not its comparators. To "
-                 "the right of the dashed grey the model is more optimistic than the empirical "
-                 "record for a closure of this size, to the left more pessimistic. Where the "
+                 "the six coloured curves are the family it sits inside, not its comparators. "
+                 "Below the dashed grey the model is more optimistic than the empirical record "
+                 "for a closure of this size, above it more pessimistic. Where the "
                  "prospect has a DHI, its updated curve is drawn in red at the same weight: two "
                  "readings of one prospect, and the question is which sits deeper.  "
                  if limit_set is not None and own_relief else "")
                 + f"Column-height exceedance by closure height, {source}"
                 + ("" if source == "Graham et al. (2015)"
                    else f", at {burial:,.0f} m burial")
-                + ". Dotted segments are the filled-to-spill point mass, marked at its height. "
+                + ". Dotted segments are the filled-to-spill point mass, marked at its depth. "
                   "The chart shape is the pre-drill benchmark family in common use; the middle "
                   "option draws the published estimator on the same axes as the corrected one.")
 
@@ -1082,13 +1092,15 @@ two names; their term is kept where their data are quoted. Method: see 8.1.8.
 
             fig_fuse = go.Figure()
             for label, sample, colour, dash, width in curves:
-                fig_fuse.add_scatter(x=grid, y=engine.exceedance(sample, grid), mode="lines",
+                # Column height down the page, probability across (Lars, 16 Sep 2026).
+                fig_fuse.add_scatter(x=engine.exceedance(sample, grid), y=grid, mode="lines",
                                      name=label,
                                      line=dict(color=colour, width=width, dash=dash))
             fig_fuse.update_layout(
-                xaxis_title="Hydrocarbon column (m)", yaxis_title="P(column ≥ this)",
-                yaxis_range=[0, 1.02], height=460, margin=dict(t=20),
-                legend=dict(orientation="h", y=-0.2))
+                xaxis_title="P(column ≥ this)", xaxis_range=[0, 1.02],
+                yaxis=dict(title="Hydrocarbon column (m)", autorange="reversed"),
+                height=560, margin=dict(t=20),
+                legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
             n.plot(fig_fuse,
                    (f"{theme.basis_tag(theme.GEOLOGICAL)} "
                     + (f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; Both distributions are here, "
