@@ -84,13 +84,9 @@ def render(n, result, *, posterior=None, tab: int,
     st.markdown("".join(_row(c) for c in checks), unsafe_allow_html=True)
 
     st.caption(
-        "These checks concern the arithmetic, not the geology. None of them knows whether the "
-        "minimum is sensible or the seal argument sound, only whether the run supports the "
-        "digits quoted from it. The geological check is tab 6.0, against the empirical record, "
-        "and is a different question.\n\n"
-        "A watch is not a defect. It means the number needs a sentence beside it when it "
-        "travels: a prospect controlled 80 % by one limit is a legitimate prospect and a "
-        "misleading curve, and the difference is whether that was stated."
+        "These checks concern the arithmetic, not the geology; the geological check is tab 6.0. "
+        "A watch is not a defect: the number needs a sentence beside it when it travels. "
+        "Method: see 8.1.8."
     )
     if posterior is None:
         st.caption("The DHI check is not run because no posterior has been built. It appears "
