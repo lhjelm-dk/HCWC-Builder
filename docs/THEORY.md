@@ -211,15 +211,34 @@ Each channel is bounded. The character ratio is capped at 10 : 1 either way, Sim
 one line of fluid-indicator evidence: an honest single-channel `R` rarely exceeds 3, and a value
 above 10 sends the assessor back to the inputs. The geometry channel is bounded by its floor
 (8.1.6). The one published measurement of a combined ratio is Kjønsberg et al. (2010), who invert
-prestack AVO by Markov chain Monte Carlo at three locations offshore Norway: the strongest bought
-a factor of 29 and that location found gas; the negative at the outskirts bought 0.70. Their
-number carries amplitude and geometry together, so it bounds the whole update rather than one
-channel, and it shows the asymmetry: absence is much weaker evidence than presence.
+prestack AVO for the joint lithology–fluid distribution by Markov chain Monte Carlo at three
+locations offshore Norway and report prior and posterior hydrocarbon probabilities: a prior of
+0.53 from their facies model, 0.76 at a well, 0.97 at the prospect centre and 0.44 at the
+outskirts, so implied ratios of 2.8, 28.7 and 0.70. The strongest bought a factor of 29, against
+this tool's guard on the combined ratio of 50, and that location found gas in two layers; the
+negative at the outskirts bought 0.70, a factor of 1.4 against where the positive was 29 for.
+Their number carries amplitude and geometry together, since the fluid contacts are part of what
+their chain samples, so it bounds the whole update rather than one channel, and it shows the
+asymmetry: absence is much weaker evidence than presence. Their inversion separates hydrocarbon
+from brine far better than one hydrocarbon from another: oil sand and gas sand overlap in
+acoustic impedance and Vp/Vs, and at the prospect centre the posterior put 0.03 on wet and then
+0.45 on gas alone against 0.46 on gas and oil, with the oil and gas volumes strongly
+anti-correlated, the seismic pinning the total and trading the split. The consequence for the
+pick is that a flat spot may be a gas–oil contact rather than a hydrocarbon–water contact; the
+tool assumes the latter, and on a two-phase prospect the amplitude alone does not settle which.
+The volume weight `R / (R + 1)`, the weight the amplitude alone would carry against an even
+prior, is reported beside `R` and is not a chance of success.
 
 The effective sample size, Kish's `(Σw)² / Σw²`, reports how many of the realisations the
 posterior rests on. A low value does not mean the interpretation is wrong; it means the answer
 depends heavily on it and should be presented as such. The ESS reports the geometry channel only:
 the character channel updates one number and discards nothing.
+
+A DHI reshapes the chance curve rather than lifting it: the pick raises the chance at
+thresholds near and above the picked contact and lowers it below, and the curves cross where
+that changes. The posterior median lands on the pick, because an amplitude termination is an
+estimate of the contact and not a floor under it, so the chance read there is about half the
+one read at the assessment minimum.
 
 The evidence moves the depth distribution, and only through it the mechanism mix. Drawn as
 shares of all realisations, the controlling mechanism by depth differs visibly between the
@@ -239,8 +258,10 @@ controller is recorded.
 The scenario switch, `IF(DHI valid, DHI contact, geological contact)`, is the older method and
 Hood's rule: merge late, never blend into the input distribution. It moves the contact and not
 the chance, cannot narrow the distribution, and reports no mechanism. Its one parameter, whether
-the picked event is the contact, lives inside the likelihood here as the floor (8.1.6). Tab 5.2's
-diagnostics compare the two.
+the picked event is the contact, was an unlabelled parameter of a model never written down; the
+likelihood form writes it down as the floor (8.1.6) and needs two numbers a geophysicist can
+state instead of one nobody can. Tab 5.1's diagnostics compare the two on the same value, since
+a comparison run on a different one would be a comparison against something else.
 
 Monigle et al. (2025) integrate a DHI score with a geological prior by the same Bayesian update
 used for the character channel, and treat an absent anomaly as negative evidence. What is not
@@ -395,7 +416,17 @@ mean, the average outcome with that input in its top tenth against its bottom te
 from the joint sample so the bars respect the correlations. A limit has two kinds of bar, where
 it applies and whether it is present, and the longer says whether the question is a depth or a
 probability. The mean rather than the median, because a volume is built from the mean and a
-median can sit still while the tail moves. The sensitivity figures state their support. A tornado bar resting on fewer than a hundred
+median can sit still while the tail moves. After a DHI update the sensitivity keeps two kinds of input apart. The geology varies
+realisation by realisation and is sliced as before, with the means weighted by likelihood; the
+DHI's own numbers are single typed values, so their influence is found by moving each one and
+recomputing, the pick sigma halved and doubled, the picked contact by half a sigma, the
+detection parameters across the span an assessor cannot pin down. Each variation is a new set of
+weights on the same realisations, with no second Monte Carlo. Where a typed DHI number moves the
+answer further than the geology does, the posterior is a statement about the seismic assumptions
+rather than about the prospect; the pick sigma and the detection ceiling are usually the least
+defensible numbers. Reweighting also changes which limits the answer is sensitive to, so the
+geological ranking after the update can differ from the one before it. The sensitivity figures
+state their support. A tornado bar resting on fewer than a hundred
 effective realisations is reported as thin rather than drawn as though it were as well supported
 as the rest.
 
