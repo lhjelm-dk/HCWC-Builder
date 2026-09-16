@@ -670,7 +670,11 @@ two names; their term is kept where their data are quoted. Method: see 8.1.8.
         # against log and only -0.921 against linear. Offering probit with a linear column axis
         # would be offering the scale without the property it exists for, and the reader would
         # read the residual curvature as a finding.
-        fam.update_yaxes(type="log", autorange="reversed",
+        # A fixed window on the log column axis, 9 to 1 001 m (Lars, 16 Sep 2026), so the
+        # probit view keeps the same frame whatever the family or prospect draws; reversed by
+        # giving the range deep end first. Plotly takes log-axis ranges as log10 of the values.
+        fam.update_yaxes(type="log", autorange=False,
+                         range=[np.log10(1001.0), np.log10(9.0)],
                          title_text="Hydrocarbon column (m) — log scale")
     else:
         fam.update_xaxes(range=[0, 1.02])
