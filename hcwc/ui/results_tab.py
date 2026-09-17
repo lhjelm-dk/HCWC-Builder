@@ -233,9 +233,18 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                  marker_color="#B8BEC7", marker_line_width=0, xaxis="x2", yaxis="y",
                  hovertemplate="%{y:.0f} m TVDSS<br>%{x:.1%} of realisations<extra></extra>")
     _grid = np.linspace(0.0, float(result.column_m.max()) * 1.02, 400)
+    if given_dhi:
+        # The geological curve beside the updated one, dashed, so what the evidence moved is
+        # read on the same axis (Lars, 17 Sep 2026). Same realisations, unit weights.
+        figc.add_scatter(x=np.asarray(result.exceedance(_grid), dtype=float),
+                         y=float(np.median(result.apex_m)) + _grid, mode="lines",
+                         name="P(contact deeper than this), geological",
+                         line=dict(color="#4C72B0", width=2, dash="dash"),
+                         xaxis="x3", yaxis="y")
     figc.add_scatter(x=exceed(_grid), y=float(np.median(result.apex_m)) + _grid, mode="lines",
-                     name="P(contact deeper than this)", line=dict(color="#4C72B0", width=3),
-                     xaxis="x3", yaxis="y")
+                     name="P(contact deeper than this)"
+                          + (f", {theme.evidence_basis()}" if given_dhi else ""),
+                     line=dict(color="#4C72B0", width=3), xaxis="x3", yaxis="y")
     # The fifty shown, as ticks across the bars in their controllers' colours: where this
     # window sits in the whole, and what set each of its contacts.
     figc.add_scatter(x=np.full(_idx.size, 0.02), y=_won, mode="markers",
@@ -281,7 +290,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                  f"sampled depth in {_idx.size} realisations, the shallowest ringed in the "
                  f"colour of the limit that set it; the slider walks the window through all "
                  f"{result.n:,}. Right: the whole distribution, its exceedance curve on the top "
-                 f"axis, and the {_idx.size} shown marked at their depths. Method: see 8.1.3.")
+                 f"axis"
+                 + (", with the geological curve dashed beside it" if given_dhi else "")
+                 + f", and the {_idx.size} shown marked at their depths. Method: see 8.1.3.")
 
     # `grid` and `apex_med` feed the chance curve in section 3; the exceedance figure that used
     # to sit here was replaced by the competition figure above (Lars, 17 Sep 2026), which carries
