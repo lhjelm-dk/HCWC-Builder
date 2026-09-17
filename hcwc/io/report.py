@@ -474,8 +474,12 @@ def build_full(result: EngineResult, provenance: Provenance, figures: dict, *,
             continue
         figure, caption = figures[label]
         try:
-            payload = figure.to_image(format=FIGURE_FORMAT,
-                                      width=FIGURE_WIDTH, height=FIGURE_HEIGHT)
+            if hasattr(figure, "read_bytes"):
+                # A figure drawn outside Plotly and registered by path: the workflow SVG.
+                payload = figure.read_bytes()
+            else:
+                payload = figure.to_image(format=FIGURE_FORMAT,
+                                          width=FIGURE_WIDTH, height=FIGURE_HEIGHT)
         except Exception as exc:                        # noqa: BLE001 — reported, not raised
             failed.append(f"{label} ({type(exc).__name__})")
             continue

@@ -41,7 +41,8 @@ ROOT = Path(__file__).parent
 DOCS = ROOT / "docs"
 
 
-def _render_with_figures(text: str, base: Path, demote: int = 0) -> None:
+def _render_with_figures(text: str, base: Path, demote: int = 0,
+                         numbering: Numbering | None = None) -> None:
     """Render Markdown that carries relative image links.
 
     ``demote`` pushes every Markdown heading down that many levels (``##`` with ``demote=3``
@@ -91,11 +92,16 @@ def _render_with_figures(text: str, base: Path, demote: int = 0) -> None:
         if stripped.startswith("![") and stripped.endswith(")") and "](" in stripped:
             flush()
             src = stripped[stripped.index("](") + 2:-1].strip()
+            alt = stripped[2:stripped.index("](")].strip()
             target = base / src
-            if target.exists():
-                st.image(str(target), width="stretch")
-            else:
+            if not target.exists():
                 st.caption(f"`{src}` not found — run `scripts/paper_figures.py`.")
+            elif numbering is not None:
+                # Numbered and captioned like any exhibit, with the image's alt text as the
+                # caption, so 8.1.1's workflow figure carries a number (Lars, 17 Sep 2026).
+                numbering.image(target, alt)
+            else:
+                st.image(str(target), width="stretch")
             continue
         # A section boundary is a heading at the document's own top level, wherever the demotion
         # has put it: `## ` in the source, so `## ` plus `demote` hashes here.
@@ -595,11 +601,12 @@ with tab8:
             # the tab intro above says the same.
         _worked_example_slot = None
         theme.heading(8, f"1 · {_h1}")
+        _n8 = Numbering(8, sub=1)
         for _k, (_title, _body) in enumerate(_parts):
             theme.subheading(8, 1, _k + 1, _title)
-            _render_with_figures("\n".join(_body), DOCS, demote=3)
+            _render_with_figures("\n".join(_body), DOCS, demote=3, numbering=_n8)
             if _k == 5:
-                dhi_walkthrough.render(Numbering(8, sub=1))
+                dhi_walkthrough.render(_n8)
             if _k == 7:
                 _worked_example_slot = st.container()
         if _worked_example_slot is None:
