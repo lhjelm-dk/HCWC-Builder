@@ -58,6 +58,13 @@ OPENING_STRENGTH = 5.0
 #: against any contact depth; a well-conformed event is claimed by moving it.
 DEFAULT_CONTACT_GIVEN_HC = 0.36
 
+#: The three routes to c on tab 5.1.3, as the radio names them.
+C_STATED, C_FROM_ATTRIBUTES, C_FROM_SCORE = ("Stated", "Graded attributes",
+                                             "DHI score, Monigle et al. (2025)")
+#: The DHI score whose calibrated rule gives the shipped c, so the untouched route agrees with
+#: the untouched slider: 2 x 0.18 = 0.36.
+DEFAULT_DHI_SCORE = 0.18
+
 #: The three **contact** attributes, after Monigle et al. (2025), who separate them from the
 #: *body* attributes that grade the amplitude. These answer whether the picked event is the
 #: base of the column; the strength slider answers whether there is a column. The numbers are
@@ -705,22 +712,46 @@ def render(n: Numbering | None = None) -> None:
             f"value down. A heuristic, not a calibration. Method: see 8.1.7."
         )
 
-    use_attributes = st.checkbox(
-        f"Use the attributes' suggestion (c = {suggested_c:.2f})", value=False,
-        key="dhi_in_c_from_attributes",
-        help="Takes c from the three gradings above instead of the slider. Off by default: "
-             "the combination rule is a heuristic, and a stated value is easier to defend than "
-             "one a rule chose.")
+    # Three routes to c (Lars, 17 Sep 2026): stated on the slider; the graded attributes'
+    # geometric mean, a heuristic; or a DHI score in Monigle et al.'s (2025) sense through their
+    # calibrated rule w = min(2 x score, 0.95), the one external referent this quantity has. The
+    # radio replaced a checkbox keyed `dhi_in_c_from_attributes`; a prospect saved with that
+    # checkbox on opens on the attributes route, so the file keeps its meaning.
+    if "dhi_in_c_source" not in st.session_state and \
+            st.session_state.get("dhi_in_c_from_attributes") is True:
+        st.session_state["dhi_in_c_source"] = C_FROM_ATTRIBUTES
+    c_source = st.radio(
+        "Source of c", [C_STATED, C_FROM_ATTRIBUTES, C_FROM_SCORE], horizontal=True,
+        key="dhi_in_c_source",
+        help="Stated: the slider, a value the assessor defends. Graded attributes: the geometric "
+             "mean of the three gradings above, a heuristic. DHI score: Monigle et al.'s (2025) "
+             "rule w = min(2 × score, 0.95), calibrated on their drilled database and not on "
+             "this basin; their score is a five-attribute rating, not the strength reading of "
+             "§2.")
     stated_c = st.slider(
         "Contact attribution: given hydrocarbons, is the picked event the HCWC?",
         0.05, 1.0, DEFAULT_CONTACT_GIVEN_HC, 0.01, key="dhi_in_contact_given_hc",
-        disabled=use_attributes,
+        disabled=c_source != C_STATED,
         help="P(the picked event is the contact | hydrocarbon present). A question about the "
              "event, not the amplitude and not the charge: granted a column here, is this flat "
              "thing its base rather than lithology, a diagenetic front, fizz, or an artefact. "
              "Conformance, flatness and whether it cuts structure answer it.")
+    sc1, sc2 = st.columns([1, 2])
+    dhi_score = sc1.number_input(
+        "DHI score (Monigle et al. 2025), 0 to 1", 0.0, 1.0, DEFAULT_DHI_SCORE, 0.01,
+        key="dhi_in_dhi_score", disabled=c_source != C_FROM_SCORE,
+        help="A chance of success from the seismic alone, as their five-attribute score rates "
+             "it. Opens at 0.18, the score whose rule gives the shipped c of 0.36.")
+    score_c = dhi_core.contact_weight_from_score(dhi_score)
+    sc2.caption(
+        f"Monigle et al.'s rule gives c = {score_c:.2f} from a score of {dhi_score:.2f}: "
+        f"w = min(2 × score, {dhi_core.CONTACT_WEIGHT_CEILING:.2f}), calibrated on 400+ drilled "
+        f"DHI prospects in their database. The rule is theirs and the basin is not; a score "
+        f"above 0.475 reaches the ceiling. Method: see 8.1.7."
+    )
     _lev["c"] = st.empty()
-    contact_given_hc = suggested_c if use_attributes else stated_c
+    contact_given_hc = {C_STATED: stated_c, C_FROM_ATTRIBUTES: suggested_c,
+                        C_FROM_SCORE: score_c}[c_source]
     p_valid = float(np.clip(contact_given_hc, 0.01, 0.99))
 
     pv1, pv2 = st.columns([1, 2])
@@ -851,13 +882,15 @@ def render(n: Numbering | None = None) -> None:
         figc.add_annotation(x=lx, y=ly, text=label, showarrow=False,
                             font=dict(size=10, color=theme.INK), row=1, col=2)
 
-    if abs(suggested_c - contact_given_hc) > 0.005:
-        figc.add_scatter(x=[_lr], y=[suggested_c], mode="markers",
-                         marker=dict(color=POSTERIOR, size=11, symbol="diamond-open",
-                                     line=dict(width=1.5)),
-                         name=f"the attributes' suggestion, c = {suggested_c:.2f}",
-                         hovertemplate=f"R {r_strength:.2f}<br>c {suggested_c:.2f}<extra></extra>",
-                         row=1, col=2)
+    for other_c, symbol, name in ((suggested_c, "diamond-open", "the attributes' suggestion"),
+                                  (score_c, "square-open", "Monigle et al.'s rule")):
+        if abs(other_c - contact_given_hc) > 0.005:
+            figc.add_scatter(x=[_lr], y=[other_c], mode="markers",
+                             marker=dict(color=POSTERIOR, size=11, symbol=symbol,
+                                         line=dict(width=1.5)),
+                             name=f"{name}, c = {other_c:.2f}",
+                             hovertemplate=f"R {r_strength:.2f}<br>c {other_c:.2f}<extra></extra>",
+                             row=1, col=2)
     figc.add_scatter(x=[_lr], y=[contact_given_hc], mode="markers+text",
                      marker=dict(color=POSTERIOR, size=15, symbol="diamond",
                                  line=dict(color="white", width=2)),
@@ -1417,8 +1450,9 @@ def render(n: Numbering | None = None) -> None:
         "Elicited judgements and heuristics.\n\n"
         "- R: the ratio of two elicited curves at an elicited reading, capped at "
         + f"{dhi_core.R_SINGLE_CHANNEL:.0f}" + " : 1 either way. Elicited judgement.\n"
-        "- c: typed, or the geometric mean of three graded attributes. Heuristic, not a "
-        "calibration."
+        "- c: stated, or the geometric mean of three graded attributes (a heuristic), or "
+        "Monigle et al.'s (2025) rule from a DHI score, calibrated on their database and not on "
+        "this basin. This run: " + c_source.lower() + "."
     )
     st.markdown(
         "Modelling choices.\n\n"

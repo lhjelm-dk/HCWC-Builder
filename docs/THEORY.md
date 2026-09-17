@@ -338,11 +338,13 @@ three as contact attributes, which bear on whether the picked event is the base 
 the split is this tool's, not theirs, since their five feed one score. `c` is the second group and carries nothing
 of the first: it is conditional on hydrocarbons being present, because every realisation it
 weights was drawn on that assumption, and no expression built from the amplitude strength can
-supply it. The tab offers it typed, opening at 0.36, or as the geometric mean of three graded
-attributes, a heuristic and not a calibration. The one calibrated number on this quantity is the
-ceiling: Hood's (2019) high-confidence contact weight and Monigle et al.'s (2025) empirical rule
-`w = min(2 × score, 0.95)`, from the same company's drilled DHI prospects, both stop at 0.95,
-and the slider's anchors name it. `c` is taken independent of `h`: one number
+supply it. The tab offers it three ways: stated, opening at 0.36; as the geometric mean of
+three graded attributes, a heuristic and not a calibration; or from a DHI score in Monigle et
+al.'s (2025) sense through their rule `w = min(2 × score, 0.95)`, calibrated on 400+ drilled DHI
+prospects in their database and not on any one basin, and on their five-attribute score rather
+than on this tool's strength reading. That rule is the one externally calibrated number on this
+quantity, and its ceiling is shared: Hood's (2019) high-confidence contact weight, from the same
+company, also stops at 0.95, and the slider's anchors name it. `c` is taken independent of `h`: one number
 weights the mixture for every realisation, and the chance that the picked event is the contact
 is not made to depend on how tall the column is; the column height enters the valid branch
 through `D(h)` only. `s` is the density of a spurious event over the

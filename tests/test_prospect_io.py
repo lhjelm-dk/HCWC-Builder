@@ -203,7 +203,8 @@ class TestTheValueCheckCoversEveryKindOfWidget:
                                            ("lim_Charge_kind", "sideways"),
                                            ("stack_mode_4", "Hologram"),
                                            ("stack_space_5", "sideways"),
-                                           ("dhi_in_shape", "triangular")])
+                                           ("dhi_in_shape", "triangular"),
+                                           ("dhi_in_c_source", "guessed")])
     def test_every_other_enumeration_is_checked_too(self, key, value):
         with pytest.raises(ValueError, match="not one of"):
             self._read(key, value)
@@ -270,6 +271,16 @@ class TestTheDhiObservationIsPartOfTheDocument:
 
 
 class TestTheAllowListMatchesTheApp:
+    def test_the_three_routes_to_c_are_the_ones_the_radio_stores(self):
+        """The radio on 5.1.3 stores its label; the allow-list must name the same three
+        (Lars, 17 Sep 2026: Monigle et al.'s calibrated rule joined as the third route)."""
+        from hcwc.ui import dhi_tab
+        assert prospect.ENUM_EXACT["dhi_in_c_source"] == {
+            dhi_tab.C_STATED, dhi_tab.C_FROM_ATTRIBUTES, dhi_tab.C_FROM_SCORE}
+        for token in prospect.ENUM_EXACT["dhi_in_c_source"]:
+            text = json.dumps({"format": 1, "inputs": {"dhi_in_c_source": token}})
+            assert prospect.read(text)["dhi_in_c_source"] == token
+
     def test_no_exact_entry_is_dead(self):
         """`stack_space` and `stack_mode` sat here without the tab number the real keys carry, so
         they matched nothing: the settings were never saved and the entries were decoration."""

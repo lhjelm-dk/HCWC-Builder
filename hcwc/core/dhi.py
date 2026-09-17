@@ -844,6 +844,24 @@ _P1_P99_Z = 2.0 * 2.3263478740408408
 #: rather than absurd, and clipping there would clip real evidence.
 R_FLOOR, R_CAP = 1.0 / 50.0, 50.0
 
+#: The calibrated ceiling on the contact weight: Hood's (2019) high-confidence case and Monigle
+#: et al.'s (2025) empirical rule, from the same company's drilled DHI prospects, both stop here.
+CONTACT_WEIGHT_CEILING = 0.95
+
+
+def contact_weight_from_score(score: float) -> float:
+    """Monigle et al.'s (2025) rule for the contact weight from a DHI score in their sense.
+
+    ``w = min(2 x score, 0.95)``: "high DHI scores (>0.50 rating) weight the HCWC at the rated
+    DHI elevation to 95 % of the total trials; lower DHI scores weight the HCWC at the DHI
+    elevation relative to the rating outcome (double the DHI score for weighting value)".
+    Calibrated on 400+ drilled DHI prospects in their database, not on any one basin, and on
+    their five-attribute machine-learning score rather than on this tool's strength reading.
+    Offered on tab 5.1.3 as a third source of ``c`` beside the slider and the graded attributes
+    (Lars, 17 Sep 2026; open question 3 of 15 Sep).
+    """
+    return float(min(2.0 * float(np.clip(score, 0.0, 1.0)), CONTACT_WEIGHT_CEILING))
+
 #: The most a **single channel** may claim, either way.
 #:
 #: A different job from :data:`R_CAP`, and it used to be done by the same number. Simm (Simm &

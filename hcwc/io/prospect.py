@@ -254,6 +254,8 @@ ENUM_EXACT: dict[str, frozenset[str]] = {
     "dhi_in_seen": frozenset({"Seen", "Seen over the crest only",
                               "Absent where one was expected"}),
     "dhi_in_shape": frozenset({"normal", "pert", "uniform"}),
+    "dhi_in_c_source": frozenset({"Stated", "Graded attributes",
+                                  "DHI score, Monigle et al. (2025)"}),
 }
 
 #: Widget keys whose value must be a genuine boolean. A toggle handed the string ``"yes please"``
