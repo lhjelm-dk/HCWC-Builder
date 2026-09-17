@@ -1,4 +1,4 @@
-"""The images for the LinkedIn post, exported from the app's own figures.
+"""The images for the LinkedIn post and the article, exported from the app's own figures.
 
 Runs the app once through ``AppTest`` on its shipped prospect (DHI on, the default), lifts the
 registered figures out of the exhibit registry and writes them as PNG with kaleido, plus one
@@ -7,7 +7,11 @@ typed: every image is what the app draws. Run from the repository root::
 
     python scripts/post_images.py
 
-Output: ``docs/post/*.png``, listed in ``docs/LINKEDIN_POST.md``.
+Output: ``docs/post/*.png``, listed in ``docs/LINKEDIN_POST.md``, and the article's figures in
+``docs/figures/`` (Lars, 17 Sep 2026: the article's figures are the app's, same look; the
+matplotlib set they replace is kept in ``docs/superseded/``). The workflow figure that opens the
+article is drawn by ``scripts/workflow_figure.py``; the concept sketch ``fig5`` by
+``scripts/paper_figures.py``.
 """
 from __future__ import annotations
 
@@ -36,6 +40,16 @@ FIGURES = [
     ("Figure 6.7a", "11_benchmark_family.png", 1400, 760),
 ]
 
+#: Exhibit label -> file name in docs/figures, for docs/ARTICLE.md and the long manuscript.
+ARTICLE = [
+    ("Figure 4.1.1a", "fig1_competing_limits.png", 1400, 700),
+    ("Figure 4.1.2a", "fig2_controlling_mechanism.png", 1400, 700),
+    ("Figure 4.1.3a", "fig3_chance_against_depth.png", 1400, 620),
+    ("Figure 5.1.4a", "fig4_dhi_update.png", 1400, 620),
+    ("Figure 5.1.5a", "fig6_chance_before_after.png", 1400, 700),
+]
+FIGURES_DIR = ROOT / "docs" / "figures"
+
 
 def main() -> None:
     warnings.filterwarnings("ignore")
@@ -54,12 +68,13 @@ def main() -> None:
     figures = at.session_state[numbering.FIGURES_KEY]
     OUT.mkdir(parents=True, exist_ok=True)
 
-    for label, name, width, height in FIGURES:
-        fig, _caption = figures[label]
-        fig.update_layout(template="plotly_white", font=dict(size=15),
-                          margin=dict(l=70, r=30, t=30, b=70))
-        pio.write_image(fig, OUT / name, width=width, height=height, scale=2)
-        print(f"  {name}  <- {label}")
+    for folder, table in ((OUT, FIGURES), (FIGURES_DIR, ARTICLE)):
+        for label, name, width, height in table:
+            fig, caption = figures[label]
+            fig.update_layout(template="plotly_white", font=dict(size=15),
+                              margin=dict(l=70, r=30, t=30, b=70))
+            pio.write_image(fig, folder / name, width=width, height=height, scale=2)
+            print(f"  {folder.name}/{name}  <- {label}: {caption}")
 
     # ---- the at-a-glance card: four metrics, before and after --------------------------------
     import matplotlib
