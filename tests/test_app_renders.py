@@ -2096,7 +2096,10 @@ class TestTabsFourAndFiveOfferTheSameControls:
             m = re.match(r"\*\*(Figure|Table) (\d\.\d)\.(\d+)\*\*", str(c.value))
             if m:
                 seen.setdefault(m.group(2), []).append(m.group(1))
-        assert seen["4.1"] == seen["5.2"], (seen["4.1"], seen["5.2"])
+        # 5.2 carries four exhibits 4.1 cannot: the strength-and-c sensitivity of 2e, which
+        # exists only where there is evidence to vary (Lars, 17 Sep 2026). Everything else is
+        # the same exhibit on the two bases, in the same order.
+        assert len(seen["5.2"]) == len(seen["4.1"]) + 4, (seen["4.1"], seen["5.2"])
         assert seen["4.2"] == seen["5.3"], (seen["4.2"], seen["5.3"])
 
 
