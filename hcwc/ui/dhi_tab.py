@@ -785,16 +785,21 @@ def render(n: Numbering | None = None) -> None:
                                                      "fluid contact<br>reflection"],
                       range=[-0.5, 2.9], showgrid=False, row=1, col=1)
 
-    # -- right: the plane. The anchors on c, Simm's bands on R. -------------------------------
-    for y0, y1, label in ((0.9, 1.0, "flat, conformable, cuts structure, FCR"),
-                          (0.6, 0.8, "conformable, something missing"),
-                          (0.3, 0.5, "flat, and lithology plausible"),
-                          (0.05, 0.2, "would not be picked elsewhere")):
-        figc.add_shape(type="rect", x0=_lr_lo, x1=_lr_hi, y0=y0, y1=y1, row=1, col=2,
-                       fillcolor="rgba(140, 183, 252, 0.10)", line=dict(width=0), layer="below")
-        figc.add_annotation(x=_lr_hi, y=(y0 + y1) / 2, text=label, xanchor="right",
+    # -- both panels: the slider's anchors as continuous bands on c, green to red -------------
+    # Edges halfway between the anchor ranges (0.9 and up; 0.6 to 0.8; 0.3 to 0.5; below 0.2),
+    # dusty so the markers and the band read on top of them (Lars, 17 Sep 2026).
+    for y0, y1, fill, label in ((0.85, 1.0, "#DCE9D5", "flat, conformable, cuts structure, FCR"),
+                                (0.55, 0.85, "#EDEFD0", "conformable, something missing"),
+                                (0.25, 0.55, "#F5E2CB", "flat, and lithology plausible"),
+                                (0.05, 0.25, "#F2D5D0", "would not be picked elsewhere")):
+        for col, x0, x1 in ((1, -0.5, 2.9), (2, _lr_lo, _lr_hi)):
+            figc.add_shape(type="rect", x0=x0, x1=x1, y0=y0, y1=y1, row=1, col=col,
+                           fillcolor=fill, line=dict(width=0), layer="below")
+        figc.add_annotation(x=_lr_hi, y=y1 - 0.03, text=label, xanchor="right",
                             showarrow=False, font=dict(size=9.5, color=_MUTED_INK),
                             row=1, col=2)
+
+    # -- right: the plane. Simm's bands on R. --------------------------------------------------
     for edge in (1 / 3, 1 / 1.5, 1.5, 3):
         figc.add_shape(type="line", x0=np.log10(edge), x1=np.log10(edge), y0=0.05, y1=1.0,
                        line=dict(color="#c9ced6", width=1, dash="dot"), row=1, col=2)
@@ -805,25 +810,35 @@ def render(n: Numbering | None = None) -> None:
                             showarrow=False, font=dict(size=9.5, color=_MUTED_INK),
                             row=1, col=2)
 
-    # the usual pairing: a band along the diagonal, +/- 0.2 in c around a line through
-    # (R = 0.1, c = 0.2), (1, 0.55), (10, 0.9); a heuristic drawn so it can be argued with
+    # the usual pairing: a band along the diagonal, +/- 0.15 in c around a line through
+    # (R = 0.1, c = 0.10), (1, 0.40), (10, 0.70), so the shipped case (R 1.27, c 0.36) sits
+    # mid-band and c above 0.85 is usual only near the cap. A heuristic, drawn so it can be
+    # argued with; the first draft ran through (1, 0.55) and read as kind to high c.
+    def _band(x, edge=0.0):
+        return np.clip(0.40 + 0.30 * np.asarray(x, dtype=float) + edge, 0.05, 1.0)
+
     _xs = np.linspace(_lr_lo, _lr_hi, 40)
-    _mid = 0.55 + 0.35 * _xs
     figc.add_scatter(x=np.concatenate([_xs, _xs[::-1]]),
-                     y=np.concatenate([np.clip(_mid + 0.2, 0.05, 1.0),
-                                       np.clip(_mid - 0.2, 0.05, 1.0)[::-1]]),
-                     fill="toself", fillcolor="rgba(76, 114, 176, 0.13)",
+                     y=np.concatenate([_band(_xs, 0.15), _band(_xs, -0.15)[::-1]]),
+                     fill="toself", fillcolor="rgba(76, 114, 176, 0.16)",
                      line=dict(width=0), name="the usual pairing (heuristic)",
                      hoverinfo="skip", row=1, col=2)
-    # the two corners the tab flags: bright body with an unconvincing event, dim body with a
-    # convincing one; both real, both worth a sentence in the report
-    for x0, x1, y0, y1, label in ((np.log10(1.5), _lr_hi, 0.05, 0.40,
-                                   "bright body,<br>unconvincing event"),
-                                  (_lr_lo, np.log10(1 / 1.5), 0.75, 1.0,
-                                   "dim body,<br>convincing event")):
-        figc.add_shape(type="rect", x0=x0, x1=x1, y0=y0, y1=y1, row=1, col=2,
-                       line=dict(color=_MUTED_INK, width=1, dash="dot"), fillcolor="rgba(0,0,0,0)")
-        figc.add_annotation(x=(x0 + x1) / 2, y=(y0 + y1) / 2, text=label, showarrow=False,
+    # the two corners the tab flags are the band's complement beyond R = 1.5 either way:
+    # bright body with an unconvincing event below it, dim body with a convincing one above.
+    # Both real, both worth a sentence in the report.
+    _xb = np.linspace(np.log10(1.5), _lr_hi, 20)
+    _xd = np.linspace(_lr_lo, np.log10(1 / 1.5), 20)
+    for xs, ys, label, lx, ly in (
+            (np.concatenate([_xb, _xb[::-1]]),
+             np.concatenate([np.full_like(_xb, 0.05), _band(_xb, -0.15)[::-1]]),
+             "bright body,<br>unconvincing event", 0.62, 0.12),
+            (np.concatenate([_xd, _xd[::-1]]),
+             np.concatenate([_band(_xd, 0.15), np.full_like(_xd, 1.0)]),
+             "dim body,<br>convincing event", -0.62, 0.62)):
+        figc.add_scatter(x=xs, y=ys, mode="lines", line=dict(color=_MUTED_INK, width=1,
+                                                             dash="dot"),
+                         showlegend=False, hoverinfo="skip", row=1, col=2)
+        figc.add_annotation(x=lx, y=ly, text=label, showarrow=False,
                             font=dict(size=10, color=theme.INK), row=1, col=2)
 
     if abs(suggested_c - contact_given_hc) > 0.005:
@@ -855,17 +870,19 @@ def render(n: Numbering | None = None) -> None:
            + f"); the dashed line is their geometric mean, c = {suggested_c:.2f}. Right: R from §2 on Simm's bands against c on the "
            f"slider's anchors, this prospect at R = {r_strength:.2f}, c = {contact_given_hc:.2f}. "
            f"The shaded diagonal is the pairing body and contact attributes usually make, "
-           f"since both improve with impedance contrast; the dotted corners are the pairings "
-           f"worth a sentence. Nothing in the arithmetic joins the two axes: R does not "
-           f"propose c, and the band is a judgement, not a calibration. Method: see 8.1.7.")
-    if r_strength >= 1.5 and contact_given_hc <= 0.40:
+           f"since both improve with impedance contrast; the dotted corners, outside it beyond "
+           f"R = 1.5 either way, are the pairings worth a sentence. The colour bands are the "
+           f"slider's anchors, in both panels. Nothing in the arithmetic joins the two axes: R "
+           f"does not propose c, and the band is a judgement, not a calibration. "
+           f"Method: see 8.1.7.")
+    if r_strength >= 1.5 and contact_given_hc < float(_band(_lr, -0.15)):
         st.caption(
             f"Bright body, unconvincing event: the strength argues for hydrocarbons "
             f"(R = {r_strength:.2f}) while the event is graded at c = {contact_given_hc:.2f}. "
             f"A real and common pairing, an anomaly believed in and bounded by something that "
             f"is not. The chance moves; the contact stays near where the geology put it."
         )
-    elif r_strength <= 1 / 1.5 and contact_given_hc >= 0.75:
+    elif r_strength <= 1 / 1.5 and contact_given_hc > float(_band(_lr, 0.15)):
         st.caption(
             f"Dim body, convincing event: the strength argues against hydrocarbons "
             f"(R = {r_strength:.2f}) while the event is graded at c = {contact_given_hc:.2f}. "
