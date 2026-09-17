@@ -1,13 +1,13 @@
 """The workflow figure for 8.1.1, docs/figures/fig0_workflow.svg, drawn as SVG by hand.
 
-Two tracks, each with a geological main lane and an evidence sub-lane (Lars, 17 Sep 2026):
-
-* the chance track: P(G) from the element chances, updated by the DHI's evidence strength;
-* the contact track, given success: the competition of limits and the HCWC | G it produces,
-  reweighted by the DHI's geometry on the same realisations;
-
-joined on the right in the chance against depth, read at the assessment minimum and at the
-well. The benchmarks sit beside the geological contact lane, compared and never joined.
+A 2 x 2 grid (Lars, 17 Sep 2026). Rows: the geological model on top, the modification given
+the DHI below. Columns: the chance (is there an accumulation?) on the left, the contact given
+success (where does the column stop?) on the right. The DHI's two channels are two short
+vertical arrows, evidence strength from P(G) to P(G | strength) and contact geometry from
+HCWC | G to HCWC | G, evidence, so nothing crosses a box. The rows join on the right in the
+chance against depth, read at the assessment minimum and at the well; the chance reaches the
+join along the outer rail of its row, the contact along the inner. The benchmarks sit dashed
+between the two contact distributions, compared with both and never joined.
 
 Vector, not raster, so it is crisp at any zoom in the app, the report and the paper. Run from
 the repository root::
@@ -23,41 +23,47 @@ OUT = Path(__file__).resolve().parent.parent / "docs" / "figures" / "fig0_workfl
 INK, MUTED, GEO, DHI, JOIN = "#333333", "#7d8794", "#4C72B0", "#C44E52", "#2F6B3F"
 FONT = "font-family='Segoe UI, Helvetica, Arial, sans-serif'"
 
-W, H = 1180, 620
+W, H = 1340, 480
 
 
-def box(x, y, w, h, title, line, colour, dashed=False):
+def text(x, y, s, size=11, colour=INK, anchor="middle", weight=None):
+    bold = f" font-weight='{weight}'" if weight else ""
+    return (f"<text x='{x}' y='{y}' text-anchor='{anchor}' font-size='{size}' fill='{colour}'"
+            f"{bold} {FONT}>{s}</text>")
+
+
+def box(x, y, w, h, title, lines, colour, dashed=False):
+    """A rounded box with a bold title and one line beneath it; ``lines`` may hold two or three
+    for the join boxes, the last one muted when it is a tab reference."""
     dash = " stroke-dasharray='6 4'" if dashed else ""
-    return (
-        f"<rect x='{x}' y='{y}' width='{w}' height='{h}' rx='8' ry='8' fill='white' "
-        f"stroke='{colour}' stroke-width='1.8'{dash}/>"
-        f"<text x='{x + w / 2}' y='{y + 24}' text-anchor='middle' font-size='14' "
-        f"font-weight='600' fill='{colour}' {FONT}>{title}</text>"
-        f"<text x='{x + w / 2}' y='{y + 44}' text-anchor='middle' font-size='12' "
-        f"fill='{INK}' {FONT}>{line}</text>"
-    )
-
-
-def arrow(x1, y1, x2, y2, colour, label=None, dashed=False, lx=None, ly=None, anchor="middle"):
-    dash = " stroke-dasharray='6 4'" if dashed else ""
-    marker = {GEO: "geo", DHI: "dhi", MUTED: "muted"}.get(colour, "join")
-    out = (f"<line x1='{x1}' y1='{y1}' x2='{x2}' y2='{y2}' stroke='{colour}' "
-           f"stroke-width='1.8'{dash} marker-end='url(#arrow-{marker})'/>")
-    if label:
-        lx = (x1 + x2) / 2 if lx is None else lx
-        ly = (y1 + y2) / 2 - 6 if ly is None else ly
-        out += (f"<text x='{lx}' y='{ly}' text-anchor='{anchor}' font-size='11.5' "
-                f"fill='{colour}' {FONT}>{label}</text>")
+    lines = [lines] if isinstance(lines, str) else list(lines)
+    out = (f"<rect x='{x}' y='{y}' width='{w}' height='{h}' rx='8' ry='8' fill='white' "
+           f"stroke='{colour}' stroke-width='1.8'{dash}/>"
+           + text(x + w / 2, y + 24, title, 14, colour, weight=600))
+    for k, line in enumerate(lines):
+        muted = line.startswith("tab ")
+        out += text(x + w / 2, y + 44 + 18 * k, line, 11, MUTED if muted else INK)
     return out
 
 
+def arrow(x1, y1, x2, y2, colour, dashed=False):
+    dash = " stroke-dasharray='6 4'" if dashed else ""
+    marker = {GEO: "geo", DHI: "dhi", MUTED: "muted"}.get(colour, "join")
+    return (f"<line x1='{x1}' y1='{y1}' x2='{x2}' y2='{y2}' stroke='{colour}' "
+            f"stroke-width='1.8'{dash} marker-end='url(#arrow-{marker})'/>")
+
+
+def rail(points, colour):
+    """An elbowed arrow along the outside of a row, from a box edge to the join column."""
+    marker = {GEO: "geo", DHI: "dhi"}[colour]
+    d = " ".join(f"{'M' if k == 0 else 'L'} {x} {y}" for k, (x, y) in enumerate(points))
+    return (f"<path d='{d}' fill='none' stroke='{colour}' stroke-width='1.8' "
+            f"marker-end='url(#arrow-{marker})'/>")
+
+
 def lane(x, y, w, h, title, colour, fill):
-    return (
-        f"<rect x='{x}' y='{y}' width='{w}' height='{h}' rx='10' ry='10' fill='{fill}' "
-        f"stroke='none'/>"
-        f"<text x='{x + 14}' y='{y + 20}' font-size='12.5' font-weight='600' fill='{colour}' "
-        f"{FONT}>{title}</text>"
-    )
+    return (f"<rect x='{x}' y='{y}' width='{w}' height='{h}' rx='10' ry='10' fill='{fill}' "
+            f"stroke='none'/>" + text(x + 14, y + 20, title, 12, colour, "start", 600))
 
 
 def main() -> None:
@@ -74,90 +80,78 @@ def main() -> None:
         f"<rect width='{W}' height='{H}' fill='white'/>",
     ]
 
-    # ---- the two tracks, each with a geological lane and an evidence lane -------------------
-    parts.append(lane(20, 20, 830, 250, "CHANCE  ·  is there an accumulation?", INK, "#F4F5F7"))
-    parts.append(lane(30, 48, 810, 100, "geological", GEO, "#EEF3FA"))
-    parts.append(lane(30, 158, 810, 100, "given the DHI  ·  evidence strength", DHI, "#FBEFEF"))
+    # ---- the two rows -------------------------------------------------------------------------
+    parts.append(f"<rect x='20' y='20' width='1050' height='160' rx='10' ry='10' "
+                 f"fill='#F4F5F7'/>")
+    parts.append(text(34, 42, "GEOLOGICAL  ·  the model, tabs 2.0 to 4.0", 12.5, INK, "start",
+                      600))
+    parts.append(lane(30, 58, 370, 112, "chance  ·  is there an accumulation?", GEO, "#EEF3FA"))
+    parts.append(lane(420, 58, 640, 112, "contact, given success  ·  where does the column stop?",
+                      GEO, "#EEF3FA"))
 
-    parts.append(lane(20, 300, 830, 300, "CONTACT, GIVEN SUCCESS  ·  where does the column stop?",
-                      INK, "#F4F5F7"))
-    parts.append(lane(30, 328, 810, 150, "geological", GEO, "#EEF3FA"))
-    parts.append(lane(30, 488, 810, 100, "given the DHI  ·  contact geometry", DHI, "#FBEFEF"))
+    parts.append(f"<rect x='20' y='284' width='1050' height='176' rx='10' ry='10' "
+                 f"fill='#F4F5F7'/>")
+    parts.append(text(34, 306, "GIVEN THE DHI  ·  the modification, tab 5.0", 12.5, INK, "start",
+                      600))
+    parts.append(lane(30, 322, 370, 112, "evidence strength  ·  updates the chance", DHI,
+                      "#FBEFEF"))
+    parts.append(lane(420, 322, 640, 112, "contact geometry  ·  reweights the contact", DHI,
+                      "#FBEFEF"))
 
-    # ---- chance track ------------------------------------------------------------------------
-    parts.append(box(60, 76, 250, 60, "Element chances", "play × conditional, tab 2.0", GEO))
-    parts.append(box(520, 76, 250, 60, "P(G)", "the product of the four", GEO))
-    parts.append(arrow(310, 106, 520, 106, GEO))
-    parts.append(box(60, 186, 250, 60, "DHI evidence strength",
-                     "likelihood ratio R, tab 5.1", DHI))
-    parts.append(box(520, 186, 250, 60, "P(G | strength)", "two-state update, capped 10 : 1",
-                     DHI))
-    parts.append(arrow(310, 216, 520, 216, DHI))
-    parts.append(arrow(645, 136, 645, 186, DHI, "updated by the strength", lx=655, ly=166,
-                       anchor="start"))
-
-    # ---- contact track -----------------------------------------------------------------------
-    parts.append(box(60, 366, 220, 60, "Geological limits",
-                     "P(active) and a depth each, tab 3.0", GEO))
-    parts.append(box(320, 366, 220, 60, "Competition", "shallowest active limit wins", GEO))
-    parts.append(box(580, 366, 250, 60, "HCWC | G", "F(h), controller, percentiles, tab 4.1",
+    # ---- geological row ------------------------------------------------------------------------
+    parts.append(box(40, 100, 160, 60, "Element chances", "play × conditional, tab 2.0", GEO))
+    parts.append(box(230, 100, 160, 60, "P(G)", "product of the four", GEO))
+    parts.append(arrow(200, 130, 230, 130, GEO))
+    parts.append(box(440, 100, 185, 60, "Geological limits", "P(active) and a depth, tab 3.0",
                      GEO))
-    parts.append(arrow(280, 396, 320, 396, GEO))
-    parts.append(arrow(540, 396, 580, 396, GEO))
-    parts.append(box(60, 516, 250, 60, "DHI geometry",
-                     "picked contact, c, detection D(h), tab 5.1", DHI))
-    parts.append(box(580, 516, 250, 60, "HCWC | G, evidence",
-                     "same realisations, reweighted, tab 5.2", DHI))
-    parts.append(arrow(310, 546, 580, 546, DHI))
-    parts.append(arrow(705, 426, 705, 516, DHI, "reweighted by the geometry", lx=715, ly=478,
-                       anchor="start"))
+    parts.append(box(655, 100, 185, 60, "Competition", "shallowest active limit wins", GEO))
+    parts.append(box(870, 100, 185, 60, "HCWC | G", "F(h) and the controller, tab 4.1", GEO))
+    parts.append(arrow(625, 130, 655, 130, GEO))
+    parts.append(arrow(840, 130, 870, 130, GEO))
 
-    # ---- the benchmarks, compared and never joined --------------------------------------------
-    parts.append(box(330, 430, 240, 52, "Benchmarks, tab 6.0", "compared beside F(h), never joined",
+    # ---- DHI row -------------------------------------------------------------------------------
+    parts.append(box(40, 364, 160, 60, "DHI evidence strength", "likelihood ratio R, tab 5.1",
+                     DHI))
+    parts.append(box(230, 364, 160, 60, "P(G | strength)", "two-state update, capped 10 : 1",
+                     DHI))
+    parts.append(arrow(200, 394, 230, 394, DHI))
+    parts.append(box(440, 364, 185, 60, "DHI geometry", "picked contact, c, D(h), tab 5.1", DHI))
+    parts.append(box(870, 364, 185, 60, "HCWC | G, evidence", "reweighted realisations, tab 5.2",
+                     DHI))
+    parts.append(arrow(625, 394, 870, 394, DHI))
+
+    # ---- the two channels: one short vertical arrow each, nothing crossed ----------------------
+    parts.append(arrow(310, 160, 310, 364, DHI))
+    parts.append(text(320, 254, "updated by", 11.5, DHI, "start"))
+    parts.append(text(320, 270, "the strength", 11.5, DHI, "start"))
+    parts.append(arrow(962, 160, 962, 364, DHI))
+    parts.append(text(972, 254, "reweighted by", 11.5, DHI, "start"))
+    parts.append(text(972, 270, "the geometry", 11.5, DHI, "start"))
+
+    # ---- the benchmarks, between the two contact distributions, compared and never joined -----
+    parts.append(box(648, 206, 200, 52, "Benchmarks, tab 6.0", "compared with both, never joined",
                      MUTED, dashed=True))
-    parts.append(arrow(570, 452, 590, 428, MUTED, dashed=True))
+    parts.append(arrow(848, 218, 878, 164, MUTED, dashed=True))
+    parts.append(arrow(848, 246, 878, 360, MUTED, dashed=True))
 
-    # ---- joined on the right: the chance against depth -------------------------------------
-    parts.append(f"<rect x='880' y='48' width='280' height='540' rx='10' ry='10' fill='#EEF5EF' "
-                 f"stroke='none'/>")
-    parts.append(f"<text x='894' y='68' font-size='12.5' font-weight='600' fill='{JOIN}' "
-                 f"{FONT}>CHANCE AGAINST DEPTH</text>")
-    parts.append(box(900, 96, 240, 96, "Geological", "", JOIN))
-    parts.append(f"<text x='1020' y='140' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>POS(h) = P(G) × F(h)</text>")
-    parts.append(f"<text x='1020' y='158' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>read at h_min, and at z_entry for the well</text>")
-    parts.append(f"<text x='1020' y='176' text-anchor='middle' font-size='11.5' fill='{MUTED}' "
-                 f"{FONT}>tab 4.1.3 and 4.1.4</text>")
-    parts.append(box(900, 236, 240, 96, "Given the DHI", "", JOIN))
-    parts.append(f"<text x='1020' y='280' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>POS(h) = P(G | strength) × F_post(h)</text>")
-    parts.append(f"<text x='1020' y='298' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>same readings, same realisations</text>")
-    parts.append(f"<text x='1020' y='316' text-anchor='middle' font-size='11.5' fill='{MUTED}' "
-                 f"{FONT}>tab 5.2.3 and 5.2.4</text>")
-    parts.append(f"<text x='1020' y='372' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>One weighted sample reads</text>")
-    parts.append(f"<text x='1020' y='390' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>the histogram, the percentiles,</text>")
-    parts.append(f"<text x='1020' y='408' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>F(h) and the chance; nothing</text>")
-    parts.append(f"<text x='1020' y='426' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>is re-simulated or rescaled.</text>")
-    parts.append(f"<text x='1020' y='466' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>Strength moves the chance and</text>")
-    parts.append(f"<text x='1020' y='484' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>never the contact; geometry moves</text>")
-    parts.append(f"<text x='1020' y='502' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>the contact and never the chance's</text>")
-    parts.append(f"<text x='1020' y='520' text-anchor='middle' font-size='12' fill='{INK}' "
-                 f"{FONT}>first factor. Each enters once.</text>")
+    # ---- the join: the chance against depth, one box per row ----------------------------------
+    parts.append(f"<rect x='1080' y='20' width='240' height='440' rx='10' ry='10' "
+                 f"fill='#EEF5EF' stroke='none'/>")
+    parts.append(text(1200, 236, "CHANCE AGAINST DEPTH", 12.5, JOIN, weight=600))
+    parts.append(text(1200, 254, "read at h_min, and at z_entry", 11, JOIN))
+    parts.append(text(1200, 270, "for the well", 11, JOIN))
+    parts.append(box(1090, 66, 220, 94, "Geological",
+                     ["POS(h) = P(G) × F(h)", "the chance of a column to h",
+                      "tab 4.1.3 and 4.1.4"], JOIN))
+    parts.append(box(1090, 330, 220, 94, "Given the DHI",
+                     ["POS(h) = P(G | strength) × F_post(h)", "same readings, same realisations",
+                      "tab 5.2.3 and 5.2.4"], JOIN))
 
-    # geological P(G) and F(h) into the geological product; the updated pair into the updated one
-    parts.append(arrow(770, 106, 900, 130, GEO))
-    parts.append(arrow(830, 396, 900, 160, GEO))
-    parts.append(arrow(770, 216, 900, 270, DHI))
-    parts.append(arrow(830, 546, 900, 300, DHI))
+    # the chance along the outer rail of its row, the contact along the inner
+    parts.append(rail([(310, 100), (310, 46), (1200, 46), (1200, 66)], GEO))
+    parts.append(arrow(1055, 130, 1090, 130, GEO))
+    parts.append(rail([(310, 424), (310, 446), (1200, 446), (1200, 424)], DHI))
+    parts.append(arrow(1055, 394, 1090, 394, DHI))
 
     parts.append("</svg>")
     OUT.parent.mkdir(parents=True, exist_ok=True)

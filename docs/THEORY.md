@@ -7,7 +7,7 @@ carries the sources.*
 
 ## Model overview
 
-![The model as two tracks. The chance: the element chances give P(G), which the DHI's evidence strength updates. The contact given success: the limits compete, the shallowest active one sets the contact and is recorded, and the DHI's geometry reweights the same realisations. The two tracks join in the chance against depth, read at the assessment minimum and at the well; the benchmarks are compared beside the geological contact and never joined.](figures/fig0_workflow.svg)
+![The model as two rows. Geological: the element chances give P(G); the limits compete, the shallowest active one sets the contact and is recorded. Given the DHI: the evidence strength updates P(G) and the contact geometry reweights the same realisations; strength never moves the contact, geometry never moves the chance, and each enters once. Nothing is re-simulated or rescaled: one weighted sample reads the histogram, the percentiles, F(h) and the chance. The rows join in the chance against depth, read at the assessment minimum and at the well; the benchmarks are compared with both contact distributions and never joined.](figures/fig0_workflow.svg)
 
 A hydrocarbon column is stopped by whichever mechanism acts first: charge runs out, the closure
 spills, a fault juxtaposes the reservoir against a carrier, the top or base seal leaks at a
