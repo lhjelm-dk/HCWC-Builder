@@ -60,8 +60,10 @@ distribution.
    depth; the right-hand one is the shallowest active limit in every realisation, which is the
    contact.
 
-4. `04_contact_distribution.png` — The result: the contact distribution and its exceedance
-   curve. Every probability of success in the workflow is a reading of this curve at a depth.
+4. `04_contact_distribution.png` — The competition, realisation by realisation. Left: fifty
+   draws, every active limit's depth, the shallowest ringed in the colour of the limit that
+   won. Right: the distribution all ten thousand make, with its exceedance curve. Every
+   probability of success in the workflow is a reading of that curve at a depth.
 
 5. `05_controlling_by_depth.png` — The same distribution coloured by what controls it. Shallow
    contacts are seal-limited; deep ones pass to fault geometry and spill. A generic distribution
@@ -94,10 +96,11 @@ distribution.
 ## Notes for posting
 
 - Overlap with the article: the closing line, the 40 → 64 % / 130 → 99 m / 4 872 numbers, and
-  image 9 (the article's panel c). Everything else in the post is picture-led and the article
+  images 4, 5, 9 and 10 (the article's Figures 2 to 5). Everything else in the post is picture-led and the article
   carries the derivation.
-- The article's figure (`docs/figures/fig6_paper.png`) is not in the post; the post's images
-  are the app's own, so a reader who opens the app recognises them.
+- The article's figures are the app's own too (`docs/figures/fig1…fig6`, from the same run
+  as the post's images), so a reader who opens the app recognises them; the article opens with
+  the workflow figure (`docs/figures/fig0_workflow.png`), which the post does not carry.
 - `GITHUB_URL` requires the repository to be public; until then, drop the line or link the
   app only.
 - The strength / σ / c settings behind images 7–10 are the shipped defaults with strength 20 and
