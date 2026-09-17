@@ -1373,7 +1373,8 @@ class TestEveryResultExhibitDeclaresItsBasis:
     def test_the_paired_captions_are_no_longer_identical(self):
         """The precise defect: same words, two distributions, nothing to tell them apart."""
         captions = self._captions(_run())
-        # Renumbered 15 Sep 2026 when 4.1 gained the chance curve (3) and the well (4).
+        # Renumbered 15 Sep 2026 when 4.1 gained the chance curve (3) and the well (4); on
+        # 17 Sep the competition figure replaced the exceedance figure as 4.1.1.
         for a, b in (("Figure 4.1.1", "Figure 5.2.1"), ("Figure 4.1.4", "Figure 5.2.4"),
                      ("Table 4.1.5", "Table 5.2.5"), ("Figure 4.2.2", "Figure 5.3.2")):
             assert captions[a] != captions[b], f"{a} and {b} still read identically"
@@ -2097,3 +2098,38 @@ class TestTabsFourAndFiveOfferTheSameControls:
                 seen.setdefault(m.group(2), []).append(m.group(1))
         assert seen["4.1"] == seen["5.2"], (seen["4.1"], seen["5.2"])
         assert seen["4.2"] == seen["5.3"], (seen["4.2"], seen["5.3"])
+
+
+class TestTheCompetitionIsDrawnRealisationByRealisation:
+    """Lars, 17 Sep 2026: the paper's figure 1, live, in place of the exceedance figure on 4.1
+    and 5.2, whose curve it carries on its right-hand panel. Fifty realisations at a time, the shallowest active limit ringed in its controller's
+    colour, a window slider through the whole run, and the whole distribution with its
+    exceedance curve beside it."""
+
+    def test_it_is_the_first_exhibit_on_both_result_tabs(self):
+        at = _run(dhi_toggle=True)
+        figures = at.session_state["_figures"]
+        for label in ("Figure 4.1.1", "Figure 5.2.1"):
+            fig, caption = figures[label]
+            assert "The competition, realisation by realisation" in caption, label
+            names = [str(t.name) for t in fig.data]
+            assert any(n.startswith("shallowest active limit") for n in names), label
+            assert "P(contact deeper than this)" in names, label
+
+    def test_the_window_walks_the_run_in_steps_of_fifty(self):
+        at = _run()
+        slider = next(s for s in at.slider if s.key == "competition_window_4")
+        assert slider.value == 0 and slider.max == 9_950 and slider.step == 50
+        at.session_state["competition_window_4"] = 5_000
+        at.run()
+        fig, _ = at.session_state["_figures"]["Figure 4.1.1"]
+        assert fig.layout.xaxis.title.text == "realisation (5,000 to 5,049)"
+        rings = next(t for t in fig.data if str(t.name).startswith("shallowest active limit"))
+        assert len(rings.y) == 50
+
+    def test_the_rings_take_their_controllers_colours(self):
+        """An open marker's stroke is `marker.color`; per-point colours there are the point."""
+        fig, _ = _run().session_state["_figures"]["Figure 4.1.1"]
+        rings = next(t for t in fig.data if str(t.name).startswith("shallowest active limit"))
+        assert rings.marker.symbol == "circle-open"
+        assert len(set(rings.marker.color)) > 1, "every ring has the same colour"
