@@ -176,54 +176,118 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
 
     # ------------------------------------------------------------------ 1 · exceedance
     theme.heading(tab, sub=n.sub, text="1 · Where the contact is")
-    # A cumulative curve hides where the mass is: two quite different contact distributions can
-    # trace nearly the same exceedance. The histogram is the same object read the other way, so it
-    # is on by default and switchable off rather than the reverse.
-    show_hist = st.checkbox("Show the contacts themselves", value=True,
-                            key=f"contact_hist_{tab}",
-                            help="The distribution the curve beside it is the cumulative form of, "
-                                 "binned by depth on its own axis.")
-    grid = np.linspace(0.0, float(result.column_m.max()) * 1.02, 400)
-    f = exceed(grid)
-    apex_med = float(np.median(result.apex_m))
-    fig = go.Figure()
+    # ------------------------------------------------------------------ 1 · the competition
+    # Lars, 17 Sep 2026: the paper's figure 1, live. Fifty realisations at a time, every active
+    # limit's sampled depth as a dot and the shallowest ringed in the controller's colour; a
+    # window slider walks the fifty through the whole run in run order. The right panel is the
+    # whole distribution, with the fifty shown marked on it, so a reader sees where this window
+    # sits in the ten thousand. Draws are the geology's whatever the basis; under the evidence
+    # the right panel's bars and curve carry the weights, as every other exhibit on tab 5 does.
+    _window = 50
+    _start = st.slider(
+        "Realisations from", 0, max(result.n - _window, 0), 0, step=_window,
+        key=f"competition_window_{tab}",
+        help=f"Which {_window} of the {result.n:,} realisations the left panel shows, in the "
+             "order the engine drew them. The right panel is always all of them.")
+    _idx = np.arange(_start, min(_start + _window, result.n))
+    _colours = limit_colours(limit_set)
+    _live_names = [name for name, share in engine.limit_ranking(result, weights=weights)
+                   if share > 0.0005]
+    _apex = result.apex_m[_idx]
+    _x = np.arange(_idx.size)
 
-    if show_hist:
-        # The token picks the colour; the words come from what is actually in the weights.
-        basis = theme.GIVEN_DHI if given_dhi else theme.GEOLOGICAL
-        basis_words = theme.evidence_basis() if given_dhi else theme.GEOLOGICAL
-        edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 61)
-        counts, _ = np.histogram(result.contact_m, bins=edges, weights=weights)
-        total = float(counts.sum())
-        fig.add_bar(y=0.5 * (edges[:-1] + edges[1:]), x=counts / total if total else counts,
-                    orientation="h", xaxis="x2", name=f"contacts — {basis_words}", opacity=0.45,
-                    marker_color=theme.BASIS_COLOUR[basis], marker_line_width=0,
-                    hovertemplate="%{y:.0f} m TVDSS<br>%{x:.1%} of realisations<extra></extra>")
+    figc = go.Figure()
+    for _name in _live_names:
+        _j = limit_set.names.index(_name)
+        _on = result.active[_idx, _j]
+        if not _on.any():
+            continue
+        figc.add_scatter(x=_x[_on], y=(_apex + result.sampled_m[_idx, _j])[_on], mode="markers",
+                         name=_name, marker=dict(color=_colours.get(_name, "#999"), size=6,
+                                                 opacity=0.75),
+                         hovertemplate=f"{_name}<br>%{{y:,.0f}} m TVDSS<extra></extra>",
+                         xaxis="x", yaxis="y")
+    _won = result.contact_m[_idx]
+    _ctrl = [limit_set.names[k] for k in result.controller[_idx]]
+    figc.add_scatter(x=_x, y=_won, mode="lines", name="the contact, realisation to realisation",
+                     line=dict(color="#555", width=1), opacity=0.5, hoverinfo="skip",
+                     xaxis="x", yaxis="y")
+    figc.add_scatter(x=_x, y=_won, mode="markers", name="shallowest active limit = the contact",
+                     # An open symbol takes its stroke from `marker.color`, not `marker.line`.
+                     marker=dict(symbol="circle-open", size=13, line=dict(width=2.2),
+                                 color=[_colours.get(c, "#111") for c in _ctrl]),
+                     customdata=_ctrl,
+                     hovertemplate="realisation %{x}<br>contact %{y:,.0f} m<br>"
+                                   "controlled by %{customdata}<extra></extra>",
+                     xaxis="x", yaxis="y")
 
-    fig.add_scatter(x=f, y=apex_med + grid, mode="lines", name="P(contact deeper than this)",
-                    line=dict(color="#4C72B0", width=3))
+    # The whole distribution beside it: bars, the exceedance curve on a top axis, the window's
+    # fifty as a rug in their controllers' colours.
+    _edges = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 61)
+    _counts, _ = np.histogram(result.contact_m, bins=_edges, weights=weights)
+    _total = float(_counts.sum())
+    # Grey, not the basis colour: every element hue is taken by a limit, and a blue bar reads as
+    # closure. The caption's chip says which basis the bars carry.
+    figc.add_bar(y=0.5 * (_edges[:-1] + _edges[1:]), x=_counts / _total if _total else _counts,
+                 orientation="h", name="share of realisations per depth bin", opacity=0.55,
+                 marker_color="#B8BEC7", marker_line_width=0, xaxis="x2", yaxis="y",
+                 hovertemplate="%{y:.0f} m TVDSS<br>%{x:.1%} of realisations<extra></extra>")
+    _grid = np.linspace(0.0, float(result.column_m.max()) * 1.02, 400)
+    figc.add_scatter(x=exceed(_grid), y=float(np.median(result.apex_m)) + _grid, mode="lines",
+                     name="P(contact deeper than this)", line=dict(color="#4C72B0", width=3),
+                     xaxis="x3", yaxis="y")
+    # The fifty shown, as ticks across the bars in their controllers' colours: where this
+    # window sits in the whole, and what set each of its contacts.
+    figc.add_scatter(x=np.full(_idx.size, 0.02), y=_won, mode="markers",
+                     name=f"the {_idx.size} shown, coloured by controlling limit",
+                     # A line symbol is drawn with `marker.line`, so the colour goes there.
+                     marker=dict(symbol="line-ew", size=16,
+                                 line=dict(width=2.4,
+                                           color=[_colours.get(c, "#111") for c in _ctrl])),
+                     customdata=_ctrl,
+                     hovertemplate="%{y:,.0f} m, %{customdata}<extra></extra>",
+                     xaxis="x3", yaxis="y")
+    for _p, _dash in ((90, "dot"), (50, "solid"), (10, "dot")):
+        figc.add_shape(type="line", xref="x3", yref="y", x0=0, x1=1, y0=pct(_p), y1=pct(_p),
+                       line=dict(color="#888", dash=_dash, width=1))
+        figc.add_annotation(xref="x3", yref="y", x=1.0, y=pct(_p), text=f"P{_p}",
+                            showarrow=False, xanchor="right", yanchor="bottom", font_size=10)
     if h_min > 0:
-        fig.add_hline(y=apex_med + h_min, line=dict(color="#C44E52", dash="dash"),
-                      annotation_text=f"assessment minimum — P(column ≥ h | G) = {column_pos:.1%}",
-                      annotation_position="bottom right")
-    for p, dash in ((90, "dot"), (50, "solid"), (10, "dot")):
-        fig.add_hline(y=pct(p), line=dict(color="#888", dash=dash, width=1),
-                      annotation_text=f"P{p}", annotation_position="top left")
-    fig.update_layout(xaxis_title="Probability the contact is deeper", xaxis_range=[0, 1],
-                      yaxis_title="Depth (m TVDSS)", yaxis=dict(autorange="reversed"),
-                      height=560, margin=dict(t=20 if not show_hist else 58),
-                      legend=dict(orientation="h", y=-0.15))
-    if show_hist:
-        # Its own axis, so "probability the contact is deeper" keeps meaning exactly one thing, and
-        # scaled to a third of the width so the bars read as the ground the curve stands on.
-        peak = float(np.max(counts / total)) if total else 1.0
-        fig.update_layout(bargap=0.04, xaxis2=dict(
-            overlaying="x", side="top", range=[0, max(peak, 1e-6) * 3.0], showgrid=False,
-            tickformat=".0%", title="share of realisations per depth bin",
-            title_font_size=11, tickfont_size=10))
-    n.plot(fig, "The exceedance curve `F(h) = P(column ≥ h)` on the depth axis. Depth on y, "
-                "inverted, m TVDSS, the convention throughout this tool and WellVolPOS. This "
-                "curve is the risk output; POS at any threshold is a reading of it.")
+        _z_min = float(np.median(result.apex_m)) + h_min
+        figc.add_shape(type="line", xref="x3", yref="y", x0=0, x1=1, y0=_z_min, y1=_z_min,
+                       line=dict(color="#C44E52", dash="dash"))
+        figc.add_annotation(xref="x3", yref="y", x=0.0, y=_z_min, text="assessment minimum",
+                            showarrow=False, xanchor="left", yanchor="bottom", font_size=10,
+                            font_color="#C44E52")
+    _peak = float(np.max(_counts / _total)) if _total else 1.0
+    # A capacity sampled from the tail can sit hundreds of metres below anything else in the
+    # window and would squeeze the competition into a band; the range follows what the shown
+    # realisations occupy, and the right panel's curve continues beyond it.
+    _shown = np.concatenate([
+        (_apex + result.sampled_m[_idx, limit_set.names.index(nm)])[result.active[_idx, limit_set.names.index(nm)]]
+        for nm in _live_names] + [_won])
+    _y_lo = min(float(np.percentile(_shown, 0.5)), float(result.contact_m.min())) - 10.0
+    _y_hi = float(np.percentile(_shown, 97.0)) + 15.0
+    figc.update_layout(
+        xaxis=dict(domain=[0.0, 0.6], title=f"realisation ({_start:,} to {_idx[-1]:,})"),
+        xaxis2=dict(domain=[0.66, 1.0], title="share of realisations per depth bin",
+                    tickformat=".0%", range=[0, max(_peak, 1e-6) * 3.0], showgrid=False),
+        xaxis3=dict(domain=[0.66, 1.0], overlaying="x2", side="top", range=[0, 1],
+                    title="probability the contact is deeper"),
+        yaxis=dict(title="Depth (m TVDSS)", range=[_y_hi, _y_lo]),
+        height=620, margin=dict(t=48, b=40), barmode="overlay", bargap=0.04,
+        legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
+    n.plot(figc, f"The competition, realisation by realisation. Left: every active limit's "
+                 f"sampled depth in {_idx.size} realisations, the shallowest ringed in the "
+                 f"colour of the limit that set it; the slider walks the window through all "
+                 f"{result.n:,}. Right: the whole distribution, its exceedance curve on the top "
+                 f"axis, and the {_idx.size} shown marked at their depths. Method: see 8.1.3.")
+
+    # `grid` and `apex_med` feed the chance curve in section 3; the exceedance figure that used
+    # to sit here was replaced by the competition figure above (Lars, 17 Sep 2026), which carries
+    # the same curve on its right-hand panel.
+    grid = np.linspace(0.0, float(result.column_m.max()) * 1.02, 400)
+    apex_med = float(np.median(result.apex_m))
 
     # ------------------------------------------------------------------ 2 · which limit controls
     theme.heading(tab, sub=n.sub, text="2 · What controls the contact")
