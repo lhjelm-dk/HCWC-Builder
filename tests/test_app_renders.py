@@ -1781,11 +1781,13 @@ class TestTheArgumentsLiveInDocuments:
 
     def test_the_references_are_numbered_sub_sections(self):
         """8.3.1 onward, one per `## ` heading of docs/REFERENCES.md, with Beha in Method and
-        the companion tools naming ArianeLogiX (Lars, 15 Sep 2026)."""
+        the companion tools naming ArianeLogiX (Lars, 15 Sep 2026). A DHI-evidence section
+        joined as 8.3.2 on 17 Sep 2026, so the companion tools are 8.3.8."""
         at = _run()
         blob = "\n".join(str(m.value) for m in at.get("markdown"))
         assert "8.3.1 · Method" in blob
-        assert "8.3.7 · Companion tools" in blob, "the bibliography's sections changed"
+        assert "8.3.2 · DHI evidence" in blob
+        assert "8.3.8 · Companion tools" in blob, "the bibliography's sections changed"
         method = blob[blob.index("8.3.1 · Method"):blob.index("8.3.2 ·")]
         assert "Beha, A., Christensen, J. E. & Young, R. (2012)" in method
         assert "ariane-logix.com" in blob

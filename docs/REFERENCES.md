@@ -105,6 +105,48 @@ doi:[10.1144/SP496-2020-51](https://doi.org/10.1144/SP496-2020-51) · 🟡 **Int
 
 ---
 
+## DHI evidence
+
+**Simm, R. & Bacon, M. (2014)** · *Seismic Amplitude: An Interpreter's Handbook.* Cambridge
+University Press. Chapter 11, amplitudes in prospect evaluation.
+🔒 **Book.**
+> The two-state Bayesian update of a prior chance by a likelihood ratio, `P(G | s) = R·P(G) /
+> (R·P(G) + 1 − P(G))`, which is `hcwc.core.dhi.simm_update`; the interpreter's DHI checklist.
+> Also the source Monigle *et al.* (2025) cite for their integration.
+
+**Simm, R. (2020)** · *DHI scenarios in exploration: a personal view.* First Break **38**(2),
+37–42. doi:[10.3997/1365-2397.fb2020008](https://doi.org/10.3997/1365-2397.fb2020008)
+🔒 **Paywalled.**
+> High-grade DHI scenarios, with characteristics consistent with the trap and indicative of a
+> fluid contact, warrant an uplift to the chance; low-grade ones, amplitude and AVO anomalies or
+> low-confidence fluid indications, generally do not. The verbal bands on `R` in
+> `dhi.strength_bands` and the single-channel ceiling of 10 are attributed to Simm; the page
+> that carries them is to be confirmed against the handbook and this paper.
+
+**Kjønsberg, H., Hauge, R., Kolbjørnsen, O. & Buland, A. (2010)** · *Bayesian Monte Carlo method
+for seismic predrill prospect assessment.* Geophysics **75**(2), O9–O19.
+> The one published measurement of a combined likelihood ratio: prior 0.53, posteriors 0.76,
+> 0.97 and 0.44 at three locations offshore Norway, implied ratios 2.8, 28.7 and 0.70, from a
+> full prestack inversion. `R_CAP = 50` sits above the 29.
+
+**Roden, R., Forrest, M. & Holeywell, R. (2012)** · *Relating seismic interpretation to
+reserve/resource calculations: Insights from a DHI consortium.* The Leading Edge **31**(9),
+1066–1074.
+> The DHI consortium's drilled database (217 prospects then, 400+ now): amplitude down-dip
+> conformance to structure is the most diagnostic characteristic, flat spots rank high, and
+> a DHI Index above 20 % approached full success. Also the list of what is misread as a flat
+> spot: channel bases and edges, low-angle faults, diagenetic boundaries, processing artefacts.
+> These are the characteristics `c` grades, so the consortium ranking is why `c` and `R` move
+> together at elicitation (8.1.6, Figure 5.1.3a).
+
+**Nixon, S., Hallam, T. & Constantine, A. (2018)** · *Ranking DHI attributes for effective
+prospect risk assessment applied to the Otway Basin, Australia.* ASEG Extended Abstracts, AEGC
+2018, Sydney. Held in `_private/papers/`.
+> Concur with the consortium ranking, with flat spots raised to "highly definitive"; conformance
+> with depth structure "uncommon in the absence of hydrocarbons", while AVO anomalies and bright
+> spots have many non-hydrocarbon causes. Bayes' theorem applied with basin-calibrated DHI
+> statistics.
+
 ## Empirical column-height data
 
 **Edmundson, I., Davies, R., Frette, L.U., Mackie, S., Kavli, E.A., Rotevatn, A., Yielding, G. &
