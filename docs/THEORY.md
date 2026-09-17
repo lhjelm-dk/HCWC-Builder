@@ -208,7 +208,8 @@ channel and uses the geometry conditionally within `G`, once. A second likelihoo
 two kinds of evidence, and each updates one factor:
 
 - Character, how hydrocarbon-like the amplitude looks, is a likelihood ratio on `G`. It updates
-  `P(G)` through the two-state form `P(G | s) = R·P(G) / (R·P(G) + 1 − P(G))` (Simm 2016; E-POS).
+  `P(G)` through the two-state form `P(G | s) = R·P(G) / (R·P(G) + 1 − P(G))` (Simm & Bacon
+  2014; E-POS).
   `R` is the ratio of two elicited curves on a strength axis, a hydrocarbon-bearing and a
   non-hydrocarbon population, read at the prospect's placing. The axis has no units; what carries
   meaning is where the prospect sits relative to the two populations as drawn.
@@ -220,8 +221,17 @@ The prospect chance at a threshold is the product of the two updated factors,
 `P(G | character) × F_post(h)` passes through it by identity. Each piece of evidence enters once,
 in the factor it is evidence about; there is no blending parameter, and the apparent dependence
 between the two channels does not arise in the arithmetic. The dependence that remains is between
-the two judgements at elicitation, since body and contact attributes both improve with impedance
-contrast (Monigle et al. 2025).
+the two judgements at elicitation. The characteristics that grade `c`, conformance to structure,
+sharp terminations and a fluid-contact reflection, are also the characteristics the DHI
+consortium's drilled database ranks as most predictive of finding hydrocarbons: amplitude
+conformance to structure first, flat spots among the most definitive (Roden, Forrest & Holeywell
+2012; Nixon, Hallam & Constantine 2018). In this model that evidence about `G` enters through the
+strength reading, so an event graded high on `c` is usually read higher on the strength axis too.
+Simm (2020) draws the same line from the other side: a high-grade DHI, with characteristics
+consistent with the trap and indicative of a fluid contact, warrants an uplift to the chance; an
+amplitude or AVO anomaly without them generally does not. Tab 5.1.3 draws the two judgements
+against each other (Figure 5.1.3a) with that pairing as a band, a judgement and not a
+calibration, and names the pairings outside it.
 
 A strong reading does not make the contact certain. The character channel moves `P(G)`, and at
 its cap takes 0.41 to 0.87; it does not touch the weights, so the contact keeps the spread the
@@ -230,8 +240,8 @@ Hydrocarbon presence can become highly likely while the contact distribution kee
 width, and the two readings are reported apart so that this is visible.
 
 Each channel is bounded. The character ratio is capped at 10 : 1 either way, Simm's ceiling for
-one line of fluid-indicator evidence: an honest single-channel `R` rarely exceeds 3, and a value
-above 10 sends the assessor back to the inputs. The geometry channel is bounded by its floor
+one line of fluid-indicator evidence (Simm & Bacon 2014; Simm 2020): an honest single-channel
+`R` rarely exceeds 3, and a value above 10 sends the assessor back to the inputs. The geometry channel is bounded by its floor
 (8.1.7). The one published measurement of a combined ratio is Kjønsberg et al. (2010), who invert
 prestack AVO for the joint lithology–fluid distribution by Markov chain Monte Carlo at three
 locations offshore Norway and report prior and posterior hydrocarbon probabilities: a prior of
@@ -318,15 +328,21 @@ so its spurious branch is the constant 1 where the picked case's is the density 
 the highest floor the mixture can have and the conservative choice.
 
 `c` is `P(the picked event is the contact | G, contact attributes)`. A flat event can be
-lithology, a diagenetic front, fizz gas read as pay or a processing artefact. Monigle et al.
-(2025) separate DHI attributes into body attributes, anomaly strength and lateral contrast, which
-bear on whether hydrocarbons are present and are what the strength axis grades, and contact
-attributes, fit to structure, terminations and the fluid-contact reflection, which bear on
-whether the picked event is the base of the column. `c` is the second group and carries nothing
+lithology, a diagenetic front, fizz gas read as pay or a processing artefact; Roden, Forrest &
+Holeywell (2012) list the base or edge of a channel, a low-angle fault, a diagenetic boundary and
+a processing artefact as what is most often misread as a flat spot. Monigle et al. (2025) grade
+five DHI attributes: anomaly strength, lateral amplitude contrast, fit to structure, amplitude
+terminations and the fluid-contact reflection. This tool reads the first two as body attributes,
+which bear on whether hydrocarbons are present and are what the strength axis grades, and the last
+three as contact attributes, which bear on whether the picked event is the base of the column;
+the split is this tool's, not theirs, since their five feed one score. `c` is the second group and carries nothing
 of the first: it is conditional on hydrocarbons being present, because every realisation it
 weights was drawn on that assumption, and no expression built from the amplitude strength can
 supply it. The tab offers it typed, opening at 0.36, or as the geometric mean of three graded
-attributes, a heuristic and not a calibration. `c` is taken independent of `h`: one number
+attributes, a heuristic and not a calibration. The one calibrated number on this quantity is the
+ceiling: Hood's (2019) high-confidence contact weight and Monigle et al.'s (2025) empirical rule
+`w = min(2 × score, 0.95)`, from the same company's drilled DHI prospects, both stop at 0.95,
+and the slider's anchors name it. `c` is taken independent of `h`: one number
 weights the mixture for every realisation, and the chance that the picked event is the contact
 is not made to depend on how tall the column is; the column height enters the valid branch
 through `D(h)` only. `s` is the density of a spurious event over the

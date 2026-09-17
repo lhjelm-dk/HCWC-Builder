@@ -558,7 +558,8 @@ No new risk numbers are required, and the geological model is not re-run.
 
 It is tempting to derive (2) from the amplitude. If the anomaly is bright and conformable, surely
 the event bounding it is likely to be the contact? The temptation is worth resisting, and the
-reason is a split that Monigle *et al.* (2025) draw explicitly.
+reason is a split drawn here across the five DHI attributes Monigle *et al.* (2025) grade; their
+five feed one score, and the split is this paper's reading of them.
 
 Their five DHI attributes fall into two groups. **Body attributes** — anomaly strength, lateral
 amplitude contrast — argue about whether hydrocarbons are present. **Contact attributes** — fit to
@@ -856,9 +857,13 @@ independence assumption. An earlier draft blended the two ratios through an elic
 parameter; that construction applied a ratio between column heights inside $G$ as if it were a
 ratio on the prospect, and is withdrawn.
 
-The dependence that remains is between the two *judgements*. Monigle *et al.* (2025) note that
-body and contact attributes both improve with impedance contrast and data quality, so an assessor
-who has graded the amplitude strongly is likely to grade the conformance strongly too. That is a
+The dependence that remains is between the two *judgements*. The characteristics that grade $c$
+are also the ones the DHI consortium's drilled database ranks as most predictive of finding
+hydrocarbons, amplitude conformance to structure first and flat spots among the most definitive
+(Roden *et al.*, 2012; Nixon *et al.*, 2018), and Simm (2020) reserves the uplift to the chance for
+anomalies that carry them. In this model that evidence about $G$ enters through the strength
+reading, so an assessor who has graded the conformance strongly is likely to read the strength
+higher too. That is a
 matter for the elicitation — the two rows of §10.2 are the cases where the judgements should
 diverge — and not for the arithmetic, which cannot tell a correlated pair of honest judgements
 from an uncorrelated one.
@@ -1049,6 +1054,20 @@ seismic predrill prospect assessment. *Geophysics* **75**(2), O9–O19.
 Monigle, P. W., Hedayati, T. S. & Goulding, F. J. (2025). Integrated and improved direct
 hydrocarbon indicators: A step forward in petroleum risk discrimination. *AAPG Bulletin*
 **109**(5), 617–636. doi:10.1306/04042524030.
+
+Nixon, S., Hallam, T. & Constantine, A. (2018). Ranking DHI attributes for effective prospect
+risk assessment applied to the Otway Basin, Australia. *ASEG Extended Abstracts* 2018(1), AEGC
+2018, Sydney.
+
+Roden, R., Forrest, M. & Holeywell, R. (2012). Relating seismic interpretation to
+reserve/resource calculations: Insights from a DHI consortium. *The Leading Edge* **31**(9),
+1066–1074.
+
+Simm, R. & Bacon, M. (2014). *Seismic Amplitude: An Interpreter's Handbook.* Cambridge University
+Press.
+
+Simm, R. (2020). DHI scenarios in exploration: a personal view. *First Break* **38**(2), 37–42.
+doi:10.3997/1365-2397.fb2020008.
 
 Schowalter, T. T. (1979). Mechanics of secondary hydrocarbon migration and entrapment. *AAPG
 Bulletin* **63**(5), 723–760.

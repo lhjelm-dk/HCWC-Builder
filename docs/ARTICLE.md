@@ -207,5 +207,7 @@ distribution.
 **References.** Beha, A., Christensen, J. E. & Young, R. (2012), Journal of Petroleum Geology
 35(1); Edmundson, I. et al. (2021), AAPG Bulletin 105(12); Grant, N. T. (2020), Petroleum
 Geoscience; Hood, K. C. (2019, 2024), Rose & Associates; Lowry, D. C., Suttill, R. J. &
-Taylor, R. J. (2005), The APPEA Journal 45(1); Simm, R. (2016); Kjønsberg, H. et al. (2010),
-Geophysics 75(5). Full references on tab 8.3 of the tool.
+Taylor, R. J. (2005), The APPEA Journal 45(1); Simm, R. & Bacon, M. (2014), Seismic Amplitude:
+An Interpreter's Handbook, Cambridge; Simm, R. (2020), First Break 38(2); Kjønsberg, H. et al.
+(2010), Geophysics 75(2); Monigle, P. W. et al. (2025), AAPG Bulletin 109(5); Roden, R., Forrest,
+M. & Holeywell, R. (2012), The Leading Edge 31(9). Full references on tab 8.3 of the tool.
