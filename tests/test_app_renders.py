@@ -2122,7 +2122,14 @@ class TestTheCompetitionIsDrawnRealisationByRealisation:
             assert "The competition, realisation by realisation" in caption, label
             names = [str(t.name) for t in fig.data]
             assert any(n.startswith("shallowest active limit") for n in names), label
-            assert "P(contact deeper than this)" in names, label
+            assert any(n.startswith("P(contact deeper than this)") for n in names), label
+        # Given the DHI the geological curve is drawn dashed beside the updated one, so what
+        # the evidence moved is read in one panel (Lars, 17 Sep 2026); tab 4.1 carries one.
+        names_5 = [str(t.name) for t in figures["Figure 5.2.1a"][0].data]
+        assert "P(contact deeper than this), geological" in names_5
+        assert sum(n.startswith("P(contact deeper than this)") for n in names_5) == 2
+        names_4 = [str(t.name) for t in figures["Figure 4.1.1a"][0].data]
+        assert sum(n.startswith("P(contact deeper than this)") for n in names_4) == 1
 
     def test_the_window_walks_the_run_in_steps_of_fifty(self):
         at = _run()
