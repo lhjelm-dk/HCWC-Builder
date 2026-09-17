@@ -71,7 +71,7 @@ def test_no_two_sub_tabs_can_produce_the_same_figure_number():
     app now uses both:
 
     Both tabs with sub-tabs stamp each one with its own ``sub=``, so a label carries the page it is
-    on: `Figure 5.1.1` is the first exhibit on *The observation*, and `Figure 4.1.6` and `Figure 5.2.6`
+    on: `Figure 5.1.1a` is the first exhibit on *The observation*, and `Figure 4.1.2e` and `Figure 5.2.2e`
     are the same figure on the two bases. A flat sequence gave the reader `Figure 5.9` with no way
     to know which of four pages to turn to, and matching tab 4.0 to it means someone comparing the two
     bases reads one numbering scheme rather than two.

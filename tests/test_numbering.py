@@ -6,32 +6,83 @@ import pytest
 from hcwc.ui.numbering import Numbering
 
 
+def _under(n: Numbering, section: str) -> None:
+    """Draw a section heading's effect without Streamlit: the section the exhibits sit under."""
+    from hcwc.ui import theme
+    theme.CURRENT_SECTION[(n.tab, n.sub)] = section
+
+
 class TestSharedSequence:
-    def test_plots_and_tables_share_one_counter(self):
-        """Lars's rule: no `2.3 plot` AND `2.3 table`."""
+    """Exhibits are numbered by the section they sit under, with a letter (Lars, 17 Sep 2026):
+    ``Figure 4.1.3a`` is the first exhibit of section 4.1.3, and figures and tables share the
+    letters so the reading order survives. One number names one thing."""
+
+    def test_plots_and_tables_share_one_sequence_within_a_section(self):
+        """Lars's rule: no `2.3a plot` AND `2.3a table`."""
         n = Numbering(2)
-        assert n.ref("Figure") == "Figure 2.1"
-        assert n.ref("Table") == "Table 2.2"
-        assert n.ref("Figure") == "Figure 2.3"
+        _under(n, "3")
+        assert n.ref("Figure") == "Figure 2.3a"
+        assert n.ref("Table") == "Table 2.3b"
+        assert n.ref("Figure") == "Figure 2.3c"
+
+    def test_the_letters_restart_at_each_section(self):
+        n = Numbering(4)
+        _under(n, "1")
+        assert n.ref("Figure") == "Figure 4.1a"
+        _under(n, "2")
+        assert n.ref("Figure") == "Figure 4.2a"
+        assert n.ref("Table") == "Table 4.2b"
 
     def test_numbers_are_never_reused_within_a_tab(self):
         n = Numbering(3)
+        _under(n, "1")
         seen = [n.ref("Figure" if i % 2 else "Table").split()[-1] for i in range(12)]
         assert len(set(seen)) == 12
 
     def test_the_tab_number_prefixes_everything(self):
         n = Numbering(4)
-        assert all(lab.split()[-1].startswith("4.") for lab in
+        _under(n, "2")
+        assert all(lab.split()[-1].startswith("4.2") for lab in
                    (n.ref("Table"), n.ref("Figure"), n.ref("Table")))
+
+    def test_a_sub_tab_carries_its_page(self):
+        n = Numbering(5, sub=2)
+        _under(n, "3")
+        assert n.ref("Figure") == "Figure 5.2.3a"
 
     def test_separate_tabs_are_independent(self):
         a, b = Numbering(2), Numbering(5)
-        assert a.ref("Figure") == "Figure 2.1"
-        assert b.ref("Figure") == "Figure 5.1"
+        _under(a, "1"); _under(b, "1")
+        assert a.ref("Figure") == "Figure 2.1a"
+        assert b.ref("Figure") == "Figure 5.1a"
 
     def test_a_fresh_instance_restarts(self):
         """One per rerun is correct: the numbers describe the page as it is drawn."""
-        assert Numbering(3).ref("Figure") == Numbering(3).ref("Figure") == "Figure 3.1"
+        a = Numbering(3); _under(a, "1"); first = a.ref("Figure")
+        b = Numbering(3); _under(b, "1")
+        assert first == b.ref("Figure") == "Figure 3.1a"
+
+    def test_before_any_heading_the_section_is_zero(self):
+        """An exhibit above the first heading is numbered under section 0, visibly, rather than
+        stealing section 1's letters."""
+        n = Numbering(6)
+        assert n.ref("Table") == "Table 6.0a"
+
+    def test_upcoming_peeks_without_taking(self):
+        n = Numbering(4, sub=1)
+        _under(n, "2")
+        n.ref("Figure")
+        assert n.upcoming("Table", 1) == "Table 4.1.2b"
+        assert n.upcoming("Figure", 2) == "Figure 4.1.2c"
+        assert n.ref("Table") == "Table 4.1.2b"
+
+    def test_the_report_orders_letters_and_optionals(self):
+        from hcwc.ui.numbering import figure_order
+        labels = ["Figure 4.1.10a", "Figure 4.1.9a", "Table 4.1.3b", "Figure 4.1.3a",
+                  "Figure 4.1.3b.1", "Figure 4.1.3c"]
+        assert sorted(labels, key=figure_order) == [
+            "Figure 4.1.3a", "Table 4.1.3b", "Figure 4.1.3b.1", "Figure 4.1.3c",
+            "Figure 4.1.9a", "Figure 4.1.10a"]
 
 
 class TestThemeMapping:
@@ -75,7 +126,7 @@ class TestThemeMapping:
 
 
 class TestOptionalNumbering:
-    """Three-level numbers for figures that only appear sometimes.
+    """Optional exhibits hang off the last ordinary one, so nothing downstream moves.
 
     Lars, 27 Aug 2026, asking for consistent numbering when some figures are conditional. The
     problem is real and not cosmetic: a figure that appears only when the DHI is on, or only when
@@ -86,37 +137,39 @@ class TestOptionalNumbering:
 
     def test_an_optional_figure_hangs_off_the_last_ordinary_one(self):
         n = Numbering(3)
-        assert n.ref("Figure") == "Figure 3.1"
-        assert n.optional("Figure") == "Figure 3.1.1"
-        assert n.optional("Figure") == "Figure 3.1.2"
+        _under(n, "1")
+        assert n.ref("Figure") == "Figure 3.1a"
+        assert n.optional("Figure") == "Figure 3.1a.1"
+        assert n.optional("Figure") == "Figure 3.1a.2"
 
     def test_optional_figures_do_not_advance_the_main_sequence(self):
         """The whole point: what comes after is unmoved by whether the optional one appeared."""
         with_optional = Numbering(3)
+        _under(with_optional, "1")
         with_optional.ref("Figure")
         with_optional.optional("Figure")
         with_optional.optional("Figure")
 
         without = Numbering(3)
+        _under(without, "1")
         without.ref("Figure")
 
-        assert with_optional.ref("Table") == without.ref("Table") == "Table 3.2"
+        assert with_optional.ref("Table") == without.ref("Table") == "Table 3.1b"
 
     def test_the_optional_counter_resets_at_each_ordinary_number(self):
-        """`4.5.1` means *the first optional after 4.5*, so the suffix has to restart. Without the
-        reset the second group would continue 4.6.3, which reads as a gap."""
         n = Numbering(4)
+        _under(n, "5")
         n.ref("Figure")
-        assert n.optional("Figure") == "Figure 4.1.1"
+        assert n.optional("Figure") == "Figure 4.5a.1"
         n.ref("Figure")
-        assert n.optional("Figure") == "Figure 4.2.1"
+        assert n.optional("Figure") == "Figure 4.5b.1"
 
     def test_optional_shares_the_counter_with_tables(self):
-        """The one-sequence rule still holds one level down: no `3.1.1` figure *and* `3.1.1` table."""
         n = Numbering(3)
+        _under(n, "1")
         n.ref("Figure")
-        assert n.optional("Figure") == "Figure 3.1.1"
-        assert n.optional("Table") == "Table 3.1.2"
+        assert n.optional("Figure") == "Figure 3.1a.1"
+        assert n.optional("Table") == "Table 3.1a.2"
 
 
 class TestNoCircledNumeralsSurvive:
@@ -160,8 +213,9 @@ class TestNoCircledNumeralsSurvive:
                 '"E · Correlations"]') in text
 
     def test_the_figures_on_tab_three_ignore_the_letters(self):
-        """One sequence for the whole tab, counting straight through A, B, C, D. `Figure 3.4` is the
-        fourth exhibit on tab 3.0 wherever it sits, which is what makes a reference findable."""
+        """The sub-tab letters are not sections: an exhibit is numbered by the numbered section
+        it sits under wherever the sub-tab is, which is what makes a reference findable."""
         n = Numbering(3)
+        _under(n, "2")
         assert [n.ref("Figure") for _ in range(4)] == [
-            "Figure 3.1", "Figure 3.2", "Figure 3.3", "Figure 3.4"]
+            "Figure 3.2a", "Figure 3.2b", "Figure 3.2c", "Figure 3.2d"]
