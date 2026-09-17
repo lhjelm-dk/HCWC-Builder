@@ -550,9 +550,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # and the export report carries them as before.
     # The label names the exhibits inside, so the jump in numbering a reader sees from the last
     # open figure to the next section is accounted for on the fold itself.
-    with st.expander(f"Further readings of the controls, folded: by risk element (Table "
+    with st.expander(f"Further readings of the controls: by risk element (Table "
                      f"{n.stem}.{n._count + 1}) and all limits on one axis (Figure "
-                     f"{n.stem}.{n._count + 2})", expanded=False):
+                     f"{n.stem}.{n._count + 2})", expanded=True):
         # ------------------------------------------------------------------ group minima
         theme.heading(tab, sub=n.sub, text="2c · By risk element")
         rows = []
@@ -640,6 +640,175 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                     "rather than observed, and the updated result lane is an importance resample, so "
                     "a favoured realisation appears more than once."
                   if given_dhi else ""))
+
+    # ------------------------------------------------------------------ 2e · strength and c
+    # Lars, 17 Sep 2026: what other readings of the two DHI judgements would give. The two act
+    # differently and the exhibits keep that visible: strength scales the chance and never
+    # reshapes the contact, c reshapes the contact and does not touch the chance's first
+    # factor; the headline is their product, so it is the one quantity that gets a map. Every
+    # scenario is a reweight of the same realisations or a scalar, nothing is re-simulated.
+    if (given_dhi and posterior.observation is not None and posterior.observation.seen
+            and posterior.detection is not None):
+        import dataclasses
+
+        from hcwc.core import dhi as dhi_core
+        from hcwc.core import well as well_core
+        from hcwc.ui.dhi_tab import well_control
+
+        theme.heading(tab, sub=n.sub, text="2e · What other strength and c readings would give")
+        st.markdown(
+            "The evidence strength scales the chance and never reshapes the contact; the contact "
+            "attribution c reshapes the contact and does not enter the chance's first factor. "
+            "The headline chance is their product. Each scenario below is the same realisations "
+            "reweighted, or the same curve rescaled. Method: see 8.1.6."
+        )
+        _obs = posterior.observation
+        _det = posterior.detection
+        _c_now = float(_obs.p_valid)
+        _r_now = float(st.session_state.get("dhi_r_applied", 1.0))
+        _p_g_now = dhi_core.p_g_given_strength(p_geological, _r_now)
+        _well = well_control()
+        _well_w = well_core.likelihood(result, _well) if _well is not None else None
+
+        def _weights_at(c: float) -> np.ndarray:
+            w = dhi_core.likelihood(result, _det, dataclasses.replace(
+                _obs, p_valid=float(np.clip(c, 0.01, 0.99))))
+            return well_core.combine(w, _well_w) if _well_w is not None else w
+
+        def _f_at(w: np.ndarray, columns: np.ndarray) -> np.ndarray:
+            return np.asarray(engine.exceedance(result.column_m, columns, w), dtype=float)
+
+        _c_ladder = sorted({0.05, 0.2, 0.36, 0.5, 0.7, 0.9, round(_c_now, 2)})
+        _r_ladder = sorted({0.1, 1.0 / 3.0, 1.0, 3.0, 10.0, _r_now})
+        _depth = apex_med + grid
+
+        # (a) the contact at other c ------------------------------------------------------------
+        fig_c = go.Figure()
+        fig_c.add_scatter(x=np.asarray(result.exceedance(grid), dtype=float), y=_depth,
+                          mode="lines", name="geological, no evidence",
+                          line=dict(color="#9aa3ad", width=2))
+        for _c in _c_ladder:
+            _w = _weights_at(_c)
+            _fc = _f_at(_w, grid)
+            _is_now = abs(_c - _c_now) < 0.005
+            fig_c.add_scatter(x=_fc, y=_depth, mode="lines",
+                              name=f"c = {_c:.2f}" + (" (current)" if _is_now else ""),
+                              line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI] if _is_now
+                                        else "#C44E52",
+                                        width=3.2 if _is_now else 1.4,
+                                        dash="solid" if _is_now else "dash"),
+                              opacity=1.0 if _is_now else 0.7)
+            # Labelled on the shallow flank, where the curves are apart; at 0.5 they meet at
+            # the pick and the labels would sit on one another.
+            _z85 = float(np.interp(0.85, _fc[::-1], _depth[::-1]))
+            fig_c.add_annotation(x=0.85, y=_z85, text=f"c {_c:.2f}", showarrow=False,
+                                 xanchor="left", xshift=6, font=dict(size=10, color="#C44E52"),
+                                 bgcolor="rgba(255,255,255,0.7)")
+        if h_min > 0:
+            fig_c.add_hline(y=apex_med + h_min, line=dict(color="#333", dash="dash", width=1),
+                            annotation_text="assessment minimum", annotation_position="bottom right")
+        fig_c.update_layout(xaxis=dict(title="F(h) = P(column ≥ h | G, evidence)", range=[0, 1.02]),
+                            yaxis=dict(title="Contact at least this deep (m TVDSS)",
+                                       autorange="reversed"),
+                            height=520, margin=dict(t=20),
+                            legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
+        n.plot(fig_c, f"The contact at other contact attributions. Solid is the current c = "
+                      f"{_c_now:.2f}; dashed curves are the same realisations reweighted at other "
+                      f"values, each labelled where it crosses 0.85; grey is the geology. As c "
+                      f"rises the pick takes over; as it falls the geology returns. Strength does "
+                      f"not appear here because it does not move these curves. Method: see 8.1.6.")
+
+        # (b) the chance at other strengths ------------------------------------------------------
+        _f_now = _f_at(posterior.weights, grid)
+        fig_s = go.Figure()
+        for _r in _r_ladder:
+            _pg = dhi_core.p_g_given_strength(p_geological, _r)
+            _is_now = abs(_r - _r_now) < 1e-9
+            _band = dhi_core.strength_bands(_r)[0]
+            fig_s.add_scatter(x=_pg * _f_now, y=_depth, mode="lines",
+                              name=f"R = {_r:.2g}, P(G | s) = {_pg:.2f}, {_band}"
+                                   + (" (current)" if _is_now else ""),
+                              line=dict(color="#C44E52" if _is_now else "#7d8794",
+                                        width=3.2 if _is_now else 1.4,
+                                        dash="solid" if _is_now else "dash"))
+            fig_s.add_annotation(x=_pg, y=float(_depth[0]), text=f"R {_r:.2g}", showarrow=False,
+                                 yanchor="bottom", yshift=4, font=dict(size=10, color="#7d8794"))
+        if h_min > 0:
+            fig_s.add_hline(y=apex_med + h_min, line=dict(color="#333", dash="dash", width=1),
+                            annotation_text="assessment minimum", annotation_position="bottom right")
+        fig_s.update_layout(xaxis=dict(title="prospect chance = P(G | s) × F(h), at the current c",
+                                       range=[0, 1.02]),
+                            yaxis=dict(title="Contact at least this deep (m TVDSS)",
+                                       autorange="reversed"),
+                            height=520, margin=dict(t=30),
+                            legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
+        n.plot(fig_s, f"The chance against depth at other evidence strengths, at the current c. "
+                      f"Solid is the current R = {_r_now:.2f}; each dashed curve is the same "
+                      f"shape scaled by P(G | s), labelled at the apex with its R. Strength moves "
+                      f"the whole curve and never its shape; the single-channel ceiling is 10 : 1 "
+                      f"either way. Method: see 8.1.6.")
+
+        # (c) the headline over both ------------------------------------------------------------
+        _cs = np.linspace(0.05, 0.95, 19)
+        _rs = np.logspace(-1, 1, 25)
+        _f_min = np.array([float(_f_at(_weights_at(c), np.array([h_min]))[0]) for c in _cs])
+        _pgs = np.array([dhi_core.p_g_given_strength(p_geological, r) for r in _rs])
+        _zmap = np.outer(_f_min, _pgs)   # rows c, columns R
+        fig_m = go.Figure()
+        fig_m.add_contour(x=np.log10(_rs), y=_cs, z=_zmap, colorscale="Blues",
+                          contours=dict(showlabels=True, labelfont=dict(size=10),
+                                        labelformat=".0%"),
+                          colorbar=dict(title="prospect chance at h_min", tickformat=".0%",
+                                        x=1.02),
+                          hovertemplate="R = 10^%{x:.2f}<br>c = %{y:.2f}<br>POS %{z:.1%}"
+                                        "<extra></extra>")
+        fig_m.add_scatter(x=[np.log10(max(_r_now, 1e-6))], y=[_c_now], mode="markers",
+                          name="current setting",
+                          marker=dict(color="#C44E52", size=12, symbol="x",
+                                      line=dict(width=2)), showlegend=False)
+        fig_m.add_annotation(x=np.log10(max(_r_now, 1e-6)), y=_c_now,
+                             text=f"current: {_p_g_now * float(posterior.pos()):.1%}",
+                             showarrow=False, xanchor="left", xshift=10, yanchor="bottom",
+                             bgcolor="rgba(255,255,255,0.85)", font=dict(size=11, color="#333"))
+        _ticks = [0.1, 1.0 / 3.0, 1.0, 3.0, 10.0]
+        fig_m.update_layout(
+            xaxis=dict(title="evidence strength, as the likelihood ratio R (log scale)",
+                       tickmode="array", tickvals=[np.log10(t) for t in _ticks],
+                       ticktext=["1/10", "1/3", "1", "3", "10"]),
+            yaxis=dict(title="contact attribution c"), height=480, margin=dict(t=20))
+        n.plot(fig_m, f"The headline chance at the assessment minimum over both judgements: "
+                      f"P(G | s) across, from R = 1/10 to 10, and c down, from 0.05 to 0.95. "
+                      f"The cross is the current setting. Contours run diagonally where both "
+                      f"inputs bite; horizontal contours mean c is not moving the chance, which "
+                      f"is the case at a minimum every realisation clears. Method: see 8.1.6.")
+
+        # (d) what c alone does to the contact ---------------------------------------------------
+        from plotly.subplots import make_subplots
+
+        _keep = result.above_minimum
+        _p50s, _spreads, _esses = [], [], []
+        for _c in _cs:
+            _w = _weights_at(_c)
+            _wk = _w[_keep]
+            _pcts = engine.weighted_percentiles(result.contact_m[_keep], _wk,
+                                                np.array([90.0, 50.0, 10.0]))
+            _p50s.append(float(_pcts[1]))
+            _spreads.append(float(_pcts[2] - _pcts[0]))
+            _esses.append(float(_w.sum() ** 2 / np.sum(_w ** 2)))
+        fig_d = make_subplots(rows=1, cols=3, subplot_titles=(
+            "contact P50 (m TVDSS)", "P90–P10 spread (m)", "effective sample size"))
+        for _col, _ys in enumerate(( _p50s, _spreads, _esses), start=1):
+            fig_d.add_scatter(x=_cs, y=_ys, mode="lines", line=dict(color="#C44E52", width=2.5),
+                              showlegend=False, row=1, col=_col)
+            fig_d.add_vline(x=_c_now, line=dict(color="#333", dash="dash", width=1),
+                            row=1, col=_col)
+        fig_d.update_xaxes(title_text="c")
+        fig_d.update_yaxes(autorange="reversed", row=1, col=1)
+        fig_d.update_layout(height=320, margin=dict(t=40, b=40), showlegend=False)
+        n.plot(fig_d, f"What c alone does to the contact: its P50, its P90–P10 spread (success "
+                      f"cases) and the effective sample size, against c, with the current "
+                      f"{_c_now:.2f} marked. None of the three depends on the evidence strength. "
+                      f"Method: see 8.1.6.")
 
     # ------------------------------------------------------------------ 3 · the chance
     # The third question. Every point on this curve is a prospect chance: the element chance
