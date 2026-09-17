@@ -7,7 +7,7 @@ carries the sources.*
 
 ## Model overview
 
-![The workflow: geological limits compete, the contact and its controller are recorded, the chance is read against depth; the DHI's two channels update P(G) and HCWC | G](figures/fig0_workflow.png)
+![The model as two tracks. The chance: the element chances give P(G), which the DHI's evidence strength updates. The contact given success: the limits compete, the shallowest active one sets the contact and is recorded, and the DHI's geometry reweights the same realisations. The two tracks join in the chance against depth, read at the assessment minimum and at the well; the benchmarks are compared beside the geological contact and never joined.](figures/fig0_workflow.svg)
 
 A hydrocarbon column is stopped by whichever mechanism acts first: charge runs out, the closure
 spills, a fault juxtaposes the reservoir against a carrier, the top or base seal leaks at a

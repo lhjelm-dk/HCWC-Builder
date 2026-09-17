@@ -274,6 +274,21 @@ class Numbering:
         render_caption(label, caption, basis)
         return label
 
+    def image(self, path, caption: str, *, basis: str | None = INHERIT) -> str:
+        """Render an image file with a numbered caption beneath it. Returns the label.
+
+        For a figure that is drawn outside Plotly, such as the workflow diagram of 8.1.1, an
+        SVG laid out by ``scripts/workflow_figure.py``. Registered like any figure, with the
+        path as the payload, so the report carries it in number order.
+        """
+        label = self._label("Figure")
+        st.image(str(path), width="stretch")
+        basis = self.basis if basis == INHERIT else basis
+        stored = caption if not basis else f"{theme_tag(basis)} &nbsp; {caption}"
+        st.session_state.setdefault(FIGURES_KEY, {})[label] = (path, stored)
+        render_caption(label, caption, basis)
+        return label
+
     def markdown_table(self, body: str, caption: str) -> str:
         """Number a table written as markdown, for the cases where prose formatting wins.
 
