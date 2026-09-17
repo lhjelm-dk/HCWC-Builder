@@ -266,7 +266,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.8.
     burial = cb.number_input("Burial depth (m)", 200.0, 6000.0, 2050.0, 50.0,
                              help="Overburden thickness to the reservoir. Needed because the "
                                   "corrected fit finds burial depth to be a much stronger control "
-                                  "than the published analysis reported; see Table 6.4.")
+                                  "than the published analysis reported; see Table 6.3a.")
     prior = _empirical_prior(closure, burial)
     # **On by arrival.** Lars, 4 Sep 2026. The empirical prior on its own is a statement about the
     # NCS record; the comparison is the reason anyone is on this tab, and a toggle defaulting off

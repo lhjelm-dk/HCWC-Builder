@@ -25,6 +25,7 @@ a plain counter is sufficient. Each tab makes its own::
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -88,14 +89,33 @@ def theme_tag(basis: str) -> str:
     return theme.basis_tag(basis)
 
 
-def figure_order(label: str) -> tuple:
-    """Sort key for a figure label, so ``4.10`` follows ``4.9`` rather than ``4.1``.
+def _letter(k: int) -> str:
+    """``1 -> a`` … ``26 -> z``, then ``aa``, ``ab``: the exhibit's place inside its section."""
+    out = ""
+    while k > 0:
+        k, rem = divmod(k - 1, 26)
+        out = chr(97 + rem) + out
+    return out
 
-    Lexical order would put `Figure 4.10` between `Figure 4.1` and `Figure 4.2`, which reads as a
-    mis-numbered document rather than as a sorting artefact.
+
+def figure_order(label: str) -> tuple:
+    """Sort key for an exhibit label, so ``4.1.10a`` follows ``4.1.9a`` and ``4.1.3b`` follows
+    ``4.1.3a``, with an optional ``4.1.3b.1`` between ``4.1.3b`` and ``4.1.3c``.
+
+    Lexical order would put `4.10` between `4.1` and `4.2`, which reads as a mis-numbered document
+    rather than as a sorting artefact.
     """
     digits = label.replace("Figure", "").replace("Table", "").strip()
-    return tuple(int(part) if part.isdigit() else 0 for part in digits.split("."))
+    key: list = []
+    for part in digits.split("."):
+        m = re.match(r"^(\d+)([a-z]*)$", part)
+        if m:
+            key.append(int(m.group(1)))
+            key.append(m.group(2))
+        else:
+            key.append(0)
+            key.append(part)
+    return tuple(key)
 
 
 def _plotly_config(label: str) -> dict:
@@ -146,21 +166,43 @@ class Numbering:
         if self.tab <= 2:
             st.session_state[FIGURES_KEY] = {}
             st.session_state[TABLES_KEY] = {}
+        from hcwc.ui import theme
+
+        theme.CURRENT_SECTION.pop((self.tab, self.sub), None)
 
     _optional: int = field(default=0, init=False)
+    #: The section the last exhibit was numbered under, and how many exhibits it has had.
+    _section: str = field(default="", init=False)
 
     @property
     def stem(self) -> str:
         """``5`` without sub-tabs, ``5.2`` with them — the part every label on this page shares."""
         return f"{self.tab}" if self.sub is None else f"{self.tab}.{self.sub}"
 
+    def _current_section(self) -> str:
+        from hcwc.ui import theme
+
+        return theme.CURRENT_SECTION.get((self.tab, self.sub), "0")
+
     def _label(self, kind: Kind) -> str:
+        """``Figure 4.1.3a``: the section the exhibit sits under, then its place inside it.
+
+        **Exhibits are numbered by section, with a letter** (Lars, 17 Sep 2026). Until then
+        exhibits ran in their own sequence beside the sections' -- section 4.1.3 held Figure
+        4.1.7 and "Figure 4.1.3" was somewhere else -- so one number named two things. Now
+        ``4.1.3`` names the section, ``4.1.3a`` its first exhibit, and figures and tables share
+        the letters so the order they are read in survives. The section is whatever
+        :func:`hcwc.ui.theme.heading` last drew on this tab and sub-tab.
+        """
+        section = self._current_section()
+        if section != self._section:
+            self._section, self._count = section, 0
         self._count += 1
         self._optional = 0
-        return f"{kind} {self.stem}.{self._count}"
+        return f"{kind} {self.stem}.{section}{_letter(self._count)}"
 
     def optional(self, kind: Kind) -> str:
-        """A number for a figure that only appears sometimes: ``4.5.1``, ``4.5.2``, …
+        """A number for an exhibit that only appears sometimes: ``4.1.3b.1``, ``4.1.3b.2``, …
 
         Lars, 27 Aug 2026, on wanting consistent numbering when some figures are conditional. The
         problem is real: a figure that appears only when the DHI is on, or only when a calculator
@@ -168,12 +210,23 @@ class Numbering:
         the same tab in different states then disagree about what "Figure 4.6" is, which is worse
         than having no numbers.
 
-        A third level fixes it. An optional figure hangs off the last ordinary one — the figure it
-        elaborates — so ``4.5.1`` is *the first optional figure after 4.5* and nothing downstream
-        moves when it disappears. The main sequence only ever counts figures that are always there.
+        An optional exhibit hangs off the last ordinary one, the exhibit it elaborates, so
+        ``4.1.3b.1`` is *the first optional exhibit after 4.1.3b* and nothing downstream moves
+        when it disappears. The letters only ever count exhibits that are always there.
         """
         self._optional += 1
-        return f"{kind} {self.stem}.{self._count}.{self._optional}"
+        return f"{kind} {self.stem}.{self._section or self._current_section()}" \
+               f"{_letter(self._count)}.{self._optional}"
+
+    def upcoming(self, kind: Kind, ahead: int = 1) -> str:
+        """The label ``ahead`` ordinary exhibits from now, without taking it.
+
+        For a fold's label that names the exhibits inside it, so the reader knows which numbers
+        the fold holds before opening it.
+        """
+        section = self._current_section()
+        count = self._count if section == self._section else 0
+        return f"{kind} {self.stem}.{section}{_letter(count + ahead)}"
 
     def ref(self, kind: Kind) -> str:
         """Take the next number without rendering anything.
