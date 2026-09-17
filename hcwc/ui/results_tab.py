@@ -976,43 +976,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                       f"well entry are the two depths the chance is quoted at. Method: see "
                       f"8.1.6.")
 
-        # (g) the well's chance at three entry depths --------------------------------------------
-        # How the two judgements trade off as the well goes deeper: the shallower the entry,
-        # the less c matters and the more the map is strength alone.
-        _z_lo = float(np.percentile(result.contact_m, 10))
-        _z_hi = float(np.percentile(result.contact_m, 75))
-        _z_ladder = sorted({round(_z_lo), round(_z_well_now), round(_z_hi)})
-        fig_g = make_subplots(rows=1, cols=len(_z_ladder), shared_yaxes=True,
-                              subplot_titles=[f"entry at {z:,.0f} m" for z in _z_ladder],
-                              horizontal_spacing=0.06)
-        for _k, _z in enumerate(_z_ladder, start=1):
-            _fr = np.array([float(np.sum(w[result.contact_m >= _z]) / np.sum(w))
-                            for w in _w_by_c])
-            fig_g.add_contour(x=np.log10(_rs), y=_cs, z=np.outer(_fr, _pgs), colorscale="Blues",
-                              zmin=0.0, zmax=1.0, showscale=(_k == len(_z_ladder)),
-                              contours=dict(showlabels=True, labelfont=dict(size=9),
-                                            labelformat=".0%", start=0.1, end=0.9, size=0.1),
-                              colorbar=dict(title="P(well)", tickformat=".0%", x=1.02),
-                              hovertemplate="R = 10^%{x:.2f}<br>c = %{y:.2f}<br>%{z:.1%}"
-                                            "<extra></extra>",
-                              row=1, col=_k)
-            fig_g.add_scatter(x=[np.log10(max(_r_now, 1e-6))], y=[_c_now], mode="markers",
-                              marker=dict(color="#C44E52", size=10, symbol="x",
-                                          line=dict(width=2)),
-                              showlegend=False, hoverinfo="skip", row=1, col=_k)
-            fig_g.update_xaxes(tickmode="array", tickvals=[np.log10(t) for t in _ticks],
-                               ticktext=["1/10", "1/3", "1", "3", "10"], row=1, col=_k)
-        fig_g.update_xaxes(title_text="R (log scale)", row=1, col=2 if len(_z_ladder) > 1 else 1)
-        fig_g.update_yaxes(title_text="contact attribution c", row=1, col=1)
-        fig_g.update_layout(height=420, margin=dict(t=40, b=40))
-        n.plot(fig_g, f"P(well) over both judgements at three entry depths: the geological P10 "
-                      f"contact, the entry depth on section 4, and the geological P75 contact. "
-                      f"Shallow entries are all strength, since almost every contact lies below "
-                      f"them whatever c says; the deeper the entry, the more the contours tilt "
-                      f"and the more c decides. The cross is the current setting. Method: see "
-                      f"8.1.6.")
-
-        # (h) the update's net effect and leverage -----------------------------------------------
+        # (g) the update's net effect and leverage -----------------------------------------------
         # The geological reference for the quantity on the map: P(G) times the geological
         # reading, one number over the whole plane. The difference says where the evidence
         # helps and hurts; the ratio says by what factor.
