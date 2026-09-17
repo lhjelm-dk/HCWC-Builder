@@ -736,7 +736,8 @@ def render(n: Numbering | None = None) -> None:
         "Anchors for the slider. These are judgements, not measurements, and the spacing "
         "matters more than the exact value.\n\n"
         "- 0.9 and up: a flat, conformable event that cuts dipping structure, with a clear "
-        "fluid contact reflection.\n"
+        "fluid contact reflection. 0.95 is the calibrated ceiling on the contact weight (Hood "
+        "2019; Monigle et al. 2025).\n"
         "- 0.6 to 0.8: conformable and plausibly a contact, with something missing: no FCR, or "
         "terminations that are not sharp.\n"
         "- 0.3 to 0.5: the event is there and flat, and so is a plausible lithological "
@@ -798,6 +799,15 @@ def render(n: Numbering | None = None) -> None:
         figc.add_annotation(x=_lr_hi, y=y1 - 0.03, text=label, xanchor="right",
                             showarrow=False, font=dict(size=9.5, color=_MUTED_INK),
                             row=1, col=2)
+
+    # the calibrated ceiling on the contact weight: Hood's high-COV case (2019) and Monigle et
+    # al.'s (2025) empirical rule both stop at 0.95, on the same company's drilled database
+    for col, x0, x1 in ((1, -0.5, 2.9), (2, _lr_lo, _lr_hi)):
+        figc.add_shape(type="line", x0=x0, x1=x1, y0=0.95, y1=0.95, row=1, col=col,
+                       line=dict(color="#2F6B3F", width=1.2, dash="dashdot"))
+    figc.add_annotation(x=_lr_lo + 0.02, y=0.95, yshift=-9, xanchor="left",
+                        text="0.95: calibrated ceiling (Hood 2019; Monigle et al. 2025)",
+                        showarrow=False, font=dict(size=9.5, color="#2F6B3F"), row=1, col=2)
 
     # -- right: the plane. Simm's bands on R. --------------------------------------------------
     for edge in (1 / 3, 1 / 1.5, 1.5, 3):
@@ -869,18 +879,26 @@ def render(n: Numbering | None = None) -> None:
            + ", ".join(lv.lower() for lv in picked_levels.values())
            + f"); the dashed line is their geometric mean, c = {suggested_c:.2f}. Right: R from §2 on Simm's bands against c on the "
            f"slider's anchors, this prospect at R = {r_strength:.2f}, c = {contact_given_hc:.2f}. "
-           f"The shaded diagonal is the pairing body and contact attributes usually make, "
-           f"since both improve with impedance contrast; the dotted corners, outside it beyond "
-           f"R = 1.5 either way, are the pairings worth a sentence. The colour bands are the "
-           f"slider's anchors, in both panels. Nothing in the arithmetic joins the two axes: R "
-           f"does not propose c, and the band is a judgement, not a calibration. "
-           f"Method: see 8.1.7.")
+           f"The shaded diagonal is the pairing the two judgements usually make: conformance "
+           f"to structure and a fluid-contact reflection are also the characteristics most "
+           f"predictive of finding hydrocarbons (Roden et al. 2012; Nixon et al. 2018), so an "
+           f"event that earns a high c usually earns a higher strength reading in §2 too. The "
+           f"dotted corners, outside the band beyond R = 1.5 either way, are the pairings worth "
+           f"a sentence. The colour bands are the slider's anchors, in both panels; the "
+           f"dash-dot line is the calibrated ceiling on the contact weight. The split of "
+           f"Monigle et al.'s (2025) five attributes into body and contact is this tool's "
+           f"reading. Nothing in the arithmetic joins the two axes: R does not propose c, and "
+           f"the band is a judgement, not a calibration. Method: see 8.1.7.")
     if r_strength >= 1.5 and contact_given_hc < float(_band(_lr, -0.15)):
         st.caption(
             f"Bright body, unconvincing event: the strength argues for hydrocarbons "
             f"(R = {r_strength:.2f}) while the event is graded at c = {contact_given_hc:.2f}. "
             f"A real and common pairing, an anomaly believed in and bounded by something that "
-            f"is not. The chance moves; the contact stays near where the geology put it."
+            f"is not. The chance moves; the contact stays near where the geology put it. Simm "
+            f"(2020) grades an anomaly without characteristics consistent with the trap and "
+            f"indicative of a fluid contact as a low-grade DHI that generally warrants no "
+            f"uplift, so an R above 1.5 here rests on the strength reading alone and is worth "
+            f"stating as such."
         )
     elif r_strength <= 1 / 1.5 and contact_given_hc > float(_band(_lr, 0.15)):
         st.caption(
