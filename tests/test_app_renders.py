@@ -1903,12 +1903,16 @@ class TestThePaperAgreesWithTheAppItDescribes:
     """
 
     ARTICLE = "docs/ARTICLE.md"
-    #: The short article carries one combined figure (16 Sep 2026); the long manuscript,
-    #: kept as docs/ARTICLE_LONG_2026-09.md, carries the five it was written with.
-    FIGURES = ("fig6_paper.png",)
+    #: Since 17 Sep 2026 the figures are the app's own, exported by scripts/post_images.py,
+    #: plus the workflow figure (scripts/workflow_figure.py); the long manuscript, kept as
+    #: docs/ARTICLE_LONG_2026-09.md, adds the chance against depth and keeps the concept
+    #: sketch fig5 from scripts/paper_figures.py. The matplotlib set is in docs/superseded/.
+    FIGURES = ("fig0_workflow.png", "fig1_competing_limits.png",
+               "fig2_controlling_mechanism.png", "fig4_dhi_update.png",
+               "fig6_chance_before_after.png")
     LONG_FIGURES = ("fig1_competing_limits.png", "fig2_controlling_mechanism.png",
-                    "fig3_survival_curve.png", "fig4_dhi_update.png",
-                    "fig5_truncate_vs_terminate.png")
+                    "fig3_chance_against_depth.png", "fig4_dhi_update.png",
+                    "fig5_truncate_vs_terminate.png", "fig6_chance_before_after.png")
 
     @staticmethod
     def _root():
@@ -1925,12 +1929,12 @@ class TestThePaperAgreesWithTheAppItDescribes:
         for name in self.FIGURES:
             assert f"figures/{name}" in text, f"the paper no longer references {name}"
             assert (self._root() / "docs" / "figures" / name).exists(), \
-                f"docs/figures/{name} is missing -- run scripts/paper_figures.py"
+                f"docs/figures/{name} is missing -- run scripts/post_images.py"
         long_text = (self._root() / "docs" / "ARTICLE_LONG_2026-09.md").read_text(encoding="utf-8")
         for name in self.LONG_FIGURES:
             assert f"figures/{name}" in long_text, f"the manuscript no longer references {name}"
             assert (self._root() / "docs" / "figures" / name).exists(), \
-                f"docs/figures/{name} is missing -- run scripts/paper_figures.py"
+                f"docs/figures/{name} is missing -- run scripts/post_images.py"
 
     def test_the_worked_prospect_is_reproducible(self):
         """The prospect definition ships beside the figures, so the numbers can be re-derived."""
@@ -1956,16 +1960,15 @@ class TestThePaperAgreesWithTheAppItDescribes:
             assert wrong not in text, f"the conditional term is being quoted as the POS: {wrong!r}"
 
     def test_the_figures_script_still_runs_against_the_current_engine(self):
-        """Import-level check only -- generating five figures is too slow for the suite, but a
-        renamed core function would break the script silently until someone regenerated."""
+        """Import-level check only -- running the app is too slow for the suite, but a renamed
+        core function would break the script silently until someone regenerated."""
         import importlib.util
         import pathlib
         path = pathlib.Path(self._root()) / "scripts" / "paper_figures.py"
         spec = importlib.util.spec_from_file_location("paper_figures", path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        for name in ("figure_1_competing_limits", "figure_5_truncate_vs_terminate",
-                     "from_the_app", "HMIN"):
+        for name in ("figure_5_truncate_vs_terminate", "from_the_app", "HMIN"):
             assert hasattr(module, name), f"scripts/paper_figures.py lost {name}"
         assert module.HMIN == 120.0
 

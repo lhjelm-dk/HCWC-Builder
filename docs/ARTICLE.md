@@ -28,12 +28,28 @@ Each is a limit with two properties: a probability of being present on this pros
 distribution of the depth or column height at which it acts. Let those compete, and the contact
 distribution follows.
 
+![The model as two rows: geological, and given the DHI; two columns: the chance, and the contact given success](figures/fig0_workflow.png)
+
+*Figure 1. The model. Geological row: the element chances give P(G); the limits compete and the
+shallowest active one sets the contact. Given the DHI: the evidence strength updates P(G), the
+contact geometry reweights the same realisations, and each enters once. The rows join in the
+chance against depth, read at the assessment minimum and at the well; the empirical benchmarks
+are compared with both contact distributions and never joined.*
+
 ## Competing limits
 
 In every Monte Carlo realisation each limit is drawn twice, once for presence and once for the
 depth at which it acts, and the shallowest active limit sets the contact. The mechanism that set
 it is recorded. Ten thousand realisations give a contact distribution, a controlling share for
-each mechanism, and both as functions of depth (figure, panels a and b).
+each mechanism, and both as functions of depth (Figures 2 and 3).
+
+![Fifty realisations of the competition, and the contact distribution they belong to](figures/fig1_competing_limits.png)
+
+*Figure 2. The competition, realisation by realisation, on the worked prospect at 10 000
+realisations. Left: every active limit's sampled depth in fifty consecutive realisations, the
+shallowest ringed in the colour of the limit that set it. Right: the whole distribution as a
+histogram, its exceedance curve on the top axis with P90, P50 and P10, the assessment minimum
+of 120 m, and the fifty shown marked at their depths.*
 
 This is not new. Beha, Christensen and Young (2012) enumerate the combinations of trapping
 elements sealing or failing and derive the leak point that follows; Hood (2019, 2024) frames
@@ -83,7 +99,13 @@ charge, the contact comes out at 2 191 / 2 246 / 2 322 m (P90 / P50 / P10), read
 realisations that reach the assessment minimum. Top-seal capillary
 capacity sets it in 32 % of realisations, fault leakage in 23 %, seal continuity in 16 %, fault
 geometry in 12 %, charge in 9 %, spill in 3 %. The share is not constant down the structure:
-shallow contacts are seal-controlled, deep ones pass to fault geometry and spill (panel b).
+shallow contacts are seal-controlled, deep ones pass to fault geometry and spill (Figure 3).
+
+![The controlling mechanism by depth](figures/fig2_controlling_mechanism.png)
+
+*Figure 3. The controlling mechanism at each depth. Bars are shares of all realisations, so the
+bin height carries the contact distribution and each limit's bars sum across depth to its
+overall share. Hue is the risk element, lightness the limit within it.*
 
 That table is the sensitivity analysis. Two or three limits set the answer and the rest do not
 move it, so the elicitation effort goes where it counts, and a reviewer can disagree with a
@@ -99,7 +121,7 @@ $$\mathrm{POS} = P(G) \times F(h_{\min})$$
 
 where $P(G)$ is the product of the element chances. A chance quoted without its threshold means
 nothing; read at every depth, the same product is the chance against depth, and read at a
-well's entry depth it is the chance that well finds hydrocarbons (panel d). Chance and volume
+well's entry depth it is the chance that well finds hydrocarbons (Figure 5). Chance and volume
 come off one curve, so they cannot refer to different thresholds.
 
 A trapping element that fails below the crest, a fault window at 2 300 m or a seal that holds
@@ -126,10 +148,24 @@ ruled out by one interpretation.
 
 On the worked prospect a moderate anomaly with a 10 m pick at 2 250 m and $c = 0.36$ takes the
 prospect chance from 40 % to 64 % and narrows the P90–P10 spread of the contact from 130 m to
-99 m (panels c and d). The chance at a well entering at 2 230 m goes from 23 % to 50 %. The
+99 m (Figures 4 and 5). The chance at a well entering at 2 230 m goes from 23 % to 50 %. The
 updated distribution rests on an effective 4 871 of the 10 000 realisations, which is the honest
 measure of how far the seismic displaced the geology: a low value does not mean the
 interpretation is wrong, it means the answer depends on it.
+
+![The contact distribution before and after the pick](figures/fig4_dhi_update.png)
+
+*Figure 4. Where the contact is, before and after the pick: a 10 m pick at 2 250 m with contact
+attribution c = 0.36. Both histograms are over every realisation and conditional on the elements
+having worked; the lines are the percentiles over the realisations above the assessment minimum.
+The evidence strength does not enter this figure: it updates the chance of hydrocarbons, not
+where the contact is given that there are.*
+
+![The chance against depth, geological and updated](figures/fig6_chance_before_after.png)
+
+*Figure 5. The chance against depth: P(G) × F(h) geological, P(G | strength) × F(h | G, pick)
+updated. The strength scales the whole curve; the pick reshapes it, raising the chance near and
+above the picked contact and lowering it below. The open circle is the updated median.*
 
 Two things the update does not do. A strong amplitude raises $P(G)$ and does not narrow the
 contact: the depth uncertainty stays with the pick, the depth conversion and the attribution,
@@ -165,15 +201,6 @@ and runs without a three-dimensional geomodel.
 
 The point is not to find a better distribution. It is to let the geology generate the
 distribution.
-
-![The workflow on the worked prospect: (a) competing limits, (b) the controlling mechanism against depth, (c) the DHI update of the contact distribution, (d) the chance against depth before and after](figures/fig6_paper.png)
-
-*Figure. The worked prospect at 10 000 realisations and an assessment minimum of 120 m. (a) Forty
-realisations: every active limit's sampled depth, the shallowest ringed. (b) The controlling
-mechanism by depth, with overall shares. (c) The geological contact distribution and the
-DHI-updated one, with a 10 m pick at 2 250 m and contact attribution c = 0.36. (d) The prospect
-chance against depth, geological and updated, read at the assessment minimum and at a well
-entering at 2 230 m.*
 
 ---
 
