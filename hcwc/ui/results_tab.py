@@ -748,26 +748,68 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                       f"the whole curve and never its shape; the single-channel ceiling is 10 : 1 "
                       f"either way. Method: see 8.1.6.")
 
-        # (c) the headline over both ------------------------------------------------------------
+        # (c) the quantities that vary with both, on a map ---------------------------------------
+        # Only a product of P(G | s) with a reading of the contact varies with both inputs; the
+        # contact's own percentiles, spread and effective sample size depend on c alone and are
+        # drawn against c in (d). The map offers the products, with the well's chance first
+        # because it varies with both even at a minimum every realisation clears.
+        from hcwc.ui.depth_risk_tab import DEFAULT_ENTRY_DEPTH_M
+
         _cs = np.linspace(0.05, 0.95, 19)
         _rs = np.logspace(-1, 1, 25)
-        _f_min = np.array([float(_f_at(_weights_at(c), np.array([h_min]))[0]) for c in _cs])
+        _w_by_c = [_weights_at(c) for c in _cs]
         _pgs = np.array([dhi_core.p_g_given_strength(p_geological, r) for r in _rs])
-        _zmap = np.outer(_f_min, _pgs)   # rows c, columns R
+        _z_well_now = float(st.session_state.get(f"z_entry_{tab}", DEFAULT_ENTRY_DEPTH_M))
+        _MAP_WELL = "P(well) at the entry depth"
+        _MAP_HMIN = "prospect chance at the assessment minimum"
+        _MAP_DEPTH = "chance of a contact at least as deep as a chosen depth"
+        m1, m2 = st.columns([3, 1])
+        _map_what = m1.radio("Map shows", (_MAP_WELL, _MAP_HMIN, _MAP_DEPTH), horizontal=True,
+                             key=f"map_quantity_{tab}",
+                             help="Each is P(G | strength) times a reading of the updated "
+                                  "contact distribution, so each varies with both inputs. The "
+                                  "contact's own percentiles depend on c alone and are drawn "
+                                  "against c below.")
+        _z_chosen = m2.number_input("Chosen depth (m TVDSS)", float(result.contact_m.min()),
+                                    float(result.contact_m.max()),
+                                    float(round(pct(50), 0)), 5.0, key=f"map_depth_{tab}",
+                                    disabled=_map_what != _MAP_DEPTH)
+        if _map_what == _MAP_HMIN:
+            _z_read, _read_now = None, float(posterior.pos())
+            _col_at = np.array([h_min])
+        elif _map_what == _MAP_WELL:
+            _z_read = _z_well_now
+            _col_at = None
+        else:
+            _z_read = float(_z_chosen)
+            _col_at = None
+        if _col_at is not None:
+            _f_read = np.array([float(_f_at(w, _col_at)[0]) for w in _w_by_c])
+        else:
+            # A depth is a fixed surface: read the share of realisations whose contact lies at or
+            # below it, apex drawn per realisation, as section 4 does for the well.
+            _f_read = np.array([float(np.sum(w[result.contact_m >= _z_read]) / np.sum(w))
+                                for w in _w_by_c])
+            _read_now = float(np.sum(posterior.weights[result.contact_m >= _z_read])
+                              / np.sum(posterior.weights))
+        _zmap = np.outer(_f_read, _pgs)   # rows c, columns R
+        _now_value = _p_g_now * _read_now
+        _map_title = {_MAP_HMIN: "prospect chance at h_min",
+                      _MAP_WELL: f"P(well) at {_z_well_now:,.0f} m",
+                      _MAP_DEPTH: f"chance of a contact ≥ {_z_read or 0:,.0f} m"}[_map_what]
         fig_m = go.Figure()
         fig_m.add_contour(x=np.log10(_rs), y=_cs, z=_zmap, colorscale="Blues",
                           contours=dict(showlabels=True, labelfont=dict(size=10),
                                         labelformat=".0%"),
-                          colorbar=dict(title="prospect chance at h_min", tickformat=".0%",
-                                        x=1.02),
-                          hovertemplate="R = 10^%{x:.2f}<br>c = %{y:.2f}<br>POS %{z:.1%}"
+                          colorbar=dict(title=_map_title, tickformat=".0%", x=1.02),
+                          hovertemplate="R = 10^%{x:.2f}<br>c = %{y:.2f}<br>%{z:.1%}"
                                         "<extra></extra>")
         fig_m.add_scatter(x=[np.log10(max(_r_now, 1e-6))], y=[_c_now], mode="markers",
                           name="current setting",
                           marker=dict(color="#C44E52", size=12, symbol="x",
                                       line=dict(width=2)), showlegend=False)
         fig_m.add_annotation(x=np.log10(max(_r_now, 1e-6)), y=_c_now,
-                             text=f"current: {_p_g_now * float(posterior.pos()):.1%}",
+                             text=f"current: {_now_value:.1%}",
                              showarrow=False, xanchor="left", xshift=10, yanchor="bottom",
                              bgcolor="rgba(255,255,255,0.85)", font=dict(size=11, color="#333"))
         _ticks = [0.1, 1.0 / 3.0, 1.0, 3.0, 10.0]
@@ -776,39 +818,247 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                        tickmode="array", tickvals=[np.log10(t) for t in _ticks],
                        ticktext=["1/10", "1/3", "1", "3", "10"]),
             yaxis=dict(title="contact attribution c"), height=480, margin=dict(t=20))
-        n.plot(fig_m, f"The headline chance at the assessment minimum over both judgements: "
-                      f"P(G | s) across, from R = 1/10 to 10, and c down, from 0.05 to 0.95. "
-                      f"The cross is the current setting. Contours run diagonally where both "
-                      f"inputs bite; horizontal contours mean c is not moving the chance, which "
-                      f"is the case at a minimum every realisation clears. Method: see 8.1.6.")
+        n.plot(fig_m, f"{_map_title[0].upper() + _map_title[1:]} over both judgements: "
+                      f"P(G | s) across, from R = 1/10 to 10, and c down, from 0.05 to 0.95; "
+                      f"the cross is the current setting. Each map is P(G | s) times a reading "
+                      f"of the updated contact distribution, so contours run diagonally where "
+                      f"both inputs bite and vertically where the reading is 1 whatever c is, "
+                      f"which the headline is at a minimum every realisation clears. Method: "
+                      f"see 8.1.6.")
 
         # (d) what c alone does to the contact ---------------------------------------------------
+        # Six readings against c, each with the geological value dashed where there is one and
+        # the current c marked with its value. Strength does not enter any of them.
         from plotly.subplots import make_subplots
 
         _keep = result.above_minimum
-        _p50s, _spreads, _esses = [], [], []
-        for _c in _cs:
-            _w = _weights_at(_c)
-            _wk = _w[_keep]
-            _pcts = engine.weighted_percentiles(result.contact_m[_keep], _wk,
-                                                np.array([90.0, 50.0, 10.0]))
-            _p50s.append(float(_pcts[1]))
-            _spreads.append(float(_pcts[2] - _pcts[0]))
-            _esses.append(float(_w.sum() ** 2 / np.sum(_w ** 2)))
-        fig_d = make_subplots(rows=1, cols=3, subplot_titles=(
-            "contact P50 (m TVDSS)", "P90–P10 spread (m)", "effective sample size"))
-        for _col, _ys in enumerate(( _p50s, _spreads, _esses), start=1):
-            fig_d.add_scatter(x=_cs, y=_ys, mode="lines", line=dict(color="#C44E52", width=2.5),
-                              showlegend=False, row=1, col=_col)
-            fig_d.add_vline(x=_c_now, line=dict(color="#333", dash="dash", width=1),
-                            row=1, col=_col)
-        fig_d.update_xaxes(title_text="c")
-        fig_d.update_yaxes(autorange="reversed", row=1, col=1)
-        fig_d.update_layout(height=320, margin=dict(t=40, b=40), showlegend=False)
-        n.plot(fig_d, f"What c alone does to the contact: its P50, its P90–P10 spread (success "
-                      f"cases) and the effective sample size, against c, with the current "
-                      f"{_c_now:.2f} marked. None of the three depends on the evidence strength. "
-                      f"Method: see 8.1.6.")
+        if not _keep.any():
+            # Every reading below is over the success cases, and there are none at this
+            # minimum; the headline said so at the top of the tab.
+            st.info("No realisation reaches the assessment minimum, so there are no success "
+                    "cases to read the contact's percentiles, spread or displacement from. A "
+                    "lower minimum on tab 2.0 restores them.")
+            _keep = None
+        _z_keep = result.contact_m[_keep] if _keep is not None else np.array([])
+        _col_keep = result.column_m[_keep] if _keep is not None else np.array([])
+        _q = np.array([90.0, 50.0, 10.0])
+        if _keep is not None:
+            _g_pcts = engine.weighted_percentiles(_z_keep, None, _q)
+            _g_cols = engine.weighted_percentiles(_col_keep, None, _q)
+            _g_mean = float(np.mean(_z_keep))
+            _g_spread = float(_g_pcts[2] - _g_pcts[0])
+            _qgrid = np.linspace(1.0, 99.0, 99)
+            _g_quantiles = engine.weighted_percentiles(_z_keep, None, _qgrid)
+            rows = {"P50": [], "mean": [], "spread": [], "spread_ratio": [], "col_ratio": [],
+                    "displacement": [], "ess": []}
+            for _w in _w_by_c:
+                _wk = _w[_keep]
+                _pcts = engine.weighted_percentiles(_z_keep, _wk, _q)
+                _cols = engine.weighted_percentiles(_col_keep, _wk, _q)
+                rows["P50"].append(float(_pcts[1]))
+                rows["mean"].append(float(np.average(_z_keep, weights=_wk)))
+                rows["spread"].append(float(_pcts[2] - _pcts[0]))
+                rows["spread_ratio"].append(float((_pcts[2] - _pcts[0]) / max(_g_spread, 1e-9)))
+                rows["col_ratio"].append(float(_cols[2] / max(_cols[0], 1e-9)))
+                rows["displacement"].append(float(np.mean(np.abs(
+                    engine.weighted_percentiles(_z_keep, _wk, _qgrid) - _g_quantiles))))
+                rows["ess"].append(float(_w.sum() ** 2 / np.sum(_w ** 2)))
+            _panels = [
+                ("contact P50 and mean (m TVDSS)", [("P50", rows["P50"], float(_g_pcts[1])),
+                                                     ("mean", rows["mean"], _g_mean)], True),
+                ("P90–P10 spread (m)", [("spread", rows["spread"], _g_spread)], False),
+                ("spread ratio, DHI / geological", [("ratio", rows["spread_ratio"], 1.0)], False),
+                ("P10 / P90 column ratio", [("ratio", rows["col_ratio"],
+                                             float(_g_cols[2] / max(_g_cols[0], 1e-9)))], False),
+                ("displacement from the geology (m)", [("mean |Δquantile|", rows["displacement"],
+                                                        None)], False),
+                ("effective sample size", [("ESS", rows["ess"], float(result.n))], False),
+            ]
+            fig_d = make_subplots(rows=2, cols=3, subplot_titles=[t for t, _, _ in _panels],
+                                  vertical_spacing=0.16, horizontal_spacing=0.08)
+            for _k, (_title, _series, _reversed) in enumerate(_panels):
+                _r, _cc = divmod(_k, 3)
+                _r += 1; _cc += 1
+                for _j, (_label, _ys, _geo) in enumerate(_series):
+                    _colour = "#C44E52" if _j == 0 else "#E07B7B"
+                    fig_d.add_scatter(x=_cs, y=_ys, mode="lines", name=_label,
+                                      line=dict(color=_colour, width=2.5,
+                                                dash="solid" if _j == 0 else "dot"),
+                                      showlegend=False, row=_r, col=_cc)
+                    if _geo is not None:
+                        fig_d.add_hline(y=_geo, line=dict(color="#9aa3ad", dash="dash", width=1),
+                                        row=_r, col=_cc)
+                    # The current c as a point on the line, labelled with its value.
+                    _yv = float(np.interp(_c_now, _cs, _ys))
+                    _fmt = (f"{_yv:,.0f}" if abs(_yv) >= 100 else f"{_yv:.2f}")
+                    fig_d.add_scatter(x=[_c_now], y=[_yv], mode="markers+text",
+                                      text=[f"{_label} {_fmt}"], textposition="top right",
+                                      textfont=dict(size=10, color=_colour),
+                                      marker=dict(color=_colour, size=9,
+                                                  line=dict(color="white", width=1.5)),
+                                      showlegend=False, hoverinfo="skip", row=_r, col=_cc)
+                fig_d.add_vline(x=_c_now, line=dict(color="#333", dash="dash", width=1),
+                                row=_r, col=_cc)
+                if _reversed:
+                    fig_d.update_yaxes(autorange="reversed", row=_r, col=_cc)
+            fig_d.update_xaxes(title_text="c", row=2)
+            fig_d.update_layout(height=620, margin=dict(t=40, b=40), showlegend=False)
+            n.plot(fig_d, f"What c alone does to the contact, against c with the current "
+                          f"{_c_now:.2f} marked on every line: the P50 and mean (success cases); "
+                          f"the P90–P10 spread and its ratio to the geological spread; the P10 / P90 "
+                          f"ratio of the column height; the displacement from the geology, the mean "
+                          f"absolute shift of the contact quantiles in metres; and the effective "
+                          f"sample size. Dashed grey is the geological value where there is one. "
+                          f"None of the six depends on the evidence strength. Method: see 8.1.6.")
+
+
+        # (e) the contact over depth and c, as one surface ---------------------------------------
+        # The family of (a) drawn as a map: c across, depth down, colour and contours are
+        # F(h | G, evidence). Where the pick takes hold reads as the contours bending toward
+        # the picked depth as c rises.
+        _surface_c = np.array([_f_at(w, grid) for w in _w_by_c]).T   # rows depth, columns c
+        fig_e = go.Figure()
+        fig_e.add_contour(x=_cs, y=_depth, z=_surface_c, colorscale="Blues",
+                          contours=dict(showlabels=True, labelfont=dict(size=10),
+                                        labelformat=".1f", start=0.1, end=0.9, size=0.1),
+                          colorbar=dict(title="F(h | G, evidence)", x=1.02),
+                          hovertemplate="c = %{x:.2f}<br>%{y:,.0f} m<br>F = %{z:.2f}"
+                                        "<extra></extra>")
+        fig_e.add_vline(x=_c_now, line=dict(color="#C44E52", width=2),
+                        annotation_text=f"current c {_c_now:.2f}", annotation_position="top")
+        for _p, _dash in ((90, "dot"), (50, "solid"), (10, "dot")):
+            _zg = float(result.percentiles(float(_p))[0])
+            if np.isfinite(_zg):
+                fig_e.add_hline(y=_zg, line=dict(color="#9aa3ad", dash=_dash, width=1),
+                                annotation_text=f"geological P{_p}",
+                                annotation_position="right")
+        if posterior.observation.contact_m is not None:
+            fig_e.add_hline(y=float(posterior.observation.contact_m),
+                            line=dict(color="#B45309", dash="dash", width=1.2),
+                            annotation_text="picked contact", annotation_position="left")
+        fig_e.update_layout(xaxis=dict(title="contact attribution c"),
+                            yaxis=dict(title="Contact at least this deep (m TVDSS)",
+                                       autorange="reversed"),
+                            height=520, margin=dict(t=30))
+        n.plot(fig_e, f"The updated contact over depth and c, as one surface: the family of "
+                      f"the figure above with c across and depth down, coloured and contoured by "
+                      f"F(h | G, evidence). At small c the contours are the geology's; as c "
+                      f"rises they bend toward the picked contact. The red line is the current "
+                      f"c, grey the geological P90 / P50 / P10, orange the pick. Strength does not "
+                      f"enter. Method: see 8.1.6.")
+
+        # (f) the chance over depth and R, at the current c --------------------------------------
+        _surface_r = np.outer(_f_now, _pgs)   # rows depth, columns R
+        fig_f = go.Figure()
+        fig_f.add_contour(x=np.log10(_rs), y=_depth, z=_surface_r, colorscale="Reds",
+                          contours=dict(showlabels=True, labelfont=dict(size=10),
+                                        labelformat=".0%", start=0.1, end=0.9, size=0.1),
+                          colorbar=dict(title="prospect chance", tickformat=".0%", x=1.02),
+                          hovertemplate="R = 10^%{x:.2f}<br>%{y:,.0f} m<br>%{z:.1%}"
+                                        "<extra></extra>")
+        fig_f.add_vline(x=np.log10(max(_r_now, 1e-6)), line=dict(color="#C44E52", width=2),
+                        annotation_text=f"current R {_r_now:.2f}", annotation_position="top")
+        if h_min > 0:
+            fig_f.add_hline(y=apex_med + h_min, line=dict(color="#333", dash="dash", width=1),
+                            annotation_text="assessment minimum", annotation_position="right")
+        fig_f.add_hline(y=_z_well_now, line=dict(color="#0369A1", dash="dot", width=1.2),
+                        annotation_text="well entry", annotation_position="left")
+        fig_f.update_layout(
+            xaxis=dict(title="evidence strength, as R (log scale)", tickmode="array",
+                       tickvals=[np.log10(t) for t in _ticks],
+                       ticktext=["1/10", "1/3", "1", "3", "10"]),
+            yaxis=dict(title="Contact at least this deep (m TVDSS)", autorange="reversed"),
+            height=520, margin=dict(t=30))
+        n.plot(fig_f, f"The prospect chance over depth and evidence strength, at the current "
+                      f"c = {_c_now:.2f}: the fan of the strength figure as a surface. Every "
+                      f"column is the same curve scaled by P(G | s), so the contours are the "
+                      f"depth curve's shape stretched sideways; the assessment minimum and the "
+                      f"well entry are the two depths the chance is quoted at. Method: see "
+                      f"8.1.6.")
+
+        # (g) the well's chance at three entry depths --------------------------------------------
+        # How the two judgements trade off as the well goes deeper: the shallower the entry,
+        # the less c matters and the more the map is strength alone.
+        _z_lo = float(np.percentile(result.contact_m, 10))
+        _z_hi = float(np.percentile(result.contact_m, 75))
+        _z_ladder = sorted({round(_z_lo), round(_z_well_now), round(_z_hi)})
+        fig_g = make_subplots(rows=1, cols=len(_z_ladder), shared_yaxes=True,
+                              subplot_titles=[f"entry at {z:,.0f} m" for z in _z_ladder],
+                              horizontal_spacing=0.06)
+        for _k, _z in enumerate(_z_ladder, start=1):
+            _fr = np.array([float(np.sum(w[result.contact_m >= _z]) / np.sum(w))
+                            for w in _w_by_c])
+            fig_g.add_contour(x=np.log10(_rs), y=_cs, z=np.outer(_fr, _pgs), colorscale="Blues",
+                              zmin=0.0, zmax=1.0, showscale=(_k == len(_z_ladder)),
+                              contours=dict(showlabels=True, labelfont=dict(size=9),
+                                            labelformat=".0%", start=0.1, end=0.9, size=0.1),
+                              colorbar=dict(title="P(well)", tickformat=".0%", x=1.02),
+                              hovertemplate="R = 10^%{x:.2f}<br>c = %{y:.2f}<br>%{z:.1%}"
+                                            "<extra></extra>",
+                              row=1, col=_k)
+            fig_g.add_scatter(x=[np.log10(max(_r_now, 1e-6))], y=[_c_now], mode="markers",
+                              marker=dict(color="#C44E52", size=10, symbol="x",
+                                          line=dict(width=2)),
+                              showlegend=False, hoverinfo="skip", row=1, col=_k)
+            fig_g.update_xaxes(tickmode="array", tickvals=[np.log10(t) for t in _ticks],
+                               ticktext=["1/10", "1/3", "1", "3", "10"], row=1, col=_k)
+        fig_g.update_xaxes(title_text="R (log scale)", row=1, col=2 if len(_z_ladder) > 1 else 1)
+        fig_g.update_yaxes(title_text="contact attribution c", row=1, col=1)
+        fig_g.update_layout(height=420, margin=dict(t=40, b=40))
+        n.plot(fig_g, f"P(well) over both judgements at three entry depths: the geological P10 "
+                      f"contact, the entry depth on section 4, and the geological P75 contact. "
+                      f"Shallow entries are all strength, since almost every contact lies below "
+                      f"them whatever c says; the deeper the entry, the more the contours tilt "
+                      f"and the more c decides. The cross is the current setting. Method: see "
+                      f"8.1.6.")
+
+        # (h) the update's net effect and leverage -----------------------------------------------
+        # The geological reference for the quantity on the map: P(G) times the geological
+        # reading, one number over the whole plane. The difference says where the evidence
+        # helps and hurts; the ratio says by what factor.
+        if _col_at is not None:
+            _geo_read = float(result.exceedance(_col_at)[0])
+        else:
+            _geo_read = float(np.mean(result.contact_m >= _z_read))
+        _geo_value = p_geological * _geo_read
+        _diff = _zmap - _geo_value
+        with np.errstate(divide="ignore", invalid="ignore"):
+            _ratio = np.where(_geo_value > 0, _zmap / max(_geo_value, 1e-12), np.nan)
+        _lim = float(np.nanmax(np.abs(_diff))) or 0.01
+        fig_h = make_subplots(rows=1, cols=2, shared_yaxes=True, horizontal_spacing=0.12,
+                              subplot_titles=(f"net effect: {_map_title} minus geological "
+                                              f"({_geo_value:.1%})",
+                                              f"leverage: {_map_title} divided by geological"))
+        fig_h.add_contour(x=np.log10(_rs), y=_cs, z=_diff, colorscale="RdBu", zmid=0.0,
+                          zmin=-_lim, zmax=_lim,
+                          contours=dict(showlabels=True, labelfont=dict(size=9),
+                                        labelformat="+.0%"),
+                          colorbar=dict(title="points", tickformat="+.0%", x=0.44),
+                          hovertemplate="R = 10^%{x:.2f}<br>c = %{y:.2f}<br>%{z:+.1%}"
+                                        "<extra></extra>", row=1, col=1)
+        fig_h.add_contour(x=np.log10(_rs), y=_cs, z=np.log10(_ratio), colorscale="RdBu",
+                          zmid=0.0,
+                          contours=dict(showlabels=False),
+                          colorbar=dict(title="factor", x=1.02, tickmode="array",
+                                        tickvals=[np.log10(v) for v in (0.25, 0.5, 1, 2, 4)],
+                                        ticktext=["×0.25", "×0.5", "×1", "×2", "×4"]),
+                          hovertemplate="R = 10^%{x:.2f}<br>c = %{y:.2f}<br>×%{customdata:.2f}"
+                                        "<extra></extra>", customdata=_ratio, row=1, col=2)
+        for _k in (1, 2):
+            fig_h.add_scatter(x=[np.log10(max(_r_now, 1e-6))], y=[_c_now], mode="markers",
+                              marker=dict(color="#111", size=10, symbol="x", line=dict(width=2)),
+                              showlegend=False, hoverinfo="skip", row=1, col=_k)
+            fig_h.update_xaxes(tickmode="array", tickvals=[np.log10(t) for t in _ticks],
+                               ticktext=["1/10", "1/3", "1", "3", "10"],
+                               title_text="R (log scale)", row=1, col=_k)
+        fig_h.update_yaxes(title_text="contact attribution c", row=1, col=1)
+        fig_h.update_layout(height=440, margin=dict(t=50, b=40))
+        n.plot(fig_h, f"What the evidence is worth, for the quantity on the map above. Left: the "
+                      f"updated value minus the geological one, {_geo_value:.1%}, in points; the "
+                      f"white contour is where the evidence neither helps nor hurts. Right: the "
+                      f"same as a factor, ×1 where it is neutral. Both are the map above shifted "
+                      f"and scaled, so the shapes agree; the labels are what change. The cross is "
+                      f"the current setting. Method: see 8.1.6.")
 
     # ------------------------------------------------------------------ 3 · the chance
     # The third question. Every point on this curve is a prospect chance: the element chance
