@@ -25,15 +25,15 @@ OUT = ROOT / "docs" / "post"
 
 #: Exhibit label -> file name and the width to draw it at. Order is the post's order.
 FIGURES = [
-    ("Figure 3.1", "02_ranking.png", 1200, 520),
-    ("Figure 4.1.6", "03_all_limits_one_axis.png", 1400, 760),
-    ("Figure 4.1.1", "04_contact_distribution.png", 1400, 700),
-    ("Figure 4.1.2", "05_controlling_by_depth.png", 1400, 700),
-    ("Figure 4.1.7", "06_chance_against_depth.png", 1400, 620),
-    ("Figure 5.1.1", "07_the_pick_against_the_geology.png", 1400, 520),
-    ("Figure 5.1.4", "09_dhi_updated_contact.png", 1400, 620),
-    ("Figure 5.1.5", "10_chance_before_after.png", 1400, 700),
-    ("Figure 6.8", "11_benchmark_family.png", 1400, 760),
+    ("Figure 3.1a", "02_ranking.png", 1200, 520),
+    ("Figure 4.1.2e", "03_all_limits_one_axis.png", 1400, 760),
+    ("Figure 4.1.1a", "04_contact_distribution.png", 1400, 700),
+    ("Figure 4.1.2a", "05_controlling_by_depth.png", 1400, 700),
+    ("Figure 4.1.3a", "06_chance_against_depth.png", 1400, 620),
+    ("Figure 5.1.1a", "07_the_pick_against_the_geology.png", 1400, 520),
+    ("Figure 5.1.4a", "09_dhi_updated_contact.png", 1400, 620),
+    ("Figure 5.1.5a", "10_chance_before_after.png", 1400, 700),
+    ("Figure 6.7a", "11_benchmark_family.png", 1400, 760),
 ]
 
 

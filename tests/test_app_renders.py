@@ -1349,14 +1349,14 @@ class TestEveryResultExhibitDeclaresItsBasis:
 
         out = {}
         for element in at.get("caption"):
-            match = re.match(r"\*\*((?:Figure|Table) [\d.]+)\*\*", str(element.value))
+            match = re.match(r"\*\*((?:Figure|Table) [\d.a-z]+)\*\*", str(element.value))
             if match:
                 out[match.group(1)] = str(element.value)
         return out
 
     @staticmethod
     def _sequence(label):
-        """`Figure 5.2.6` -> `5.2` — the sub-tab sequence it belongs to."""
+        """`Figure 5.2.2f` -> `5.2` — the sub-tab sequence it belongs to."""
         parts = label.split()[-1].split(".")
         return ".".join(parts[:2])
 
@@ -1375,8 +1375,8 @@ class TestEveryResultExhibitDeclaresItsBasis:
         captions = self._captions(_run())
         # Renumbered 15 Sep 2026 when 4.1 gained the chance curve (3) and the well (4); on
         # 17 Sep the competition figure replaced the exceedance figure as 4.1.1.
-        for a, b in (("Figure 4.1.1", "Figure 5.2.1"), ("Figure 4.1.4", "Figure 5.2.4"),
-                     ("Table 4.1.5", "Table 5.2.5"), ("Figure 4.2.2", "Figure 5.3.2")):
+        for a, b in (("Figure 4.1.1a", "Figure 5.2.1a"), ("Figure 4.1.2c", "Figure 5.2.2c"),
+                     ("Table 4.1.2d", "Table 5.2.2d"), ("Figure 4.2.2a", "Figure 5.3.2a")):
             assert captions[a] != captions[b], f"{a} and {b} still read identically"
 
     def test_the_chip_follows_the_evidence_on_a_well_only_prospect(self):
@@ -1508,7 +1508,7 @@ class TestTheFullReportCarriesTheTables:
 
         tables = _run().session_state[numbering.TABLES_KEY]
         assert len(tables) > 10, f"only {len(tables)} tables registered"
-        for label in ("Table 3.2", "Table 4.1.5", "Table 4.2.3", "Table 6.10"):
+        for label in ("Table 3.2a", "Table 4.1.2d", "Table 4.2.4a", "Table 6.8a"):
             assert label in tables, f"{label} was drawn but never registered"
 
     def test_every_registered_table_reaches_the_document(self):
@@ -1541,8 +1541,8 @@ class TestTheFullReportCarriesTheTables:
         from hcwc.ui import numbering
 
         tables = _run().session_state[numbering.TABLES_KEY]
-        assert "GEOLOGICAL" in tables["Table 4.1.5"][1]
-        assert "GIVEN THE DHI" in tables["Table 5.2.5"][1]
+        assert "GEOLOGICAL" in tables["Table 4.1.2d"][1]
+        assert "GIVEN THE DHI" in tables["Table 5.2.2d"][1]
 
     def test_a_failed_figure_is_still_reported_and_the_tables_survive_it(self):
         """The missing-figure path had to keep working once the loop walked both kinds."""
@@ -1557,7 +1557,7 @@ class TestTheFullReportCarriesTheTables:
                               source_file=""),
             {"Figure 9.1": (object(), "a figure that cannot render")}, tables=tables)
         assert missing and "Figure 9.1" in missing[0]
-        assert "<b>Table 3.2</b>" in html
+        assert "<b>Table 3.2a</b>" in html
 
 
 class TestThePageIsNotAnEssay:
@@ -2093,7 +2093,7 @@ class TestTabsFourAndFiveOfferTheSameControls:
         at = _run(dhi_toggle=True)
         seen = {}
         for c in at.caption:
-            m = re.match(r"\*\*(Figure|Table) (\d\.\d)\.(\d+)\*\*", str(c.value))
+            m = re.match(r"\*\*(Figure|Table) (\d\.\d)\.(\d+[a-z]+(?:\.\d+)?)\*\*", str(c.value))
             if m:
                 seen.setdefault(m.group(2), []).append(m.group(1))
         # 5.2 carries seven exhibits 4.1 cannot: the strength-and-c sensitivity of 2e, which
@@ -2112,7 +2112,7 @@ class TestTheCompetitionIsDrawnRealisationByRealisation:
     def test_it_is_the_first_exhibit_on_both_result_tabs(self):
         at = _run(dhi_toggle=True)
         figures = at.session_state["_figures"]
-        for label in ("Figure 4.1.1", "Figure 5.2.1"):
+        for label in ("Figure 4.1.1a", "Figure 5.2.1a"):
             fig, caption = figures[label]
             assert "The competition, realisation by realisation" in caption, label
             names = [str(t.name) for t in fig.data]
@@ -2125,14 +2125,14 @@ class TestTheCompetitionIsDrawnRealisationByRealisation:
         assert slider.value == 0 and slider.max == 9_950 and slider.step == 50
         at.session_state["competition_window_4"] = 5_000
         at.run()
-        fig, _ = at.session_state["_figures"]["Figure 4.1.1"]
+        fig, _ = at.session_state["_figures"]["Figure 4.1.1a"]
         assert fig.layout.xaxis.title.text == "realisation (5,000 to 5,049)"
         rings = next(t for t in fig.data if str(t.name).startswith("shallowest active limit"))
         assert len(rings.y) == 50
 
     def test_the_rings_take_their_controllers_colours(self):
         """An open marker's stroke is `marker.color`; per-point colours there are the point."""
-        fig, _ = _run().session_state["_figures"]["Figure 4.1.1"]
+        fig, _ = _run().session_state["_figures"]["Figure 4.1.1a"]
         rings = next(t for t in fig.data if str(t.name).startswith("shallowest active limit"))
         assert rings.marker.symbol == "circle-open"
         assert len(set(rings.marker.color)) > 1, "every ring has the same colour"

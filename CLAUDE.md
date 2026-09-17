@@ -53,6 +53,15 @@ whether it is conditional on G, whether it includes the element risk, and the th
 read at. Assumptions are stated in the open (5.1.6), each labelled elicited, heuristic or
 modelling choice; expanders hold diagnostics and derivations, never assumptions.
 
+## Numbering, 17 Sep 2026
+
+Headings are `tab.subtab.section` (4.1.3). Exhibits carry the section they sit under and a
+letter: `Figure 4.1.3a` is the first exhibit of section 4.1.3; figures and tables share the
+letters, so reading order survives; an exhibit that only sometimes appears hangs off the
+previous one as `4.1.3b.1`. `theme.heading` records the section, `theme.subsection` is an
+unnumbered title inside a section, and `Numbering.upcoming` names what a fold holds. One number
+names one thing.
+
 ## Standing constraints
 
 - `_private/` and `reference/private/` are gitignored and stay untracked. The app never mentions

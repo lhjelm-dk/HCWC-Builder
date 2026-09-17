@@ -746,7 +746,7 @@ def render(n: Numbering | None = None) -> None:
     )
 
     # ------------------------------------------------------------------ combining
-    theme.heading(TAB, sub=n.sub, text="3b · Detection model D(h)")
+    theme.subsection(TAB, "Detection model D(h)")
     st.markdown(
         "The chance a column of height h produces a detectable anomaly. It is what makes an "
         "absent anomaly usable evidence; the false-positive assumption sets how much absence "
@@ -820,7 +820,7 @@ def render(n: Numbering | None = None) -> None:
             st.error(str(exc))
             return
         with _well_slot:
-            theme.heading(TAB, sub=n.sub, text="1b · Well control")
+            theme.subsection(TAB, "Well control")
             lo, hi = control.bracket()
             bits = []
             if control.hc_down_to_m is not None:
@@ -1167,7 +1167,7 @@ def render(n: Numbering | None = None) -> None:
         "separate numbers, which is why a volume is taken at the same row as the chance beside "
         "it. The chance to quote is the one at the row the volume was computed at.")
 
-    theme.heading(TAB, sub=n.sub, text="5b · The two factors")
+    theme.subsection(TAB, "The two factors")
     # The two channels multiply as separate factors and no dependence parameter is applied
     # (the blended `CombinedUpdate.dependence` is retained only for the teaching comparison and
     # never reaches a number on this tab). The relation between the two is at elicitation --
@@ -1333,8 +1333,8 @@ def render(n: Numbering | None = None) -> None:
         else:
             st.info("Not enough weight spread to slice a sensitivity from this posterior.")
 
-        theme.heading(TAB, sub=n.sub,
-                      text=f"8b · Which mechanism set the contact, {theme.evidence_basis()}")
+        theme.subsection(TAB,
+                      f"Which mechanism set the contact, {theme.evidence_basis()}")
         st.markdown(
             "Among the realisations the evidence favours, which mechanisms are more frequent. "
             "It is not the DHI saying which element failed: the element chances on tab 2.0 are "

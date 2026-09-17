@@ -240,6 +240,12 @@ def accent(tab: int) -> str:
 #: so tab 5's ``3b`` sat under ``5.1.3`` as a bare "3b ·").
 _SECTION = re.compile(r"^(\d+[a-z]?)\s*·\s*(.*)$", re.DOTALL)
 
+#: The section each tab (and sub-tab) is currently drawing, recorded by :func:`heading` and read
+#: by :class:`hcwc.ui.numbering.Numbering` so an exhibit's number carries the section it sits
+#: under: ``Figure 4.1.3a`` is the first exhibit of section 4.1.3 (Lars, 17 Sep 2026). Keyed by
+#: ``(tab, sub)``; reset when a tab's Numbering is created.
+CURRENT_SECTION: dict[tuple[int, int | None], str] = {}
+
 
 def section_label(tab: int, text: str, sub: int | None = None) -> str:
     """``"4 · How it is arranged"`` on tab 1.0 becomes ``"1.4 How it is arranged"``.
@@ -271,10 +277,25 @@ def heading(tab: int, text: str, sub: int | None = None) -> None:
     depth-risk sections.
     """
     label = section_label(tab, text, sub)
+    match = _SECTION.match(text)
+    if match:
+        CURRENT_SECTION[(tab, sub)] = match.group(1)
     st.markdown(
         f"<h3 style='color:{accent(tab)};margin-top:1.2rem'>{label}</h3>",
         unsafe_allow_html=True,
     )
+
+
+def subsection(tab: int, text: str) -> None:
+    """An unnumbered heading inside a section, in the tab's colour.
+
+    For a part of a section that has a title of its own but no number: the exhibits under it
+    keep the section's letters (``Figure 4.1.2b`` under *Limit ranking and sensitivity* inside
+    section 4.1.2), so a part that comes and goes, such as well control on tab 5.1, never
+    renumbers what follows it.
+    """
+    st.markdown(f"<h5 style='color:{accent(tab)};margin-top:1.0rem'>{text}</h5>",
+                unsafe_allow_html=True)
 
 
 def subheading_markdown(tab: int, section: int, item: int, text: str) -> str:
@@ -289,6 +310,9 @@ def subheading_markdown(tab: int, section: int, item: int, text: str) -> str:
 
 
 def subheading(tab: int, section: int, item: int, text: str) -> None:
+    # A third-level heading is a section for numbering: the walkthrough under 8.1.6 numbers
+    # its exhibits 8.1.6a, 8.1.6b through the Numbering(8, sub=1) that draws them.
+    CURRENT_SECTION[(tab, section)] = str(item)
     st.markdown(subheading_markdown(tab, section, item, text), unsafe_allow_html=True)
 
 
