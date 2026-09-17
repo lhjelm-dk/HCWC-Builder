@@ -846,9 +846,9 @@ R_FLOOR, R_CAP = 1.0 / 50.0, 50.0
 
 #: The most a **single channel** may claim, either way.
 #:
-#: A different job from :data:`R_CAP`, and it used to be done by the same number. Simm (2016) is
-#: explicit that for one line of fluid-indicator evidence an honest R rarely exceeds about 3, and
-#: that |R| above 10 should send you back to the inputs; :func:`strength_bands` has said so in
+#: A different job from :data:`R_CAP`, and it used to be done by the same number. Simm (Simm &
+#: Bacon 2014, ch. 11; Simm 2020) is explicit that for one line of fluid-indicator evidence an
+#: honest R rarely exceeds about 3, and that |R| above 10 should send you back to the inputs; :func:`strength_bands` has said so in
 #: words since the strength model was written, while the arithmetic allowed 50. The gap was not
 #: academic. On the shipped prospect the strength slider alone moved the prospect chance from
 #: 1.4 % to 97.2 % -- a 96-point swing from one elicited number on an axis with no external
@@ -967,7 +967,7 @@ def volume_weight(r: float) -> float:
 
 
 def strength_bands(r: float) -> tuple[str, str]:
-    """Simm's (2016) verbal reading of R, so the number is not quoted bare.
+    """Simm's verbal reading of R (Simm & Bacon 2014; Simm 2020), so the number is not quoted bare.
 
     His caution matters and is repeated here: for a *single* DFI line of evidence an honest R rarely
     exceeds about 3 either way, and |R| above 10 should send you back to the inputs.

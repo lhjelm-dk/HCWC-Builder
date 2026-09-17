@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+from plotly.subplots import make_subplots
 
 from hcwc.core import charge as ch
 from hcwc.core import dhi as dhi_core
@@ -735,7 +736,8 @@ def render(n: Numbering | None = None) -> None:
         "Anchors for the slider. These are judgements, not measurements, and the spacing "
         "matters more than the exact value.\n\n"
         "- 0.9 and up: a flat, conformable event that cuts dipping structure, with a clear "
-        "fluid contact reflection.\n"
+        "fluid contact reflection. 0.95 is the calibrated ceiling on the contact weight (Hood "
+        "2019; Monigle et al. 2025).\n"
         "- 0.6 to 0.8: conformable and plausibly a contact, with something missing: no FCR, or "
         "terminations that are not sharp.\n"
         "- 0.3 to 0.5: the event is there and flat, and so is a plausible lithological "
@@ -744,6 +746,167 @@ def render(n: Numbering | None = None) -> None:
         "- Below 0.2: the event would not have been picked on a less interesting prospect. "
         "Whether there is a DHI at all is the question at this level."
     )
+
+    # ------------------------------------------------------------------ the two judgements, together
+    # The R-c plane returns without the surface it lost on 14 Sep 2026 (Lars, 17 Sep 2026).
+    # Nothing in the arithmetic joins R and c, so nothing here is shaded by a product of them;
+    # what is drawn is where the two judgements sit against each other. Simm's bands on R, the
+    # slider's anchors on c, a diagonal band for the pairing body and contact attributes usually
+    # make, since both improve with impedance contrast (Monigle et al. 2025), and the two
+    # off-diagonal corners, which are real prospects worth a sentence. The band and the corners
+    # are judgement, not calibration; the corner thresholds are the ones the tab flagged on
+    # 9 Sep. Beside the plane, the three contact attributes as ladders with the graded level
+    # filled, so the reader sees what c rests on. R is the other axis and never proposes c.
+    _MUTED_INK = "#7d8794"
+    _lr = float(np.log10(max(r_strength, 1.0 / dhi_core.R_SINGLE_CHANNEL)))
+    _lr_lo, _lr_hi = -1.0, 1.0
+    figc = make_subplots(rows=1, cols=2, column_widths=[0.3, 0.7], shared_yaxes=True,
+                         horizontal_spacing=0.03)
+
+    # -- left: the ladders. One column per attribute, levels at their scores. ----------------
+    for k, (attribute, levels) in enumerate(CONTACT_ATTRIBUTES.items()):
+        chosen = picked_levels[attribute]
+        figc.add_scatter(
+            x=[k] * len(levels), y=list(levels.values()), mode="markers",
+            marker=dict(color="white", size=9, line=dict(color=theme.INK, width=1.2)),
+            text=list(levels), hovertemplate=f"{attribute}<br>%{{text}}<br>%{{y:.2f}}"
+                                              "<extra></extra>",
+            showlegend=False, row=1, col=1)
+        figc.add_scatter(
+            x=[k], y=[levels[chosen]], mode="markers", marker=dict(color=POSTERIOR, size=12),
+            hovertemplate=f"{attribute}<br>{chosen}<br>{levels[chosen]:.2f}<extra></extra>",
+            showlegend=False, row=1, col=1)
+        figc.add_scatter(x=[k, k], y=[0.05, 1.0], mode="lines",
+                         line=dict(color="#d7dbe0", width=1), showlegend=False,
+                         hoverinfo="skip", row=1, col=1)
+    figc.add_scatter(x=[-0.5, 2.5], y=[suggested_c, suggested_c], mode="lines",
+                     name=f"suggested c = {suggested_c:.2f}, geometric mean",
+                     line=dict(color=POSTERIOR, width=1.5, dash="dash"), row=1, col=1)
+    figc.update_xaxes(tickvals=[0, 1, 2], ticktext=["fit to<br>structure", "termin-<br>ations",
+                                                     "fluid contact<br>reflection"],
+                      range=[-0.5, 2.9], showgrid=False, row=1, col=1)
+
+    # -- both panels: the slider's anchors as continuous bands on c, green to red -------------
+    # Edges halfway between the anchor ranges (0.9 and up; 0.6 to 0.8; 0.3 to 0.5; below 0.2),
+    # dusty so the markers and the band read on top of them (Lars, 17 Sep 2026).
+    for y0, y1, fill, label in ((0.85, 1.0, "#DCE9D5", "flat, conformable, cuts structure, FCR"),
+                                (0.55, 0.85, "#EDEFD0", "conformable, something missing"),
+                                (0.25, 0.55, "#F5E2CB", "flat, and lithology plausible"),
+                                (0.05, 0.25, "#F2D5D0", "would not be picked elsewhere")):
+        for col, x0, x1 in ((1, -0.5, 2.9), (2, _lr_lo, _lr_hi)):
+            figc.add_shape(type="rect", x0=x0, x1=x1, y0=y0, y1=y1, row=1, col=col,
+                           fillcolor=fill, line=dict(width=0), layer="below")
+        figc.add_annotation(x=_lr_hi, y=y1 - 0.03, text=label, xanchor="right",
+                            showarrow=False, font=dict(size=9.5, color=_MUTED_INK),
+                            row=1, col=2)
+
+    # the calibrated ceiling on the contact weight: Hood's high-COV case (2019) and Monigle et
+    # al.'s (2025) empirical rule both stop at 0.95, on the same company's drilled database
+    for col, x0, x1 in ((1, -0.5, 2.9), (2, _lr_lo, _lr_hi)):
+        figc.add_shape(type="line", x0=x0, x1=x1, y0=0.95, y1=0.95, row=1, col=col,
+                       line=dict(color="#2F6B3F", width=1.2, dash="dashdot"))
+    figc.add_annotation(x=_lr_lo + 0.02, y=0.95, yshift=-9, xanchor="left",
+                        text="0.95: calibrated ceiling (Hood 2019; Monigle et al. 2025)",
+                        showarrow=False, font=dict(size=9.5, color="#2F6B3F"), row=1, col=2)
+
+    # -- right: the plane. Simm's bands on R. --------------------------------------------------
+    for edge in (1 / 3, 1 / 1.5, 1.5, 3):
+        figc.add_shape(type="line", x0=np.log10(edge), x1=np.log10(edge), y0=0.05, y1=1.0,
+                       line=dict(color="#c9ced6", width=1, dash="dot"), row=1, col=2)
+    for x0, x1, name in ((1 / 10, 1 / 3, "strong ↓"), (1 / 3, 1 / 1.5, "moderate ↓"),
+                         (1 / 1.5, 1.5, "negligible"), (1.5, 3, "moderate ↑"),
+                         (3, 10, "strong ↑")):
+        figc.add_annotation(x=(np.log10(x0) + np.log10(x1)) / 2, y=1.0, yshift=10, text=name,
+                            showarrow=False, font=dict(size=9.5, color=_MUTED_INK),
+                            row=1, col=2)
+
+    # the usual pairing: a band along the diagonal, +/- 0.15 in c around a line through
+    # (R = 0.1, c = 0.10), (1, 0.40), (10, 0.70), so the shipped case (R 1.27, c 0.36) sits
+    # mid-band and c above 0.85 is usual only near the cap. A heuristic, drawn so it can be
+    # argued with; the first draft ran through (1, 0.55) and read as kind to high c.
+    def _band(x, edge=0.0):
+        return np.clip(0.40 + 0.30 * np.asarray(x, dtype=float) + edge, 0.05, 1.0)
+
+    _xs = np.linspace(_lr_lo, _lr_hi, 40)
+    figc.add_scatter(x=np.concatenate([_xs, _xs[::-1]]),
+                     y=np.concatenate([_band(_xs, 0.15), _band(_xs, -0.15)[::-1]]),
+                     fill="toself", fillcolor="rgba(76, 114, 176, 0.16)",
+                     line=dict(width=0), name="the usual pairing (heuristic)",
+                     hoverinfo="skip", row=1, col=2)
+    # the two corners the tab flags are the band's complement beyond R = 1.5 either way:
+    # bright body with an unconvincing event below it, dim body with a convincing one above.
+    # Both real, both worth a sentence in the report.
+    _xb = np.linspace(np.log10(1.5), _lr_hi, 20)
+    _xd = np.linspace(_lr_lo, np.log10(1 / 1.5), 20)
+    for xs, ys, label, lx, ly in (
+            (np.concatenate([_xb, _xb[::-1]]),
+             np.concatenate([np.full_like(_xb, 0.05), _band(_xb, -0.15)[::-1]]),
+             "bright body,<br>unconvincing event", 0.62, 0.12),
+            (np.concatenate([_xd, _xd[::-1]]),
+             np.concatenate([_band(_xd, 0.15), np.full_like(_xd, 1.0)]),
+             "dim body,<br>convincing event", -0.62, 0.62)):
+        figc.add_scatter(x=xs, y=ys, mode="lines", line=dict(color=_MUTED_INK, width=1,
+                                                             dash="dot"),
+                         showlegend=False, hoverinfo="skip", row=1, col=2)
+        figc.add_annotation(x=lx, y=ly, text=label, showarrow=False,
+                            font=dict(size=10, color=theme.INK), row=1, col=2)
+
+    if abs(suggested_c - contact_given_hc) > 0.005:
+        figc.add_scatter(x=[_lr], y=[suggested_c], mode="markers",
+                         marker=dict(color=POSTERIOR, size=11, symbol="diamond-open",
+                                     line=dict(width=1.5)),
+                         name=f"the attributes' suggestion, c = {suggested_c:.2f}",
+                         hovertemplate=f"R {r_strength:.2f}<br>c {suggested_c:.2f}<extra></extra>",
+                         row=1, col=2)
+    figc.add_scatter(x=[_lr], y=[contact_given_hc], mode="markers+text",
+                     marker=dict(color=POSTERIOR, size=15, symbol="diamond",
+                                 line=dict(color="white", width=2)),
+                     text=["  this prospect"], textposition="middle right",
+                     textfont=dict(size=11, color=POSTERIOR), name="this prospect",
+                     hovertemplate=f"R {r_strength:.2f}<br>c {contact_given_hc:.2f}<extra></extra>",
+                     row=1, col=2)
+    _ticks = [0.1, 0.2, 0.5, 1, 2, 5, 10]
+    figc.update_xaxes(title_text="R from the evidence strength (§2), log scale",
+                      tickvals=[np.log10(v) for v in _ticks], ticktext=[str(v) for v in _ticks],
+                      range=[_lr_lo - 0.04, _lr_hi + 0.04], showgrid=False, row=1, col=2)
+    figc.update_yaxes(title_text="c, contact attribution", range=[0.05, 1.0], row=1, col=1)
+    figc.update_yaxes(range=[0.05, 1.0], row=1, col=2)
+    figc.update_layout(height=470, margin=dict(t=36, b=10, l=10, r=10),
+                       legend=dict(orientation="h", y=-0.16, x=0))
+    n.plot(figc,
+           f"The two judgements against each other. Left: the three contact attributes, each "
+           f"level at its score, the graded one filled ("
+           + ", ".join(lv.lower() for lv in picked_levels.values())
+           + f"); the dashed line is their geometric mean, c = {suggested_c:.2f}. Right: R from §2 on Simm's bands against c on the "
+           f"slider's anchors, this prospect at R = {r_strength:.2f}, c = {contact_given_hc:.2f}. "
+           f"The shaded diagonal is the pairing the two judgements usually make: conformance "
+           f"to structure and a fluid-contact reflection are also the characteristics most "
+           f"predictive of finding hydrocarbons (Roden et al. 2012; Nixon et al. 2018), so an "
+           f"event that earns a high c usually earns a higher strength reading in §2 too. The "
+           f"dotted corners, outside the band beyond R = 1.5 either way, are the pairings worth "
+           f"a sentence. The colour bands are the slider's anchors, in both panels; the "
+           f"dash-dot line is the calibrated ceiling on the contact weight. The split of "
+           f"Monigle et al.'s (2025) five attributes into body and contact is this tool's "
+           f"reading. Nothing in the arithmetic joins the two axes: R does not propose c, and "
+           f"the band is a judgement, not a calibration. Method: see 8.1.7.")
+    if r_strength >= 1.5 and contact_given_hc < float(_band(_lr, -0.15)):
+        st.caption(
+            f"Bright body, unconvincing event: the strength argues for hydrocarbons "
+            f"(R = {r_strength:.2f}) while the event is graded at c = {contact_given_hc:.2f}. "
+            f"A real and common pairing, an anomaly believed in and bounded by something that "
+            f"is not. The chance moves; the contact stays near where the geology put it. Simm "
+            f"(2020) grades an anomaly without characteristics consistent with the trap and "
+            f"indicative of a fluid contact as a low-grade DHI that generally warrants no "
+            f"uplift, so an R above 1.5 here rests on the strength reading alone and is worth "
+            f"stating as such."
+        )
+    elif r_strength <= 1 / 1.5 and contact_given_hc > float(_band(_lr, 0.15)):
+        st.caption(
+            f"Dim body, convincing event: the strength argues against hydrocarbons "
+            f"(R = {r_strength:.2f}) while the event is graded at c = {contact_given_hc:.2f}. "
+            f"Also real: a conformable flat spot on a low-contrast reservoir is a good contact "
+            f"indicator with an unremarkable amplitude. The contact sharpens; the chance falls."
+        )
 
     # ------------------------------------------------------------------ combining
     theme.subsection(TAB, "Detection model D(h)")
