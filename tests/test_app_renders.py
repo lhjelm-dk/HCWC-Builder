@@ -1373,10 +1373,10 @@ class TestEveryResultExhibitDeclaresItsBasis:
     def test_the_paired_captions_are_no_longer_identical(self):
         """The precise defect: same words, two distributions, nothing to tell them apart."""
         captions = self._captions(_run())
-        # Renumbered 15 Sep 2026 when 4.1 gained the chance curve (3) and the well (4), and
-        # again 17 Sep when the competition figure became 4.1.1 and pushed the rest by one.
-        for a, b in (("Figure 4.1.2", "Figure 5.2.2"), ("Figure 4.1.5", "Figure 5.2.5"),
-                     ("Table 4.1.6", "Table 5.2.6"), ("Figure 4.2.2", "Figure 5.3.2")):
+        # Renumbered 15 Sep 2026 when 4.1 gained the chance curve (3) and the well (4); on
+        # 17 Sep the competition figure replaced the exceedance figure as 4.1.1.
+        for a, b in (("Figure 4.1.1", "Figure 5.2.1"), ("Figure 4.1.4", "Figure 5.2.4"),
+                     ("Table 4.1.5", "Table 5.2.5"), ("Figure 4.2.2", "Figure 5.3.2")):
             assert captions[a] != captions[b], f"{a} and {b} still read identically"
 
     def test_the_chip_follows_the_evidence_on_a_well_only_prospect(self):
@@ -1508,7 +1508,7 @@ class TestTheFullReportCarriesTheTables:
 
         tables = _run().session_state[numbering.TABLES_KEY]
         assert len(tables) > 10, f"only {len(tables)} tables registered"
-        for label in ("Table 3.2", "Table 4.1.6", "Table 4.2.3", "Table 6.10"):
+        for label in ("Table 3.2", "Table 4.1.5", "Table 4.2.3", "Table 6.10"):
             assert label in tables, f"{label} was drawn but never registered"
 
     def test_every_registered_table_reaches_the_document(self):
@@ -1541,8 +1541,8 @@ class TestTheFullReportCarriesTheTables:
         from hcwc.ui import numbering
 
         tables = _run().session_state[numbering.TABLES_KEY]
-        assert "GEOLOGICAL" in tables["Table 4.1.6"][1]
-        assert "GIVEN THE DHI" in tables["Table 5.2.6"][1]
+        assert "GEOLOGICAL" in tables["Table 4.1.5"][1]
+        assert "GIVEN THE DHI" in tables["Table 5.2.5"][1]
 
     def test_a_failed_figure_is_still_reported_and_the_tables_survive_it(self):
         """The missing-figure path had to keep working once the loop walked both kinds."""
@@ -2101,8 +2101,8 @@ class TestTabsFourAndFiveOfferTheSameControls:
 
 
 class TestTheCompetitionIsDrawnRealisationByRealisation:
-    """Lars, 17 Sep 2026: the paper's figure 1, live, ahead of the exceedance curve on 4.1 and
-    5.2. Fifty realisations at a time, the shallowest active limit ringed in its controller's
+    """Lars, 17 Sep 2026: the paper's figure 1, live, in place of the exceedance figure on 4.1
+    and 5.2, whose curve it carries on its right-hand panel. Fifty realisations at a time, the shallowest active limit ringed in its controller's
     colour, a window slider through the whole run, and the whole distribution with its
     exceedance curve beside it."""
 
