@@ -44,6 +44,31 @@ def _spread(post, *, posterior=True):
 
 
 # --------------------------------------------------------------------------- 1 · p_valid
+class TestMonigleRuleIsTheThirdRouteToC:
+    """`w = min(2 x score, 0.95)`, Monigle et al. (2025), offered beside the slider and the
+    graded attributes (Lars, 17 Sep 2026). A source of c, not a change to what c does."""
+
+    def test_the_rule_doubles_the_score_and_stops_at_the_ceiling(self):
+        assert dhi.contact_weight_from_score(0.10) == pytest.approx(0.20)
+        assert dhi.contact_weight_from_score(0.18) == pytest.approx(0.36)
+        assert dhi.contact_weight_from_score(0.475) == pytest.approx(0.95)
+        assert dhi.contact_weight_from_score(0.50) == dhi.CONTACT_WEIGHT_CEILING
+        assert dhi.contact_weight_from_score(1.00) == dhi.CONTACT_WEIGHT_CEILING
+
+    def test_the_ceiling_is_hoods_and_monigles_0_95(self):
+        assert dhi.CONTACT_WEIGHT_CEILING == 0.95
+
+    def test_the_default_score_gives_the_shipped_c(self):
+        """An untouched third route agrees with an untouched slider."""
+        from hcwc.ui import dhi_tab
+        assert dhi.contact_weight_from_score(dhi_tab.DEFAULT_DHI_SCORE) == pytest.approx(
+            dhi_tab.DEFAULT_CONTACT_GIVEN_HC)
+
+    def test_a_score_outside_0_to_1_is_clipped_not_raised(self):
+        assert dhi.contact_weight_from_score(-0.2) == 0.0
+        assert dhi.contact_weight_from_score(3.0) == dhi.CONTACT_WEIGHT_CEILING
+
+
 class TestPValidIsAContactAttributeJudgementOnly:
     """`p_valid = P(the picked event is the HCWC | G, contact attributes)`. It must not contain
     P(G | strength), and it must not depend on the column height."""
