@@ -651,31 +651,95 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     _overlay = st.session_state.get("dhi_overlay") if given_dhi else None
     _p_g_applied = (float(_overlay.get("p_g_given_amplitude", p_geological))
                     if _overlay else p_geological)
-    _chance = _p_g_applied * np.asarray(exceed(grid), dtype=float)
+    _f = np.asarray(exceed(grid), dtype=float)
+    _chance = _p_g_applied * _f
     _chance_prior = p_geological * np.asarray(result.exceedance(grid), dtype=float)
+
+    # Lars, 17 Sep 2026: the chance curve alone is F(h) scaled by one number, so the figure now
+    # carries the three things that make the reading: the controlling mechanism per depth bin
+    # (shares of all realisations, as 4.1.2 scaled), F(h) in blue with the contact's P90, P50,
+    # P10 and mean marked on it, and the prospect chance in red on the same 0-1 axis, so the
+    # vertical gap between the two curves is P(G) made visible.
     figp = go.Figure()
+    _edges7 = np.linspace(float(result.contact_m.min()), float(result.contact_m.max()), 41)
+    _centres7 = 0.5 * (_edges7[:-1] + _edges7[1:])
+    _shares7 = engine.controlling_share_by_depth(result, _edges7, weights=weights,
+                                                 within_bin=False)
+    _peak7 = 0.0
+    _stack = np.zeros(len(_centres7))
+    for _name in ranked:
+        if _name not in _shares7 or float(np.sum(_shares7[_name])) <= 0.0005:
+            continue
+        figp.add_bar(y=_centres7, x=_shares7[_name], orientation="h", name=_name,
+                     marker_color=colour_of[_name], marker_line_width=0, opacity=0.85,
+                     xaxis="x2", yaxis="y", legendgroup="limits", legendgrouptitle_text="controlling limit",
+                     hovertemplate=f"{_name}<br>%{{y:.0f}} m: %{{x:.1%}} of realisations"
+                                   "<extra></extra>")
+        _stack = _stack + np.asarray(_shares7[_name], dtype=float)
+    _peak7 = float(_stack.max()) if _stack.size else 1.0
+
     if given_dhi:
         figp.add_scatter(x=_chance_prior, y=apex_med + grid, mode="lines",
-                         name="geological", line=dict(color="#7d8794", width=2, dash="dash"))
+                         name="prospect chance, geological",
+                         line=dict(color="#7d8794", width=2, dash="dash"))
+    figp.add_scatter(x=_f, y=apex_med + grid, mode="lines",
+                     name="F(h) = P(column ≥ h | G), conditional",
+                     line=dict(color="#4C72B0", width=3))
     figp.add_scatter(x=_chance, y=apex_med + grid, mode="lines",
-                     name=(theme.evidence_basis() if given_dhi else "geological"),
-                     line=dict(color=theme.BASIS_COLOUR[theme.GIVEN_DHI if given_dhi
-                                                        else theme.GEOLOGICAL], width=3))
+                     name=f"prospect chance = P(G) × F(h), P(G) = {_p_g_applied:.2f}"
+                          + (f", {theme.evidence_basis()}" if given_dhi else ""),
+                     line=dict(color="#C44E52", width=3))
+
+    # The contact's percentiles and mean, read on the conditional curve: success cases, the
+    # same numbers as the headline metrics.
+    _keep = result.above_minimum
+    _w_keep = None if weights is None else np.asarray(weights, dtype=float)[_keep]
+    _mean_z = (float(np.average(result.contact_m[_keep], weights=_w_keep))
+               if _keep.any() else float("nan"))
+    _marks = [(f"P{_p}", pct(_p)) for _p in (90, 50, 10)] + [("mean", _mean_z)]
+    _mx, _my, _mt = [], [], []
+    for _label, _z in _marks:
+        if not np.isfinite(_z):
+            continue
+        _fx = float(np.interp(_z - apex_med, grid, _f))
+        _mx.append(_fx); _my.append(_z); _mt.append(f"{_label} {_z:,.0f} m")
+    # P50 and the mean sit a few metres apart on most prospects, so their labels take
+    # opposite sides of the point.
+    _pos = {"P90": "middle right", "P50": "top right", "P10": "middle right",
+            "mean": "bottom right"}
+    figp.add_scatter(x=_mx, y=_my, mode="markers+text", text=_mt,
+                     textposition=[_pos[t.split()[0]] for t in _mt],
+                     name="contact P90 / P50 / P10 and mean, success cases",
+                     marker=dict(color="#4C72B0", size=9,
+                                 symbol=["diamond" if t.startswith("mean") else "circle"
+                                         for t in _mt],
+                                 line=dict(color="white", width=1.5)),
+                     textfont=dict(size=11, color="#4C72B0"),
+                     hovertemplate="%{text}<br>F = %{x:.2f}<extra></extra>")
+
     if h_min > 0:
         figp.add_hline(y=apex_med + h_min, line=dict(color="#C44E52", dash="dash"),
-                       annotation_text=f"assessment minimum: {prospect_pos if not given_dhi else _p_g_applied * column_pos:.1%}",
+                       annotation_text=f"assessment minimum: chance {prospect_pos if not given_dhi else _p_g_applied * column_pos:.1%}",
                        annotation_position="bottom right")
-    figp.update_layout(xaxis_title="Prospect chance  =  P(G) × P(column ≥ h | G)",
-                       xaxis_range=[0, min(1.0, max(_p_g_applied, p_geological, 0.05) * 1.15)],
-                       yaxis_title="Contact at least this deep (m TVDSS)",
-                       yaxis=dict(autorange="reversed"), height=420, margin=dict(t=20),
-                       legend=dict(orientation="h", y=-0.18))
-    n.plot(figp, f"The prospect chance at every threshold. Includes the element risk: each "
-                 f"point is P(G) = {_p_g_applied:.3f} times the chance of a column at least that "
-                 f"tall given the elements worked, so it starts at P(G) at the apex and falls with "
-                 f"depth. Read at the assessment minimum it is the headline above; read at any "
-                 f"other depth it is the chance of a column reaching that depth. Method: see "
-                 f"8.1.4.")
+    figp.update_layout(
+        barmode="stack", bargap=0.05,
+        xaxis=dict(title="probability, on one axis: conditional F(h) and the prospect chance",
+                   range=[0, 1.02]),
+        xaxis2=dict(overlaying="x", side="top", range=[0, max(_peak7, 1e-6) * 3.0],
+                    showgrid=False, tickformat=".0%",
+                    title="share of all realisations per depth bin, by controlling limit",
+                    title_font_size=11, tickfont_size=10),
+        yaxis=dict(title="Contact at least this deep (m TVDSS)", autorange="reversed"),
+        height=620, margin=dict(t=58),
+        legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
+    n.plot(figp, f"The chance against depth, and what makes it. Blue is F(h), the chance of a "
+                 f"column at least this tall given the elements worked, with the contact's "
+                 f"P90, P50, P10 and mean marked on it (success cases). Red is the prospect "
+                 f"chance, P(G) = {_p_g_applied:.3f} times the blue curve; the gap between the "
+                 f"two is the element risk. The bars are the controlling limit per depth bin as "
+                 f"shares of all realisations, the scaled view of 4.1.2. Read at the assessment "
+                 f"minimum the red curve is the headline above; read at any other depth it is "
+                 f"the chance of a column reaching that depth. Method: see 8.1.4.")
 
     # ------------------------------------------------------------------ 4 · the well
     # The last question: a well entering the reservoir at a depth finds hydrocarbon if the
