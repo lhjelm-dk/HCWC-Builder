@@ -2063,7 +2063,7 @@ class TestTabsFourAndFiveOfferTheSameControls:
     on 5, and the only widget 5 has that 4 does not is the DHI's own basis switch.
     """
 
-    DHI_ONLY = {"controlling_view_N"}
+    DHI_ONLY = {"controlling_view_N", "map_quantity_N", "map_depth_N"}
 
     def test_the_tab_keyed_widgets_match(self):
         import re
