@@ -96,8 +96,9 @@ distribution.
 - Overlap with the article: the closing line, the 40 → 64 % / 130 → 99 m / 4 872 numbers, and
   image 9 (the article's panel c). Everything else in the post is picture-led and the article
   carries the derivation.
-- The article's figure (`docs/figures/fig6_paper.png`) is not in the post; the post's images
-  are the app's own, so a reader who opens the app recognises them.
+- The article's figures are the app's own too (`docs/figures/fig1…fig6`, from the same run
+  as the post's images), so a reader who opens the app recognises them; the article opens with
+  the workflow figure (`docs/figures/fig0_workflow.png`), which the post does not carry.
 - `GITHUB_URL` requires the repository to be public; until then, drop the line or link the
   app only.
 - The strength / σ / c settings behind images 7–10 are the shipped defaults with strength 20 and

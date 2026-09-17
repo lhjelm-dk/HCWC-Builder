@@ -95,7 +95,7 @@ def _render_with_figures(text: str, base: Path, demote: int = 0,
             alt = stripped[2:stripped.index("](")].strip()
             target = base / src
             if not target.exists():
-                st.caption(f"`{src}` not found — run `scripts/paper_figures.py`.")
+                st.caption(f"`{src}` not found — run `scripts/post_images.py`.")
             elif numbering is not None:
                 # Numbered and captioned like any exhibit, with the image's alt text as the
                 # caption, so 8.1.1's workflow figure carries a number (Lars, 17 Sep 2026).
@@ -168,23 +168,34 @@ empirical data and updated with DHI or well evidence. Method: see 8.1.1.
         """
     )
 
+    st.markdown("---\n\nNew here? The figure is the model with the tab each box lives on; the "
+                "tabs follow it left to right, top to bottom.")
+    # The guide version of the workflow figure, drawn by scripts/workflow_figure.py: the same
+    # boxes as 8.1.1's conceptual one, each line naming the tab and what is entered or read
+    # there (Lars, 17 Sep 2026). Numbered 1.0a; tab 1's Numbering is created only for it, and
+    # tab 2's resets the exhibit registry, so the guide stays out of the results export.
+    Numbering(1).image(
+        DOCS / "figures" / "fig0_workflow_guide.svg",
+        "The model as a map of the app. Geological row: the element chances (2.0) give P(G); "
+        "the limits (3.0) compete and the shallowest active one sets the contact (4.1). Given "
+        "the DHI (5.1): the evidence strength updates P(G), the contact geometry reweights the "
+        "same realisations (5.2). Both rows join in the chance against depth, read at the "
+        "assessment minimum and at the well (4.1.3, 4.1.4; 5.2.3, 5.2.4); the benchmarks (6.0) "
+        "are compared beside both contact distributions; 7.0 exports the percentiles.",
+    )
     st.markdown(
         """
----
-
-New here? Start with the tabs in this order.
-
-- **2.0 Prospect** — apex, spill point, element risk and the assessment minimum: the smallest
-  column that qualifies as a discovery at the well.
-- **3.0 HCWC Limiters** — the mechanisms that may limit the column, each with its probability
-  and its depth or capacity uncertainty.
-- **4.0 HCWC (geological)** — the contact distribution, the controlling mechanism, and the
-  probability of hydrocarbons with depth, from the competing limits alone.
-- **5.0 HCWC (DHI + well)** — the same, updated by a DHI or a well penetration and their
-  uncertainty.
-- **6.0 Benchmarks** and **8.0 Theory** — empirical reference data and the method.
-- **7.0 Export** — contact percentiles for predrill volumetric tools, with the distribution
-  basis stated.
+- **2.0 Prospect** — apex, spill point, the element chances and the assessment minimum, the
+  smallest column that counts as a discovery at the well.
+- **3.0 HCWC Limiters** — the limits: each with its probability of being active and its depth
+  or capacity uncertainty.
+- **4.0 HCWC (geological)** — the contact, its controlling mechanism and the chance against
+  depth, from the competing limits alone.
+- **5.0 HCWC (DHI + well)** — the same given a DHI or a well: 5.1 the evidence, 5.2 and 5.3
+  the updated results.
+- **6.0 Benchmarks** — the empirical record beside the contact distributions.
+- **7.0 Export** — the contact percentiles for volumetric tools, with the basis stated.
+- **8.0 Theory** — the method behind each box, and the paper.
 
         """
     )
@@ -734,8 +745,8 @@ with tab8:
         _paper_text = _paper.read_text(encoding="utf-8")
         st.info(
             "Every number in it is computed rather than typed: the worked prospect is the app's "
-            "own default read at a 120 m assessment minimum, and the figure is regenerated from "
-            "the engine by `scripts/paper_figures.py`. The long-form manuscript it shortens is "
+            "own default read at a 120 m assessment minimum, and the figures are the app's own, "
+            "exported by `scripts/post_images.py`. The long-form manuscript it shortens is "
             "kept as `docs/ARTICLE_LONG_2026-09.md`."
         )
         with st.expander("The source: Markdown, for posting or for a document"):

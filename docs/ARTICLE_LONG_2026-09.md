@@ -391,12 +391,14 @@ default, so a reader can reproduce them.
 
 ![Competing limits and the resulting distribution](figures/fig1_competing_limits.png)
 
-> **Figure 1.** (a) Forty consecutive realisations. Each coloured dot is one limit's sampled depth
-> in that realisation; the ringed dot is the minimum, which controls it. Note that no limit wins
-> consistently, and that the winner changes from realisation to realisation as the sampled depths
-> reorder. (b) The HCWC distribution those minima make: P90 2,191 m, P50 2,246 m, P10 2,322 m. The
-> shape is an output; nothing about it was elicited. Panel (a) is clipped for legibility — a few
-> capillary capacities sample well below the plotted range.
+> **Figure 1.** Left: fifty consecutive realisations. Each coloured dot is one limit's sampled
+> depth in that realisation; the ringed dot is the minimum, which controls it, in the colour of
+> the limit that set it. No limit wins consistently, and the winner changes from realisation to
+> realisation as the sampled depths reorder. Right: the HCWC distribution those minima make, as
+> a histogram with its exceedance curve on the top axis: P90 2,191 m, P50 2,246 m, P10 2,322 m,
+> with the 120 m assessment minimum and the fifty shown marked at their depths. The shape is an
+> output; nothing about it was elicited. The window is clipped for legibility — a few capillary
+> capacities sample well below the plotted range.
 
 Reading the geological result:
 
@@ -413,26 +415,29 @@ which the spill point provided the minimum.
 
 ![Controlling mechanism](figures/fig2_controlling_mechanism.png)
 
-> **Figure 2.** (a) The controlling-limit histogram: top-seal capillary capacity controls 32.0 % of
-> realisations, fault leakage 23.0 %, seal continuity 15.6 %, fault geometry 12.4 %, charge 9.4 %,
-> preservation 4.5 % and spill 3.1 %. (b) The same information as a function of depth. The
-> controlling share is **not constant down the structure**: shallow contacts are almost entirely
-> seal-controlled, while deeper ones pass to fault geometry and finally to spill. This is the
-> diagnostic that a distribution alone cannot provide.
+> **Figure 2.** The controlling limit at each depth. Bars are shares of all realisations, so
+> each limit's bars sum across depth to its overall share: top-seal capillary capacity controls
+> 32.0 % of realisations, fault leakage 23.0 %, seal continuity 15.6 %, fault geometry 12.4 %,
+> charge 9.4 %, preservation 4.5 % and spill 3.1 %. The controlling share is **not constant down
+> the structure**: shallow contacts are almost entirely seal-controlled, while deeper ones pass
+> to fault geometry and finally to spill. This is the diagnostic that a distribution alone
+> cannot provide.
 
 The mechanism diagnostic changes what sensitivity analysis is for. The conventional question is
 *which input is uncertain?* The useful question is *which uncertain mechanism actually controls the
 result?* Here, refining the preservation model would move very little, because it controls 4.5 % of
 realisations; refining the seal-capacity elicitation would move a great deal.
 
-At the same time, a mechanism with a small overall share is not necessarily unimportant: Figure 2b
+At the same time, a mechanism with a small overall share is not necessarily unimportant: Figure 2
 shows fault geometry controlling a large fraction of the *deep* realisations, which are exactly the
 ones that carry the volume. Both readings come from the same array.
 
-![The survival curve](figures/fig3_survival_curve.png)
+![The chance against depth](figures/fig3_chance_against_depth.png)
 
-> **Figure 3.** One curve, read in three places. The solid curve is $F(h)$, conditional on the
-> elements working; the dashed curve is $P(G)F(h)$, the prospect POS. At the 120 m assessment
+> **Figure 3.** One curve, read in three places. The blue curve is $F(h)$, conditional on the
+> elements working, with the contact's P90, P50, P10 and mean marked on it; the red curve is
+> $P(G)F(h)$, the prospect POS, and the gap between the two is the element risk. The bars are
+> the controlling limit per depth bin, Figure 2 on the same axis. At the 120 m assessment
 > minimum, $F = 98.6\%$ and POS $= 40.3\%$. At the DHI-indicated column,
 > $F = 47.3\%$ and POS $= 19.3\%$. Because $F$ decreases,
 > $F(h_\min) \geq F(h_\text{DHI})$ always — the two numbers were
@@ -636,13 +641,22 @@ check first.
 One consequence of likelihood-based updating is that seismic evidence does not act as a
 multiplicative correction to POS. It changes the *shape* of the column-height distribution.
 
-![The DHI update](figures/fig4_dhi_update.png)
+![The contact distribution before and after the pick](figures/fig4_dhi_update.png)
 
-> **Figure 4.** (a) Prospect POS against depth, for the geological prior, for three seismic
-> observations at a picked contact of 2,250 m and for an absent anomaly. The curves do not merely lift: each develops a step
-> at the pick, because the evidence moves probability toward the depths the interpreted event
-> supports and away from those it argues against. (b) The effective sample size behind each update.
-> A strongly stated interpretation leaves 3,000 of 10,000 realisations carrying the answer.
+> **Figure 4.** Where the contact is, before and after a 10 m pick at 2,250 m with contact
+> attribution $c = 0.36$ and a moderate evidence strength. Both histograms are over every
+> realisation and conditional on the elements having worked; the lines are the percentiles over
+> the realisations above the assessment minimum. The evidence strength does not enter this
+> figure: it updates the chance of hydrocarbons, not where the contact is given that there are.
+
+![The chance against depth, geological and updated](figures/fig6_chance_before_after.png)
+
+> **Figure 6.** The chance against depth for the same observation: $P(G) \times F(h)$
+> geological, $P(G \mid \text{strength}) \times F(h \mid G, \text{pick})$ updated. The curve
+> does not merely lift: the strength scales it and the pick reshapes it, raising the chance near
+> and above the picked contact and lowering it below, because the evidence moves probability
+> toward the depths the interpreted event supports and away from those it argues against. The
+> open circle is the updated median.
 
 Read as depth-dependent risk, on the worked prospect with a mild anomaly, the curve being
 $P(G \mid \text{character}) \times F(h)$ in both columns:
@@ -1041,6 +1055,7 @@ Bulletin* **63**(5), 723–760.
 
 ---
 
-*Figures 1–5 are generated by `scripts/paper_figures.py` from the implementation's own default
-prospect at 10,000 realisations; the prospect definition is written alongside them as
+*Figures 1 to 4 and 6 are the implementation's own figures, exported by
+`scripts/post_images.py` from its default prospect at 10,000 realisations; Figure 5 is drawn by
+`scripts/paper_figures.py`, which also writes the prospect definition alongside them as
 `docs/figures/prospect.json`.*
