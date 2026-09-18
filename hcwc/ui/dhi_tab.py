@@ -13,7 +13,6 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-from hcwc.core import charge as ch
 from hcwc.core import dhi as dhi_core
 from hcwc.core import sensitivity
 from hcwc.core import well as well_core
@@ -731,8 +730,6 @@ def render(n: Numbering | None = None) -> None:
     # Published for the walkthrough sub-tab, which explains this number rather than producing
     # it. Same one-frame lag as everything else that crosses a sub-tab boundary.
     st.session_state["dhi_r_strength"] = float(r_strength)
-    _elements = st.session_state.get("element_pos") or {}
-    _p_g = float(np.prod([float(v) for v in _elements.values()])) if _elements else 1.0
 
     theme.heading(TAB, sub=n.sub, text="3 · Contact attribution: updates HCWC | G")
     st.markdown(

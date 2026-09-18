@@ -40,7 +40,7 @@ where a lab MICP exists it is the number the assessor has. Small.
 
 **Capillary-controlled two-phase columns** — the one real gap the Hood (2019) review found (`docs/HOOD_2019_REVIEW.md`). The app has no seal-capacity route to a gas–oil contact, and the charge-driven route exists in `hcwc.core.charge` but is wired to no widget. Fully planned in **`docs/PLAN_DUAL_PHASE_SEAL.md`**, including the one thing to settle first: the derivation gives a 45 % gas cap on this app's own interfacial-tension correlations where Hood quotes 20 %, and the disagreement is entirely in oil–water tension.
 
-Its cheap sibling — commodity scenarios from realisation proportions, Hood's slide 19 — needs no new physics and would go first. Both wait: Lars, 15 Sep 2026, does not want the two-phase seal implemented yet, and step 0 (the oil–water tension) is closed by `docs/IFT_CHECK_2026-09-15.md`.
+Its cheap sibling — commodity scenarios from realisation proportions, Hood's slide 19 — needs no new physics and would go first. Both wait: Lars, 15 Sep 2026, does not want the two-phase seal implemented yet, and step 0 (the oil–water tension) is closed by `archive/development_notes/IFT_CHECK_2026-09-15.md`.
 
 ---
 
@@ -79,7 +79,7 @@ the engine and prior art for the level above it. **Buy or borrow it before the m
 paper.** The review lists the four things to check when it arrives.
 
 **A second public benchmark: answered, and the answer is no.** Searched 28 Aug 2026 — see
-`docs/superseded/BENCHMARK_SOURCES.md` (now 8.1.8 of `docs/THEORY.md`). Edmundson appears to be the only openly redistributable dataset
+`archive/superseded_notes/BENCHMARK_SOURCES.md` (now 8.1.8 of `docs/THEORY.md`). Edmundson appears to be the only openly redistributable dataset
 relating column height to closure height, for a structural reason rather than an accidental one:
 closure height needs an apex and a spill picked off depth-converted 3D per field, which is months
 of interpretation rather than a database query. **Do not repeat the search without new

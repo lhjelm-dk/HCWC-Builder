@@ -25,7 +25,6 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from hcwc.core import charge as ch
 from hcwc.core import trust
 from hcwc.core import decompose as dc
 from hcwc.io import benchmarks, geox, report
@@ -222,7 +221,7 @@ empirical data and updated with DHI or well evidence. Method: see 8.1.
 
     # Trimmed 16 Sep 2026 to the operational statement. The argument for reading the chance
     # off the contact distribution, the ranking of effort, the precedent and the limitations
-    # are stated once, on tab 8.1 (docs/EXPLANATION_MAP_2026-09-16.md, tab 1).
+    # are stated once, on tab 8.1 (archive/development_notes/EXPLANATION_MAP_2026-09-16.md, tab 1).
     st.markdown(
         "A discovery is a column of at least the assessment minimum set on **2.0 Prospect**; the "
         "chance of success is the contact distribution read at that depth. Method: see 8.1.3. "

@@ -27,7 +27,6 @@ import streamlit as st
 
 from hcwc.core import dhi as dhi_core
 from hcwc.core import engine
-from hcwc.core import censoring
 from hcwc.io import benchmarks
 from hcwc.ui import theme
 from hcwc.ui.numbering import Numbering
@@ -322,7 +321,8 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                          name=f"censored MLE — median seal capacity (r = {mle_r:.2f})",
                          line=dict(color=FITTED, width=3))
     _add_prospect_violin(figA, closure, prior, width=45.0)
-    drawn_a = _overlay_models(figA, closure, 45.0) if show_models else []
+    if show_models:
+        _overlay_models(figA, closure, 45.0)
     # Column height increases downward (Lars, 16 Sep 2026): a column is a depth below the apex,
     # and every other depth axis in the tool reads that way.
     figA.update_layout(xaxis_title="Closure height (m)",
@@ -1089,7 +1089,6 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                 if fuse_weight > 0:
                     curves.append((f"{basis} + benchmark, weight {fuse_weight:.2f}",
                                    fused_by_basis[basis], colour, "dot", 3.0))
-            fused = fused_by_basis[theme.GEOLOGICAL]
 
             curves.append((f"{bench_source}, at {own_relief:,.0f} m relief", bench,
                            "#8172B2", "dash", 2.4))
@@ -1188,7 +1187,6 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                 fill_bases.append((theme.evidence_basis(), _updated))
             shares = {basis: _fill_shares(columns) for basis, columns in fill_bases}
             mine = shares[theme.GEOLOGICAL][:3]
-            mine_spill = shares[theme.GEOLOGICAL][3]
             theirs = [float(cell.p_fill_0_50), float(cell.p_fill_51_75),
                       float(cell.p_fill_76_99)]
 

@@ -282,7 +282,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
              "lighter than stock-tank oil because the dissolved gas is still in it. "
              "Surface-condition gas, around 0.0008, is not on this scale.")
     # Oil–water tension is elicited rather than read off a line in temperature (15 Sep 2026,
-    # docs/IFT_CHECK_2026-09-15.md): the line the calculator carried fell below every measured
+    # archive/development_notes/IFT_CHECK_2026-09-15.md): the line the calculator carried fell below every measured
     # reservoir-condition value above about 60 °C and understated the oil capacity by about
     # 1.9×. The gas case keeps its temperature line, which agrees with methane–brine data, so
     # the control is shown for oil only.

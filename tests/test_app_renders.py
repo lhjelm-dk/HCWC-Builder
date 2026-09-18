@@ -521,7 +521,7 @@ class TestTheSealDensitiesAreInSitu:
         calculator is still what the *Computed* source runs.
 
         Until 15 Sep 2026 these were 79 / 148 / 433 m, from an oil-water tension line that gave
-        11.7 dyne/cm at 70 C; the elicited 18-28 dyne/cm that replaced it (docs/IFT_CHECK_2026-09-15.md)
+        11.7 dyne/cm at 70 C; the elicited 18-28 dyne/cm that replaced it (archive/development_notes/IFT_CHECK_2026-09-15.md)
         roughly doubles the capacity, which is the finding.
         """
         at = _run(**TOP_SEAL_COMPUTED)
@@ -668,7 +668,6 @@ class TestTheLimitStackSaysWhichContactItIsDrawing:
         """The caption's promise, and the reason every thin curve is reweighted too. The identity
         holds under any *one* weighting; mixing geological limits with a DHI answer would let the
         bold line cross above a thin one, which the caption then reads as impossible."""
-        import numpy as np
 
         checked = 0
         for chart in self._traces(_run(**{"stack_mode_4": "Exceedance curves",
@@ -776,12 +775,9 @@ class TestTheLimitStackGroupsWhatItDraws:
 
     def test_the_geological_tab_has_no_amplitude_group(self):
         """Nothing to show there, and a group heading over an empty gap would be worse than none."""
-        centres, layout = None, None
         at = _run(**{"stack_mode_4": "Violin"})
-        import base64
         import json
 
-        import numpy as np
         for el in at.get("plotly_chart"):
             spec = json.loads(el.proto.spec)
             names = [str(t.get("name")) for t in spec.get("data", [])]
@@ -860,7 +856,6 @@ class TestTheDhiOpensOnTheProspectsPick:
     def test_it_is_inside_the_prior_it_is_updating(self):
         """The whole failure mode of a hard-coded default. Outside the central 98 % of the prior the
         update rests on a handful of realisations, and the fallback exists for that case."""
-        import numpy as np
 
         at = _run()
         contacts = _contact_quantiles()
@@ -1703,7 +1698,7 @@ class TestTheArgumentsLiveInDocuments:
     """The docs split, 5 Sep 2026, moved three essays that were pure reasoning out of the tabs
     into `docs/`. On 15 Sep 2026 they and the other theory notes were folded into one document,
     `docs/THEORY.md`, rendered on tab 8 as 8.1 and 8.1.1 to 8.1.8, with the superseded notes kept
-    under `docs/superseded/`. The tabs state a conclusion and point at a number.
+    under `archive/superseded_notes/`. The tabs state a conclusion and point at a number.
 
     **The viewer fails silently by design.** A missing file gets *"not found in this checkout"*
     rather than an exception, which is right for a deployment without the docs folder and wrong as
@@ -1767,16 +1762,16 @@ class TestTheArgumentsLiveInDocuments:
 
     def test_the_superseded_notes_are_kept_off_screen(self):
         """*Files are moved, not deleted.* The five notes 8.1 replaced stay readable in
-        docs/superseded/, indexed by a README, and none is registered on tab 8 any more."""
+        archive/superseded_notes/, indexed by a README, and none is registered on tab 8 any more."""
         import pathlib
 
         root = pathlib.Path(__file__).resolve().parent.parent
         notes = ["COMPETING_LIMITS.md", "LIKELIHOOD_OR_PRIOR.md", "WEIGHT_NOT_BAYES.md",
                  "BASE_RATE_NEGLECT.md", "BENCHMARK_SOURCES.md"]
-        missing = [n for n in notes if not (root / "docs" / "superseded" / n).exists()]
+        missing = [n for n in notes if not (root / "archive" / "superseded_notes" / n).exists()]
         assert not missing, f"a superseded note was deleted rather than moved: {missing}"
-        readme = (root / "docs" / "superseded" / "README.md").read_text(encoding="utf-8")
-        assert all(n in readme for n in notes), "docs/superseded/README.md does not list every note"
+        readme = (root / "archive" / "superseded_notes" / "README.md").read_text(encoding="utf-8")
+        assert all(n in readme for n in notes), "archive/superseded_notes/README.md does not list every note"
         source = (root / "app.py").read_text(encoding="utf-8")
         assert not [n for n in notes if n in source], "a superseded note is back on screen"
 
@@ -1909,7 +1904,7 @@ class TestThePaperAgreesWithTheAppItDescribes:
     #: Since 17 Sep 2026 the figures are the app's own, exported by scripts/post_images.py,
     #: plus the workflow figure (scripts/workflow_figure.py); the long manuscript, kept as
     #: docs/ARTICLE_LONG_2026-09.md, adds the chance against depth and keeps the concept
-    #: sketch fig5 from scripts/paper_figures.py. The matplotlib set is in docs/superseded/.
+    #: sketch fig5 from scripts/paper_figures.py. The matplotlib set is in archive/old_figures/.
     FIGURES = ("fig0_workflow.png", "fig1_competing_limits.png",
                "fig2_controlling_mechanism.png", "fig4_dhi_update.png",
                "fig6_chance_before_after.png")

@@ -4,7 +4,7 @@ Run:  python scripts/paper_figures.py
 
 Since 17 Sep 2026 the article's other figures are the app's own, exported by
 ``scripts/post_images.py`` with the same look as the tabs; the matplotlib set this script drew
-before is kept as ``docs/superseded/paper_figures_mpl_2026-09-17.py``. What stays here is the
+before is kept as ``archive/old_figures/paper_figures_mpl_2026-09-17.py``. What stays here is the
 figure that has no app counterpart, the terminating-versus-truncating sketch, and the prospect
 written beside the figures so the inputs travel with the outputs.
 

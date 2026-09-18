@@ -13,7 +13,6 @@ import streamlit as st
 
 from hcwc.core import decompose as dc
 from hcwc.core.decompose import ELEMENTS, ReservoirEffectiveness
-from hcwc.core.limits import Group
 from hcwc.ui import results_tab, run, theme
 from hcwc.ui.numbering import Numbering
 
