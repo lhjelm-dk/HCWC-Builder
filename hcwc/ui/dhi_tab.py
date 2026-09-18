@@ -14,9 +14,11 @@ import streamlit as st
 from plotly.subplots import make_subplots
 
 from hcwc.core import dhi as dhi_core
+from hcwc.core import dhi_comparison as comparison
 from hcwc.core import sensitivity
 from hcwc.core import well as well_core
 from hcwc.core.dhi import DetectionFunction, DhiObservation
+from hcwc.core import pos
 from hcwc.ui import run, sources, theme
 from hcwc.ui.numbering import Numbering
 
@@ -633,8 +635,7 @@ def render(n: Numbering | None = None) -> None:
     r_strength = model.r_at(strength)
     band, band_note = dhi_core.strength_bands(r_strength)
     _elements_now = st.session_state.get("element_pos") or {}
-    _p_g_prior = (float(np.prod([float(v) for v in _elements_now.values()]))
-                  if _elements_now else 1.0)
+    _p_g_prior = pos.accumulation_chance(_elements_now)
 
     axis = np.linspace(-160.0, 160.0, 400)
     figs = go.Figure()
@@ -1111,7 +1112,7 @@ def render(n: Numbering | None = None) -> None:
     # P(absent | not G), audit finding P1-0 -- so that an absent DHI reads against the prospect
     # rather than as neutral, and never as encouraging.
     element_pos = st.session_state.get("element_pos") or {}
-    element_product = float(np.prod([float(v) for v in element_pos.values()])) if element_pos else 1.0
+    element_product = pos.accumulation_chance(element_pos)
     r_applied = dhi_core.applied_ratio(result, detection, observation, r_strength)
     st.session_state["dhi_r_applied"] = float(r_applied)
     p_g_updated = dhi_core.p_g_given_strength(element_product, r_applied)
@@ -1325,22 +1326,22 @@ def render(n: Numbering | None = None) -> None:
     pooled_gap = None
     floor_part = None
     if show_all and seen:
-        for method, dash in ((dhi_core.POOLED, "dash"), (dhi_core.SCENARIO, "dot")):
+        for method, dash in ((comparison.POOLED, "dash"), (comparison.SCENARIO, "dot")):
             curve = _comparison_curve(
-                dhi_core.combination_exceedance(result, detection, observation, hs, method=method))
-            if method == dhi_core.POOLED:
+                comparison.combination_exceedance(result, detection, observation, hs, method=method))
+            if method == comparison.POOLED:
                 pooled_gap = float(np.abs(np.asarray(curve) - np.asarray(updated)).max())
                 # The same comparison with the detection function held flat, so the caption can
                 # say how much of the gap is the floor rather than asserting a split that moves
                 # with p_valid.
                 _flat = dhi_core.DetectionFunction(h50_m=1e-6, steepness_m=1e-6, ceiling=1.0)
                 _flat_curve = _comparison_curve(
-                    dhi_core.combination_exceedance(result, _flat, observation, hs,
-                                                    method=dhi_core.BAYES))
+                    comparison.combination_exceedance(result, _flat, observation, hs,
+                                                    method=comparison.BAYES))
                 floor_part = float(np.abs(np.asarray(curve) - np.asarray(_flat_curve)).max())
             fig.add_scatter(x=curve, y=depths, mode="lines", opacity=0.65,
-                            name={dhi_core.POOLED: "…with the floor and D(h) dropped",
-                                  dhi_core.SCENARIO: "…as a scenario switch (a mixture)"}[method],
+                            name={comparison.POOLED: "…with the floor and D(h) dropped",
+                                  comparison.SCENARIO: "…as a scenario switch (a mixture)"}[method],
                             line=dict(color=POSTERIOR, width=2.0, dash=dash))
 
     markers = [("assessment minimum", h_min, "#333")]
@@ -1654,7 +1655,7 @@ def render(n: Numbering | None = None) -> None:
             "see 8.1.6."
         )
         if seen:
-            switched = dhi_core.scenario_switch(result, p_valid, contact, sigma)
+            switched = comparison.scenario_switch(result, p_valid, contact, sigma)
             s1, s2, s3 = st.columns(3)
             for col, p in ((s1, 90), (s2, 50), (s3, 10)):
                 col.metric(f"Contact P{p}, scenario switch",
@@ -1694,7 +1695,7 @@ def _well_only(result, n: Numbering) -> None:
     h_min = float(result.limit_set.min_column_m)
     depth_grid = apex + np.linspace(0.0, float(result.column_m.max()), 300)
     element_pos = st.session_state.get("element_pos") or {}
-    product = float(np.prod([float(v) for v in element_pos.values()])) if element_pos else 1.0
+    product = pos.accumulation_chance(element_pos)
     prior_pos = product * posterior.pos(posterior=False)
     posterior_pos = product * posterior.pos()
     st.session_state["dhi_overlay"] = {

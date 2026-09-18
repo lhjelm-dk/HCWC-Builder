@@ -20,6 +20,7 @@ import streamlit as st
 from hcwc.core import engine, sensitivity, trust
 from hcwc.core import limits as limits_mod
 from hcwc.core.limits import Group
+from hcwc.core import pos
 from hcwc.ui import limit_stack, run, theme, trust_panel
 from hcwc.ui.numbering import Numbering
 
@@ -133,7 +134,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     column_pos = pos_at(h_min)
 
     element_pos = st.session_state.get("element_pos") or {}
-    p_geological = float(np.prod([float(v) for v in element_pos.values()])) if element_pos else 1.0
+    p_geological = pos.accumulation_chance(element_pos)
     prospect_pos = p_geological * column_pos
 
     if h_min <= 0:

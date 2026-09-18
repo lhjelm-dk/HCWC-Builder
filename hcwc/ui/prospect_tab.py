@@ -23,6 +23,7 @@ import streamlit as st
 
 from hcwc.core.decompose import ELEMENTS
 from hcwc.core.limits import Group
+from hcwc.core import pos
 from hcwc.io import epos
 from hcwc.io import prospect as prospect_io
 from hcwc.ui import theme
@@ -338,7 +339,7 @@ def render() -> None:
                     unsafe_allow_html=True)
 
     st.session_state["element_pos"] = element_pos
-    product = float(np.prod(list(element_pos.values())))
+    product = pos.accumulation_chance(element_pos)
 
     # Its own line, at size, because it is the number this section exists to produce and it was
     # previously the smallest thing on the page -- a figure inside a grey caption, under a table

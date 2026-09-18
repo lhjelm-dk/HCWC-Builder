@@ -24,7 +24,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from hcwc.core import charge as ch
-from hcwc.core import censoring, seals
+from hcwc.core import censoring, engine, seals
 from hcwc.core.limits import DepthDistribution
 from hcwc.io import benchmarks
 from hcwc.ui import theme
@@ -449,7 +449,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     fig.add_histogram(x=capacity, nbinsx=60, name="Realisations",
                       marker_color=theme.PILLAR_COLOURS["Retention"], opacity=0.8)
     grid = np.linspace(float(capacity.min()), float(capacity.max()), 240)
-    fig.add_scatter(x=grid, y=(capacity[None, :] >= grid[:, None]).mean(axis=1), mode="lines",
+    fig.add_scatter(x=grid, y=engine.exceedance(capacity, grid), mode="lines",
                     name="Probability of exceedance", secondary_y=True,
                     line=dict(color="#DD8452", width=2.4))
     for label, value in (("P90", np.percentile(capacity, 10)),
