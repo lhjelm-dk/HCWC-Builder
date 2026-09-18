@@ -9,7 +9,7 @@ typed: every image is what the app draws. Run from the repository root::
 
 Output: ``docs/post/*.png``, listed in ``docs/LINKEDIN_POST.md``, and the article's figures in
 ``docs/figures/`` (Lars, 17 Sep 2026: the article's figures are the app's, same look; the
-matplotlib set they replace is kept in ``docs/superseded/``). The workflow figure that opens the
+matplotlib set they replace is kept in ``archive/old_figures/``). The workflow figure that opens the
 article is drawn by ``scripts/workflow_figure.py``; the concept sketch ``fig5`` by
 ``scripts/paper_figures.py``.
 """

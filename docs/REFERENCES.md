@@ -239,7 +239,7 @@ doi:[10.3997/2214-4609.201901555](https://doi.org/10.3997/2214-4609.201901555)
 |---|---|
 | **Sperrevik, S. et al. (2002)** | fault permeability: `Kf = 80000·exp(−(19.4·SGR + 0.00403·Zmax + (0.0055·Zf − 12.5)·(1−SGR)^7))` |
 | **Manzocchi, T. et al.** | fault permeability: `log Kf = −A1·SGR − A2·log(D)·(1−SGR)^A3` |
-| **Yang, Y. & Aplin, A.C. (1998)** | pore-throat radius from porosity / void ratio. Not the source of the gas–water tension line once attributed to it; the oil–water line was replaced on 15 Sep 2026 (`docs/IFT_CHECK_2026-09-15.md`) |
+| **Yang, Y. & Aplin, A.C. (1998)** | pore-throat radius from porosity / void ratio. Not the source of the gas–water tension line once attributed to it; the oil–water line was replaced on 15 Sep 2026 (`archive/development_notes/IFT_CHECK_2026-09-15.md`) |
 | **Sales, J.K. (1997)** | closure height / seal capacity / fluid type interplay; cited by Graham |
 | **Hansen (1996)** | depth calibration of the fitted entry-pressure distributions |
 

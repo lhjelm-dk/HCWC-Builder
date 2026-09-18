@@ -2,7 +2,7 @@
 
 1. The exceedance curve, `F(h) = P(column >= h)`, which is the primary risk output. **Never a bare
    POS**: every chance quoted here carries the threshold it was read at, because a POS read at one
-   threshold and a volume read at another is the specific error `docs/DHI_alignment.md` exists to
+   threshold and a volume read at another is the specific error `archive/development_notes/DHI_alignment.md` exists to
    prevent.
 2. Which limit controlled the contact, against depth — the question a distribution alone cannot
    answer, and the reason the engine keeps the argmin.

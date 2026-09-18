@@ -195,7 +195,7 @@ industry (e.g. Nixon *et al.*, 2018)" — is the correct level of confidence for
 statement.
 
 *Status, 14 September 2026.* The correction above was made, and the audit of the same day
-went further. Under the corrected chain (`docs/DHI_alignment.md` §0) the realisations are
+went further. Under the corrected chain (`archive/development_notes/DHI_alignment.md` §0) the realisations are
 conditional on G, so `1 − D(h)` reshapes the column and cannot move the chance; the 40.3 % → 6.3 %
 result the article quoted came from a within-G ratio applied as a ratio on the prospect, and is
 withdrawn. The chance-axis route Monigle *et al.* use is now implemented as a separate ratio on
@@ -273,12 +273,12 @@ read that way.
 **Brier score and discrimination as the calibration metrics.** The app's `trust.py` audits whether
 the arithmetic supports the number quoted; it cannot score prediction quality, because it has no
 outcomes. But the paper is the reference for *what a calibrated risking system looks like* —
-Brier 0.15, discrimination 30 % — and `docs/superseded/BASE_RATE_NEGLECT.md` is the right place to point at
+Brier 0.15, discrimination 30 % — and `archive/superseded_notes/BASE_RATE_NEGLECT.md` is the right place to point at
 it.
 
 **Base rates, not 50 %.** They begin every element at a database-derived base rate, explicitly
 "avoiding an initial COA of 50 %, common in risk matrices". This supports the argument already made
-in `docs/superseded/BASE_RATE_NEGLECT.md` and gives it a 2025 citation.
+in `archive/superseded_notes/BASE_RATE_NEGLECT.md` and gives it a 2025 citation.
 
 **A fluid contact reflection constrains net-to-gross.** From 121 calibration points: reservoirs
 with an FCR run 40–85 % NTG, those without 18–55 %; "the absence of an FCR does not preclude a

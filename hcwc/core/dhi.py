@@ -1,6 +1,6 @@
 """The DHI branch: what a seismic amplitude does to the contact distribution, and to POS.
 
-Worked out in ``docs/DHI_alignment.md``. The short of it, because it decides the shape of this
+Worked out in ``archive/development_notes/DHI_alignment.md``. The short of it, because it decides the shape of this
 module:
 
 **POS is not a number, it is a reading.** Everything is one function, ``F(h) = P(column >= h)``. The
@@ -95,7 +95,7 @@ class DetectionFunction:
     ⚠ **The shape is a modelling choice, not physics.** A Class III sand can become *less* visible
     when very thick, as the top and base responses separate; that is a humped function, not a
     monotone one. The logistic is exposed rather than hard-coded for that reason, and
-    ``docs/DHI_alignment.md`` §9 flags it as worth a geophysicist's opinion.
+    ``archive/development_notes/DHI_alignment.md`` §9 flags it as worth a geophysicist's opinion.
 
     ``false_positive`` is the detector's other property: how often a trap with **no** hydrocarbons
     shows an anomaly of the class being looked for, stated relative to how often a

@@ -8,7 +8,7 @@ none is executed before approval. `S` scientific, `U` user interface, `T` test, 
 | path | lines | purpose | sig. | imports (hcwc) | imported by | action | proposed location |
 |---|---:|---|---|---|---|---|---|
 | `app.py` | 800 | Streamlit entry: tab layout, tab 1, tab 7 export, tab 8 theory/paper/references, prospect load | U | core.charge, core.decompose, core.trust, io.benchmarks, io.geox, io.report, io.wellvolpos, ui.depth_risk_tab, ui.dhi_tab, ui.dhi_walkthrough, ui.empirical, ui.limiters_tab, ui.numbering, ui.prospect_tab, ui.results_tab, ui.run, ui.sources, ui.theme | - | KEEP, split | hcwc/ui/app.py or app.py thin; tab 1/7/8 bodies into hcwc/ui/concept.py, export.py, theory.py |
-| `docs/superseded/paper_figures_mpl_2026-09-17.py` | 587 | the matplotlib paper figures superseded on 17 Sep | P archive | core.dhi, core.engine, core.limits | - | ARCHIVE | archive/old_figures/ |
+| `archive/old_figures/paper_figures_mpl_2026-09-17.py` | 587 | the matplotlib paper figures superseded on 17 Sep | P archive | core.dhi, core.engine, core.limits | - | ARCHIVE | archive/old_figures/ |
 | `hcwc/__init__.py` | 4 | package | - | - | - | KEEP |  |
 | `hcwc/core/__init__.py` | 2 | package | - | - | - | KEEP |  |
 | `hcwc/core/calibration.py` | 173 | prospect vs benchmark comparison: exceedance percentile, quantile pairs, corridor share | S | - | ui/empirical | KEEP | core/calibration.py |
@@ -59,7 +59,7 @@ none is executed before approval. `S` scientific, `U` user interface, `T` test, 
 ## 2 · Public functions and classes (the before-inventory, §28)
 
 - `app.py`: -
-- `docs/superseded/paper_figures_mpl_2026-09-17.py`: from_the_app, save, figure_1_competing_limits, figure_2_controlling_mechanism, figure_3_survival, figure_4_dhi_update, figure_5_truncate_vs_terminate, figure_6_paper, main
+- `archive/old_figures/paper_figures_mpl_2026-09-17.py`: from_the_app, save, figure_1_competing_limits, figure_2_controlling_mechanism, figure_3_survival, figure_4_dhi_update, figure_5_truncate_vs_terminate, figure_6_paper, main
 - `hcwc/core/calibration.py`: exceedance_percentile, compare, quantile_pairs, exceedance_grid, corridor_share, quantile_ratios; classes: Comparison(ratio, verdict, sentence)
 - `hcwc/core/censoring.py`: spill_censoring, censored_slope, censored_loglinear, naive_slope, filtered_slope; classes: CensoredFit(censored_fraction); CensoredMultiFit()
 - `hcwc/core/charge.py`: oil_contact, gas_contact, mixed_separate, mixed_joint, column_height_from_contact, columns_below_apex, table_short_of_spill; classes: AreaDepthTable(apex_m, deepest_m, grv_1e6m3, capacity_1e6m3, depth_at_grv, from_csv, reference, from_top_and_thickness); ChargeResult(not_limiting, fraction_not_limiting, dry); ChargeColumns()
@@ -147,11 +147,11 @@ none is executed before approval. `S` scientific, `U` user interface, `T` test, 
 | `docs/LINKEDIN_POST.md` | the post draft | KEEP -> paper/ |
 | `docs/THEORY.md` | tab 8.1, the single statement of the method | KEEP |
 | `docs/REFERENCES.md` | tab 8.3 bibliography | KEEP |
-| `docs/DHI_alignment.md` | signed working note, 25 Aug, superseded in parts by the 14 Sep audit; §0 records the corrected chain | ARCHIVE candidate: developer note; keep as history (archive/development_notes/) |
+| `archive/development_notes/DHI_alignment.md` | signed working note, 25 Aug, superseded in parts by the 14 Sep audit; §0 records the corrected chain | ARCHIVE candidate: developer note; keep as history (archive/development_notes/) |
 | `docs/AUDIT_2026-09-14.md` | numerical audit of the core | KEEP -> docs/VALIDATION.md source or archive/development_notes/ |
 | `docs/DHI_AUDIT_2026-09-16.md` | DHI mathematical audit | KEEP -> same |
-| `docs/EXPLANATION_MAP_2026-09-16.md` | where each explanation lives | ARCHIVE (superseded by tab 8's map) |
-| `docs/IFT_CHECK_2026-09-15.md` | interfacial-tension check | ARCHIVE (development note) |
+| `archive/development_notes/EXPLANATION_MAP_2026-09-16.md` | where each explanation lives | ARCHIVE (superseded by tab 8's map) |
+| `archive/development_notes/IFT_CHECK_2026-09-15.md` | interfacial-tension check | ARCHIVE (development note) |
 | `docs/OPEN_QUESTIONS_2026-09-15.md` | open decisions | KEEP (developer-facing) |
 | `docs/NEXT_PLAN.md` | what to build next | KEEP (developer-facing) |
 | `docs/PLAN_DUAL_PHASE_SEAL.md` | parked design | KEEP (developer-facing) |
@@ -196,9 +196,9 @@ of the same quantity except the percentile estimator (R2).
 | where | overlap | proposed |
 |---|---|---|
 | `docs/THEORY.md` (tab 8.1) vs `docs/ARTICLE_LONG_2026-09.md` | the manuscript restates 8.1.2 to 8.1.6 at length with its own numbers | keep both: the manuscript is protected; note in the manuscript's header that 8.1 is authoritative for the tool's current wording |
-| `docs/THEORY.md` vs `docs/DHI_alignment.md` | the signed note's §0 states the corrected chain, its later sections the pre-14-Sep construction | archive as a development note with a header pointing at 8.1.4–8.1.6 |
+| `docs/THEORY.md` vs `archive/development_notes/DHI_alignment.md` | the signed note's §0 states the corrected chain, its later sections the pre-14-Sep construction | archive as a development note with a header pointing at 8.1.4–8.1.6 |
 | `docs/superseded/*.md` | absorbed into THEORY on 16 Sep | archive |
-| `docs/EXPLANATION_MAP_2026-09-16.md` | superseded by tab 8's map paragraph and CLAUDE.md | archive |
+| `archive/development_notes/EXPLANATION_MAP_2026-09-16.md` | superseded by tab 8's map paragraph and CLAUDE.md | archive |
 | `docs/AUDIT_2026-09-14.md`, `docs/DHI_AUDIT_2026-09-16.md` | the two audits; their findings are in tests and 8.1.8 | keep, referenced from `docs/VALIDATION.md` |
 | `CLAUDE.md`, `README.md` | README is stale (Phase 6, a private plan) | README rewritten from ARCHITECTURE_FINAL; CLAUDE.md stays the working instruction |
 | tab captions vs 8.1 | every tab says "Method: see 8.1.x"; no page of theory remains on a tab | fine |
