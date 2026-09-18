@@ -225,7 +225,7 @@ them separate is what makes the whole thing tractable.
 
 | | E-POS | HCWC Builder |
 |---|---|---|
-| **Uses** | amplitude class / DHI index, calibrated on SAAM | anomaly **geometry**: down-dip termination, areal extent |
+| **Uses** | amplitude class / DHI evidence index, against its reference distributions | anomaly **geometry**: down-dip termination, areal extent |
 | **Updates** | `P(HC present)` and `P(reservoir effective)` — a **categorical** update over 8 outcomes | the **continuous** distribution of column height |
 | **Answers** | *is there hydrocarbon, and is there reservoir* | *how far down does it go* |
 | **Implemented** | `logic/dfi_bayes.py`, `logic/dfi_pillar_update.py` | to build |

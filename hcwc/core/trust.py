@@ -127,7 +127,7 @@ def tail_support(result: EngineResult) -> Check:
                  f"P10 rests on {behind_p10:,} of them, P1 on {behind_p1:,}."),
         meaning=("Enough to quote P10 to the metre." if level == "ok" else
                  "P10 needs a higher trial count before it is quoted. The percentiles are taken "
-                 "over successes only, so a low chance of success thins the tail twice over."),
+                 "over the realisations meeting the assessment minimum only, so a low share above it thins the tail twice over."),
     )
 
 

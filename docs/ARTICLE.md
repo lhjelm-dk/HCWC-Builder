@@ -30,10 +30,12 @@ distribution follows.
 
 ![The model as two rows: geological, and given the DHI; two columns: the chance, and the contact given success](figures/fig0_workflow.png)
 
-*Figure 1. The model. Geological row: the element chances give P(G); the limits compete and the
-shallowest active one sets the contact. Given the DHI: the evidence strength updates P(G), the
-contact geometry reweights the same realisations, and each enters once. The rows join in the
-chance against depth, read at the assessment minimum and at the well; the empirical benchmarks
+*Figure 1. The model. The geological model is the prior: the element chances give P(G), the
+chance an accumulation is present; given an accumulation, the limits compete and the shallowest
+active one sets the contact, F(h) = P(H ≥ h | G). The DHI is evidence: the evidence index gives a
+likelihood ratio that updates P(G), the contact geometry reweights the same realisations, and
+each enters once. Each row ends in the probability of meeting the threshold, POS(h) = P(G) ×
+F(h) and its posterior, read at the assessment minimum and at the well; the empirical benchmarks
 are compared with both contact distributions and never joined.*
 
 ## Competing limits

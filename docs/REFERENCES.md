@@ -119,7 +119,7 @@ University Press. Chapter 11, amplitudes in prospect evaluation.
 🔒 **Paywalled.**
 > High-grade DHI scenarios, with characteristics consistent with the trap and indicative of a
 > fluid contact, warrant an uplift to the chance; low-grade ones, amplitude and AVO anomalies or
-> low-confidence fluid indications, generally do not. The verbal bands on `R` in
+> low-confidence fluid indications, generally do not. The verbal bands on `LR` in
 > `dhi.strength_bands` and the single-channel ceiling of 10 are attributed to Simm; the page
 > that carries them is to be confirmed against the handbook and this paper.
 
@@ -132,17 +132,17 @@ for seismic predrill prospect assessment.* Geophysics **75**(2), O9–O19.
 **Roden, R., Forrest, M. & Holeywell, R. (2012)** · *Relating seismic interpretation to
 reserve/resource calculations: Insights from a DHI consortium.* The Leading Edge **31**(9),
 1066–1074.
-> The DHI consortium's drilled database (217 prospects then, 400+ now): amplitude down-dip
+> The drilled-prospect database behind the paper (217 prospects then, 400+ now): amplitude down-dip
 > conformance to structure is the most diagnostic characteristic, flat spots rank high, and
 > a DHI Index above 20 % approached full success. Also the list of what is misread as a flat
 > spot: channel bases and edges, low-angle faults, diagenetic boundaries, processing artefacts.
-> These are the characteristics `c` grades, so the consortium ranking is why `c` and `R` move
+> These are the characteristics `c` grades, so this ranking is why `c` and `LR` move
 > together at elicitation (8.1.6, Figure 5.1.3a).
 
 **Nixon, S., Hallam, T. & Constantine, A. (2018)** · *Ranking DHI attributes for effective
 prospect risk assessment applied to the Otway Basin, Australia.* ASEG Extended Abstracts, AEGC
 2018, Sydney. Held in `_private/papers/`.
-> Concur with the consortium ranking, with flat spots raised to "highly definitive"; conformance
+> Concur with Roden et al.'s ranking, with flat spots raised to "highly definitive"; conformance
 > with depth structure "uncommon in the absence of hydrocarbons", while AVO anomalies and bright
 > spots have many non-hydrocarbon causes. Bayes' theorem applied with basin-calibrated DHI
 > statistics.

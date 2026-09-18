@@ -7,7 +7,7 @@ carries the sources.*
 
 ## Model overview
 
-![The model as two rows. Geological: the element chances give P(G); the limits compete, the shallowest active one sets the contact and is recorded. Given the DHI: the evidence strength updates P(G) and the contact geometry reweights the same realisations; strength never moves the contact, geometry never moves the chance, and each enters once. Nothing is re-simulated or rescaled: one weighted sample reads the histogram, the percentiles, F(h) and the chance. The rows join in the chance against depth, read at the assessment minimum and at the well; the benchmarks are compared with both contact distributions and never joined. The same figure with the tab each box lives on is Figure 1.0a.](figures/fig0_workflow.svg)
+![The model as two rows. The geological model is the prior: the element chances give P(G), the chance an accumulation is present; given an accumulation, the limits compete, the shallowest active one sets the contact and is recorded, and F(h) = P(H ≥ h | G) is the contact distribution read as an exceedance. The DHI is evidence: the evidence index gives a likelihood ratio that updates P(G), and the contact geometry reweights the same realisations; the index never moves the contact, the geometry never moves P(G), and each enters once. Nothing is re-simulated or rescaled: one weighted sample reads the histogram, the percentiles, F(h) and the chance. Each row ends in the probability of meeting the threshold, POS(h) = P(G) × F(h) and its posterior, read at the assessment minimum h_min and at the well; the benchmarks are compared with both contact distributions and never joined. The same figure with the tab each box lives on is Figure 1.0a.](figures/fig0_workflow.svg)
 
 A hydrocarbon column is stopped by whichever mechanism acts first: charge runs out, the closure
 spills, a fault juxtaposes the reservoir against a carrier, the top or base seal leaks at a
@@ -80,7 +80,7 @@ the column could be unbounded.
 The controlling mechanism is recorded per realisation as the index of the shallowest active
 limit. Its share over the sample is the ranking on tab 3.1 and 4.1.2b: in most cases two or three
 limits set the contact and the rest do not move the answer, so the elicitation effort belongs on
-those. The ranking is reported over all realisations and over the successes: a limit that
+those. The ranking is reported over all realisations and over those meeting the minimum: a limit that
 usually fails the prospect outright is under-represented among the survivors because it is the
 most severe, which is the selection effect of the empirical record (8.1.8) one level up, so
 neither view alone is the answer. The share is not constant down the structure. On the shipped prospect shallow contacts
@@ -97,11 +97,25 @@ continuous, correlated sampling and the per-element curves built from the contro
 
 ## HCWC, column height and POS
 
-A probability of success refers to a stated definition of success. In this tool that definition
-is the assessment minimum: the smallest column, or the deepest contact, that would make the well
-a discovery. It is set on tab 2.0 and every chance downstream is read at it.
+Four quantities, and the convention that joins them. `H` is the column height, sampled per
+realisation as the shallowest active limit; `z_apex` is the apex depth, m TVDSS, sampled in the
+same realisation; the contact depth is `z_HCWC = z_apex + H`, depth increasing downward; `z_well`
+is the well's reservoir entry depth; `h_min` is the assessment minimum, a column height. `F(h) =
+P(H ≥ h | G)` is defined in column-height space and every chance is read there; contact
+percentiles and histograms are reported as `z_HCWC`; the well is read in depth space against
+`z_HCWC` realisation by realisation; a depth axis under a column-space curve places it at the
+median apex, a drawing convention and not a second model.
 
-The chance has two factors. `P(G)` is the product of the element chances on tab 2.0, each
+A probability of success refers to a stated threshold. In this tool that threshold is the
+assessment minimum: the smallest column, `h_min`, that would make the well a discovery. It is
+set on tab 2.0 and every chance downstream is read at it. Nowhere else does a volume criterion
+enter: `P(G)` is the chance an accumulation is present, of any size, and the threshold is
+applied once, through `F(h_min)`. An element chance imported from another tool must be read the
+same way, as the chance the element works at the crest and not as a chance that already carries
+a minimum volume.
+
+The chance has two factors. `P(G)`, the geological accumulation chance, is the product of the
+element chances on tab 2.0, each
 elicited as play × conditional: the chance that charge arrived, that there is a closure, that
 there is reservoir, that retention works, all at the crest. The second factor,
 `P(column ≥ h_min | G)`, is the share of realisations whose column reaches the minimum, read off
@@ -124,7 +138,7 @@ The controller gives each element its own curve. Taking the shallowest active li
 element, its group minimum, gives `P_e(z)`, the chance that element permits a contact deeper
 than `z` (tab 4.2). Under independent limits `∏_e P_e(z) = P(contact > z)`, and the product is
 checked against the direct distribution on every run (8.1.9). WellVolPOS computes one location
-factor, `r = P(contact > z_entry | success)`, and spreads it across the elements by a weighting
+factor, `r = P(z_HCWC > z_well | G)`, and spreads it across the elements by a weighting
 rule; the derived curves say which element binds at that depth, which the allocation cannot.
 Reservoir enters the depth dependence twice, as a base or pinch-out limit that moves the contact
 and as an effectiveness decline (diagenesis, cementation, a net-to-gross trend) that lowers the
@@ -198,8 +212,8 @@ directly comparable.
 The realisations are conditional on `G`, so a likelihood over them can redistribute probability
 among column heights and cannot say whether `G` holds. The model is therefore factorised in
 two stages, and this is a modelling decision rather than a theorem: the geometry is updated by
-likelihood weighting within the geological-success ensemble, while the DHI character provides
-the separate update to `P(G)`. Each stage is a Bayesian update of the quantity it names. The
+likelihood weighting within the realisations, all of them conditional on `G`, while the DHI
+character provides the separate update to `P(G)`. Each stage is a Bayesian update of the quantity it names. The
 whole seismic observation is not modelled generatively across `G` and `h` together; in such a
 model the valid-contact branch of the geometry likelihood, which exists only when `G` holds,
 would carry some evidence about `G` as well. The tool assigns that evidence to the character
@@ -207,14 +221,48 @@ channel and uses the geometry conditionally within `G`, once. A second likelihoo
 `P(G)` built from the geometry would count the observation twice. The observation carries
 two kinds of evidence, and each updates one factor:
 
-- Character, how hydrocarbon-like the amplitude looks, is a likelihood ratio on `G`. It updates
-  `P(G)` through the two-state form `P(G | s) = R·P(G) / (R·P(G) + 1 − P(G))` (Simm & Bacon
-  2014; E-POS).
-  `R` is the ratio of two elicited curves on a strength axis, a hydrocarbon-bearing and a
-  non-hydrocarbon population, read at the prospect's placing. The axis has no units; what carries
-  meaning is where the prospect sits relative to the two populations as drawn.
+- Character, how hydrocarbon-like the amplitude looks, is placed on the DHI evidence index and
+  becomes a likelihood ratio on `G`, which updates `P(G)`. The model is set out below.
 - Geometry, where the picked event terminates, is a likelihood over `h` within `G`. It updates
   the contact distribution (8.1.7).
+
+The DHI evidence-strength model. The DHI evidence index `s` is a conceptual scale used to
+represent the strength and polarity of the seismic evidence: 0 is neutral, positive values
+increasingly positive evidence, negative values increasingly negative evidence or a missing
+expected response. Its numerical values are relative rather than physical; the index has no
+units, and a reading of 5 or −5 has no absolute geophysical meaning. The evidence model uses
+separate conditional density functions for hydrocarbon-bearing and non-hydrocarbon outcomes,
+`f(s | HC)` and `f(s | NoHC)`, the hydrocarbon-bearing and non-hydrocarbon reference
+distributions, each a Gaussian on the index given by its 1st and 99th percentiles. They are
+conditional densities of the index given the outcome, not probabilities of the outcome given the
+index. Their ratio at the observed index is the likelihood ratio, the evidence weight,
+
+    LR(s) = f(s | HC) / f(s | NoHC),
+
+and the geological accumulation probability provides the prior against which this evidence is
+evaluated:
+
+    P(G | s) = LR(s) · P(G) / (LR(s) · P(G) + 1 − P(G)),
+
+the two-state Bayesian update (Simm & Bacon 2014). This is the interpretation this application
+uses; the reference relationship the tool ships with is an empirical/reference density
+relationship, editable on tab 5.1.2, and not a calibration for any one basin. `LR` is
+scale-invariant in the index, so only the position of the reading relative to the two reference
+distributions carries meaning. The model is an evidence-weighting framework: it is not a seismic
+forward model, not a physical simulator of the DHI response, not a universal calibration and
+not a guarantee of hydrocarbon presence.
+
+Assumptions and limitations of the evidence-strength model. The reference outcomes are
+hydrocarbon-bearing and non-hydrocarbon, so `G` is read as an accumulation of any size at the
+crest, and a success criterion that carried a volume threshold would be a different quantity;
+the tool applies its threshold once, through `F(h_min)`, and never inside `P(G | s)`. The
+reference relationship carries no information on contact depth, trap height, spill point or
+assessment minimum: the evidence-strength model informs the probability of hydrocarbon presence
+and does not predict the HCWC. The depth of the contact is updated only through the
+prospect-specific contact geometry (8.1.7). The two channels are two information channels from
+one seismic observation, not two independent observations; their overlap is handled by the
+factorisation above, each channel updating the one factor it is evidence about, and by the
+bounds on each.
 
 The prospect chance at a threshold is the product of the two updated factors,
 `POS(h_min) = P(G | character) × P(h ≥ h_min | G, geometry)`, and the depth curve
@@ -222,26 +270,26 @@ The prospect chance at a threshold is the product of the two updated factors,
 in the factor it is evidence about; there is no blending parameter, and the apparent dependence
 between the two channels does not arise in the arithmetic. The dependence that remains is between
 the two judgements at elicitation. The characteristics that grade `c`, conformance to structure,
-sharp terminations and a fluid-contact reflection, are also the characteristics the DHI
-consortium's drilled database ranks as most predictive of finding hydrocarbons: amplitude
-conformance to structure first, flat spots among the most definitive (Roden, Forrest & Holeywell
-2012; Nixon, Hallam & Constantine 2018). In this model that evidence about `G` enters through the
-strength reading, so an event graded high on `c` is usually read higher on the strength axis too.
+sharp terminations and a fluid-contact reflection, are also the characteristics the published
+drilled-prospect rankings put first for finding hydrocarbons: amplitude conformance to structure
+first, flat spots among the most definitive (Roden, Forrest & Holeywell 2012; Nixon, Hallam &
+Constantine 2018). In this model that evidence about `G` enters through the evidence index, so an
+event graded high on `c` is usually placed higher on the index too.
 Simm (2020) draws the same line from the other side: a high-grade DHI, with characteristics
 consistent with the trap and indicative of a fluid contact, warrants an uplift to the chance; an
 amplitude or AVO anomaly without them generally does not. Tab 5.1.3 draws the two judgements
 against each other (Figure 5.1.3a) with that pairing as a band, a judgement and not a
 calibration, and names the pairings outside it.
 
-A strong reading does not make the contact certain. The character channel moves `P(G)`, and at
+Strong evidence does not make the contact certain. The evidence index moves `P(G)`, and at
 its cap takes 0.41 to 0.87; it does not touch the weights, so the contact keeps the spread the
 pick, the depth conversion, the contact attribution and the detection assumptions leave it.
 Hydrocarbon presence can become highly likely while the contact distribution keeps a finite
 width, and the two readings are reported apart so that this is visible.
 
-Each channel is bounded. The character ratio is capped at 10 : 1 either way, Simm's ceiling for
+Each channel is bounded. The likelihood ratio is capped at 10 : 1 either way, Simm's ceiling for
 one line of fluid-indicator evidence (Simm & Bacon 2014; Simm 2020): an honest single-channel
-`R` rarely exceeds 3, and a value above 10 sends the assessor back to the inputs. The geometry channel is bounded by its floor
+`LR` rarely exceeds 3, and a value above 10 sends the assessor back to the inputs. The geometry channel is bounded by its floor
 (8.1.7). The one published measurement of a combined ratio is Kjønsberg et al. (2010), who invert
 prestack AVO for the joint lithology–fluid distribution by Markov chain Monte Carlo at three
 locations offshore Norway and report prior and posterior hydrocarbon probabilities: a prior of
@@ -258,8 +306,8 @@ acoustic impedance and Vp/Vs, and at the prospect centre the posterior put 0.03 
 anti-correlated, the seismic pinning the total and trading the split. The consequence for the
 pick is that a flat spot may be a gas–oil contact rather than a hydrocarbon–water contact; the
 tool assumes the latter, and on a two-phase prospect the amplitude alone does not settle which.
-The volume weight `R / (R + 1)`, the weight the amplitude alone would carry against an even
-prior, is reported beside `R` and is not a chance of success.
+The volume weight `LR / (LR + 1)`, the weight the amplitude alone would carry against an even
+prior, is reported beside `LR` and is not a chance of anything.
 
 The effective sample size, Kish's `(Σw)² / Σw²`, reports how many of the realisations the
 posterior rests on. A low value does not mean the interpretation is wrong; it means the answer
@@ -333,16 +381,17 @@ Holeywell (2012) list the base or edge of a channel, a low-angle fault, a diagen
 a processing artefact as what is most often misread as a flat spot. Monigle et al. (2025) grade
 five DHI attributes: anomaly strength, lateral amplitude contrast, fit to structure, amplitude
 terminations and the fluid-contact reflection. This tool reads the first two as body attributes,
-which bear on whether hydrocarbons are present and are what the strength axis grades, and the last
+which bear on whether hydrocarbons are present and are what the evidence index carries, and the last
 three as contact attributes, which bear on whether the picked event is the base of the column;
-the split is this tool's, not theirs, since their five feed one score. `c` is the second group and carries nothing
+the split is this tool's, not theirs, since their five feed one score. The evidence index of
+8.1.6 is where the first two are read. `c` is the second group and carries nothing
 of the first: it is conditional on hydrocarbons being present, because every realisation it
 weights was drawn on that assumption, and no expression built from the amplitude strength can
 supply it. The tab offers it three ways: stated, opening at 0.36; as the geometric mean of
 three graded attributes, a heuristic and not a calibration; or from a DHI score in Monigle et
 al.'s (2025) sense through their rule `w = min(2 × score, 0.95)`, calibrated on 400+ drilled DHI
 prospects in their database and not on any one basin, and on their five-attribute score rather
-than on this tool's strength reading. That rule is the one externally calibrated number on this
+than on this tool's evidence index. That rule is the one externally calibrated number on this
 quantity, and its ceiling is shared: Hood's (2019) high-confidence contact weight, from the same
 company, also stops at 0.95, and the slider's anchors name it. `c` is taken independent of `h`: one number
 weights the mixture for every realisation, and the chance that the picked event is the contact
@@ -542,8 +591,8 @@ reproduces the direct one, the DHI chain's two factors are updated once each, an
 is fixed and tested or recorded as acceptable. The paper's numbers are regenerated from the
 engine by script and tested against the prospect they were drawn from.
 
-Elicited judgements, which have no external referent in the tool: the strength axis and the two
-populations on it; `c`, the contact-attribute judgement, typed or from three graded attributes by
+Judgements with no external referent in the tool: the DHI evidence index, read against the two
+reference distributions the tool ships with, themselves editable; `c`, the contact-attribute judgement, typed or from three graded attributes by
 a heuristic rule; the relative false-positive rate for an absent anomaly; the oil–water
 interfacial tension, 18–28 dyne/cm, flat in temperature; the well's connection chance.
 

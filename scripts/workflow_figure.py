@@ -9,8 +9,8 @@
 Both are also rasterised to PNG beside the SVG through kaleido's Chromium, for the article and
 the post, where SVG is not accepted; the PNG is the SVG as a browser draws it.
 
-The layout is a 2 x 2 grid. Rows: the geological model on top, the modification given the DHI
-below. Columns: the chance (is there an accumulation?) on the left, the contact given success
+The layout is a 2 x 2 grid. Rows: the geological model, the prior, on top; the DHI evidence,
+the update, below. Columns: the chance (is there an accumulation?) on the left, the contact given success
 (where does the column stop?) on the right. The DHI's two channels are two short vertical
 arrows, evidence strength from P(G) to P(G | strength) and contact geometry from HCWC | G to
 HCWC | G, evidence, so nothing crosses a box. The rows join on the right in the chance against
@@ -36,52 +36,58 @@ FONT = "font-family='Segoe UI, Helvetica, Arial, sans-serif'"
 W, H = 1340, 480
 
 #: The words that differ between the two versions. Every value is one line under a box title,
-#: at most 32 characters at the 11 px the boxes use, or a row, lane or join title.
+#: at most 32 characters at the 11 px the boxes use (24 in the three narrow evidence boxes),
+#: or a row, lane or join title. Wording after Lars's alignment of 18 Sep 2026: the geological
+#: model is the prior, the DHI is evidence; the evidence index is a relative scale, its
+#: likelihood ratio updates P(G); the contact geometry updates HCWC | G; the join is the
+#: probability of meeting the threshold.
 CONCEPT = dict(
     file="fig0_workflow",
-    row_geo="GEOLOGICAL  ·  the model",
-    row_dhi="GIVEN THE DHI  ·  the modification",
-    lane_chance="chance  ·  is there an accumulation?",
-    lane_contact="contact, given success  ·  where does the column stop?",
-    lane_strength="evidence strength  ·  updates the chance",
-    lane_geometry="contact geometry  ·  reweights the contact",
-    elements="play and conditional chances",
-    p_g="product of the element chances",
+    row_geo="GEOLOGICAL MODEL  ·  the prior",
+    row_dhi="DHI EVIDENCE  ·  the update",
+    lane_chance="is an accumulation present?",
+    lane_contact="given an accumulation: where does the column stop?",
+    lane_strength="evidence index  ·  updates P(G)",
+    lane_geometry="contact geometry  ·  updates HCWC | G",
+    elements="play × conditional, per element",
+    p_g="geological accumulation chance",
     limits="P(active) and a depth each",
     competition="shallowest active limit wins",
-    hcwc="F(h), controller, percentiles",
-    strength="likelihood ratio R",
-    p_g_strength="two-state update of P(G)",
+    hcwc="contact distribution, given G",
+    index="relative scale, 0 neutral",
+    lr="f(s|HC) / f(s|NoHC)",
+    p_g_evidence="two-state update",
     geometry="pick, attribution c, D(h)",
     hcwc_post="same realisations, reweighted",
     bench_title="Empirical benchmarks",
     bench="compared with both, never joined",
-    join_mid=("CHANCE AGAINST DEPTH", "read at h_min, and at z_entry", "for the well"),
-    join_geo=("POS(h) = P(G) × F(h)", "the chance of a column to h"),
-    join_dhi=("POS(h) = P(G | strength) × F_post(h)", "same readings, same realisations"),
+    join_mid=("MEETS THE THRESHOLD?", "read at h_min, the assessment", "minimum, and at z_well"),
+    join_geo=("POS(h) = P(G) × F(h)", "F(h) = P(H ≥ h | G)", "the prior chance against depth"),
+    join_dhi=("P(G | evidence)", "× P(H ≥ h | G, evidence)", "the posterior POS(h)"),
 )
 GUIDE = dict(
     file="fig0_workflow_guide",
-    row_geo="GEOLOGICAL  ·  tabs 2.0 to 4.0",
-    row_dhi="GIVEN THE DHI  ·  tab 5.0",
-    lane_chance="chance  ·  is there an accumulation?",
-    lane_contact="contact, given success  ·  where does the column stop?",
-    lane_strength="evidence strength  ·  updates the chance",
-    lane_geometry="contact geometry  ·  reweights the contact",
+    row_geo="GEOLOGICAL MODEL  ·  tabs 2.0 to 4.0",
+    row_dhi="DHI EVIDENCE  ·  tab 5.0",
+    lane_chance="is an accumulation present?",
+    lane_contact="given an accumulation: where does the column stop?",
+    lane_strength="evidence index  ·  updates P(G)",
+    lane_geometry="contact geometry  ·  updates HCWC | G",
     elements="2.0: element chances entered",
-    p_g="2.0: the product, read",
+    p_g="2.0: accumulation chance, read",
     limits="3.0: P(active) and depth entered",
     competition="4.1.1: the draws, shown",
     hcwc="4.1: percentiles, controller read",
-    strength="5.1: likelihood ratio R entered",
-    p_g_strength="5.1: the updated chance read",
-    geometry="5.1: pick, c and D(h) entered",
-    hcwc_post="5.2: percentiles, sample size read",
+    index="5.1.2: entered",
+    lr="5.1.2: LR(s), read",
+    p_g_evidence="5.1.2: read",
+    geometry="5.1.3: pick, c and D(h) entered",
+    hcwc_post="5.2: contact and shares read",
     bench_title="Benchmarks  ·  6.0",
     bench="beside 4.1 and 5.2, never joined",
-    join_mid=("CHANCE AGAINST DEPTH", "read at h_min (2.0) and at", "the well's depth; 7.0 exports"),
-    join_geo=("POS(h) = P(G) × F(h)", "4.1.3, 4.1.4: read; 4.2: by element"),
-    join_dhi=("POS(h) = P(G | strength) × F_post(h)", "5.2.3, 5.2.4: read; 5.3: by element"),
+    join_mid=("MEETS THE THRESHOLD?", "read at h_min (2.0) and at", "the well's depth; 7.0 exports"),
+    join_geo=("POS(h) = P(G) × F(h)", "F(h) = P(H ≥ h | G)", "4.1.3, 4.1.4: read; 4.2: by element"),
+    join_dhi=("P(G | evidence)", "× P(H ≥ h | G, evidence)", "5.2.3, 5.2.4: read; 5.3: by element"),
 )
 
 
@@ -138,63 +144,65 @@ def draw(t: dict) -> str:
         f"<rect width='{W}' height='{H}' fill='white'/>",
     ]
 
-    # ---- the two rows -------------------------------------------------------------------------
+    # ---- the two rows: the chance column is wider now, it holds three evidence boxes ---------
     parts.append("<rect x='20' y='20' width='1050' height='160' rx='10' ry='10' fill='#F4F5F7'/>")
     parts.append(text(34, 42, t["row_geo"], 12.5, INK, "start", 600))
-    parts.append(lane(30, 58, 370, 112, t["lane_chance"], GEO, "#EEF3FA"))
-    parts.append(lane(420, 58, 640, 112, t["lane_contact"], GEO, "#EEF3FA"))
+    parts.append(lane(30, 58, 440, 112, t["lane_chance"], GEO, "#EEF3FA"))
+    parts.append(lane(490, 58, 570, 112, t["lane_contact"], GEO, "#EEF3FA"))
 
     parts.append("<rect x='20' y='284' width='1050' height='176' rx='10' ry='10' fill='#F4F5F7'/>")
     parts.append(text(34, 306, t["row_dhi"], 12.5, INK, "start", 600))
-    parts.append(lane(30, 322, 370, 112, t["lane_strength"], DHI, "#FBEFEF"))
-    parts.append(lane(420, 322, 640, 112, t["lane_geometry"], DHI, "#FBEFEF"))
+    parts.append(lane(30, 322, 440, 112, t["lane_strength"], DHI, "#FBEFEF"))
+    parts.append(lane(490, 322, 570, 112, t["lane_geometry"], DHI, "#FBEFEF"))
 
-    # ---- geological row: chance boxes 160 and 165 wide, contact boxes 185 -----------------------------
-    parts.append(box(40, 100, 160, 60, "Element chances", t["elements"], GEO))
-    parts.append(box(225, 100, 165, 60, "P(G)", t["p_g"], GEO))
-    parts.append(arrow(200, 130, 225, 130, GEO))
-    parts.append(box(440, 100, 185, 60, "Geological limits", t["limits"], GEO))
-    parts.append(box(655, 100, 185, 60, "Competition", t["competition"], GEO))
-    parts.append(box(870, 100, 185, 60, "HCWC | G", t["hcwc"], GEO))
-    parts.append(arrow(625, 130, 655, 130, GEO))
-    parts.append(arrow(840, 130, 870, 130, GEO))
+    # ---- geological row ------------------------------------------------------------------------
+    parts.append(box(40, 100, 200, 60, "Element chances", t["elements"], GEO))
+    parts.append(box(290, 100, 170, 60, "P(G)", t["p_g"], GEO))
+    parts.append(arrow(240, 130, 290, 130, GEO))
+    parts.append(box(500, 100, 170, 60, "Geological limits", t["limits"], GEO))
+    parts.append(box(700, 100, 170, 60, "Competition", t["competition"], GEO))
+    parts.append(box(890, 100, 170, 60, "HCWC | G", t["hcwc"], GEO))
+    parts.append(arrow(670, 130, 700, 130, GEO))
+    parts.append(arrow(870, 130, 890, 130, GEO))
 
-    # ---- DHI row -------------------------------------------------------------------------------
-    parts.append(box(40, 364, 160, 60, "DHI evidence strength", t["strength"], DHI))
-    parts.append(box(225, 364, 165, 60, "P(G | strength)", t["p_g_strength"], DHI))
-    parts.append(arrow(200, 394, 225, 394, DHI))
-    parts.append(box(440, 364, 185, 60, "DHI geometry", t["geometry"], DHI))
-    parts.append(box(870, 364, 185, 60, "HCWC | G, evidence", t["hcwc_post"], DHI))
-    parts.append(arrow(625, 394, 870, 394, DHI))
+    # ---- DHI row: index -> likelihood ratio -> P(G | evidence); geometry -> HCWC | G, evidence
+    parts.append(box(40, 364, 130, 60, "Evidence index", t["index"], DHI))
+    parts.append(box(190, 364, 130, 60, "Likelihood ratio", t["lr"], DHI))
+    parts.append(box(340, 364, 120, 60, "P(G | evidence)", t["p_g_evidence"], DHI))
+    parts.append(arrow(170, 394, 190, 394, DHI))
+    parts.append(arrow(320, 394, 340, 394, DHI))
+    parts.append(box(500, 364, 170, 60, "Contact geometry", t["geometry"], DHI))
+    parts.append(box(890, 364, 170, 60, "HCWC | G, evidence", t["hcwc_post"], DHI))
+    parts.append(arrow(670, 394, 890, 394, DHI))
 
-    # ---- the two channels: one short vertical arrow each, nothing crossed ----------------------
-    parts.append(arrow(307, 160, 305, 364, DHI))
-    parts.append(text(317, 254, "updated by", 11.5, DHI, "start"))
-    parts.append(text(317, 270, "the strength", 11.5, DHI, "start"))
-    parts.append(arrow(962, 160, 962, 364, DHI))
-    parts.append(text(972, 254, "reweighted by", 11.5, DHI, "start"))
-    parts.append(text(972, 270, "the geometry", 11.5, DHI, "start"))
+    # ---- the two channels: the prior enters each update once ----------------------------------
+    parts.append(rail([(375, 160), (375, 262), (400, 262), (400, 364)], DHI))
+    parts.append(text(410, 254, "P(G) is the prior", 11.5, DHI, "start"))
+    parts.append(text(410, 270, "the evidence updates", 11.5, DHI, "start"))
+    parts.append(arrow(975, 160, 975, 364, DHI))
+    parts.append(text(985, 254, "reweighted by", 11.5, DHI, "start"))
+    parts.append(text(985, 270, "the geometry", 11.5, DHI, "start"))
 
     # ---- the benchmarks, between the two contact distributions, compared and never joined -----
-    parts.append(box(648, 206, 200, 52, t["bench_title"], t["bench"], MUTED, dashed=True))
-    parts.append(arrow(848, 218, 878, 164, MUTED, dashed=True))
-    parts.append(arrow(848, 246, 878, 360, MUTED, dashed=True))
+    parts.append(box(680, 206, 180, 52, t["bench_title"], t["bench"], MUTED, dashed=True))
+    parts.append(arrow(860, 218, 895, 164, MUTED, dashed=True))
+    parts.append(arrow(860, 246, 895, 360, MUTED, dashed=True))
 
-    # ---- the join: the chance against depth, one box per row ----------------------------------
+    # ---- the join: does the column reach the threshold? one box per row -----------------------
     parts.append("<rect x='1080' y='20' width='240' height='440' rx='10' ry='10' "
                  "fill='#EEF5EF' stroke='none'/>")
     mid_title, mid_1, mid_2 = t["join_mid"]
     parts.append(text(1200, 236, mid_title, 12.5, JOIN, weight=600))
     parts.append(text(1200, 254, mid_1, 11, JOIN))
     parts.append(text(1200, 270, mid_2, 11, JOIN))
-    parts.append(box(1090, 66, 220, 94, "Geological", t["join_geo"], JOIN, muted_from=1))
-    parts.append(box(1090, 330, 220, 94, "Given the DHI", t["join_dhi"], JOIN, muted_from=1))
+    parts.append(box(1090, 66, 220, 94, "Prior POS(h)", t["join_geo"], JOIN, muted_from=2))
+    parts.append(box(1090, 330, 220, 94, "Posterior POS(h)", t["join_dhi"], JOIN, muted_from=2))
 
     # the chance along the outer rail of its row, the contact along the inner
-    parts.append(rail([(307, 100), (307, 46), (1200, 46), (1200, 66)], GEO))
-    parts.append(arrow(1055, 130, 1090, 130, GEO))
-    parts.append(rail([(307, 424), (307, 446), (1200, 446), (1200, 424)], DHI))
-    parts.append(arrow(1055, 394, 1090, 394, DHI))
+    parts.append(rail([(375, 100), (375, 46), (1200, 46), (1200, 66)], GEO))
+    parts.append(arrow(1060, 130, 1090, 130, GEO))
+    parts.append(rail([(400, 424), (400, 446), (1200, 446), (1200, 424)], DHI))
+    parts.append(arrow(1060, 394, 1090, 394, DHI))
 
     parts.append("</svg>")
     return "\n".join(parts)
