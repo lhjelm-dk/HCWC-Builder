@@ -5,38 +5,37 @@ enter assumptions, show results and name what to check; where a concept is not i
 refer here by section number. The paper (8.2) is the long-form version; the bibliography (8.3)
 carries the sources.*
 
-## Model overview
-
 ![The model as two rows. The geological model is the prior: the element chances give P(G), the chance an accumulation is present; given an accumulation, the limits compete, the shallowest active one sets the contact and is recorded, and F(h) = P(H ≥ h | G) is the contact distribution read as an exceedance. The DHI is evidence: the evidence index gives a likelihood ratio that updates P(G), and the contact geometry reweights the same realisations; the index never moves the contact, the geometry never moves P(G), and each enters once. Nothing is re-simulated or rescaled: one weighted sample reads the histogram, the percentiles, F(h) and the chance. Each row ends in the probability of meeting the threshold, POS(h) = P(G) × F(h) and its posterior, read at the assessment minimum h_min and at the well; the benchmarks are compared with both contact distributions and never joined. The same figure with the tab each box lives on is Figure 1.0a.](figures/fig0_workflow.svg)
 
-A hydrocarbon column is stopped by whichever mechanism acts first: charge runs out, the closure
-spills, a fault juxtaposes the reservoir against a carrier, the top or base seal leaks at a
-capillary pressure the column exceeds, the seal breaks in tension, the reservoir pinches out.
-Each mechanism is a limit with two properties: a probability of being present on this prospect,
-and a distribution of the depth or column height at which it acts.
+The model as one figure, and the sections that follow its boxes. The geological model is the prior: the accumulation chance `P(G)` (8.1.1); the competing limits and the contact distribution given an accumulation, `HCWC | G` (8.1.2); the reading of that distribution as a chance against a threshold, `POS(h) = P(G) × F(h)` (8.1.3). The DHI is evidence: the evidence index updates `P(G)` (8.1.4); the contact geometry updates `HCWC | G` (8.1.5); the two updated factors give the posterior `POS(h)` from the same weighted realisations (8.1.6). The empirical record is compared beside both contact distributions (8.1.7), and the validation, assumptions and limitations close the method (8.1.8). The construction is Beha, Christensen and Young's (2012) competing trapping-element logic and Hood's (2019, 2024) competition between limits, run as a continuous, correlated Monte Carlo; the per-element depth-dependent chance (8.1.3), the likelihood form of DHI evidence (8.1.5) and the censoring correction to the empirical record (8.1.7) are the parts not found in that literature.
 
-The tool samples every limit in each Monte Carlo realisation, a presence draw and a depth draw,
-and takes the shallowest active limit as the hydrocarbon–water contact. The mechanism that set
-it is recorded. Ten thousand realisations give a contact distribution, a controlling-mechanism
-share for each limit, and both as functions of depth.
+## Accumulation chance P(G)
 
-Probability of success is a reading of that distribution at a threshold: the assessment minimum,
-the smallest column that counts as a discovery. `POS = P(G) × P(column ≥ h_min | G)`, where
-`P(G)` is the chance the geological elements work at the crest and the second factor is read off
-the contact distribution. Chance and volume come off the same curve.
+`G` is the accumulation state: the geological elements work at the crest and there is a hydrocarbon
+column of some height. `P(G)` is its chance, the first factor of every probability the tool
+reports, and the prior the DHI evidence updates (8.1.4).
 
-Evidence about the contact, a seismic amplitude with a picked termination or a well penetration,
-enters as a likelihood over the realisations and reweights them. The amplitude's character
-updates `P(G)`; its geometry updates the contact distribution. Nothing is re-simulated, the
-controlling-mechanism bookkeeping survives, and the effective sample size says how far the
-evidence displaced the geology.
+The chance has two factors. `P(G)`, the geological accumulation chance, is the product of the
+element chances on tab 2.0, each
+elicited as play × conditional: the chance that charge arrived, that there is a closure, that
+there is reservoir, that retention works, all at the crest. The second factor,
+`P(column ≥ h_min | G)`, is the share of realisations whose column reaches the minimum, read off
+the contact distribution (8.1.3). Their product is the prospect chance at that threshold.
 
-The construction is Beha, Christensen and Young's (2012) competing trapping-element logic and
-Hood's (2019, 2024) competition between limits, run as a continuous, correlated Monte Carlo. The
-per-element depth-dependent chance (8.1.4), the likelihood form of DHI evidence (8.1.6) and the
-censoring correction to the empirical record (8.1.8) are the parts not found in that literature.
+The two are kept apart because they answer different questions and are moved by different
+evidence. A trapping element that fails below the crest, a fault window at 2 300 m or a seal
+that holds 150 m, does not reduce the chance of finding hydrocarbons at the well; it reduces the
+chance of a deeper contact. Folding such a mechanism into `P(G)` understates the chance and,
+because volume is conditioned on it, overstates the volume (Beha et al. 2012). Here those
+mechanisms are limits on tab 3.0 and move the contact; only whether an element works at the
+crest belongs in the chance.
 
-## Why HCWC is an output, not a generic distribution
+Nowhere else does a volume criterion enter: `P(G)` is the chance an accumulation is present, of any
+size, and the threshold is applied once, through `F(h_min)` (8.1.3). An element chance imported
+from another tool must be read the same way, as the chance the element works at the crest and not
+as a chance that already carries a minimum volume.
+
+## Competing limits and HCWC | G
 
 A predrill contact is usually entered as a distribution: uniform from apex to spill, or a
 three-point estimate from analogues. That distribution carries no connection to the mechanisms
@@ -56,7 +55,16 @@ distribution corresponds to no geology, and adding a leak can raise the apparent
 can produce, at a depth that mechanism can reach. Drawn on one axis, each limit's exceedance
 curve flattens at its `P(active)`, and the contact is the lower envelope of the active ones.
 
-## Competing geological limits
+A hydrocarbon column is stopped by whichever mechanism acts first: charge runs out, the closure
+spills, a fault juxtaposes the reservoir against a carrier, the top or base seal leaks at a
+capillary pressure the column exceeds, the seal breaks in tension, the reservoir pinches out.
+Each mechanism is a limit with two properties: a probability of being present on this prospect,
+and a distribution of the depth or column height at which it acts.
+
+The tool samples every limit in each Monte Carlo realisation, a presence draw and a depth draw,
+and takes the shallowest active limit as the hydrocarbon–water contact. The mechanism that set
+it is recorded. Ten thousand realisations give a contact distribution, a controlling-mechanism
+share for each limit, and both as functions of depth.
 
 Six mechanism families are modelled. Structural spill is a mapped depth. Charge limitation is the
 depth at which the accumulated pore volume equals the volume the basin model delivered, found by
@@ -70,22 +78,22 @@ reaches the minimum horizontal stress, `H = (S_Hmin − P_p) / (grad_w − grad_
 Each limit is stated as a column below the apex or as a depth in metres TVDSS, and the engine
 converts a depth to a column against the apex drawn in the same realisation. A capacity does not
 move when the apex pick moves; a mapped surface does. The distinction matters for the correlation
-between apex and spill (8.1.5).
+between apex and spill (below).
 
 Every limit has a probability of being present. A limit with `P(active) = 0.3` applies in three
 realisations in ten and is absent in the rest; its exceedance curve flattens at 0.3. At least one
 limit is always active, since every prospect has a spill point; the engine refuses a set in which
 the column could be unbounded.
 
-The controlling mechanism is recorded per realisation as the index of the shallowest active
-limit. Its share over the sample is the ranking on tab 3.1 and 4.1.2b: in most cases two or three
-limits set the contact and the rest do not move the answer, so the elicitation effort belongs on
-those. The ranking is reported over all realisations and over those meeting the minimum: a limit that
-usually fails the prospect outright is under-represented among the survivors because it is the
-most severe, which is the selection effect of the empirical record (8.1.8) one level up, so
-neither view alone is the answer. The share is not constant down the structure. On the shipped prospect shallow contacts
-are seal-controlled and deep contacts pass to fault geometry and spill; tab 4.1.2 draws this,
-scaled either as a share of all realisations or as the mechanism mix at each depth.
+The controlling mechanism is recorded per realisation as the index of the shallowest active limit.
+Its share over the sample is the ranking on tab 3.1 and 4.1.2b: in most cases two or three limits
+set the contact and the rest do not move the answer, so the elicitation effort belongs on those.
+The ranking is reported over all realisations and over those meeting the minimum: a limit that
+usually fails the prospect outright is under-represented among the survivors because it is the most
+severe, which is the selection effect of the empirical record (8.1.7) one level up, so neither view
+alone is the answer. The share is not constant down the structure. On the shipped prospect shallow
+contacts are seal-controlled and deep contacts pass to fault geometry and spill; tab 4.1.2 draws
+this, scaled either as a share of all realisations or as the mechanism mix at each depth.
 
 The precedent is published. Beha et al. (2012) enumerate every combination of trapping elements
 sealing or failing, weight each scenario and collapse the result onto leak-point frequencies;
@@ -93,87 +101,20 @@ their two-fault example (0.60 / 0.12 / 0.28 at three leak points) is reproduced 
 Monte Carlo error, and is the one external validation the tool has. Grant (2020) publishes the
 controlling-limit diagnostic as column height control statistics; Lowry et al. (2005) had chance
 against column height two decades earlier. What is not found in that literature is the
-continuous, correlated sampling and the per-element curves built from the controller (8.1.4).
+continuous, correlated sampling and the per-element curves built from the controller (8.1.3).
 
-## HCWC, column height and POS
-
-Four quantities, and the convention that joins them. `H` is the column height, sampled per
-realisation as the shallowest active limit; `z_apex` is the apex depth, m TVDSS, sampled in the
-same realisation; the contact depth is `z_HCWC = z_apex + H`, depth increasing downward; `z_well`
-is the well's reservoir entry depth; `h_min` is the assessment minimum, a column height. `F(h) =
-P(H ≥ h | G)` is defined in column-height space and every chance is read there; contact
-percentiles and histograms are reported as `z_HCWC`; the well is read in depth space against
-`z_HCWC` realisation by realisation; a depth axis under a column-space curve places it at the
-median apex, a drawing convention and not a second model.
-
-A probability of success refers to a stated threshold. In this tool that threshold is the
-assessment minimum: the smallest column, `h_min`, that would make the well a discovery. It is
-set on tab 2.0 and every chance downstream is read at it. Nowhere else does a volume criterion
-enter: `P(G)` is the chance an accumulation is present, of any size, and the threshold is
-applied once, through `F(h_min)`. An element chance imported from another tool must be read the
-same way, as the chance the element works at the crest and not as a chance that already carries
-a minimum volume.
-
-The chance has two factors. `P(G)`, the geological accumulation chance, is the product of the
-element chances on tab 2.0, each
-elicited as play × conditional: the chance that charge arrived, that there is a closure, that
-there is reservoir, that retention works, all at the crest. The second factor,
-`P(column ≥ h_min | G)`, is the share of realisations whose column reaches the minimum, read off
-the contact distribution. Their product is the prospect chance at that threshold.
-
-The two are kept apart because they answer different questions and are moved by different
-evidence. A trapping element that fails below the crest, a fault window at 2 300 m or a seal
-that holds 150 m, does not reduce the chance of finding hydrocarbons at the well; it reduces the
-chance of a deeper contact. Folding such a mechanism into `P(G)` understates the chance and,
-because volume is conditioned on it, overstates the volume (Beha et al. 2012). Here those
-mechanisms are limits on tab 3.0 and move the contact; only whether an element works at the
-crest belongs in the chance.
-
-The chance is a curve, not a number. `P(G) × P(column ≥ h | G)` at every `h` is the prospect
-chance against threshold (tab 4.1.3), and the headline is that curve read at `h_min`. A chance
-quoted without its threshold means nothing; every chance on the operational tabs carries the
-threshold it was read at and states whether it includes the element risk.
-
-The controller gives each element its own curve. Taking the shallowest active limit within each
-element, its group minimum, gives `P_e(z)`, the chance that element permits a contact deeper
-than `z` (tab 4.2). Under independent limits `∏_e P_e(z) = P(contact > z)`, and the product is
-checked against the direct distribution on every run (8.1.9). WellVolPOS computes one location
-factor, `r = P(z_HCWC > z_well | G)`, and spreads it across the elements by a weighting
-rule; the derived curves say which element binds at that depth, which the allocation cannot.
-Reservoir enters the depth dependence twice, as a base or pinch-out limit that moves the contact
-and as an effectiveness decline (diagenesis, cementation, a net-to-gross trend) that lowers the
-chance without moving it; only the first is a competing limit, and conflating them breaks the
-consistency identity, so the identity is checked over the contact-controlling elements only.
-An element with no limit in the model never controls the contact, and its derived curve is its
-element chance unchanged with depth. Spreading one location factor across four elements by a
-rule presents the same number differently and adds no information about charge or closure;
-the allocation reproduces `P(well)` whatever rule is chosen, and the derived curves can disagree
-with it because they carry which element binds at that depth. `r` quoted as a chance of success
-overstates the well by `1 / P(G)`.
-
-The contact percentiles the tabs print are conditional on the assessment minimum: they are
-taken over the realisations whose column reaches `h_min`, with the same weights as
-everything else, because a contact quoted for a discovery is a contact given that there was
-one. `F(h)` itself is over every realisation conditional on `G`. The two are one weighted
-sample read under two conditions, and the tabs label which.
-
-A well entering at `z_entry` reads three numbers off the same curves: `P(well)`, the chance it
-finds hydrocarbons at its entry depth, including the element risk; the geological chance at the
-assessment minimum; and their ratio, the location factor.
-
-## Correlation and dependence
-
-Limit depths and capacities can be correlated through a Gaussian copula, elicited as rank
-correlations on pairs rather than as a full matrix. An elicited matrix that is not positive
-semi-definite is projected onto the nearest one that is, and the projection is reported. The
-realised correlation of every sampled pair, apex included, is reported on tab 4's run checks.
+Correlation and dependence. Limit depths and capacities can be correlated through a Gaussian
+copula, elicited as rank correlations on pairs rather than as a full matrix. An elicited matrix
+that is not positive semi-definite is projected onto the nearest one that is, and the projection is
+reported. The realised correlation of every sampled pair, apex included, is reported on tab 4's run
+checks.
 
 The pair most worth setting is the apex to a depth-stated limit. A spill point and the apex are
 picked off the same depth-converted surface, so a depth-conversion error moves both together.
 Left independent, a realisation can put the spill above the apex, and the derived closure height
 carries a spread that is an artefact: on a 120 m apex uncertainty with a mapped spill, 33 m
 independent against 11 m at a correlation of 0.9. The same coupling inflates the published
-column-height regression (8.1.8), since column height and trap height share the apex pick.
+column-height regression (8.1.7), since column height and trap height share the apex pick.
 
 Correlation applies to depths and capacities only. Whether a limit is present is drawn
 independently of everything, including the presence of every other limit. Two faults that leak at
@@ -197,34 +138,65 @@ default correlation table lists it.
 
 The elements share the apex draw. Every element's contact is `apex + h`, so in depth space the
 element curves are dependent even under independent limits, and their product is not the
-contact distribution. The consistency test (8.1.9) is exact in column-height space and is run in
+contact distribution. The consistency test (8.1.8) is exact in column-height space and is run in
 both.
 
-## DHI updating
+## From column height to POS
 
-The geological realisations are a sample from the prior `p(h | G)`. A seismic observation `D`
-enters as a likelihood `L(D | h)` over those realisations, and the posterior is the same sample
-with weights `w_j ∝ L(D | h_j)`. That is self-normalised importance sampling and, for this
-sample, an exact Bayesian update: nothing is re-simulated, each realisation keeps its controlling
-limit, and the prior and posterior are the same realisations, so `F_prior(h)` and `F_post(h)` are
-directly comparable.
+Four quantities, and the convention that joins them. `H` is the column height, sampled per
+realisation as the shallowest active limit; `z_apex` is the apex depth, m TVDSS, sampled in the
+same realisation; the contact depth is `z_HCWC = z_apex + H`, depth increasing downward; `z_well`
+is the well's reservoir entry depth; `h_min` is the assessment minimum, a column height. `F(h) =
+P(H ≥ h | G)` is defined in column-height space and every chance is read there; contact
+percentiles and histograms are reported as `z_HCWC`; the well is read in depth space against
+`z_HCWC` realisation by realisation; a depth axis under a column-space curve places it at the
+median apex, a drawing convention and not a second model.
 
-The realisations are conditional on `G`, so a likelihood over them can redistribute probability
-among column heights and cannot say whether `G` holds. The model is therefore factorised in
-two stages, and this is a modelling decision rather than a theorem: the geometry is updated by
-likelihood weighting within the realisations, all of them conditional on `G`, while the DHI
-character provides the separate update to `P(G)`. Each stage is a Bayesian update of the quantity it names. The
-whole seismic observation is not modelled generatively across `G` and `h` together; in such a
-model the valid-contact branch of the geometry likelihood, which exists only when `G` holds,
-would carry some evidence about `G` as well. The tool assigns that evidence to the character
-channel and uses the geometry conditionally within `G`, once. A second likelihood ratio on
-`P(G)` built from the geometry would count the observation twice. The observation carries
-two kinds of evidence, and each updates one factor:
+A probability of success refers to a stated threshold. In this tool that threshold is the
+assessment minimum: the smallest column, `h_min`, that would make the well a discovery. It is
+set on tab 2.0 and every chance downstream is read at it; the volume criterion enters here and
+nowhere else (8.1.1). The second factor, `F(h_min) = P(H ≥ h_min | G)`, is the share of
+realisations whose column reaches the minimum, read off the contact distribution, and the
+prospect chance is `POS(h_min) = P(G) × F(h_min)`.
 
-- Character, how hydrocarbon-like the amplitude looks, is placed on the DHI evidence index and
-  becomes a likelihood ratio on `G`, which updates `P(G)`. The model is set out below.
-- Geometry, where the picked event terminates, is a likelihood over `h` within `G`. It updates
-  the contact distribution (8.1.7).
+The chance is a curve, not a number. `P(G) × P(column ≥ h | G)` at every `h` is the prospect
+chance against threshold (tab 4.1.3), and the headline is that curve read at `h_min`. A chance
+quoted without its threshold means nothing; every chance on the operational tabs carries the
+threshold it was read at and states whether it includes the element risk.
+
+The controller gives each element its own curve. Taking the shallowest active limit within each
+element, its group minimum, gives `P_e(z)`, the chance that element permits a contact deeper
+than `z` (tab 4.2). Under independent limits `∏_e P_e(z) = P(contact > z)`, and the product is
+checked against the direct distribution on every run (8.1.8). WellVolPOS computes one location
+factor, `r = P(z_HCWC > z_well | G)`, and spreads it across the elements by a weighting
+rule; the derived curves say which element binds at that depth, which the allocation cannot.
+Reservoir enters the depth dependence twice, as a base or pinch-out limit that moves the contact
+and as an effectiveness decline (diagenesis, cementation, a net-to-gross trend) that lowers the
+chance without moving it; only the first is a competing limit, and conflating them breaks the
+consistency identity, so the identity is checked over the contact-controlling elements only.
+An element with no limit in the model never controls the contact, and its derived curve is its
+element chance unchanged with depth. Spreading one location factor across four elements by a
+rule presents the same number differently and adds no information about charge or closure;
+the allocation reproduces `P(well)` whatever rule is chosen, and the derived curves can disagree
+with it because they carry which element binds at that depth. `r` quoted as a chance of success
+overstates the well by `1 / P(G)`.
+
+The contact percentiles the tabs print are conditional on the assessment minimum: they are
+taken over the realisations whose column reaches `h_min`, with the same weights as
+everything else, because a contact quoted for a discovery is a contact given that there was
+one. `F(h)` itself is over every realisation conditional on `G`. The two are one weighted
+sample read under two conditions, and the tabs label which.
+
+A well entering at `z_entry` reads three numbers off the same curves: `P(well)`, the chance it
+finds hydrocarbons at its entry depth, including the element risk; the geological chance at the
+assessment minimum; and their ratio, the location factor.
+
+## DHI evidence index update
+
+One seismic observation carries two kinds of evidence, and each updates one factor (8.1.6). Its
+character, how hydrocarbon-like the amplitude looks, is evidence about whether there are
+hydrocarbons at all: it is placed on the DHI evidence index and becomes a likelihood ratio on `G`,
+which updates `P(G)`. Its geometry is evidence about the contact given `G` (8.1.5).
 
 The DHI evidence-strength model. The DHI evidence index `s` is a conceptual scale used to
 represent the strength and polarity of the seismic evidence: 0 is neutral, positive values
@@ -237,21 +209,6 @@ distributions, each a Gaussian on the index given by its 1st and 99th percentile
 conditional densities of the index given the outcome, not probabilities of the outcome given the
 index. Their ratio at the observed index is the likelihood ratio, the evidence weight,
 
-    LR(s) = f(s | HC) / f(s | NoHC),
-
-and the geological accumulation probability provides the prior against which this evidence is
-evaluated:
-
-    P(G | s) = LR(s) · P(G) / (LR(s) · P(G) + 1 − P(G)),
-
-the two-state Bayesian update (Simm & Bacon 2014). This is the interpretation this application
-uses; the reference relationship the tool ships with is an empirical/reference density
-relationship, editable on tab 5.1.2, and not a calibration for any one basin. `LR` is
-scale-invariant in the index, so only the position of the reading relative to the two reference
-distributions carries meaning. The model is an evidence-weighting framework: it is not a seismic
-forward model, not a physical simulator of the DHI response, not a universal calibration and
-not a guarantee of hydrocarbon presence.
-
 Assumptions and limitations of the evidence-strength model. The reference outcomes are
 hydrocarbon-bearing and non-hydrocarbon, so `G` is read as an accumulation of any size at the
 crest, and a success criterion that carried a volume threshold would be a different quantity;
@@ -259,103 +216,37 @@ the tool applies its threshold once, through `F(h_min)`, and never inside `P(G |
 reference relationship carries no information on contact depth, trap height, spill point or
 assessment minimum: the evidence-strength model informs the probability of hydrocarbon presence
 and does not predict the HCWC. The depth of the contact is updated only through the
-prospect-specific contact geometry (8.1.7). The two channels are two information channels from
+prospect-specific contact geometry (8.1.5). The two channels are two information channels from
 one seismic observation, not two independent observations; their overlap is handled by the
-factorisation above, each channel updating the one factor it is evidence about, and by the
+factorisation (8.1.6), each channel updating the one factor it is evidence about, and by the
 bounds on each.
 
-The prospect chance at a threshold is the product of the two updated factors,
-`POS(h_min) = P(G | character) × P(h ≥ h_min | G, geometry)`, and the depth curve
-`P(G | character) × F_post(h)` passes through it by identity. Each piece of evidence enters once,
-in the factor it is evidence about; there is no blending parameter, and the apparent dependence
-between the two channels does not arise in the arithmetic. The dependence that remains is between
-the two judgements at elicitation. The characteristics that grade `c`, conformance to structure,
-sharp terminations and a fluid-contact reflection, are also the characteristics the published
-drilled-prospect rankings put first for finding hydrocarbons: amplitude conformance to structure
-first, flat spots among the most definitive (Roden, Forrest & Holeywell 2012; Nixon, Hallam &
-Constantine 2018). In this model that evidence about `G` enters through the evidence index, so an
-event graded high on `c` is usually placed higher on the index too.
-Simm (2020) draws the same line from the other side: a high-grade DHI, with characteristics
-consistent with the trap and indicative of a fluid contact, warrants an uplift to the chance; an
-amplitude or AVO anomaly without them generally does not. Tab 5.1.3 draws the two judgements
-against each other (Figure 5.1.3a) with that pairing as a band, a judgement and not a
-calibration, and names the pairings outside it.
+The likelihood ratio is capped at 10 : 1 either way, Simm's ceiling for one line of fluid-indicator
+evidence (Simm & Bacon 2014; Simm 2020): an honest single-channel `LR` rarely exceeds 3, and a
+value above 10 sends the assessor back to the inputs. The geometry channel is bounded by its floor
+(8.1.5), and the combined update by a guard above the one published measurement (8.1.6).
 
-Strong evidence does not make the contact certain. The evidence index moves `P(G)`, and at
-its cap takes 0.41 to 0.87; it does not touch the weights, so the contact keeps the spread the
-pick, the depth conversion, the contact attribution and the detection assumptions leave it.
-Hydrocarbon presence can become highly likely while the contact distribution keeps a finite
-width, and the two readings are reported apart so that this is visible.
-
-Each channel is bounded. The likelihood ratio is capped at 10 : 1 either way, Simm's ceiling for
-one line of fluid-indicator evidence (Simm & Bacon 2014; Simm 2020): an honest single-channel
-`LR` rarely exceeds 3, and a value above 10 sends the assessor back to the inputs. The geometry channel is bounded by its floor
-(8.1.7). The one published measurement of a combined ratio is Kjønsberg et al. (2010), who invert
-prestack AVO for the joint lithology–fluid distribution by Markov chain Monte Carlo at three
-locations offshore Norway and report prior and posterior hydrocarbon probabilities: a prior of
-0.53 from their facies model, 0.76 at a well, 0.97 at the prospect centre and 0.44 at the
-outskirts, so implied ratios of 2.8, 28.7 and 0.70. The strongest bought a factor of 29, against
-this tool's guard on the combined ratio of 50, and that location found gas in two layers; the
-negative at the outskirts bought 0.70, a factor of 1.4 against where the positive was 29 for.
-Their number carries amplitude and geometry together, since the fluid contacts are part of what
-their chain samples, so it bounds the whole update rather than one channel, and it shows the
-asymmetry: absence is much weaker evidence than presence. Their inversion separates hydrocarbon
-from brine far better than one hydrocarbon from another: oil sand and gas sand overlap in
-acoustic impedance and Vp/Vs, and at the prospect centre the posterior put 0.03 on wet and then
-0.45 on gas alone against 0.46 on gas and oil, with the oil and gas volumes strongly
-anti-correlated, the seismic pinning the total and trading the split. The consequence for the
-pick is that a flat spot may be a gas–oil contact rather than a hydrocarbon–water contact; the
-tool assumes the latter, and on a two-phase prospect the amplitude alone does not settle which.
 The volume weight `LR / (LR + 1)`, the weight the amplitude alone would carry against an even
 prior, is reported beside `LR` and is not a chance of anything.
 
-The effective sample size, Kish's `(Σw)² / Σw²`, reports how many of the realisations the
-posterior rests on. A low value does not mean the interpretation is wrong; it means the answer
-depends heavily on it and should be presented as such. The ESS reports the geometry channel only:
-the character channel updates one number and discards nothing.
+An absent anomaly, where one was looked for, enters the chance through its own ratio,
+`R_absent = P(absent | G) / P(absent | ¬G) = (1 − d) / (1 − f·d)`, with `d` the mean detectability
+over the geological columns (8.1.5) and `f` the chance a barren trap shows an anomaly of the same class,
+stated relative to `d`. Tying the false-positive rate to `d` is a modelling choice made for the
+behaviour at the ends: where nothing could have shown absence is uninformative, where a barren
+trap shows as readily as a filled one likewise, and since `f·d ≤ d` the ratio is never above one.
+`f` is elicited; the shipped 0.5 is the maximum-ignorance value and no calibration is known. On
+the shipped prospect absence takes the chance from 40 % to 11 %. Within `G` the same absence
+reshapes the column (8.1.5).
 
-A DHI reshapes the chance curve rather than lifting it: the pick raises the chance at
-thresholds near and above the picked contact and lowers it below, and the curves cross where
-that changes. The posterior median lands on the pick, because an amplitude termination is an
-estimate of the contact and not a floor under it, so the chance read there is about half the
-one read at the assessment minimum.
+## DHI geometry update
 
-The evidence moves the depth distribution, and only through it the mechanism mix. Drawn as
-shares of all realisations, the controlling mechanism by depth differs visibly between the
-geological and the updated result, because the evidence moves which depths are reached; drawn
-as the mix within each depth bin, the two are near-identical, because normalising a bin
-conditions on contact depth, which is almost all a DHI knows. The amplitude says roughly where
-the contact is, and some mechanisms explain that depth better than others; it is not evidence
-about which element failed.
-
-A DHI cannot re-attribute risk between elements. Two controlling-mechanism readings are
-reported: what controls the contact under the geological prior, and which mechanisms are
-more frequent among the realisations the evidence favours. The second is not the DHI saying
-which element failed; it is which mechanisms are more consistent with the contact depths the
-evidence favours. Given the prospect failed, which element failed, a fluid indicator cannot say; the element chances on tab 2.0 are untouched by the update
-(Monigle et al. 2025: the adequacy of source is determined by the geologic factors alone). Given
-it worked and the contact is where the amplitude says, which mechanism stopped it there, the DHI
-can answer, because the controlling limit is coupled to the contact depth. That is why the
-controller is recorded.
-
-The scenario switch, `IF(DHI valid, DHI contact, geological contact)`, is the older method and
-Hood's rule: merge late, never blend into the input distribution. It moves the contact and not
-the chance, cannot narrow the distribution, and reports no mechanism. Its one parameter, whether
-the picked event is the contact, was an unlabelled parameter of a model never written down; the
-likelihood form writes it down as the floor (8.1.7) and needs two numbers a geophysicist can
-state instead of one nobody can. Tab 5.1's diagnostics compare the two on the same value, since
-a comparison run on a different one would be a comparison against something else.
-
-Monigle et al. (2025) integrate a DHI score with a geological prior by the same Bayesian update
-used for the character channel, and treat an absent anomaly as negative evidence. What is not
-found in that work is the likelihood defined over column height, which is what makes the
-evidence reshape the contact distribution and the depth-dependent risk rather than only the
-chance.
-
-The walkthrough below takes the update apart one term at a time on the current prospect's
-numbers. Nothing on it changes a result.
-
-## Detection, contact attribution and absence
+The geological realisations are a sample from the prior `p(h | G)`. The contact geometry of a seismic observation `D`
+enters as a likelihood `L(D | h)` over those realisations, and the posterior is the same sample
+with weights `w_j ∝ L(D | h_j)`. That is self-normalised importance sampling and, for this
+sample, an exact Bayesian update: nothing is re-simulated, each realisation keeps its controlling
+limit, and the prior and posterior are the same realisations, so `F_prior(h)` and `F_post(h)` are
+directly comparable.
 
 The geometry likelihood for a seen anomaly has two factors and a floor:
 
@@ -384,7 +275,7 @@ terminations and the fluid-contact reflection. This tool reads the first two as 
 which bear on whether hydrocarbons are present and are what the evidence index carries, and the last
 three as contact attributes, which bear on whether the picked event is the base of the column;
 the split is this tool's, not theirs, since their five feed one score. The evidence index of
-8.1.6 is where the first two are read. `c` is the second group and carries nothing
+8.1.4 is where the first two are read. `c` is the second group and carries nothing
 of the first: it is conditional on hydrocarbons being present, because every realisation it
 weights was drawn on that assumption, and no expression built from the amplitude strength can
 supply it. The tab offers it three ways: stated, opening at 0.36; as the geometric mean of
@@ -413,20 +304,113 @@ column above the minimum sits on the ceiling.
 
 An absent anomaly enters within `G` as `1 − D(h)`, largest at small `h`: where the detection
 threshold falls inside the geological columns, absence reshapes the contact toward the short
-columns that would not have shown. On the chance it enters through its own ratio,
-`R_absent = P(absent | G) / P(absent | ¬G) = (1 − d) / (1 − f·d)`, with `d` the mean detectability
-over the geological columns and `f` the chance a barren trap shows an anomaly of the same class,
-stated relative to `d`. Tying the false-positive rate to `d` is a modelling choice made for the
-behaviour at the ends: where nothing could have shown absence is uninformative, where a barren
-trap shows as readily as a filled one likewise, and since `f·d ≤ d` the ratio is never above one.
-`f` is elicited; the shipped 0.5 is the maximum-ignorance value and no calibration is known. On
-the shipped prospect absence takes the chance from 40 % to 11 %.
+columns that would not have shown. What absence says about the chance is a separate ratio on
+`G` (8.1.4).
 
 A well penetration enters the same way. Hydrocarbons proven to `z_hc` and water at `z_w` give
 `L = p_connected · [Φ((z − z_hc)/σ) + Φ((z_w − z)/σ) − 1] + (1 − p_connected)`: one tie error
 between the well's depths and the mapped surface, and a floor of `1 − p_connected` for the chance
 that the well samples a different accumulation. The pick and a penetration are multiplied as
 independent evidence.
+
+The effective sample size, Kish's `(Σw)² / Σw²`, reports how many of the realisations the
+posterior rests on. A low value does not mean the interpretation is wrong; it means the answer
+depends heavily on it and should be presented as such. The ESS reports the geometry channel only:
+the character channel updates one number and discards nothing.
+
+The evidence moves the depth distribution, and only through it the mechanism mix. Drawn as
+shares of all realisations, the controlling mechanism by depth differs visibly between the
+geological and the updated result, because the evidence moves which depths are reached; drawn
+as the mix within each depth bin, the two are near-identical, because normalising a bin
+conditions on contact depth, which is almost all a DHI knows. The amplitude says roughly where
+the contact is, and some mechanisms explain that depth better than others; it is not evidence
+about which element failed.
+
+## Combined DHI result
+
+The realisations are conditional on `G`, so a likelihood over them can redistribute probability
+among column heights and cannot say whether `G` holds. The model is therefore factorised in two
+stages (8.1.4, 8.1.5), and this is a modelling decision rather than a theorem: the geometry is
+updated by likelihood weighting within the realisations, all of them conditional on `G`, while the
+DHI character provides the separate update to `P(G)`. Each stage is a Bayesian update of the
+quantity it names. The whole seismic observation is not modelled generatively across `G` and `h`
+together; in such a model the valid-contact branch of the geometry likelihood, which exists only
+when `G` holds, would carry some evidence about `G` as well. The tool assigns that evidence to the
+character channel and uses the geometry conditionally within `G`, once. A second likelihood ratio
+on `P(G)` built from the geometry would count the observation twice.
+
+The prospect chance at a threshold is the product of the two updated factors,
+`POS(h_min) = P(G | character) × P(h ≥ h_min | G, geometry)`, and the depth curve
+`P(G | character) × F_post(h)` passes through it by identity. Each piece of evidence enters once,
+in the factor it is evidence about; there is no blending parameter, and the apparent dependence
+between the two channels does not arise in the arithmetic. The dependence that remains is between
+the two judgements at elicitation. The characteristics that grade `c`, conformance to structure,
+sharp terminations and a fluid-contact reflection, are also the characteristics the published
+drilled-prospect rankings put first for finding hydrocarbons: amplitude conformance to structure
+first, flat spots among the most definitive (Roden, Forrest & Holeywell 2012; Nixon, Hallam &
+Constantine 2018). In this model that evidence about `G` enters through the evidence index, so an
+event graded high on `c` is usually placed higher on the index too.
+Simm (2020) draws the same line from the other side: a high-grade DHI, with characteristics
+consistent with the trap and indicative of a fluid contact, warrants an uplift to the chance; an
+amplitude or AVO anomaly without them generally does not. Tab 5.1.3 draws the two judgements
+against each other (Figure 5.1.3a) with that pairing as a band, a judgement and not a
+calibration, and names the pairings outside it.
+
+Strong evidence does not make the contact certain. The evidence index moves `P(G)`, and at
+its cap takes 0.41 to 0.87; it does not touch the weights, so the contact keeps the spread the
+pick, the depth conversion, the contact attribution and the detection assumptions leave it.
+Hydrocarbon presence can become highly likely while the contact distribution keeps a finite
+width, and the two readings are reported apart so that this is visible.
+
+The one published measurement of a combined ratio is Kjønsberg et al. (2010), who invert
+prestack AVO for the joint lithology–fluid distribution by Markov chain Monte Carlo at three
+locations offshore Norway and report prior and posterior hydrocarbon probabilities: a prior of
+0.53 from their facies model, 0.76 at a well, 0.97 at the prospect centre and 0.44 at the
+outskirts, so implied ratios of 2.8, 28.7 and 0.70. The strongest bought a factor of 29, against
+this tool's guard on the combined ratio of 50, and that location found gas in two layers; the
+negative at the outskirts bought 0.70, a factor of 1.4 against where the positive was 29 for.
+Their number carries amplitude and geometry together, since the fluid contacts are part of what
+their chain samples, so it bounds the whole update rather than one channel, and it shows the
+asymmetry: absence is much weaker evidence than presence. Their inversion separates hydrocarbon
+from brine far better than one hydrocarbon from another: oil sand and gas sand overlap in
+acoustic impedance and Vp/Vs, and at the prospect centre the posterior put 0.03 on wet and then
+0.45 on gas alone against 0.46 on gas and oil, with the oil and gas volumes strongly
+anti-correlated, the seismic pinning the total and trading the split. The consequence for the
+pick is that a flat spot may be a gas–oil contact rather than a hydrocarbon–water contact; the
+tool assumes the latter, and on a two-phase prospect the amplitude alone does not settle which.
+
+A DHI reshapes the chance curve rather than lifting it: the pick raises the chance at
+thresholds near and above the picked contact and lowers it below, and the curves cross where
+that changes. The posterior median lands on the pick, because an amplitude termination is an
+estimate of the contact and not a floor under it, so the chance read there is about half the
+one read at the assessment minimum.
+
+A DHI cannot re-attribute risk between elements. Two controlling-mechanism readings are reported:
+what controls the contact under the geological prior, and which mechanisms are more frequent among
+the realisations the evidence favours. The second is not the DHI saying which element failed; it is
+which mechanisms are more consistent with the contact depths the evidence favours. Given the
+prospect failed, which element failed, a fluid indicator cannot say; the element chances on tab 2.0
+are untouched by the update (Monigle et al. 2025: the adequacy of source is determined by the
+geologic factors alone). Given it worked and the contact is where the amplitude says, which
+mechanism stopped it there, the DHI can answer, because the controlling limit is coupled to the
+contact depth. That is why the controller is recorded.
+
+The scenario switch, `IF(DHI valid, DHI contact, geological contact)`, is the older method and
+Hood's rule: merge late, never blend into the input distribution. It moves the contact and not
+the chance, cannot narrow the distribution, and reports no mechanism. Its one parameter, whether
+the picked event is the contact, was an unlabelled parameter of a model never written down; the
+likelihood form writes it down as the floor (8.1.5) and needs two numbers a geophysicist can
+state instead of one nobody can. Tab 5.1's diagnostics compare the two on the same value, since
+a comparison run on a different one would be a comparison against something else.
+
+Monigle et al. (2025) integrate a DHI score with a geological prior by the same Bayesian update
+used for the character channel, and treat an absent anomaly as negative evidence. What is not
+found in that work is the likelihood defined over column height, which is what makes the
+evidence reshape the contact distribution and the depth-dependent risk rather than only the
+chance.
+
+The walkthrough below takes the update apart one term at a time on the current prospect's
+numbers. Nothing on it changes a result.
 
 ## Empirical benchmarks and censoring
 
@@ -438,32 +422,31 @@ rather than a database query. The earlier compilations report column-height dist
 no trap geometry. A prospect outside the NCS is therefore compared against Norwegian rock, and
 the import path, a company's own trap-fill database, is the response.
 
-The published regression measures the wrong quantity. What a predrill model needs is seal
-capacity `S`, the column the seal could hold; what is measured is `C = min(S, H)`, with `H` the
-closure height. Underfilled pools observe `S`. Pools filled to spill, 111 of 242, observe only
-`S ≥ H`: they are right-censored, and the seal's capacity was never tested. Hood (2019) states the
-geology, pools controlled by geometric limits "document the minimum column that the seal can
-support but not the upper limit"; the statistical consequence had not been carried into the
-published estimators. Fitted
-as a Type-I Tobit, the closure-height elasticity falls and the burial-depth elasticity roughly
-doubles, the direction physics expects since seals compact and strengthen with depth; censoring
-hid the depth signal because deep closures fill to spill more often. Dropping the censored points
-does not help: conditioning on `S < H` manufactures the same positive relationship by truncation.
-Simulated with seal capacity independent of closure height and 242 points to match, naive OLS
-returns a slope of 0.580, OLS after dropping the filled-to-spill points 0.543, and the censored
-MLE −0.009 against a truth of zero, at every correlation tested (`tests/test_censoring.py`). The
-corrected model reproduces the observed fill-to-spill rate band by band, which is what validates
-its form: in the 242 discoveries 45.9 % fill to spill, and drawing a column for every discovery
-at its own closure height and burial depth the corrected fit predicts 47.2 % and the published
-fit 32.1 %, both given the same spread so that only the mean function differs. The published
-estimator overstates the closure-height elasticity, 0.880 against 0.701 corrected, so its family
-fans out too far and goes the opposite way at the two ends: at 2 500 m burial it under-fills
-small closures (P50 82 m of a 100 m closure against 100 m corrected, 37 % filling to spill
-against 59 %) and over-fills the largest (514 m of an 800 m closure against 490 m). Graham et
-al.'s (2015) global 40 % fill-to-spill rate is a population average over closures below 250 m,
-not a value at 250 m; on the same basis the NCS gives 54 %, a regional difference rather
-than a discrepancy, since the NCS is charge-rich, which is Graham's own warning against global
-benchmarks without trap-specific geology.
+The published regression measures the wrong quantity. What a predrill model needs is seal capacity
+`S`, the column the seal could hold; what is measured is `C = min(S, H)`, with `H` the closure
+height. Underfilled pools observe `S`. Pools filled to spill, 111 of 242, observe only `S ≥ H`:
+they are right-censored, and the seal's capacity was never tested. Hood (2019) states the geology,
+pools controlled by geometric limits "document the minimum column that the seal can support but not
+the upper limit"; the statistical consequence had not been carried into the published estimators.
+Fitted as a Type-I Tobit, the closure-height elasticity falls and the burial-depth elasticity
+roughly doubles, the direction physics expects since seals compact and strengthen with depth;
+censoring hid the depth signal because deep closures fill to spill more often. Dropping the
+censored points does not help: conditioning on `S < H` manufactures the same positive relationship
+by truncation. Simulated with seal capacity independent of closure height and 242 points to match,
+naive OLS returns a slope of 0.580, OLS after dropping the filled-to-spill points 0.543, and the
+censored MLE −0.009 against a truth of zero, at every correlation tested
+(`tests/test_censoring.py`). The corrected model reproduces the observed fill-to-spill rate band by
+band, which is what validates its form: in the 242 discoveries 45.9 % fill to spill, and drawing a
+column for every discovery at its own closure height and burial depth the corrected fit predicts
+47.2 % and the published fit 32.1 %, both given the same spread so that only the mean function
+differs. The published estimator overstates the closure-height elasticity, 0.880 against 0.701
+corrected, so its family fans out too far and goes the opposite way at the two ends: at 2 500 m
+burial it under-fills small closures (P50 82 m of a 100 m closure against 100 m corrected, 37 %
+filling to spill against 59 %) and over-fills the largest (514 m of an 800 m closure against 490
+m). Graham et al.'s (2015) global 40 % fill-to-spill rate is a population average over closures
+below 250 m, not a value at 250 m; on the same basis the NCS gives 54 %, a regional difference
+rather than a discrepancy, since the NCS is charge-rich, which is Graham's own warning against
+global benchmarks without trap-specific geology.
 
 The published regression's crossing of the 1:1 line is an artefact of fitting a straight line
 to a quantity bounded by `C ≤ H`: it predicts, at small closures, a column the data cannot
@@ -515,14 +498,14 @@ that does not. Combined with the model, the two are averaged as quantiles rather
 densities, so the answer lies between them rather than coming out as two humps.
 
 The comparison is a sanity check, not a score. A prospect can be optimistic on good grounds: a
-better seal than the average NCS closure, or a charge system that fills reliably, is a
-defensible belief where the evidence for it can be named. Every benchmark is conditioned on discovery, so
-part of "optimistic against the record" is a statement about which wells were written down.
-Every trap in the record had hydrocarbons in it, so the record can inform where a contact sits
-and never the chance of having one. Two selection effects remain uncorrected in every analysis:
-discovery-only conditioning, and left-truncation at the well's reservoir entry, which removes the
-small-column tail. Stacked, the record is truncated below and censored above, and both push it to
-look better filled than reality.
+better seal than the average NCS closure, or a charge system that fills reliably, is a defensible
+belief where the evidence for it can be named. Every benchmark is conditioned on discovery, so part
+of "optimistic against the record" is a statement about which wells were written down. Every trap
+in the record had hydrocarbons in it, so the record can inform where a contact sits and never the
+chance of having one. Two selection effects remain uncorrected in every analysis: discovery-only
+conditioning, and left-truncation at the well's reservoir entry, which removes the small-column
+tail. Stacked, the record is truncated below and censored above, and both push it to look better
+filled than reality.
 
 Base rates are shown beside the model and not merged. Edmundson's §5.2 recommends base-rate
 figures integrated with the geological assessment, citing Milkov (2017), and gives no method;
@@ -563,26 +546,25 @@ where the shared apex makes it approximate. A residual near zero says the elemen
 independently and the derived per-element chances are consistent with the contact they came
 from.
 
-The tornado asks how much each elicited number moves the mean, a different question from how
-often the limit controls the contact: a limit can set the contact in most realisations and be
-worth no effort, because it always applies at nearly the same depth. Each bar is a conditional
-mean, the average outcome with that input in its top tenth against its bottom tenth, sliced
-from the joint sample so the bars respect the correlations. A limit has two kinds of bar, where
-it applies and whether it is present, and the longer says whether the question is a depth or a
-probability. The mean rather than the median, because a volume is built from the mean and a
-median can sit still while the tail moves. After a DHI update the sensitivity keeps two kinds of input apart. The geology varies
-realisation by realisation and is sliced as before, with the means weighted by likelihood; the
-DHI's own numbers are single typed values, so their influence is found by moving each one and
-recomputing, the pick sigma halved and doubled, the picked contact by half a sigma, the
-detection parameters across the span an assessor cannot pin down. Each variation is a new set of
-weights on the same realisations, with no second Monte Carlo. Where a typed DHI number moves the
+The tornado asks how much each elicited number moves the mean, a different question from how often
+the limit controls the contact: a limit can set the contact in most realisations and be worth no
+effort, because it always applies at nearly the same depth. Each bar is a conditional mean, the
+average outcome with that input in its top tenth against its bottom tenth, sliced from the joint
+sample so the bars respect the correlations. A limit has two kinds of bar, where it applies and
+whether it is present, and the longer says whether the question is a depth or a probability. The
+mean rather than the median, because a volume is built from the mean and a median can sit still
+while the tail moves. After a DHI update the sensitivity keeps two kinds of input apart. The
+geology varies realisation by realisation and is sliced as before, with the means weighted by
+likelihood; the DHI's own numbers are single typed values, so their influence is found by moving
+each one and recomputing, the pick sigma halved and doubled, the picked contact by half a sigma,
+the detection parameters across the span an assessor cannot pin down. Each variation is a new set
+of weights on the same realisations, with no second Monte Carlo. Where a typed DHI number moves the
 answer further than the geology does, the posterior is a statement about the seismic assumptions
 rather than about the prospect; the pick sigma and the detection ceiling are usually the least
 defensible numbers. Reweighting also changes which limits the answer is sensitive to, so the
 geological ranking after the update can differ from the one before it. The sensitivity figures
-state their support. A tornado bar resting on fewer than a hundred
-effective realisations is reported as thin rather than drawn as though it were as well supported
-as the rest.
+state their support. A tornado bar resting on fewer than a hundred effective realisations is
+reported as thin rather than drawn as though it were as well supported as the rest.
 
 The engine reproduces the one published case, Beha et al.'s (2012) two-fault closure, to Monte
 Carlo error. The numerical audit of 14 September 2026 (`docs/AUDIT_2026-09-14.md`) probed the
@@ -592,9 +574,10 @@ is fixed and tested or recorded as acceptable. The paper's numbers are regenerat
 engine by script and tested against the prospect they were drawn from.
 
 Judgements with no external referent in the tool: the DHI evidence index, read against the two
-reference distributions the tool ships with, themselves editable; `c`, the contact-attribute judgement, typed or from three graded attributes by
-a heuristic rule; the relative false-positive rate for an absent anomaly; the oil–water
-interfacial tension, 18–28 dyne/cm, flat in temperature; the well's connection chance.
+reference distributions the tool ships with, themselves editable; `c`, the contact-attribute
+judgement, typed or from three graded attributes by a heuristic rule; the relative false-positive
+rate for an absent anomaly; the oil–water interfacial tension, 18–28 dyne/cm, flat in temperature;
+the well's connection chance.
 
 Modelling choices: the detection function is logistic in column height; a flat event that is
 not the contact is equally likely at any depth in the model's contact range; the pick and a
@@ -603,22 +586,22 @@ in play; the barren trap's chance of showing is tied to the filled trap's; the g
 follows a temperature line of unknown provenance that agrees with methane–brine data.
 
 Things the model does not do. One fluid at a time: seal capacity depends on the density contrast,
-so a gas column and an oil column under the same seal differ in height, and a mixed-phase
-prospect needs the gas cap and the oil leg limited by different capacities with a gas–oil contact
-between them; phases are run as separate cases. A separate-case answer is not a two-phase answer,
-and the difference is not conservative: a single seal sees gas at the crest and oil on the flanks
-between the two contacts, the oil leg is unchanged by the gas above it, and the total column is
-taller than either single-phase answer rather than between them. On the shipped defaults that is
-roughly 150 m of oil under 130 m of gas, against 150 m pure oil or 183 m pure gas; spill and
-every other limit still apply. The numbers follow from the physics in `hcwc/core/seals.py`; the
-tool does not compute them, and the charge-driven route to a gas–oil contact in
-`hcwc.core.charge` is not wired to a control either (docs/PLAN_DUAL_PHASE_SEAL.md). No
-hydrodynamics or tilted contacts; the contact is hydrostatic and horizontal, and remigration and
-hydraulic reconfiguration are absent for the same reason (Grant 2020 includes the gradient). No
-compartmentalisation; a compartmentalised trap needs a contact per compartment. Presence draws
-are independent (8.1.5). Calculator inputs are independent (8.1.5). The empirical record is discovery-conditioned, censored above and truncated below
-(8.1.8). The seismic likelihoods are elicited, not calibrated, which is why the effective sample
-size and the sensitivity to each seismic input are reported: when a typed assumption moves the
-contact further than the geology does, that is a finding about the assumption. A proven column in
-the closure makes the prospect a discovery, which is a larger statement than one about depth;
+so a gas column and an oil column under the same seal differ in height, and a mixed-phase prospect
+needs the gas cap and the oil leg limited by different capacities with a gas–oil contact between
+them; phases are run as separate cases. A separate-case answer is not a two-phase answer, and the
+difference is not conservative: a single seal sees gas at the crest and oil on the flanks between
+the two contacts, the oil leg is unchanged by the gas above it, and the total column is taller than
+either single-phase answer rather than between them. On the shipped defaults that is roughly 150 m
+of oil under 130 m of gas, against 150 m pure oil or 183 m pure gas; spill and every other limit
+still apply. The numbers follow from the physics in `hcwc/core/seals.py`; the tool does not compute
+them, and the charge-driven route to a gas–oil contact in `hcwc.core.charge` is not wired to a
+control either (docs/PLAN_DUAL_PHASE_SEAL.md). No hydrodynamics or tilted contacts; the contact is
+hydrostatic and horizontal, and remigration and hydraulic reconfiguration are absent for the same
+reason (Grant 2020 includes the gradient). No compartmentalisation; a compartmentalised trap needs
+a contact per compartment. Presence draws are independent (8.1.2). Calculator inputs are
+independent (8.1.2). The empirical record is discovery-conditioned, censored above and truncated
+below (8.1.7). The seismic likelihoods are elicited, not calibrated, which is why the effective
+sample size and the sensitivity to each seismic input are reported: when a typed assumption moves
+the contact further than the geology does, that is a finding about the assumption. A proven column
+in the closure makes the prospect a discovery, which is a larger statement than one about depth;
 the tool uses the depth only and does not change the element chances.

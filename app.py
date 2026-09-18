@@ -164,7 +164,7 @@ simulation records which one it was.
 The result answers four questions: where the contact is, which mechanism controls it, how the
 chance changes with depth, and what that means for the assessment minimum and a well drilled to a
 given depth. Where available, the distribution is compared with
-empirical data and updated with DHI or well evidence. Method: see 8.1.1.
+empirical data and updated with DHI or well evidence. Method: see 8.1.
         """
     )
 
@@ -217,7 +217,7 @@ empirical data and updated with DHI or well evidence. Method: see 8.1.1.
             "Every mechanism that can stop the column, on one section, with the distribution of "
             "the depth at which it acts. Charge enters from below and fills downward from the "
             "apex, so every capacity is measured from the apex. Figure by Lars Hjelm. "
-            "Method: see 8.1.3."
+            "Method: see 8.1.2."
         )
 
     # Trimmed 16 Sep 2026 to the operational statement. The argument for reading the chance
@@ -225,8 +225,8 @@ empirical data and updated with DHI or well evidence. Method: see 8.1.1.
     # are stated once, on tab 8.1 (docs/EXPLANATION_MAP_2026-09-16.md, tab 1).
     st.markdown(
         "A discovery is a column of at least the assessment minimum set on **2.0 Prospect**; the "
-        "chance of success is the contact distribution read at that depth. Method: see 8.1.4. "
-        "Limitations: see 8.1.9."
+        "chance of success is the contact distribution read at that depth. Method: see 8.1.3. "
+        "Limitations: see 8.1.8."
     )
     st.markdown(
         "Related tools: [E-POS](https://e-pos.streamlit.app) supplies the element chances on "
@@ -593,14 +593,17 @@ with tab8:
     )
 
     # 8.1 is docs/THEORY.md: one `## ` section per numbered part, rendered in order (the master
-    # brief, 16 Sep 2026). The document's H1 is the 8.1 heading; its nine sections are 8.1.1
-    # Model overview to 8.1.9 Validation, assumptions and limitations. Two pieces of the tool
-    # render inside it, because they are the derivation on the live prospect and belong with
-    # the text that derives it: the DHI walkthrough under 8.1.6, and the worked base-rate
-    # example under 8.1.8.
+    # brief, 16 Sep 2026; eight sections since 18 Sep). The document's H1 is the 8.1 heading;
+    # the lines before its first section are the overview figure and the map of the sections,
+    # rendered under the heading. The sections are 8.1.1 Accumulation chance P(G) to 8.1.8
+    # Validation, assumptions and limitations. Two pieces of the tool render inside it, because
+    # they are the derivation on the live prospect and belong with the text that derives it:
+    # the DHI walkthrough under 8.1.6, and the worked base-rate example under 8.1.7.
     _theory = DOCS / "THEORY.md"
     if _theory.exists():
         _parts: list[tuple[str, list[str]]] = []
+        _preamble: list[str] = []
+        _in_subtitle = False
         _h1 = "Theory and methods"
         for _line in _theory.read_text(encoding="utf-8").split("\n"):
             if _line.startswith("# "):
@@ -610,17 +613,28 @@ with tab8:
                 _parts.append((_line[3:].strip(), []))
             elif _parts:
                 _parts[-1][1].append(_line)
-            # Lines before the first section are the document's own subtitle and are dropped:
-            # the tab intro above says the same.
+            else:
+                # Lines before the first section: the overview figure and the map of the
+                # sections. The italic subtitle, one paragraph, is dropped; the tab intro
+                # above says the same.
+                if _line.startswith("*"):
+                    _in_subtitle = True
+                if not _in_subtitle:
+                    _preamble.append(_line)
+                if _in_subtitle and not _line.strip():
+                    _in_subtitle = False
         _worked_example_slot = None
         theme.heading(8, f"1 · {_h1}")
         _n8 = Numbering(8, sub=1)
+        # The overview figure keeps its number, 8.1.1a: the preamble counts as section 1.
+        theme.CURRENT_SECTION[(8, 1)] = "1"
+        _render_with_figures("\n".join(_preamble), DOCS, demote=3, numbering=_n8)
         for _k, (_title, _body) in enumerate(_parts):
             theme.subheading(8, 1, _k + 1, _title)
             _render_with_figures("\n".join(_body), DOCS, demote=3, numbering=_n8)
             if _k == 5:
                 dhi_walkthrough.render(_n8)
-            if _k == 7:
+            if _k == 6:
                 _worked_example_slot = st.container()
         if _worked_example_slot is None:
             _worked_example_slot = st.container()
@@ -640,7 +654,7 @@ with tab8:
             "A likelihood is a use rather than a kind of distribution, and to act as one the data "
             "must have been observed on this prospect.\n\n"
             "The test is therefore not whether the data is a probability but whether it carries "
-            "something the model has not already used. Method: see 8.1.8 above; the table below "
+            "something the model has not already used. Method: see 8.1.7 above; the table below "
             "shows what getting it wrong does to a real prospect."
         )
         _t8_limits = st.session_state.get("limit_set")

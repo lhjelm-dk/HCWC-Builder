@@ -81,7 +81,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.markdown(
         "Each element's curve is derived from the shallowest active limit within that element, "
         "its group minimum. WellVolPOS allocates one location factor across the elements by a "
-        "rule; the derived curves say which element binds at each depth. Method: see 8.1.4."
+        "rule; the derived curves say which element binds at each depth. Method: see 8.1.3."
     )
 
     # ------------------------------------------------------------------ reservoir effectiveness
@@ -89,7 +89,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.markdown(
         "A reservoir that ends at a surface (base or pinch-out) is a limit on tab 3.0 and moves "
         "the contact; a reservoir that degrades with depth is entered here and lowers the chance "
-        "without moving it. Method: see 8.1.4."
+        "without moving it. Method: see 8.1.3."
     )
     use_r1 = st.toggle(
         "Apply a reservoir-effectiveness decline", value=False, key=f"r1_on_{tab}",
@@ -285,7 +285,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.markdown(
         "Under independent limits, `∏ₑ Pₑ(z) = P(contact > z)`: the product of the element "
         "curves reproduces the contact distribution. The test runs on every rerun. Method: see "
-        "8.1.9."
+        "8.1.8."
     )
     c1, c2, c3 = st.columns(3)
     c1.metric("Max gap, column space", f"{d.max_abs_residual_column:.3f}",
@@ -314,7 +314,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.info(
         "The identity is exact in column-height space and approximate in depth space, where the "
         "elements share the apex draw; the difference between the two residuals is the apex's "
-        "contribution. Method: see 8.1.5."
+        "contribution. Method: see 8.1.2."
     )
 
     # ------------------------------------------------------------------ allocation comparison
@@ -416,5 +416,5 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         f"contact lies below that depth. The prospect POS above it asks whether there is a "
         f"commercial column anywhere, and is always the larger. `r` is the depth term only and "
         f"carries no element risk. An element with no limit in the model has its element "
-        f"chance unchanged with depth. Method: see 8.1.4."
+        f"chance unchanged with depth. Method: see 8.1.3."
     )
