@@ -151,7 +151,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         st.caption(
             "The contact distribution stands; only the chance is undefined. With no minimum "
             "these percentiles are the whole distribution rather than the part above a minimum, and "
-            "there is no threshold to read a chance at. Method: see 8.1.4."
+            "there is no threshold to read a chance at. Method: see 8.1.3."
         )
     else:
         m1, m2, m3, m4, m5 = st.columns(5)
@@ -171,7 +171,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             + ", ".join(f"{name} {share:.0%}" for name, share in _top)
             + ". Every chance here carries its threshold and the conditioning it was computed "
             "under; the contact percentiles are conditional on the assessment minimum. Method: "
-            "see 8.1.4."
+            "see 8.1.3."
         )
 
     # ------------------------------------------------------------------ 1 · exceedance
@@ -292,7 +292,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                  f"{result.n:,}. Right: the whole distribution, its exceedance curve on the top "
                  f"axis"
                  + (", with the geological curve dashed beside it" if given_dhi else "")
-                 + f", and the {_idx.size} shown marked at their depths. Method: see 8.1.3.")
+                 + f", and the {_idx.size} shown marked at their depths. Method: see 8.1.2.")
 
     # `grid` and `apex_med` feed the chance curve in section 3; the exceedance figure that used
     # to sit here was replaced by the competition figure above (Lars, 17 Sep 2026), which carries
@@ -422,7 +422,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         n.plot(fig2, "The controlling mechanism at each depth, which changes down structure. Hue "
                      "is the risk element in E-POS's colours (salmon charge, blue closure, yellow "
                      "reservoir, green retention); lightness separates the limits within an "
-                     "element. Method: see 8.1.3."
+                     "element. Method: see 8.1.2."
                      + ("\n\nBars are shares of all realisations, so bin height carries the "
                         "contact distribution and each limit's bars sum across depth to its "
                         "overall share." if scaled else
@@ -536,7 +536,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                f"from how often it controls the contact (the figure above). Each bar is the "
                f"mean outcome with that input in its top tenth against its bottom tenth, from "
                f"the run on screen. Two kinds of bar: where a limit applies is its distribution; "
-               f"whether it is there is `P(active)`. Method: see 8.1.9.")
+               f"whether it is there is `P(active)`. Method: see 8.1.8.")
     else:
         st.info("Too few realisations to slice into deciles for a sensitivity.")
 
@@ -553,7 +553,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         n.table(table, optional=True,
                 caption="A limit that usually fails the prospect outright is under-represented "
                 "among the survivors. Both columns are needed; neither alone is the answer. "
-                "Method: see 8.1.3.")
+                "Method: see 8.1.2.")
 
     # ------------------------------------------------------------------ 2c, 2d · folded
     # Two further readings of the controls. Moved behind a fold on 16 Sep 2026 so the default
@@ -1139,7 +1139,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                  f"two is the element risk. The bars are the controlling limit per depth bin as "
                  f"shares of all realisations, the scaled view of 4.1.2. Read at the assessment "
                  f"minimum the red curve is the headline above; read at any other depth it is "
-                 f"the chance of a column reaching that depth. Method: see 8.1.4.")
+                 f"the chance of a column reaching that depth. Method: see 8.1.3.")
 
     # ------------------------------------------------------------------ 4 · the well
     # The last question: a well entering the reservoir at a depth finds hydrocarbon if the
@@ -1182,7 +1182,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         f"P(well) includes the element risk and is read at the entry depth, not at the "
         f"assessment minimum; it is at most the prospect chance. The column at the well is the "
         f"contact depth minus the entry depth. The per-element reading is on the Risk against "
-        f"depth sub-tab. Method: see 8.1.4."
+        f"depth sub-tab. Method: see 8.1.3."
     )
 
     # ------------------------------------------------------------------ 6 · trust

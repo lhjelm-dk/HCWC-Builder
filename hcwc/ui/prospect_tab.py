@@ -260,7 +260,7 @@ def render() -> None:
         f"A discovery is a column of at least {min_column:,.0f} m, a contact at or below "
         f"{apex_mid + min_column:,.0f} m TVDSS at the mid apex. The limits on tab 3.0 say how "
         f"deep the column could reach; this says how deep it must reach to count. Method: see "
-        f"8.1.4."
+        f"8.1.3."
     )
     if min_column == 0:
         st.warning(
@@ -283,7 +283,7 @@ def render() -> None:
     st.info(
         "The chances here are for the element working at the crest. A trapping element that "
         "fails down-dip from the crest is a limit on tab 3.0, not a reduction of the chance "
-        "here. Method: see 8.1.4.\n\n"
+        "here. Method: see 8.1.1.\n\n"
         "Retention here is whether the seal holds anything. How much it holds is the top-seal "
         "capacity on tab 3.0. An E-POS Retention number that already means the full column belongs "
         "on tab 3.0."
@@ -447,7 +447,7 @@ def render() -> None:
         elif use_hc:
             st.warning(
                 "Hydrocarbons proven in this closure make the prospect a discovery. This tool uses "
-                "the depth only and does not change the element chances above. See 8.1.9."
+                "the depth only and does not change the element chances above. See 8.1.8."
             )
         if not use_hc and not use_water:
             st.info("At least one is required. A penetration that established neither fluid is not "
