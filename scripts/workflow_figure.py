@@ -1,6 +1,6 @@
 """The workflow figure, drawn as SVG by hand, in two versions from one layout.
 
-* ``docs/figures/fig0_workflow.svg`` -- the conceptual version for 8.1.1 and the article: the
+* ``docs/figures/fig0_workflow.svg`` -- the conceptual version for 8.1's overview and the article: the
   model as symbols and one-line concepts, no tab references.
 * ``docs/figures/fig0_workflow_guide.svg`` -- the guide version for tab 1.0: the same boxes,
   each line naming the tab it lives on and what is entered or read there, so the figure is a
