@@ -474,7 +474,7 @@ def render(n: Numbering | None = None) -> None:
                f"{below:.0%} of the geological realisations fall in the shaded side, and those "
                "are the ones the update acts on. A share near zero means the observation adds "
                "nothing the model did not already hold. The likelihood falls away below the "
-               "line at the rate the pick error sets. Method: see 8.1.7.")
+               "line at the rate the pick error sets. Method: see 8.1.5.")
 
         # Once the cutoff is above essentially the whole prior, every realisation is penalised
         # by the same saturated amount, the likelihood is flat apart from the floor, the
@@ -526,7 +526,7 @@ def render(n: Numbering | None = None) -> None:
                f"The pick is {sharper:,.0f} times sharper than the geology, centred where "
                f"{sits_at:.0%} of it lies shallower. Far narrower than the geology, the pick "
                "dominates the answer; centred in its tail, the posterior rests on few "
-               "realisations, which §6 reports as the effective sample size. Method: see 8.1.7.")
+               "realisations, which §6 reports as the effective sample size. Method: see 8.1.5.")
 
     # A penetration described on tab 2.0 is evidence present too, and its note belongs in §1;
     # it is computed after the update below, so the slot is reserved here and filled there.
@@ -549,7 +549,7 @@ def render(n: Numbering | None = None) -> None:
         "hydrocarbon-bearing outcomes and f(s | NoHC) for non-hydrocarbon ones; their ratio at "
         "the observed index is the likelihood ratio LR(s), the evidence weight. P(G) from tab "
         "2.0 is the prior it updates: P(G | s) = LR(s) P(G) / (LR(s) P(G) + 1 − P(G)). "
-        "Method: see 8.1.6."
+        "Method: see 8.1.4."
     )
 
     with st.expander("The two reference distributions"):
@@ -673,8 +673,8 @@ def render(n: Numbering | None = None) -> None:
     figr.add_annotation(x=axis[0], y=_p_g_prior, text=f"prior P(G) = {_p_g_prior:.2f}",
                         xanchor="left", yshift=9, showarrow=False,
                         font=dict(size=10, color="#4C72B0"), row=1, col=2)
-    figr.update_xaxes(title_text="DHI evidence index", row=1, col=1)
-    figr.update_xaxes(title_text="DHI evidence index", row=1, col=2)
+    figr.update_xaxes(title_text="DHI evidence index", range=[-60, 60], row=1, col=1)
+    figr.update_xaxes(title_text="DHI evidence index", range=[-60, 60], row=1, col=2)
     figr.update_yaxes(title_text="likelihood ratio", type="log", row=1, col=1)
     figr.update_yaxes(title_text="P(G | DHI)", range=[0, 1], row=1, col=2)
     figr.update_layout(height=320, margin=dict(t=20, b=40),
@@ -684,7 +684,7 @@ def render(n: Numbering | None = None) -> None:
                  f"P(G | s) it gives against the prior P(G) = {_p_g_prior:.2f} from tab 2.0. "
                  f"The dot is this prospect's reading. The model weights evidence about "
                  f"hydrocarbon presence; it says nothing about the depth of the contact, which "
-                 f"§3 carries. Method: see 8.1.6.")
+                 f"§3 carries. Method: see 8.1.4.")
 
     # "POS on strength alone" is deliberately absent: it needs the prior, which is not computed
     # until the channels are combined, and a chance is a result rather than an input.
@@ -708,7 +708,7 @@ def render(n: Numbering | None = None) -> None:
         f"peak so they can be compared: how typical an index of {strength:,.0f} is for a "
         f"hydrocarbon-bearing outcome, and for a non-hydrocarbon one. Their ratio is the "
         f"likelihood ratio exactly ({_l_hc:.3f} / {_l_no:.3f} = {r_strength:.2f}). Densities, "
-        f"not probabilities; only the ratio survives the relative axis. Method: see 8.1.6."
+        f"not probabilities; only the ratio survives the relative axis. Method: see 8.1.4."
     )
     # Worked from OPENING_STRENGTH rather than typed. The caption below used to quote a
     # default of 7 and the 37.5 % that follows from it; the slider moved to 5 on 6 Sep and
@@ -718,7 +718,7 @@ def render(n: Numbering | None = None) -> None:
     st.caption(
         f"{band}: {band_note} At the opening reading of {OPENING_STRENGTH:.0f} the band is "
         f"{dhi_core.strength_bands(_opening_r)[0]}, and a 30 % prior becomes "
-        f"{_opening_shift:.1%}. The volume weight `R / (R + 1)` is not a POS. Method: see 8.1.6."
+        f"{_opening_shift:.1%}. The volume weight `R / (R + 1)` is not a POS. Method: see 8.1.4."
     )
 
     # ------------------------------------------------------------------ p_valid
@@ -739,14 +739,14 @@ def render(n: Numbering | None = None) -> None:
         "The second channel. A flat event can be lithology, a diagenetic front, fizz gas read "
         "as pay, or a processing artefact; this section states the chance that it is none of "
         "those, given a column here. With the pick (§1) and the detection model (3b) it "
-        "reweights the HCWC distribution within G. Method: see 8.1.7."
+        "reweights the HCWC distribution within G. Method: see 8.1.5."
     )
     picked_levels = {}
     with st.expander("Grade the three contact attributes, for a suggested value of c"):
         st.markdown(
             "Contact attributes bear on whether the picked event is the base of the column; "
             "body attributes, graded in §2, on whether there is hydrocarbon (Monigle et al. "
-            "2025). Method: see 8.1.7."
+            "2025). Method: see 8.1.5."
         )
         cols = st.columns(len(CONTACT_ATTRIBUTES))
         for col, (attribute, levels) in zip(cols, CONTACT_ATTRIBUTES.items()):
@@ -759,7 +759,7 @@ def render(n: Numbering | None = None) -> None:
         st.caption(
             f"Suggested c = {suggested_c:.2f}, the geometric mean of "
             f"{', '.join(f'{s:.2f}' for s in scores)}, so that one poor attribute pulls the "
-            f"value down. A heuristic, not a calibration. Method: see 8.1.7."
+            f"value down. A heuristic, not a calibration. Method: see 8.1.5."
         )
 
     # Three routes to c (Lars, 17 Sep 2026): stated on the slider; the graded attributes'
@@ -797,7 +797,7 @@ def render(n: Numbering | None = None) -> None:
         f"Monigle et al.'s rule gives c = {score_c:.2f} from a score of {dhi_score:.2f}: "
         f"w = min(2 × score, {dhi_core.CONTACT_WEIGHT_CEILING:.2f}), calibrated on 400+ drilled "
         f"DHI prospects in their database. The rule is theirs and the basin is not; a score "
-        f"above 0.475 reaches the ceiling. Method: see 8.1.7."
+        f"above 0.475 reaches the ceiling. Method: see 8.1.5."
     )
     _lev["c"] = st.empty()
     contact_given_hc = {C_STATED: stated_c, C_FROM_ATTRIBUTES: suggested_c,
@@ -810,7 +810,7 @@ def render(n: Numbering | None = None) -> None:
         f"The remaining {1 - p_valid:.2f} goes to a branch in which the pick says nothing about "
         f"depth, so the depth channel can say at most {p_valid / (1 - p_valid):.1f} : 1 against "
         f"any contact depth. It does not carry the chance of hydrocarbons, which enters once, "
-        f"in §5. Method: see 8.1.7."
+        f"in §5. Method: see 8.1.5."
     )
 
     st.caption(
@@ -971,7 +971,7 @@ def render(n: Numbering | None = None) -> None:
            f"dash-dot line is the calibrated ceiling on the contact weight. The split of "
            f"Monigle et al.'s (2025) five attributes into body and contact is this tool's "
            f"reading. Nothing in the arithmetic joins the two axes: R does not propose c, and "
-           f"the band is a judgement, not a calibration. Method: see 8.1.7.")
+           f"the band is a judgement, not a calibration. Method: see 8.1.5 and 8.1.6.")
     if r_strength >= 1.5 and contact_given_hc < float(_band(_lr, -0.15)):
         st.caption(
             f"Bright body, unconvincing event: the evidence index argues for hydrocarbons "
@@ -996,7 +996,7 @@ def render(n: Numbering | None = None) -> None:
     st.markdown(
         "The chance a column of height h produces a detectable anomaly. It is what makes an "
         "absent anomaly usable evidence; the false-positive assumption sets how much absence "
-        "says about the chance. Method: see 8.1.7."
+        "says about the chance. Method: see 8.1.5."
     )
     d1, d2, d3, d4 = st.columns(4)
     h50 = d1.number_input("50 % detection column (m)", 1.0, 500.0, 25.0, 1.0,
@@ -1034,7 +1034,7 @@ def render(n: Numbering | None = None) -> None:
                        yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
                        height=380, margin=dict(t=20), showlegend=False)
     n.plot(figd, "The detection function, logistic in column height. Its shape is a modelling "
-                 "choice, exposed rather than hard-coded. Method: see 8.1.7.")
+                 "choice, exposed rather than hard-coded. Method: see 8.1.5.")
 
     # ------------------------------------------------------------------ the update
     observation = DhiObservation(
@@ -1480,7 +1480,7 @@ def render(n: Numbering | None = None) -> None:
         "Kish's (Σw)² / Σw²: how many of the realisations the updated distribution rests on. "
         "A low value does not mean the interpretation is wrong; it means the answer depends "
         "heavily on it. The geometry channel only; the evidence index updates one number and discards "
-        "nothing. Method: see 8.1.6."
+        "nothing. Method: see 8.1.5."
     )
     if post.effective_sample_size < 300:
         st.warning(
@@ -1522,7 +1522,7 @@ def render(n: Numbering | None = None) -> None:
         "rule).\n"
         "- Where every realisation clears the assessment minimum, the pick cannot move the "
         "chance.\n\n"
-        "Method: see 8.1.7 and 8.1.9."
+        "Method: see 8.1.5 and 8.1.8."
     )
 
     # ------------------------------------------------------------------ cross-checks
@@ -1541,7 +1541,7 @@ def render(n: Numbering | None = None) -> None:
         st.markdown(
             "Geological inputs are sliced by decile as on tab 4.0, with likelihood-weighted "
             "means; the DHI's typed numbers are moved one at a time and the realisations "
-            "reweighted. Method: see 8.1.9."
+            "reweighted. Method: see 8.1.8."
         )
         dhi_space = st.radio(
             "Swing measured on", ["Column below apex", "Contact depth"], horizontal=True,
@@ -1578,7 +1578,7 @@ def render(n: Numbering | None = None) -> None:
                    f"pin down.\n\n"
                    f"Where a typed DHI number moves the answer further than the geology does, the "
                    f"posterior is a statement about the seismic assumptions rather than about the "
-                   f"prospect. Method: see 8.1.9.")
+                   f"prospect. Method: see 8.1.8.")
         else:
             st.info("Not enough weight spread to slice a sensitivity from this posterior.")
 

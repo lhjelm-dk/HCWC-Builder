@@ -1674,9 +1674,9 @@ class TestThePageIsNotAnEssay:
                           for e in at.get(kind))
         for phrase in (
             # Both were on tab 1 until 16 Sep 2026; they are stated once now, on tab 8.1.
-            "Beha et al. (2012)",                       # 8.1.3, the precedent
-            "the elicitation effort belongs on",        # 8.1.3, the ranking
-            "A prior and a likelihood are the same kind of object",   # tab 8.1.8, and its worked example
+            "Beha et al. (2012)",                       # 8.1.2, the precedent
+            "the elicitation effort belongs on",        # 8.1.2, the ranking
+            "A prior and a likelihood are the same kind of object",   # tab 8.1.7, and its worked example
             # Graham's own words moved from tab 6.0 §7 to 8.1.8 on 16 Sep 2026.
             "hydrocarbon indicators (DHIs) or known fill controls",
             "The censored MLE crossing is a prediction",  # tab 6.0 §2, folded
@@ -1702,7 +1702,7 @@ class TestThePageIsNotAnEssay:
 class TestTheArgumentsLiveInDocuments:
     """The docs split, 5 Sep 2026, moved three essays that were pure reasoning out of the tabs
     into `docs/`. On 15 Sep 2026 they and the other theory notes were folded into one document,
-    `docs/THEORY.md`, rendered on tab 8 as 8.1 and 8.1.1 to 8.1.9, with the superseded notes kept
+    `docs/THEORY.md`, rendered on tab 8 as 8.1 and 8.1.1 to 8.1.8, with the superseded notes kept
     under `docs/superseded/`. The tabs state a conclusion and point at a number.
 
     **The viewer fails silently by design.** A missing file gets *"not found in this checkout"*
@@ -1733,10 +1733,11 @@ class TestTheArgumentsLiveInDocuments:
     #: Tab 8.0 was restructured on 7 Sep 2026 into Theory / The paper / References; on
     #: 15 Sep 2026 the theory became one document with nine numbered sub-sections, so a reader
     #: can be sent to "8.1.6" rather than to a radio option.
-    THEORY_ORDER = ("Model overview", "Why HCWC is an output, not a generic distribution",
-                    "Competing geological limits", "HCWC, column height and POS",
-                    "Correlation and dependence", "DHI updating",
-                    "Detection, contact attribution and absence",
+    #: Eight sections since 18 Sep 2026 (Lars): the overview figure and the map of the sections
+    #: render under the 8.1 heading, then the sections follow the figure's boxes.
+    THEORY_ORDER = ("Accumulation chance P(G)", "Competing limits and HCWC | G",
+                    "From column height to POS", "DHI evidence index update",
+                    "DHI geometry update", "Combined DHI result",
                     "Empirical benchmarks and censoring",
                     "Validation, assumptions and limitations")
 
@@ -1755,14 +1756,14 @@ class TestTheArgumentsLiveInDocuments:
 
     def test_the_walkthrough_and_the_worked_example_sit_under_their_sections(self):
         """Two live pieces of the tool render inside the theory: the DHI walkthrough under
-        8.1.6 and the base-rate worked example under 8.1.8. Order on the page is the check."""
+        8.1.6 and the base-rate worked example under 8.1.7. Order on the page is the check."""
         at = _run(dhi_toggle=True)
         blob = "\n".join(str(m.value) for m in at.get("markdown"))
-        i5, i6 = blob.index("8.1.6 · DHI updating"), blob.index("8.1.7 · Detection")
+        i5, i6 = blob.index("8.1.6 · Combined DHI result"), blob.index("8.1.7 · Empirical")
         assert i5 < blob.index("Step 1", i5) < i6, "the walkthrough is not under 8.1.6"
-        i7, i8 = blob.index("8.1.8 · Empirical"), blob.index("8.1.9 · Validation")
+        i7, i8 = blob.index("8.1.7 · Empirical"), blob.index("8.1.8 · Validation")
         assert i7 < blob.index("counts the same belief twice", i7) < i8, (
-            "the worked example is not under 8.1.8")
+            "the worked example is not under 8.1.7")
 
     def test_the_superseded_notes_are_kept_off_screen(self):
         """*Files are moved, not deleted.* The five notes 8.1 replaced stay readable in
@@ -1836,7 +1837,7 @@ class TestTheArgumentsLiveInDocuments:
             "whether it carries something the model has not already used",
         ):
             assert conclusion in blob, f"the conclusion went with the essay: {conclusion!r}"
-        assert "Method: see 8.1.8" in blob, "nothing points at 8.1.8"
+        assert "Method: see 8.1.7" in blob, "nothing points at 8.1.7"
         for stale in ("*Weight, not Bayes*", "*Base rates*", "*Prior or likelihood?*",
                       "tab 8.0", "Tab 8.0"):
             assert stale not in blob, f"a pointer still names the old essay or tab: {stale!r}"
