@@ -181,8 +181,9 @@ class TestTheDefaultStrengthIsDefensible:
         screen is the guard rather than the evidence.
         """
         from hcwc.core import dhi
-        combined = dhi.CombinedUpdate(prior_pos=0.3, r_geometry=1.5e7, r_strength=1.40)
-        neutral = dhi.CombinedUpdate(prior_pos=0.3, r_geometry=dhi.R_SINGLE_CHANNEL,
+        from hcwc.core import dhi_comparison as comparison
+        combined = comparison.CombinedUpdate(prior_pos=0.3, r_geometry=1.5e7, r_strength=1.40)
+        neutral = comparison.CombinedUpdate(prior_pos=0.3, r_geometry=dhi.R_SINGLE_CHANNEL,
                                      r_strength=1.40)
         assert combined.r_combined == pytest.approx(neutral.r_combined)
         assert dhi.R_SINGLE_CHANNEL < combined.r_combined < dhi.R_CAP

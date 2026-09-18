@@ -27,6 +27,7 @@ import streamlit as st
 
 from hcwc.core import trust
 from hcwc.core import decompose as dc
+from hcwc.core import pos
 from hcwc.io import benchmarks, geox, report
 from hcwc.io import wellvolpos as wvp
 from hcwc.ui import (depth_risk_tab, dhi_tab, dhi_walkthrough, empirical, limiters_tab,
@@ -516,7 +517,7 @@ with tab7:
         # ------------------------------------------------------------- one page
         theme.heading(7, "4 · One page, for the well proposal")
         _elements = st.session_state.get("element_pos") or {}
-        _p_g = float(np.prod([float(v) for v in _elements.values()])) if _elements else 1.0
+        _p_g = pos.accumulation_chance(_elements)
         st.markdown(
             f"Everything above is a CSV, and a CSV does not travel. This is the inputs, the "
             f"answer, the controlling-limit diagnostic, the trust checks and the provenance on "
