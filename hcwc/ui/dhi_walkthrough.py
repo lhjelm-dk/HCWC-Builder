@@ -163,15 +163,16 @@ def render(n: Numbering | None = None) -> None:
                  else dhi_core.applied_ratio(result, detection, observation, r_strength or 1.0))
     st.markdown(
         "This is the term most often skipped, and the reason bright amplitudes over-persuade. "
-        "An observation is evidence only to the extent that it is more likely under success than "
-        "under failure. An anomaly that would have appeared either way carries no information, "
+        "An observation is evidence only to the extent that it is more likely under G, an "
+        "accumulation, than under not G. An anomaly that would have appeared either way carries "
+        "no information, "
         "however convincing it looks.\n\n"
         "The tool answers it in two places, one for each thing the amplitude carries:"
     )
     rows = [{"Aspect of the observation": ("Character: how hydrocarbon-like the amplitude looks"
                                            if observation.seen else
                                            "Absence: nothing shows where a column would have"),
-             "Answered by": ("the two-curve strength model, tab 5.1 §2" if observation.seen
+             "Answered by": ("the DHI evidence-strength model, tab 5.1 §2" if observation.seen
                              else "P(absent | G) / P(absent | no hydrocarbons), tab 5.1 §3b"),
              "Updates": "P(G), the chance the elements worked",
              "Gives": f"R = {r_applied:.2f}"},
@@ -253,8 +254,8 @@ def render(n: Numbering | None = None) -> None:
     # ------------------------------------------------------------------ 5 · the ratio
     st.markdown("##### Step 5 · R, and where the intractable term went")
     st.markdown(
-        "Bayes' rule written twice, once for success and once for failure, and divided one by "
-        "the other. `P(DHI)` is the same in both, so it cancels:")
+        "Bayes' rule written twice, once for G and once for not G, and divided one by the "
+        "other. `P(DHI)` is the same in both, so it cancels:")
     st.latex(r"\underbrace{\frac{P(\mathrm{HC} \mid \mathrm{DHI})}"
              r"{P(\mathrm{no\ HC} \mid \mathrm{DHI})}}_{\text{posterior odds}} = "
              r"\underbrace{\frac{P(\mathrm{DHI} \mid \mathrm{HC})}"
@@ -265,9 +266,9 @@ def render(n: Numbering | None = None) -> None:
         "likely the observation was if the prospect works than if it does not, and the term "
         "nobody could estimate is never computed.\n\n"
         "It also makes the two extremes legible:\n\n"
-        "- R = 0 says the observation was impossible under success. Posterior odds zero, and no "
+        "- R = 0 says the observation was impossible under G. Posterior odds zero, and no "
         "prior survives it, which is why step 4 exists.\n"
-        "- R = ∞ says it was impossible under failure.\n\n"
+        "- R = ∞ says it was impossible under not G.\n\n"
         "Neither should come out of one seismic interpretation. The tool caps R at "
         f"{dhi_core.R_SINGLE_CHANNEL:.0f} and floors it at "
         f"{1.0 / dhi_core.R_SINGLE_CHANNEL:g} so that it cannot.")

@@ -380,8 +380,8 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
     n.plot(fig,
            f"The share of realisations in which each limit set the contact, at the current "
            f"inputs. {live[0][0]} sets it in {live[0][1]:.0%} of realisations; limits near the "
-           f"bottom can stay at rough values. All realisations, not successes only; the view "
-           f"restricted to successes is on tab 4.1.2 (Figure 4.1.2b). Method: see 8.1.3.")
+           f"bottom can stay at rough values. All realisations, not only those meeting the minimum; the view "
+           f"restricted to them is on tab 4.1.2 (Figure 4.1.2b). Method: see 8.1.3.")
     idle = [name for name, share in ranking if share <= 0.0005]
     if idle:
         st.caption(

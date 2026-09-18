@@ -858,7 +858,7 @@ parameter; that construction applied a ratio between column heights inside $G$ a
 ratio on the prospect, and is withdrawn.
 
 The dependence that remains is between the two *judgements*. The characteristics that grade $c$
-are also the ones the DHI consortium's drilled database ranks as most predictive of finding
+are also the ones the published drilled-prospect rankings put first for finding
 hydrocarbons, amplitude conformance to structure first and flat spots among the most definitive
 (Roden *et al.*, 2012; Nixon *et al.*, 2018), and Simm (2020) reserves the uplift to the chance for
 anomalies that carry them. In this model that evidence about $G$ enters through the strength
