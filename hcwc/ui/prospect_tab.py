@@ -202,8 +202,8 @@ def render() -> None:
     st.markdown(
         "The apex is the datum: every capacity limit on tab 3.0 is measured downward from it. "
         "The spill point is stated once here and seeds the closure limit's range. The "
-        "assessment minimum is the definition of success, and every chance downstream is read "
-        "at it."
+        "assessment minimum is the threshold a discovery has to meet, and every chance downstream "
+        "is read at it."
     )
     # Seeded once, then owned by the widget. Passing a `value=` *and* a `key=` every run makes
     # Streamlit warn that the widget is driven from two places — and after a load it genuinely is,
@@ -257,14 +257,14 @@ def render() -> None:
              "threshold.")
     st.session_state["min_column"] = float(min_column)
     m2.markdown(
-        f"Success is a column of at least {min_column:,.0f} m, a contact at or below "
+        f"A discovery is a column of at least {min_column:,.0f} m, a contact at or below "
         f"{apex_mid + min_column:,.0f} m TVDSS at the mid apex. The limits on tab 3.0 say how "
         f"deep the column could reach; this says how deep it must reach to count. Method: see "
         f"8.1.4."
     )
     if min_column == 0:
         st.warning(
-            "At zero every realisation counts as a success and the prospect chance equals the "
+            "At zero every realisation meets the threshold and the prospect chance equals the "
             "element product. Tab 4.0 does not print a chance until this is above zero."
         )
     st.caption(
@@ -278,7 +278,7 @@ def render() -> None:
         "works here, given that it does. Their product is the element chance, and the four "
         "products multiply to P(G). This is the split E-POS produces; a single chance per element "
         "goes in Play with Conditional at 1.00.\n\n"
-        "These do not move the contact. They scale the chance of success at each depth on tab 4.0."
+        "These do not move the contact. They scale the chance at each depth on tab 4.0."
     )
     st.info(
         "The chances here are for the element working at the crest. A trapping element that "

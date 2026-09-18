@@ -275,7 +275,7 @@ def render(n: Numbering | None = None) -> None:
         "Every contact distribution below carries the amplitude evidence. The purely geological "
         "model is on tab 4.0 and is unchanged by anything here.")
     st.markdown(
-        "One observation, two DHI information channels. The evidence strength (§2) updates "
+        "One observation, two DHI information channels. The evidence index (§2) updates "
         "P(G), the chance of hydrocarbons; the contact geometry (§1, §3) updates the HCWC "
         "distribution given G. Each enters the chance once. Method: see 8.1.6."
     )
@@ -533,24 +533,32 @@ def render(n: Numbering | None = None) -> None:
     _well_slot = st.container()
 
     # ------------------------------------------------------------------ strength channel
-    theme.heading(TAB, sub=n.sub, text="2 · DHI evidence strength: updates P(G)")
+    theme.heading(TAB, sub=n.sub, text="2 · DHI evidence index: updates P(G)")
     st.markdown(
-        "The first channel. §1 recorded where the anomaly terminates; this section grades its "
-        "character: how bright, how consistent with the expected fluid response. The strength "
-        "updates the chance of hydrocarbons and does not enter the contact distribution; §5 "
-        "multiplies the two. A strong reading raises P(G) and does not narrow the contact: the "
-        "spread stays with the pick (§1), the attribution (§3) and the detection model (3b)."
+        "The first channel. §1 recorded where the anomaly terminates; this section places its "
+        "character on the DHI evidence index, a relative scale for the strength and polarity of "
+        "the seismic evidence: 0 is neutral, positive values increasingly positive evidence, "
+        "negative values increasingly negative evidence or a missing expected response. The "
+        "values have no physical units. The index updates the chance of hydrocarbons and does "
+        "not enter the contact distribution; §5 multiplies the two. Strong evidence raises P(G) "
+        "and does not narrow the contact: the spread stays with the pick (§1), the attribution "
+        "(§3) and the detection model (3b)."
     )
     st.caption(
-        "R is the ratio of the heights of two elicited curves, hydrocarbon-bearing and not, at "
-        "the prospect's reading on an axis without units (E-POS). Method: see 8.1.6."
+        "The evidence model is two conditional densities on the index, f(s | HC) for "
+        "hydrocarbon-bearing outcomes and f(s | NoHC) for non-hydrocarbon ones; their ratio at "
+        "the observed index is the likelihood ratio LR(s), the evidence weight. P(G) from tab "
+        "2.0 is the prior it updates: P(G | s) = LR(s) P(G) / (LR(s) P(G) + 1 − P(G)). "
+        "Method: see 8.1.6."
     )
 
-    with st.expander("The two populations (E-POS defaults)"):
+    with st.expander("The two reference distributions"):
         st.caption(
-            "Each case is a Gaussian given by its 1st and 99th percentiles; cases further apart "
-            "say the DHI separates the two populations better. Overlapping curves are the usual "
-            "state.")
+            "Each is a Gaussian on the index given by its 1st and 99th percentiles: the "
+            "hydrocarbon-bearing reference distribution and the non-hydrocarbon one. Further "
+            "apart, the index separates the two outcomes better; overlapping is the usual state. "
+            "The defaults are the reference relationship the tool ships with, not a calibration "
+            "for this basin.")
         h1, h2, h3, h4 = st.columns(4)
         hc = dhi_core.StrengthCase(
             h1.number_input("HC, P1", -200.0, 200.0, -50.0, 5.0),
@@ -581,19 +589,26 @@ def render(n: Numbering | None = None) -> None:
     _clamped = _was is not None and float(_was) != st.session_state["dhi_in_strength"]
 
     strength = st.slider(
-        "DHI evidence strength", _s_lo, _s_hi, float(np.clip(OPENING_STRENGTH, _s_lo, _s_hi)), 1.0,
+        "DHI evidence index", _s_lo, _s_hi, float(np.clip(OPENING_STRENGTH, _s_lo, _s_hi)), 1.0,
         key="dhi_in_strength",
-        help=f"Opens at {OPENING_STRENGTH:.0f}, just above the crossing point, so an untouched "
-             f"slider states a barely supportive DHI rather than a neutral one. E-POS's default "
-             f"on the same axis is {dhi_core.DEFAULT_STRENGTH:.0f}; the two scales are otherwise "
-             f"the same.")
+        help="Relative evidence scale. Positive values indicate increasingly positive DHI "
+             "evidence; negative values indicate increasingly negative evidence. The scale is "
+             f"conceptual and has no physical units. Neutral evidence is where the two reference "
+             f"distributions cross; opens at {OPENING_STRENGTH:.0f}, just above it, so an "
+             f"untouched slider states barely supportive evidence rather than none.")
+    _neutral = model.strength_at(1.0)
+    st.caption(
+        "Neutral evidence = "
+        + (f"{_neutral:.0f}" if np.isfinite(_neutral) else "where the two curves cross")
+        + f"; this prospect reads {strength:+.0f}."
+    )
     if _clamped:
         # Moving a saved reading without saying so is how a prospect quietly stops being the
         # prospect that was saved. Two paths reach here: reopening work stored before the
         # ceiling existed, and widening the two curves so the same R arrives at a lower reading.
         st.info(
             f"The saved reading of {float(_was):+.0f} was outside the axis and has been moved "
-            f"to {strength:+.0f}. The curves above put R = {dhi_core.R_SINGLE_CHANNEL:.0f} at "
+            f"to {strength:+.0f}. The curves above put LR = {dhi_core.R_SINGLE_CHANNEL:.0f} at "
             f"{_s_hi:+.0f}, which is as much as one channel may claim, so the old reading "
             f"asserted evidence the update does not carry. A stronger claim is made in the two "
             f"populations: drawn further apart, the same reading buys more."
@@ -601,10 +616,10 @@ def render(n: Numbering | None = None) -> None:
 
     if _bounded:
         st.caption(
-            f"The axis ends at R = {dhi_core.R_SINGLE_CHANNEL:.0f} : 1 either way, {_s_lo:+.0f} to "
+            f"The axis ends at LR = {dhi_core.R_SINGLE_CHANNEL:.0f} : 1 either way, {_s_lo:+.0f} to "
             f"{_s_hi:+.0f} on the curves above. That is Simm's ceiling for a single line of "
             "fluid-indicator evidence. A stronger claim comes from a second channel, or from two "
-            "populations drawn further apart.")
+            "reference distributions drawn further apart.")
     _lev["strength"] = st.empty()
 
     with st.expander("What a measured amplitude buys: the one published likelihood ratio"):
@@ -618,23 +633,58 @@ def render(n: Numbering | None = None) -> None:
 
     r_strength = model.r_at(strength)
     band, band_note = dhi_core.strength_bands(r_strength)
+    _elements_now = st.session_state.get("element_pos") or {}
+    _p_g_prior = (float(np.prod([float(v) for v in _elements_now.values()]))
+                  if _elements_now else 1.0)
 
     axis = np.linspace(-160.0, 160.0, 400)
     figs = go.Figure()
-    figs.add_scatter(x=axis, y=hc.pdf(axis), mode="lines", name="hydrocarbon-bearing",
+    figs.add_scatter(x=axis, y=hc.pdf(axis), mode="lines", name="f(s | HC), hydrocarbon-bearing",
                      line=dict(color=POSTERIOR, width=2.5))
-    figs.add_scatter(x=axis, y=no_hc.pdf(axis), mode="lines", name="not hydrocarbon-bearing",
-                     line=dict(color=PRIOR, width=2.5))
+    figs.add_scatter(x=axis, y=no_hc.pdf(axis), mode="lines",
+                     name="f(s | NoHC), non-hydrocarbon", line=dict(color=PRIOR, width=2.5))
     figs.add_scatter(x=[strength, strength], y=[0.0, max(float(hc.pdf(strength)),
                                                          float(no_hc.pdf(strength)))],
                      mode="lines", name="this prospect", line=dict(color=theme.INK, dash="dot"))
     for case, colour in ((hc, POSTERIOR), (no_hc, PRIOR)):
         figs.add_scatter(x=[strength], y=[float(case.pdf(strength))], mode="markers",
                          showlegend=False, marker=dict(color=colour, size=9))
-    figs.update_layout(xaxis_title="DHI strength (arbitrary axis)", yaxis_title="Density",
+    figs.update_layout(xaxis_title="DHI evidence index", yaxis_title="density",
                        height=340, margin=dict(t=20), legend=dict(orientation="h", y=-0.22))
-    n.plot(figs, f"The two-curve strength model, read at {strength:,.0f}. R is the ratio of the "
-                 f"two marked heights, which is why the units on the axis do not matter.")
+    n.plot(figs, f"The DHI evidence-strength model: the two reference distributions on the "
+                 f"index, read at {strength:,.0f}. The likelihood ratio is the ratio of the two "
+                 f"marked heights, which is why the units on the axis do not matter.")
+
+    # The likelihood ratio and the posterior against the index, so the reader sees the update
+    # as a function rather than one number (Lars, 18 Sep 2026). Same curves, same prior.
+    _lr_axis = np.array([model.r_at(float(v)) for v in axis])
+    _post_axis = np.array([dhi_core.simm_update(_p_g_prior, float(v)) for v in _lr_axis])
+    figr = make_subplots(rows=1, cols=2, horizontal_spacing=0.1)
+    figr.add_scatter(x=axis, y=_lr_axis, mode="lines", name="LR(s) = f(s | HC) / f(s | NoHC)",
+                     line=dict(color=theme.INK, width=2.2), row=1, col=1)
+    figr.add_scatter(x=[strength], y=[model.r_at(strength)], mode="markers", showlegend=False,
+                     marker=dict(color=POSTERIOR, size=10), row=1, col=1)
+    figr.add_scatter(x=axis, y=_post_axis, mode="lines", name="P(G | s)",
+                     line=dict(color=POSTERIOR, width=2.2), row=1, col=2)
+    figr.add_scatter(x=[strength], y=[dhi_core.simm_update(_p_g_prior, model.r_at(strength))],
+                     mode="markers", showlegend=False, marker=dict(color=POSTERIOR, size=10),
+                     row=1, col=2)
+    figr.add_hline(y=_p_g_prior, line=dict(color=PRIOR, width=1.5, dash="dash"), row=1, col=2)
+    figr.add_annotation(x=axis[0], y=_p_g_prior, text=f"prior P(G) = {_p_g_prior:.2f}",
+                        xanchor="left", yshift=9, showarrow=False,
+                        font=dict(size=10, color="#4C72B0"), row=1, col=2)
+    figr.update_xaxes(title_text="DHI evidence index", row=1, col=1)
+    figr.update_xaxes(title_text="DHI evidence index", row=1, col=2)
+    figr.update_yaxes(title_text="likelihood ratio", type="log", row=1, col=1)
+    figr.update_yaxes(title_text="P(G | DHI)", range=[0, 1], row=1, col=2)
+    figr.update_layout(height=320, margin=dict(t=20, b=40),
+                       legend=dict(orientation="h", y=-0.28))
+    n.plot(figr, f"Left: the likelihood ratio against the index, capped at "
+                 f"{dhi_core.R_SINGLE_CHANNEL:.0f} : 1 either way. Right: the posterior "
+                 f"P(G | s) it gives against the prior P(G) = {_p_g_prior:.2f} from tab 2.0. "
+                 f"The dot is this prospect's reading. The model weights evidence about "
+                 f"hydrocarbon presence; it says nothing about the depth of the contact, which "
+                 f"§3 carries. Method: see 8.1.6.")
 
     # "POS on strength alone" is deliberately absent: it needs the prior, which is not computed
     # until the channels are combined, and a chance is a result rather than an input.
@@ -648,17 +698,17 @@ def render(n: Numbering | None = None) -> None:
     _l_hc = float(hc.pdf(strength)) / _peak
     _l_no = float(no_hc.pdf(strength)) / _peak
     s1, s2, s3, s4 = st.columns(4)
-    s1.metric("L(DHI | G)", f"{_l_hc:.3f}", "if hydrocarbons", delta_color="off")
-    s2.metric("L(DHI | not G)", f"{_l_no:.3f}", "if not", delta_color="off")
-    s3.metric("R from strength", f"{r_strength:.2f}", band, delta_color="off")
+    s1.metric("f(s | HC)", f"{_l_hc:.3f}", "if hydrocarbons", delta_color="off")
+    s2.metric("f(s | NoHC)", f"{_l_no:.3f}", "if not", delta_color="off")
+    s3.metric("Likelihood ratio LR(s)", f"{r_strength:.2f}", band, delta_color="off")
     s4.metric("DHI volume weight", f"{dhi_core.volume_weight(r_strength):.3f}",
-              "R / (R + 1)", delta_color="off")
+              "LR / (LR + 1)", delta_color="off")
     st.caption(
-        f"The first two are the two dots in the figure above, scaled by the curves' shared peak "
-        f"so they can be compared: how typical a reading of {strength:,.0f} is for a prospect "
-        f"that works, and for one that does not. Their ratio is R exactly "
-        f"({_l_hc:.3f} / {_l_no:.3f} = {r_strength:.2f}). Likelihoods, not probabilities; "
-        f"only the ratio survives the arbitrary axis. Method: see 8.1.6."
+        f"The first two are the two dots in Figure {n.stem}.2a, scaled by the curves' shared "
+        f"peak so they can be compared: how typical an index of {strength:,.0f} is for a "
+        f"hydrocarbon-bearing outcome, and for a non-hydrocarbon one. Their ratio is the "
+        f"likelihood ratio exactly ({_l_hc:.3f} / {_l_no:.3f} = {r_strength:.2f}). Densities, "
+        f"not probabilities; only the ratio survives the relative axis. Method: see 8.1.6."
     )
     # Worked from OPENING_STRENGTH rather than typed. The caption below used to quote a
     # default of 7 and the 37.5 % that follows from it; the slider moved to 5 on 6 Sep and
@@ -726,7 +776,7 @@ def render(n: Numbering | None = None) -> None:
         help="Stated: the slider, a value the assessor defends. Graded attributes: the geometric "
              "mean of the three gradings above, a heuristic. DHI score: Monigle et al.'s (2025) "
              "rule w = min(2 × score, 0.95), calibrated on their drilled database and not on "
-             "this basin; their score is a five-attribute rating, not the strength reading of "
+             "this basin; their score is a five-attribute rating, not the evidence index of "
              "§2.")
     stated_c = st.slider(
         "Contact attribution: given hydrocarbons, is the picked event the HCWC?",
@@ -899,7 +949,7 @@ def render(n: Numbering | None = None) -> None:
                      hovertemplate=f"R {r_strength:.2f}<br>c {contact_given_hc:.2f}<extra></extra>",
                      row=1, col=2)
     _ticks = [0.1, 0.2, 0.5, 1, 2, 5, 10]
-    figc.update_xaxes(title_text="R from the evidence strength (§2), log scale",
+    figc.update_xaxes(title_text="LR from the evidence index (§2), log scale",
                       tickvals=[np.log10(v) for v in _ticks], ticktext=[str(v) for v in _ticks],
                       range=[_lr_lo - 0.04, _lr_hi + 0.04], showgrid=False, row=1, col=2)
     figc.update_yaxes(title_text="c, contact attribution", range=[0.05, 1.0], row=1, col=1)
@@ -915,7 +965,7 @@ def render(n: Numbering | None = None) -> None:
            f"The shaded diagonal is the pairing the two judgements usually make: conformance "
            f"to structure and a fluid-contact reflection are also the characteristics most "
            f"predictive of finding hydrocarbons (Roden et al. 2012; Nixon et al. 2018), so an "
-           f"event that earns a high c usually earns a higher strength reading in §2 too. The "
+           f"event that earns a high c usually earns a higher evidence index in §2 too. The "
            f"dotted corners, outside the band beyond R = 1.5 either way, are the pairings worth "
            f"a sentence. The colour bands are the slider's anchors, in both panels; the "
            f"dash-dot line is the calibrated ceiling on the contact weight. The split of "
@@ -924,18 +974,18 @@ def render(n: Numbering | None = None) -> None:
            f"the band is a judgement, not a calibration. Method: see 8.1.7.")
     if r_strength >= 1.5 and contact_given_hc < float(_band(_lr, -0.15)):
         st.caption(
-            f"Bright body, unconvincing event: the strength argues for hydrocarbons "
+            f"Bright body, unconvincing event: the evidence index argues for hydrocarbons "
             f"(R = {r_strength:.2f}) while the event is graded at c = {contact_given_hc:.2f}. "
             f"A real and common pairing, an anomaly believed in and bounded by something that "
             f"is not. The chance moves; the contact stays near where the geology put it. Simm "
             f"(2020) grades an anomaly without characteristics consistent with the trap and "
             f"indicative of a fluid contact as a low-grade DHI that generally warrants no "
-            f"uplift, so an R above 1.5 here rests on the strength reading alone and is worth "
+            f"uplift, so an LR above 1.5 here rests on the evidence index alone and is worth "
             f"stating as such."
         )
     elif r_strength <= 1 / 1.5 and contact_given_hc > float(_band(_lr, 0.15)):
         st.caption(
-            f"Dim body, convincing event: the strength argues against hydrocarbons "
+            f"Dim body, convincing event: the evidence index argues against hydrocarbons "
             f"(R = {r_strength:.2f}) while the event is graded at c = {contact_given_hc:.2f}. "
             f"Also real: a conformable flat spot on a low-contrast reservoir is a good contact "
             f"indicator with an unremarkable amplitude. The contact sharpens; the chance falls."
@@ -1087,7 +1137,7 @@ def render(n: Numbering | None = None) -> None:
         g4.metric("Effective sample size", f"{post.effective_sample_size:,.0f}",
                   f"from {result.n:,}", delta_color="off")
         st.caption(
-            "The update at a glance: the strength channel moved P(G); the geometry channel moved "
+            "The update at a glance: the evidence index moved P(G); the geometry channel moved "
             "the contact and its spread; the effective sample size says how many realisations "
             "carry the answer. Contact percentiles are conditional on the assessment minimum."
         )
@@ -1429,7 +1479,7 @@ def render(n: Numbering | None = None) -> None:
     e2.caption(
         "Kish's (Σw)² / Σw²: how many of the realisations the updated distribution rests on. "
         "A low value does not mean the interpretation is wrong; it means the answer depends "
-        "heavily on it. The geometry channel only; the strength updates one number and discards "
+        "heavily on it. The geometry channel only; the evidence index updates one number and discards "
         "nothing. Method: see 8.1.6."
     )
     if post.effective_sample_size < 300:
@@ -1448,8 +1498,10 @@ def render(n: Numbering | None = None) -> None:
     _d_flat = float(_d_at.max() - _d_at.min()) < 1e-3
     st.markdown(
         "Elicited judgements and heuristics.\n\n"
-        "- R: the ratio of two elicited curves at an elicited reading, capped at "
-        + f"{dhi_core.R_SINGLE_CHANNEL:.0f}" + " : 1 either way. Elicited judgement.\n"
+        "- LR(s): the ratio of the two reference densities at the stated evidence index, "
+        "capped at " + f"{dhi_core.R_SINGLE_CHANNEL:.0f}" + " : 1 either way. The index is a "
+        "judgement on a relative scale; the reference densities are the tool's shipped "
+        "relationship, editable, and not a calibration for this basin.\n"
         "- c: stated, or the geometric mean of three graded attributes (a heuristic), or "
         "Monigle et al.'s (2025) rule from a DHI score, calibrated on their database and not on "
         "this basin. This run: " + c_source.lower() + "."
@@ -1552,7 +1604,7 @@ def render(n: Numbering | None = None) -> None:
                          "Shift": f"{upd - geo:+.1%}", "_sort": -upd})
         table = pd.DataFrame(sorted(rows, key=lambda r: r["_sort"])).drop(columns="_sort")
         n.table(table,
-                f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; Share of successful realisations in "
+                f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; Share of realisations meeting the assessment minimum in "
                 f"which each mechanism was the shallowest active limit, before and after the update. "
                 f"A mechanism that cannot produce a contact where the amplitude was picked loses "
                 f"share; one that naturally produces that contact gains it. The column reads as what "
