@@ -176,12 +176,14 @@ empirical data and updated with DHI or well evidence. Method: see 8.1.1.
     # tab 2's resets the exhibit registry, so the guide stays out of the results export.
     Numbering(1).image(
         DOCS / "figures" / "fig0_workflow_guide.svg",
-        "The model as a map of the app. Geological row: the element chances (2.0) give P(G); "
-        "the limits (3.0) compete and the shallowest active one sets the contact (4.1). Given "
-        "the DHI (5.1): the evidence strength updates P(G), the contact geometry reweights the "
-        "same realisations (5.2). Both rows join in the chance against depth, read at the "
-        "assessment minimum and at the well (4.1.3, 4.1.4; 5.2.3, 5.2.4); the benchmarks (6.0) "
-        "are compared beside both contact distributions; 7.0 exports the percentiles.",
+        "The model as a map of the app. Geological model, the prior: the element chances "
+        "(2.0) give P(G), the accumulation chance; given an accumulation, the limits (3.0) "
+        "compete and the shallowest active one sets the contact (4.1). DHI evidence, the "
+        "update (5.1): the evidence index gives a likelihood ratio that updates P(G); the "
+        "contact geometry reweights the same realisations (5.2). Each row ends in the "
+        "probability of meeting the threshold, read at the assessment minimum and at the well "
+        "(4.1.3, 4.1.4; 5.2.3, 5.2.4); the benchmarks (6.0) are compared beside both contact "
+        "distributions; 7.0 exports the percentiles.",
     )
     st.markdown(
         """
@@ -222,7 +224,7 @@ empirical data and updated with DHI or well evidence. Method: see 8.1.1.
     # off the contact distribution, the ranking of effort, the precedent and the limitations
     # are stated once, on tab 8.1 (docs/EXPLANATION_MAP_2026-09-16.md, tab 1).
     st.markdown(
-        "Success is a column of at least the assessment minimum set on **2.0 Prospect**; the "
+        "A discovery is a column of at least the assessment minimum set on **2.0 Prospect**; the "
         "chance of success is the contact distribution read at that depth. Method: see 8.1.4. "
         "Limitations: see 8.1.9."
     )
@@ -403,7 +405,7 @@ with tab7:
             samples = result.contact_m[result.above_minimum]
         exp = geox.percentile_table(samples, tail_mode=mode, basis=basis)
         n8.table(exp.table,
-                 f"{theme.basis_tag(basis)} &nbsp; The built contact distribution, success cases "
+                 f"{theme.basis_tag(basis)} &nbsp; The built contact distribution, h ≥ h_min "
                  f"only. {exp.provenance}", height=280)
         st.download_button(
             "Download CSV", exp.to_csv(),
@@ -431,7 +433,7 @@ with tab7:
         trials = wvp.trial_table(result, area_table)
         w1, w2 = st.columns(2)
         w1.metric("Trials exported", f"{len(trials):,}",
-                  f"of {result.n:,}, successes only", delta_color="off")
+                  f"of {result.n:,}, h ≥ h_min only", delta_color="off")
         w2.metric("Columns WellVolPOS reads", f"{len(trials.columns)}",
                   "mapped with no configuration", delta_color="off")
         n8.table(trials.head(12), "The first twelve rows. Column names and units are "

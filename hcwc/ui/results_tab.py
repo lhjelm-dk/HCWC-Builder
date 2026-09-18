@@ -150,7 +150,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                        "all realisations — no minimum set", delta_color="off")
         st.caption(
             "The contact distribution stands; only the chance is undefined. With no minimum "
-            "these percentiles are the whole distribution rather than its success cases, and "
+            "these percentiles are the whole distribution rather than the part above a minimum, and "
             "there is no threshold to read a chance at. Method: see 8.1.4."
         )
     else:
@@ -161,13 +161,13 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                   "conditional; this tab only", delta_color="off")
         for col, p in ((m3, 90), (m4, 50), (m5, 10)):
             col.metric(f"Contact P{p}", f"{pct(p):,.0f} m",
-                       "success cases only", delta_color="off")
+                       "h ≥ h_min only", delta_color="off")
         # The main controls beside the headline (master brief §27): a P50 with the three
         # mechanisms that set it is a result a reader can question; a P50 alone is not.
         _top = sorted(result.controlling_shares(successes_only=True, weights=weights).items(),
                       key=lambda kv: -kv[1])[:3]
         st.caption(
-            "Main controls, success cases: "
+            "Main controls, h ≥ h_min: "
             + ", ".join(f"{name} {share:.0%}" for name, share in _top)
             + ". Every chance here carries its threshold and the conditioning it was computed "
             "under; the contact percentiles are conditional on the assessment minimum. Method: "
@@ -666,9 +666,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         from hcwc.core import well as well_core
         from hcwc.ui.dhi_tab import well_control
 
-        theme.subsection(tab, "What other strength and c readings would give")
+        theme.subsection(tab, "What other evidence-index and c readings would give")
         st.markdown(
-            "The evidence strength scales the chance and never reshapes the contact; the contact "
+            "The evidence index scales the chance and never reshapes the contact; the contact "
             "attribution c reshapes the contact and does not enter the chance's first factor. "
             "The headline chance is their product. Each scenario below is the same realisations "
             "reweighted, or the same curve rescaled. Method: see 8.1.6."
@@ -753,7 +753,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                                        autorange="reversed"),
                             height=520, margin=dict(t=30),
                             legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
-        n.plot(fig_s, f"The chance against depth at other evidence strengths, at the current c. "
+        n.plot(fig_s, f"The chance against depth at other evidence indices, at the current c. "
                       f"Solid is the current R = {_r_now:.2f}; each dashed curve is the same "
                       f"shape scaled by P(G | s), labelled at the apex with its R. Strength moves "
                       f"the whole curve and never its shape; the single-channel ceiling is 10 : 1 "
@@ -831,7 +831,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                                  bgcolor="rgba(255,255,255,0.85)", font=dict(size=11, color="#333"))
             _ticks = [0.1, 1.0 / 3.0, 1.0, 3.0, 10.0]
             fig_m.update_layout(
-                xaxis=dict(title="evidence strength, as the likelihood ratio R (log scale)",
+                xaxis=dict(title="evidence index, as the likelihood ratio LR (log scale)",
                            tickmode="array", tickvals=[np.log10(t) for t in _ticks],
                            ticktext=["1/10", "1/3", "1", "3", "10"]),
                 yaxis=dict(title="contact attribution c"), height=480, margin=dict(t=20))
@@ -852,9 +852,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             if not _keep.any():
                 # Every reading below is over the success cases, and there are none at this
                 # minimum; the headline said so at the top of the tab.
-                st.info("No realisation reaches the assessment minimum, so there are no success "
-                        "cases to read the contact's percentiles, spread or displacement from. A "
-                        "lower minimum on tab 2.0 restores them.")
+                st.info("No realisation reaches the assessment minimum, so there is nothing to "
+                        "read the contact's percentiles, spread or displacement from. A lower "
+                        "minimum on tab 2.0 restores them.")
                 _keep = None
             _z_keep = result.contact_m[_keep] if _keep is not None else np.array([])
             _col_keep = result.column_m[_keep] if _keep is not None else np.array([])
@@ -921,12 +921,12 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                 fig_d.update_xaxes(title_text="c", row=2)
                 fig_d.update_layout(height=620, margin=dict(t=40, b=40), showlegend=False)
                 n.plot(fig_d, f"What c alone does to the contact, against c with the current "
-                              f"{_c_now:.2f} marked on every line: the P50 and mean (success cases); "
+                              f"{_c_now:.2f} marked on every line: the P50 and mean (h ≥ h_min); "
                               f"the P90–P10 spread and its ratio to the geological spread; the P10 / P90 "
                               f"ratio of the column height; the displacement from the geology, the mean "
                               f"absolute shift of the contact quantiles in metres; and the effective "
                               f"sample size. Dashed grey is the geological value where there is one. "
-                              f"None of the six depends on the evidence strength. Method: see 8.1.6.")
+                              f"None of the six depends on the evidence index. Method: see 8.1.6.")
 
 
             # (e) the contact over depth and c, as one surface ---------------------------------------
@@ -981,13 +981,13 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             fig_f.add_hline(y=_z_well_now, line=dict(color="#0369A1", dash="dot", width=1.2),
                             annotation_text="well entry", annotation_position="left")
             fig_f.update_layout(
-                xaxis=dict(title="evidence strength, as R (log scale)", tickmode="array",
+                xaxis=dict(title="evidence index, as LR (log scale)", tickmode="array",
                            tickvals=[np.log10(t) for t in _ticks],
                            ticktext=["1/10", "1/3", "1", "3", "10"]),
                 yaxis=dict(title="Contact at least this deep (m TVDSS)", autorange="reversed"),
                 height=520, margin=dict(t=30))
-            n.plot(fig_f, f"The prospect chance over depth and evidence strength, at the current "
-                          f"c = {_c_now:.2f}: the fan of the strength figure as a surface. Every "
+            n.plot(fig_f, f"The prospect chance over depth and evidence index, at the current "
+                          f"c = {_c_now:.2f}: the fan of the index figure as a surface. Every "
                           f"column is the same curve scaled by P(G | s), so the contours are the "
                           f"depth curve's shape stretched sideways; the assessment minimum and the "
                           f"well entry are the two depths the chance is quoted at. Method: see "
@@ -1090,7 +1090,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                           + (f", {theme.evidence_basis()}" if given_dhi else ""),
                      line=dict(color="#C44E52", width=3))
 
-    # The contact's percentiles and mean, read on the conditional curve: success cases, the
+    # The contact's percentiles and mean, read on the conditional curve: h ≥ h_min, the
     # same numbers as the headline metrics.
     _keep = result.above_minimum
     _w_keep = None if weights is None else np.asarray(weights, dtype=float)[_keep]
@@ -1109,7 +1109,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             "mean": "bottom right"}
     figp.add_scatter(x=_mx, y=_my, mode="markers+text", text=_mt,
                      textposition=[_pos[t.split()[0]] for t in _mt],
-                     name="contact P90 / P50 / P10 and mean, success cases",
+                     name="contact P90 / P50 / P10 and mean, h ≥ h_min",
                      marker=dict(color="#4C72B0", size=9,
                                  symbol=["diamond" if t.startswith("mean") else "circle"
                                          for t in _mt],
@@ -1134,7 +1134,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
     n.plot(figp, f"The chance against depth, and what makes it. Blue is F(h), the chance of a "
                  f"column at least this tall given the elements worked, with the contact's "
-                 f"P90, P50, P10 and mean marked on it (success cases). Red is the prospect "
+                 f"P90, P50, P10 and mean marked on it (h ≥ h_min). Red is the prospect "
                  f"chance, P(G) = {_p_g_applied:.3f} times the blue curve; the gap between the "
                  f"two is the element risk. The bars are the controlling limit per depth bin as "
                  f"shares of all realisations, the scaled view of 4.1.2. Read at the assessment "
