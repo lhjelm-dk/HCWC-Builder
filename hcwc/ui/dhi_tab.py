@@ -14,6 +14,7 @@ import streamlit as st
 from plotly.subplots import make_subplots
 
 from hcwc.core import dhi as dhi_core
+from hcwc.core import engine
 from hcwc.core import dhi_comparison as comparison
 from hcwc.core import sensitivity
 from hcwc.core import well as well_core
@@ -516,7 +517,7 @@ def render(n: Numbering | None = None) -> None:
         figv.update_layout(xaxis_title="Contact depth (m TVDSS)", yaxis_title="Density",
                            height=300, margin=dict(t=30), legend=dict(orientation="h", y=-0.28))
 
-        prior_span = float(np.percentile(result.contact_m, 90) - np.percentile(result.contact_m, 10))
+        prior_span = float(np.diff(engine.weighted_percentiles(result.contact_m, None, [90.0, 10.0]))[0])
         pick_span = float(preview.pick_ppf(np.array([0.9]))[0] - preview.pick_ppf(np.array([0.1]))[0])
         sharper = prior_span / max(pick_span, 1e-9)
         sits_at = float((result.contact_m <= contact).mean())
@@ -1659,7 +1660,7 @@ def render(n: Numbering | None = None) -> None:
             s1, s2, s3 = st.columns(3)
             for col, p in ((s1, 90), (s2, 50), (s3, 10)):
                 col.metric(f"Contact P{p}, scenario switch",
-                           f"{np.percentile(switched, 100 - p):,.0f} m",
+                           f"{engine.weighted_percentiles(switched, None, float(p))[0]:,.0f} m",
                            f"likelihood form {post.percentiles(p)[0]:,.0f} m", delta_color="off")
         else:
             st.caption("The scenario switch has nothing to switch to when no anomaly was seen.")

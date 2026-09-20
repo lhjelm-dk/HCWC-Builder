@@ -26,6 +26,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from hcwc.core.engine import EngineResult
+from hcwc.core import engine
 from hcwc.core.limits import DEPTH
 
 #: The basis, spelled the way it must appear on paper. A reader of a bare page cannot recover
@@ -215,7 +216,8 @@ def _limit_rows(result: EngineResult) -> str:
         drawn = result.sampled_m[:, i]
         active = result.active[:, i]
         if active.any():
-            p90, p50, p10 = (float(np.percentile(drawn[active], p)) for p in (10, 50, 90))
+            p90, p50, p10 = (float(v) for v in
+                             engine.weighted_percentiles(drawn[active], None, [90.0, 50.0, 10.0]))
             spread = f"{p90:,.0f} / {p50:,.0f} / {p10:,.0f}"
         else:
             spread = "—"

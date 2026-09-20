@@ -12,6 +12,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from hcwc.core import engine
+
 from hcwc.core.limits import _KINDS, DepthDistribution
 from hcwc.ui import limit_block as lb
 
@@ -26,8 +28,12 @@ class TestStatsRow:
         samples = np.random.default_rng(0).normal(2300.0, 50.0, 60_000)
         row = lb.stats_row(samples)
         assert row["P100"] < row["P90"] < row["P50"] < row["P10"] < row["P0"]
-        assert row["P90"] == pytest.approx(np.percentile(samples, 10))
-        assert row["P10"] == pytest.approx(np.percentile(samples, 90))
+        # One estimator with the engine since 18 Sep 2026 (Hazen midpoints); numpy's linear
+        # order statistic agrees to the tolerance of a 60 000-sample tail, not exactly.
+        assert row["P90"] == pytest.approx(engine.weighted_percentiles(samples, None, 90.0)[0])
+        assert row["P10"] == pytest.approx(engine.weighted_percentiles(samples, None, 10.0)[0])
+        assert row["P90"] == pytest.approx(np.percentile(samples, 10), rel=1e-4)
+        assert row["P10"] == pytest.approx(np.percentile(samples, 90), rel=1e-4)
 
     def test_it_matches_the_geox_export_convention(self):
         """The export writes P100 as the shallowest contact. A block that disagreed with the file
