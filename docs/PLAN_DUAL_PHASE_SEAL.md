@@ -345,7 +345,7 @@ Stated so it can be checked rather than assumed:
 ## References
 
 Hood, K. C. (2019). *Hydrocarbon Column Height*, slides 18–19. Risk Coordinator Workshop #17.
-See `docs/HOOD_2019_REVIEW.md`.
+See `docs/reviews/HOOD_2019_REVIEW.md`.
 
 Aplin, A. C. & Yang, Y. (1998) — the interfacial-tension correlations in `hcwc/core/seals.py`, and
 the source of the disagreement in §4.

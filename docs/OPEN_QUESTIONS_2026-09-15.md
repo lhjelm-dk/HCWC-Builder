@@ -3,7 +3,7 @@
 *Answered by Lars the same day.* 1: keep 0.60, caption added. 2: gas; the example's density is now
 0.20–0.35. 3: keep 0.36; no third route. 4: done, the gas line is a slider that opens on the line.
 5: the two-phase seal is not wanted yet; the commodity scenarios wait with it. 6: the reference
-stays; the figures are on the paper's Semantic Scholar page (`docs/LOWRY_2005_REVIEW.md`). 7 and
+stays; the figures are on the paper's Semantic Scholar page (`docs/reviews/LOWRY_2005_REVIEW.md`). 7 and
 8: leave. 9: the repository stays private; the watcher stands. 10: later.
 
 Everything asked for this week is on `main`. What remains is a set of decisions that are Lars's
@@ -76,7 +76,7 @@ as the plan says; the seal then feeds a capillary GOC into the same passenger.
 
 ## 6 · Lowry et al. (2005): buy the PDF before the manuscript cites it
 
-**Found.** `docs/LOWRY_2005_REVIEW.md` is written from the abstract. Whether their risk array is
+**Found.** `docs/reviews/LOWRY_2005_REVIEW.md` is written from the abstract. Whether their risk array is
 derived from competing mechanisms or stated band by band decides whether it is prior art for the
 engine or for the level above it. USD 40 on your side; the review lists the four things to check.
 
@@ -109,7 +109,7 @@ public with the paper, require the test workflow on `main` at that point. Nothin
 
 ## 10 · Hood's confidence annotation on every input
 
-**Found.** `docs/HOOD_2019_REVIEW.md` §3 records that Hood puts a `Confidence*` grade on every
+**Found.** `docs/reviews/HOOD_2019_REVIEW.md` §3 records that Hood puts a `Confidence*` grade on every
 box of his slide 8, tracked for calibration, and the app carries no confidence field on any
 input.
 

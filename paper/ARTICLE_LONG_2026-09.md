@@ -6,6 +6,10 @@
 
 ---
 
+*Working manuscript. Where its wording of the DHI model differs from tab 8.1 of the tool
+(`docs/THEORY.md`, the evidence index, the reference distributions and the likelihood ratio,
+18 Sep 2026), 8.1 is the current statement; the manuscript is revised separately.*
+
 ## Abstract
 
 Hydrocarbon column height is a major source of uncertainty in pre-drill prospect evaluation. It
