@@ -653,11 +653,12 @@ def render(n: Numbering | None = None) -> None:
                         xanchor="left", yshift=9, showarrow=False,
                         font=dict(size=10, color="#4C72B0"), row=1, col=2)
     # Third panel: the update as a function of the prior, P(G | s) against P(G) from 1 % to
-    # 99 %, at this prospect's index in red and at reference indices in grey, labelled at the
+    # 99 %, at this prospect's index in red and at reference indices -50 to 50 in grey, labelled at the
     # curve's end (Lars, 20 Sep 2026). The 0 curve is the diagonal: neutral evidence returns
     # the prior. Same LR, same two-state update, no new quantity.
     _priors = np.linspace(0.01, 0.99, 99)
-    for _ref in (-20.0, -10.0, -5.0, 0.0, 5.0, 10.0, 20.0):
+    for _ref in (-50.0, -40.0, -30.0, -20.0, -10.0, -5.0, 0.0, 5.0, 10.0, 20.0, 30.0, 40.0,
+                 50.0):
         _lr_ref = model.r_at(_ref)
         _post_ref = np.array([dhi_core.simm_update(float(p), _lr_ref) for p in _priors])
         figr.add_scatter(x=_priors, y=_post_ref, mode="lines", showlegend=False,
@@ -689,7 +690,7 @@ def render(n: Numbering | None = None) -> None:
                  f"{dhi_core.R_SINGLE_CHANNEL:.0f} : 1 either way. Middle: the posterior "
                  f"P(G | s) it gives against the prior P(G) = {_p_g_prior:.2f} from tab 2.0. "
                  f"Right: the same update as a function of the prior, from 1 % to 99 %, at this "
-                 f"prospect's index in red and at indices −20, −10, −5, 0, 5, 10 and 20 in grey; "
+                 f"prospect's index in red and at indices −50 to 50 in grey (every 10, and ±5); "
                  f"the 0 line is the diagonal, neutral evidence returning the prior. The dots are "
                  f"this prospect. The model weights evidence about hydrocarbon presence; it says "
                  f"nothing about the depth of the contact, which §3 carries. Method: see 8.1.4.")
