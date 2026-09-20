@@ -154,7 +154,7 @@ class AreaDepthTable:
     @classmethod
     def reference(cls) -> "AreaDepthTable":
         """The reference prospect's own area–depth table, 2040–2400 m."""
-        return cls.from_csv(REFERENCE / "area_depth.csv")
+        return cls.from_csv(REFERENCE / "defaults" / "area_depth.csv")
 
     @classmethod
     def from_top_and_thickness(cls, depths_m, top_area_km2,

@@ -43,7 +43,7 @@ def compute(sigmas):
 
 if __name__ == "__main__":
     naive, censored = compute(SIGMAS)
-    out = pathlib.Path("reference/bias_curve.json")
+    out = pathlib.Path("reference/empirical/bias_curve.json")
     out.write_text(json.dumps({
         "_comment": ("Mean fitted trap-height elasticity against apex-pick error, for the naive "
                      "and censored estimators. Regenerate with scripts/bias_curve.py. Constant by "

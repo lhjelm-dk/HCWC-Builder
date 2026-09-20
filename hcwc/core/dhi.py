@@ -76,7 +76,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.stats import norm
 
-from hcwc.core import dists, engine
+from hcwc.core import defaults, dists, engine
 from hcwc.core.engine import EngineResult
 
 
@@ -104,10 +104,10 @@ class DetectionFunction:
     elicited, and no calibration is known to the tool: the default is the maximum-ignorance
     value and is labelled as such where it is shown.
     """
-    h50_m: float = 25.0
-    steepness_m: float = 8.0
-    ceiling: float = 0.9
-    false_positive: float = 0.5
+    h50_m: float = defaults.DETECTION_H50_M
+    steepness_m: float = defaults.DETECTION_WIDTH_M
+    ceiling: float = defaults.DETECTION_CEILING
+    false_positive: float = defaults.DETECTION_FALSE_POSITIVE
 
     def __post_init__(self) -> None:
         if self.h50_m <= 0:
@@ -887,8 +887,8 @@ class StrengthModel:
     R is scale-invariant in the strength axis, so the −100…100 units carry no meaning of their own
     — only the relative heights of the two curves at the reading matter. E-POS's defaults are kept.
     """
-    hc: StrengthCase = StrengthCase(-50.0, 100.0)
-    no_hc: StrengthCase = StrengthCase(-100.0, 50.0)
+    hc: StrengthCase = StrengthCase(*defaults.EVIDENCE_INDEX_HC_P1_P99)
+    no_hc: StrengthCase = StrengthCase(*defaults.EVIDENCE_INDEX_NOHC_P1_P99)
 
     def r_at(self, strength: float) -> float:
         num = float(self.hc.pdf(strength))

@@ -58,7 +58,7 @@ def load_edmundson(*, use_authors_flag: bool = False) -> Benchmark:
     wrong on one row — a 86.5 m column in a 96.5 m trap, binned as 100% fill. Use it to
     reproduce them; use the default to analyse them.
     """
-    path = REFERENCE / "edmundson_2021_ncs_columns.csv"
+    path = REFERENCE / "empirical" / "edmundson_2021_ncs_columns.csv"
     if not path.exists():
         raise FileNotFoundError(
             f"{path} is missing. It is open data: https://osf.io/6ysbv/ (CC-BY 4.0)."
@@ -77,7 +77,7 @@ def load_edmundson(*, use_authors_flag: bool = False) -> Benchmark:
 
 def load_edmundson_matrix() -> pd.DataFrame:
     """The exact 3x3x4 forward-probability matrix, from the authors' own supplement."""
-    return pd.read_csv(REFERENCE / "edmundson_2021_trapfill_matrix.csv", comment="#")
+    return pd.read_csv(REFERENCE / "empirical" / "edmundson_2021_trapfill_matrix.csv", comment="#")
 
 
 def graham_column_height(rng: np.random.Generator, trap_height: float,
