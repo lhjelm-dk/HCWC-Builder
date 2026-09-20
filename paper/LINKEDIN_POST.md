@@ -28,7 +28,8 @@ which mechanism controlled each realisation, the chance read at any depth, a wel
 every draw, and a DHI treated as evidence rather than as a replacement contact.
 
 The DHI part is the one I care most about. A bright amplitude with a picked termination does two
-different things. Its strength says something about whether there are hydrocarbons at all; its
+different things. Its character, placed on an evidence index, says something about whether there
+are hydrocarbons at all; its
 geometry says something about how deep they go, if they are there. The tool keeps those apart. On
 the worked prospect a moderate anomaly takes the chance from 40 % to 64 %, narrows the contact
 from 130 m to 99 m, and leaves 4 872 of the 10 000 realisations doing the work. That last number
@@ -76,7 +77,7 @@ distribution.
 7. `07_the_pick_against_the_geology.png` — Enter the DHI. Blue is the geology; red is the
    picked contact with its uncertainty. Everything downstream is these two meeting.
 
-8. `08_update_at_a_glance.png` — What the update did, and through which channel. Strength moved
+8. `08_update_at_a_glance.png` — What the update did, and through which channel. The evidence index moved
    P(G); geometry moved the contact and its spread; the effective sample size says how much
    geology is left underneath.
 
@@ -103,5 +104,5 @@ distribution.
   the workflow figure (`paper/figures/fig0_workflow.png`), which the post does not carry.
 - `GITHUB_URL` requires the repository to be public; until then, drop the line or link the
   app only.
-- The strength / σ / c settings behind images 7–10 are the shipped defaults with strength 20 and
+- The index / σ / c settings behind images 7–10 are the shipped defaults with the evidence index at 20 and
   σ 10 m, the same case as the article, so the two documents quote one run.

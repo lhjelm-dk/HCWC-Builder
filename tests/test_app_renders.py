@@ -1810,7 +1810,7 @@ class TestTheArgumentsLiveInDocuments:
         root = pathlib.Path(__file__).resolve().parent.parent
         reviews = ["BEHA_2012_REVIEW.md", "HOOD_2019_REVIEW.md", "MONIGLE_2025_REVIEW.md",
                    "LOWRY_2005_REVIEW.md", "SEAL_CAPACITY_REVIEW.md"]
-        missing = [n for n in reviews if not (root / "docs" / n).exists()]
+        missing = [n for n in reviews if not (root / "docs" / "reviews" / n).exists()]
         assert not missing, f"a review was deleted rather than kept: {missing}"
 
         source = "\n".join((root / f).read_text(encoding="utf-8")

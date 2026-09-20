@@ -38,7 +38,7 @@ where a lab MICP exists it is the number the assessor has. Small.
 
 ## A2 · Planned in detail, not started, and not wanted yet (Lars, 15 Sep 2026)
 
-**Capillary-controlled two-phase columns** — the one real gap the Hood (2019) review found (`docs/HOOD_2019_REVIEW.md`). The app has no seal-capacity route to a gas–oil contact, and the charge-driven route exists in `hcwc.core.charge` but is wired to no widget. Fully planned in **`docs/PLAN_DUAL_PHASE_SEAL.md`**, including the one thing to settle first: the derivation gives a 45 % gas cap on this app's own interfacial-tension correlations where Hood quotes 20 %, and the disagreement is entirely in oil–water tension.
+**Capillary-controlled two-phase columns** — the one real gap the Hood (2019) review found (`docs/reviews/HOOD_2019_REVIEW.md`). The app has no seal-capacity route to a gas–oil contact, and the charge-driven route exists in `hcwc.core.charge` but is wired to no widget. Fully planned in **`docs/PLAN_DUAL_PHASE_SEAL.md`**, including the one thing to settle first: the derivation gives a 45 % gas cap on this app's own interfacial-tension correlations where Hood quotes 20 %, and the disagreement is entirely in oil–water tension.
 
 Its cheap sibling — commodity scenarios from realisation proportions, Hood's slide 19 — needs no new physics and would go first. Both wait: Lars, 15 Sep 2026, does not want the two-phase seal implemented yet, and step 0 (the oil–water tension) is closed by `archive/development_notes/IFT_CHECK_2026-09-15.md`.
 
@@ -72,7 +72,7 @@ each is named above.
 
 ## B · Open questions, not open work
 
-**The Lowry (2005) PDF.** `docs/LOWRY_2005_REVIEW.md` is written from the abstract because the full
+**The Lowry (2005) PDF.** `docs/reviews/LOWRY_2005_REVIEW.md` is written from the abstract because the full
 text is paywalled at USD 40. What the abstract cannot settle is whether their variable risk array is
 derived from *competing mechanisms* or stated band by band — the difference between prior art for
 the engine and prior art for the level above it. **Buy or borrow it before the manuscript cites the
