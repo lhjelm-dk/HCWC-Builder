@@ -6,6 +6,10 @@
 
 ---
 
+*Working manuscript. Where its wording of the DHI model differs from tab 8.1 of the tool
+(`docs/THEORY.md`, the evidence index, the reference distributions and the likelihood ratio,
+18 Sep 2026), 8.1 is the current statement; the manuscript is revised separately.*
+
 ## Abstract
 
 Hydrocarbon column height is a major source of uncertainty in pre-drill prospect evaluation. It
@@ -1077,4 +1081,4 @@ Bulletin* **63**(5), 723–760.
 *Figures 1 to 4 and 6 are the implementation's own figures, exported by
 `scripts/post_images.py` from its default prospect at 10,000 realisations; Figure 5 is drawn by
 `scripts/paper_figures.py`, which also writes the prospect definition alongside them as
-`docs/figures/prospect.json`.*
+`paper/figures/prospect.json`.*

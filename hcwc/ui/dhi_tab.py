@@ -13,11 +13,14 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-from hcwc.core import charge as ch
+from hcwc.core import defaults
 from hcwc.core import dhi as dhi_core
+from hcwc.core import engine
+from hcwc.core import dhi_comparison as comparison
 from hcwc.core import sensitivity
 from hcwc.core import well as well_core
 from hcwc.core.dhi import DetectionFunction, DhiObservation
+from hcwc.core import pos
 from hcwc.ui import run, sources, theme
 from hcwc.ui.numbering import Numbering
 
@@ -43,7 +46,7 @@ OBSERVATIONS = (CONFORMING, PARTIAL, ABSENT)
 #: Five rather than seven is a slightly more conservative opening position on the same axis — still
 #: above the crossing point, so an assessor who moves nothing states a barely-supportive DHI rather
 #: than a neutral one, which is the property the E-POS default was chosen for.
-OPENING_STRENGTH = 5.0
+OPENING_STRENGTH = defaults.OPENING_EVIDENCE_INDEX
 
 #: Where `p_valid` opens: an even chance that the picked event is a fluid contact.
 #: Deliberately a round number and not `R/(R+1)` at the opening strength, because it is a
@@ -56,14 +59,14 @@ OPENING_STRENGTH = 5.0
 #: ambiguous fit to structure, diffuse terminations and an absent fluid-contact reflection. The
 #: floor under the pick is then 0.64, so an untouched slider lets the pick say at most 0.56 : 1
 #: against any contact depth; a well-conformed event is claimed by moving it.
-DEFAULT_CONTACT_GIVEN_HC = 0.36
+DEFAULT_CONTACT_GIVEN_HC = defaults.DEFAULT_CONTACT_GIVEN_HC
 
 #: The three routes to c on tab 5.1.3, as the radio names them.
 C_STATED, C_FROM_ATTRIBUTES, C_FROM_SCORE = ("Stated", "Graded attributes",
                                              "DHI score, Monigle et al. (2025)")
 #: The DHI score whose calibrated rule gives the shipped c, so the untouched route agrees with
 #: the untouched slider: 2 x 0.18 = 0.36.
-DEFAULT_DHI_SCORE = 0.18
+DEFAULT_DHI_SCORE = defaults.DEFAULT_DHI_SCORE
 
 #: The three **contact** attributes, after Monigle et al. (2025), who separate them from the
 #: *body* attributes that grade the amplitude. These answer whether the picked event is the
@@ -72,32 +75,9 @@ DEFAULT_DHI_SCORE = 0.18
 #: applied. The shipped selections (:data:`DEFAULT_ATTRIBUTE_LEVELS`) give c = 0.36, the
 #: slider's own default, so applying the suggestion on an untouched tab moves nothing.
 #: The option each attribute opens on: the levels whose geometric mean is the shipped c.
-DEFAULT_ATTRIBUTE_LEVELS: dict[str, str] = {
-    "Fit to structure": "Ambiguous",
-    "Amplitude terminations": "Diffuse or long",
-    "Fluid contact reflection": "Absent, where one was expected",
-}
+DEFAULT_ATTRIBUTE_LEVELS: dict[str, str] = defaults.DEFAULT_ATTRIBUTE_LEVELS
 
-CONTACT_ATTRIBUTES: dict[str, dict[str, float]] = {
-    "Fit to structure": {
-        "Flat, conformable, cuts dipping structure": 0.95,
-        "Broadly conformable": 0.75,
-        "Ambiguous": 0.45,
-        "Follows stratigraphy, not structure": 0.15,
-    },
-    "Amplitude terminations": {
-        "Sharp, at the picked depth": 0.90,
-        "Moderate": 0.65,
-        "Diffuse or long": 0.35,
-        "No clear termination": 0.15,
-    },
-    "Fluid contact reflection": {
-        "Clear FCR": 0.95,
-        "Weak or possible": 0.70,
-        "Absent, and not expected here": 0.60,
-        "Absent, where one was expected": 0.30,
-    },
-}
+CONTACT_ATTRIBUTES: dict[str, dict[str, float]] = defaults.CONTACT_ATTRIBUTES
 
 
 def well_control() -> well_core.WellControl | None:
@@ -337,8 +317,8 @@ def render(n: Numbering | None = None) -> None:
     # 98 % of the prior rather than outside its full range, so a prospect whose contact cannot
     # plausibly reach 2 250 m opens on its own median instead of on an update built from a handful
     # of realisations.
-    DEFAULT_SIGMA_M = 10.0
-    PROSPECT_PICK_M = 2_250.0
+    DEFAULT_SIGMA_M = defaults.DEFAULT_PICK_SIGMA_M
+    PROSPECT_PICK_M = defaults.DEFAULT_PICK_M
     lo_prior, hi_prior = np.percentile(result.contact_m, [1.0, 99.0])
     default_contact = (PROSPECT_PICK_M if lo_prior <= PROSPECT_PICK_M <= hi_prior
                        else float(np.percentile(result.contact_m, 50)))
@@ -515,7 +495,7 @@ def render(n: Numbering | None = None) -> None:
         figv.update_layout(xaxis_title="Contact depth (m TVDSS)", yaxis_title="Density",
                            height=300, margin=dict(t=30), legend=dict(orientation="h", y=-0.28))
 
-        prior_span = float(np.percentile(result.contact_m, 90) - np.percentile(result.contact_m, 10))
+        prior_span = float(np.diff(engine.weighted_percentiles(result.contact_m, None, [90.0, 10.0]))[0])
         pick_span = float(preview.pick_ppf(np.array([0.9]))[0] - preview.pick_ppf(np.array([0.1]))[0])
         sharper = prior_span / max(pick_span, 1e-9)
         sits_at = float((result.contact_m <= contact).mean())
@@ -634,8 +614,7 @@ def render(n: Numbering | None = None) -> None:
     r_strength = model.r_at(strength)
     band, band_note = dhi_core.strength_bands(r_strength)
     _elements_now = st.session_state.get("element_pos") or {}
-    _p_g_prior = (float(np.prod([float(v) for v in _elements_now.values()]))
-                  if _elements_now else 1.0)
+    _p_g_prior = pos.accumulation_chance(_elements_now)
 
     axis = np.linspace(-160.0, 160.0, 400)
     figs = go.Figure()
@@ -731,8 +710,6 @@ def render(n: Numbering | None = None) -> None:
     # Published for the walkthrough sub-tab, which explains this number rather than producing
     # it. Same one-frame lag as everything else that crosses a sub-tab boundary.
     st.session_state["dhi_r_strength"] = float(r_strength)
-    _elements = st.session_state.get("element_pos") or {}
-    _p_g = float(np.prod([float(v) for v in _elements.values()])) if _elements else 1.0
 
     theme.heading(TAB, sub=n.sub, text="3 · Contact attribution: updates HCWC | G")
     st.markdown(
@@ -999,19 +976,20 @@ def render(n: Numbering | None = None) -> None:
         "says about the chance. Method: see 8.1.5."
     )
     d1, d2, d3, d4 = st.columns(4)
-    h50 = d1.number_input("50 % detection column (m)", 1.0, 500.0, 25.0, 1.0,
+    h50 = d1.number_input("50 % detection column (m)", 1.0, 500.0, defaults.DETECTION_H50_M, 1.0,
                           help="Roughly the tuning thickness for this reservoir and frequency.")
     steep = d2.number_input(
-        "Transition width (m)", 1.0, 200.0, 8.0, 1.0,
+        "Transition width (m)", 1.0, 200.0, defaults.DETECTION_WIDTH_M, 1.0,
         help="How sharply detection turns on. Small means a clean threshold at the column above; "
              "large means a gradual rise, which is the safer assumption when the reservoir "
              "properties vary across the closure.")
-    ceiling = d3.number_input("Ceiling", 0.05, 1.0, 0.90, 0.01,
+    ceiling = d3.number_input("Ceiling", 0.05, 1.0, defaults.DETECTION_CEILING, 0.01,
                               help="Below 1 on purpose. A thick column can still fail to show, and "
                                    "a function reaching certainty would make an absent anomaly "
                                    "infinitely strong evidence.")
     false_positive = d4.number_input(
-        "False-positive assumption (barren trap shows, relative)", 0.0, 1.0, 0.5, 0.05,
+        "False-positive assumption (barren trap shows, relative)", 0.0, 1.0,
+        defaults.DETECTION_FALSE_POSITIVE, 0.05,
         key="dhi_in_false_positive",
         help="How often a trap with no hydrocarbons shows an anomaly of this class, as a fraction "
              "of how often a hydrocarbon-filled trap of this geometry does. 0 says a barren trap "
@@ -1114,7 +1092,7 @@ def render(n: Numbering | None = None) -> None:
     # P(absent | not G), audit finding P1-0 -- so that an absent DHI reads against the prospect
     # rather than as neutral, and never as encouraging.
     element_pos = st.session_state.get("element_pos") or {}
-    element_product = float(np.prod([float(v) for v in element_pos.values()])) if element_pos else 1.0
+    element_product = pos.accumulation_chance(element_pos)
     r_applied = dhi_core.applied_ratio(result, detection, observation, r_strength)
     st.session_state["dhi_r_applied"] = float(r_applied)
     p_g_updated = dhi_core.p_g_given_strength(element_product, r_applied)
@@ -1328,22 +1306,22 @@ def render(n: Numbering | None = None) -> None:
     pooled_gap = None
     floor_part = None
     if show_all and seen:
-        for method, dash in ((dhi_core.POOLED, "dash"), (dhi_core.SCENARIO, "dot")):
+        for method, dash in ((comparison.POOLED, "dash"), (comparison.SCENARIO, "dot")):
             curve = _comparison_curve(
-                dhi_core.combination_exceedance(result, detection, observation, hs, method=method))
-            if method == dhi_core.POOLED:
+                comparison.combination_exceedance(result, detection, observation, hs, method=method))
+            if method == comparison.POOLED:
                 pooled_gap = float(np.abs(np.asarray(curve) - np.asarray(updated)).max())
                 # The same comparison with the detection function held flat, so the caption can
                 # say how much of the gap is the floor rather than asserting a split that moves
                 # with p_valid.
                 _flat = dhi_core.DetectionFunction(h50_m=1e-6, steepness_m=1e-6, ceiling=1.0)
                 _flat_curve = _comparison_curve(
-                    dhi_core.combination_exceedance(result, _flat, observation, hs,
-                                                    method=dhi_core.BAYES))
+                    comparison.combination_exceedance(result, _flat, observation, hs,
+                                                    method=comparison.BAYES))
                 floor_part = float(np.abs(np.asarray(curve) - np.asarray(_flat_curve)).max())
             fig.add_scatter(x=curve, y=depths, mode="lines", opacity=0.65,
-                            name={dhi_core.POOLED: "…with the floor and D(h) dropped",
-                                  dhi_core.SCENARIO: "…as a scenario switch (a mixture)"}[method],
+                            name={comparison.POOLED: "…with the floor and D(h) dropped",
+                                  comparison.SCENARIO: "…as a scenario switch (a mixture)"}[method],
                             line=dict(color=POSTERIOR, width=2.0, dash=dash))
 
     markers = [("assessment minimum", h_min, "#333")]
@@ -1657,11 +1635,11 @@ def render(n: Numbering | None = None) -> None:
             "see 8.1.6."
         )
         if seen:
-            switched = dhi_core.scenario_switch(result, p_valid, contact, sigma)
+            switched = comparison.scenario_switch(result, p_valid, contact, sigma)
             s1, s2, s3 = st.columns(3)
             for col, p in ((s1, 90), (s2, 50), (s3, 10)):
                 col.metric(f"Contact P{p}, scenario switch",
-                           f"{np.percentile(switched, 100 - p):,.0f} m",
+                           f"{engine.weighted_percentiles(switched, None, float(p))[0]:,.0f} m",
                            f"likelihood form {post.percentiles(p)[0]:,.0f} m", delta_color="off")
         else:
             st.caption("The scenario switch has nothing to switch to when no anomaly was seen.")
@@ -1697,7 +1675,7 @@ def _well_only(result, n: Numbering) -> None:
     h_min = float(result.limit_set.min_column_m)
     depth_grid = apex + np.linspace(0.0, float(result.column_m.max()), 300)
     element_pos = st.session_state.get("element_pos") or {}
-    product = float(np.prod([float(v) for v in element_pos.values()])) if element_pos else 1.0
+    product = pos.accumulation_chance(element_pos)
     prior_pos = product * posterior.pos(posterior=False)
     posterior_pos = product * posterior.pos()
     st.session_state["dhi_overlay"] = {

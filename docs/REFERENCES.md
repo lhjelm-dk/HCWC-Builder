@@ -26,7 +26,7 @@ Also the clearest published statement of the POS/volume split this tool is built
 trapping elements *"will not reduce the probability of finding hydrocarbons at the prospect
 location [but] will influence the probability of deeper hydrocarbon-water contacts"*, and scenario
 weighting is *"normalised to the success rate of the prospect"*. Full review in
-`docs/BEHA_2012_REVIEW.md`.
+`docs/reviews/BEHA_2012_REVIEW.md`.
 
 **Monigle, P.W., Hedayati, T.S. & Goulding, F.J. (2025)** · *Integrated and improved direct
 hydrocarbon indicators: a step forward in petroleum risk discrimination.* AAPG Bulletin
@@ -37,7 +37,7 @@ hydrocarbon indicators: a step forward in petroleum risk discrimination.* AAPG B
 > Simm & Bacon update this app uses; absence of an expected anomaly as negative evidence; and
 > an **empirically calibrated contact weight** — `w = min(2 x DHI score, 0.95)` — from 400+
 > drilled DHI prospects. That 0.95 is the external referent the strength axis lacked; see
-> `docs/MONIGLE_2025_REVIEW.md`. Also states the element-attribution rule as policy.
+> `docs/reviews/MONIGLE_2025_REVIEW.md`. Also states the element-attribution rule as policy.
 
 **Hood, K.C. (2024)** · *Hydrocarbon Column Heights, Part 1* and *Part 2*. Rose & Associates blog,
 7 May 2024, from Hood (2019), Risk Coordinators Workshop #17, Houston. Released by ExxonMobil.
@@ -79,7 +79,7 @@ doi:[10.1144/10.44petgeo2016-022](https://doi.org/10.1144/10.44petgeo2016-022)
 
 **Lowry, D.C., Suttill, R.J. & Taylor, R.J. (2005)** · *Advances in risking exploration prospects.*
 The APPEA Journal **45**(1), 143–158. doi:[10.1071/AJ04012](https://doi.org/10.1071/AJ04012)
-🔴 **Paywalled** (USD 40) · reviewed from the abstract only — see `docs/LOWRY_2005_REVIEW.md`
+🔴 **Paywalled** (USD 40) · reviewed from the abstract only — see `docs/reviews/LOWRY_2005_REVIEW.md`
 > **Chance as a function of column height, in print in 2005.** One of their three named shortcomings
 > of conventional risking is that *"prospect risk is dependent on reserve size"*, and the worked case
 > is this tool's exactly: a mapped closure *"which has suspect seal capacity that may limit the column
@@ -239,7 +239,7 @@ doi:[10.3997/2214-4609.201901555](https://doi.org/10.3997/2214-4609.201901555)
 |---|---|
 | **Sperrevik, S. et al. (2002)** | fault permeability: `Kf = 80000·exp(−(19.4·SGR + 0.00403·Zmax + (0.0055·Zf − 12.5)·(1−SGR)^7))` |
 | **Manzocchi, T. et al.** | fault permeability: `log Kf = −A1·SGR − A2·log(D)·(1−SGR)^A3` |
-| **Yang, Y. & Aplin, A.C. (1998)** | pore-throat radius from porosity / void ratio. Not the source of the gas–water tension line once attributed to it; the oil–water line was replaced on 15 Sep 2026 (`docs/IFT_CHECK_2026-09-15.md`) |
+| **Yang, Y. & Aplin, A.C. (1998)** | pore-throat radius from porosity / void ratio. Not the source of the gas–water tension line once attributed to it; the oil–water line was replaced on 15 Sep 2026 (`archive/development_notes/IFT_CHECK_2026-09-15.md`) |
 | **Sales, J.K. (1997)** | closure height / seal capacity / fluid type interplay; cited by Graham |
 | **Hansen (1996)** | depth calibration of the fitted entry-pressure distributions |
 

@@ -26,6 +26,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from hcwc.core.engine import EngineResult
+from hcwc.core import engine
 from hcwc.core.limits import DEPTH
 
 #: The basis, spelled the way it must appear on paper. A reader of a bare page cannot recover
@@ -215,7 +216,8 @@ def _limit_rows(result: EngineResult) -> str:
         drawn = result.sampled_m[:, i]
         active = result.active[:, i]
         if active.any():
-            p90, p50, p10 = (float(np.percentile(drawn[active], p)) for p in (10, 50, 90))
+            p90, p50, p10 = (float(v) for v in
+                             engine.weighted_percentiles(drawn[active], None, [90.0, 50.0, 10.0]))
             spread = f"{p90:,.0f} / {p50:,.0f} / {p10:,.0f}"
         else:
             spread = "—"
@@ -455,15 +457,15 @@ def build_full(result: EngineResult, provenance: Provenance, figures: dict, *,
     missing rather than shipping a document that is quietly short.
 
     ``figures`` is ``{label: (plotly_figure, caption)}`` and ``tables`` is
-    ``{label: (payload, caption, hide_index)}`` — :data:`hcwc.ui.numbering.FIGURES_KEY` and
-    :data:`hcwc.ui.numbering.TABLES_KEY` as the app fills them during a run.
+    ``{label: (payload, caption, hide_index)}`` — :data:`hcwc.exhibits.FIGURES_KEY` and
+    :data:`hcwc.exhibits.TABLES_KEY` as the app fills them during a run.
 
     **The two are interleaved by number, not appended.** They already share one counter per tab --
     that is the whole point of the numbering scheme, so that `2.3` names exactly one thing -- and a
     document that ran every figure and then every table would put `Table 3.2` after `Figure 6.13`
     and lose the reading order the numbers exist to carry.
     """
-    from hcwc.ui.numbering import figure_order
+    from hcwc.exhibits import figure_order
 
     blocks, failed = [], []
     tables = tables or {}

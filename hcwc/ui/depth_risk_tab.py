@@ -13,8 +13,8 @@ import streamlit as st
 
 from hcwc.core import decompose as dc
 from hcwc.core.decompose import ELEMENTS, ReservoirEffectiveness
-from hcwc.core.limits import Group
-from hcwc.ui import results_tab, run, theme
+from hcwc.plotting.app.colours import limit_colours
+from hcwc.ui import run, theme
 from hcwc.ui.numbering import Numbering
 
 TAB = 4
@@ -193,7 +193,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         # One level down: the individual mechanisms inside each element, each in a variation of its
         # element's hue so the grouping stays readable at a glance. Scaled by the same element POS
         # as its parent, so a limit curve is never above the element curve it belongs to.
-        shades = results_tab.limit_colours(limit_set)
+        shades = limit_colours(limit_set)
         per_limit = dc.limit_curves_at_depth(result, d.depths_m, weights)
         for limit in limit_set.limits:
             fig.add_scatter(x=pos[limit.group] * per_limit[limit.name], y=d.depths_m,

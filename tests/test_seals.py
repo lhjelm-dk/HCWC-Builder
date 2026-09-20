@@ -28,7 +28,7 @@ class TestAplinYang:
         assert seals.interfacial_tension_gas_dyne_cm(80.0) == pytest.approx(33.45005225957953)
 
     def test_the_oil_line_is_gone(self):
-        """Replaced 15 Sep 2026 by an elicited range (docs/IFT_CHECK_2026-09-15.md): the line
+        """Replaced 15 Sep 2026 by an elicited range (archive/development_notes/IFT_CHECK_2026-09-15.md): the line
         gave 9.8 dyne/cm at 80 °C against a measured envelope of about 15–30, and understated
         the shipped oil seal capacity by about 1.9×."""
         assert not hasattr(seals, "interfacial_tension_oil_dyne_cm")

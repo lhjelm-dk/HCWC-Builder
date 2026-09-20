@@ -109,7 +109,7 @@ discontinuity to guard.
 
 ## 4 · The thing to settle first: Hood's 20 % is not what this gives
 
-*Status, 15 Sep 2026.* Checked; see `docs/IFT_CHECK_2026-09-15.md`. Reading 2 holds, and the
+*Status, 15 Sep 2026.* Checked; see `archive/development_notes/IFT_CHECK_2026-09-15.md`. Reading 2 holds, and the
 line's provenance is unknown: Yang & Aplin (1998) is a pore-size paper and carries no tension
 correlation. With a sourced oil tension of 21–25 mN/m the gas share is 16–24 %, bracketing
 Hood's 20 %. Lars chose to replace it: since 15 Sep 2026 the oil tension is an elicited, temperature-flat
@@ -345,7 +345,7 @@ Stated so it can be checked rather than assumed:
 ## References
 
 Hood, K. C. (2019). *Hydrocarbon Column Height*, slides 18–19. Risk Coordinator Workshop #17.
-See `docs/HOOD_2019_REVIEW.md`.
+See `docs/reviews/HOOD_2019_REVIEW.md`.
 
 Aplin, A. C. & Yang, Y. (1998) — the interfacial-tension correlations in `hcwc/core/seals.py`, and
 the source of the disagreement in §4.

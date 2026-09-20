@@ -23,6 +23,7 @@ import streamlit as st
 
 from hcwc.core.decompose import ELEMENTS
 from hcwc.core.limits import Group
+from hcwc.core import defaults, pos
 from hcwc.io import epos
 from hcwc.io import prospect as prospect_io
 from hcwc.ui import theme
@@ -31,11 +32,11 @@ from hcwc.ui.numbering import Numbering
 TAB = 2
 
 #: A complete prospect to load rather than read twelve limit blocks cold.
-_EXAMPLE = Path(__file__).resolve().parents[2] / "reference" / "example_prospect.hcwc.json"
+_EXAMPLE = Path(__file__).resolve().parents[2] / "reference" / "defaults" / "example_prospect.hcwc.json"
 #: A second one, spill-limited, so the controlling-limit diagnostic is seen going the other
 #: way: the first example is seal-dominated, this one fills to spill in about seven
 #: realisations in ten. Two examples teach the judgement where one teaches the mechanics.
-_EXAMPLE_SPILL = (Path(__file__).resolve().parents[2] / "reference"
+_EXAMPLE_SPILL = (Path(__file__).resolve().parents[2] / "reference" / "defaults"
                   / "example_prospect_spill.hcwc.json")
 
 #: (label, file, one sentence) for every shipped example, in the order they are offered.
@@ -69,12 +70,9 @@ def example_buttons(key: str) -> None:
                 st.rerun()
 
 #: Element -> (play, conditional) starting values. The product is the element chance.
-#: Lars's values, 26 Aug 2026. Geological POS = 0.408.
+#: Lars's values, 26 Aug 2026, in `hcwc.core.defaults.ELEMENT_CHANCES`; geological POS = 0.408.
 DEFAULT_RISK: dict[Group, tuple[float, float]] = {
-    Group.CHARGE: (1.00, 0.90),
-    Group.CLOSURE: (1.00, 1.00),
-    Group.RESERVOIR: (0.90, 0.70),
-    Group.RETENTION: (0.90, 0.80),
+    group: defaults.ELEMENT_CHANCES[group.value] for group in ELEMENTS
 }
 
 #: Geothermal gradient range, °C/km, and surface temperature, used to default the seal
@@ -338,7 +336,7 @@ def render() -> None:
                     unsafe_allow_html=True)
 
     st.session_state["element_pos"] = element_pos
-    product = float(np.prod(list(element_pos.values())))
+    product = pos.accumulation_chance(element_pos)
 
     # Its own line, at size, because it is the number this section exists to produce and it was
     # previously the smallest thing on the page -- a figure inside a grey caption, under a table

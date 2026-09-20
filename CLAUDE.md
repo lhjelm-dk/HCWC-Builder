@@ -1,7 +1,10 @@
 # HCWC Distribution Builder
 
 Streamlit app deriving hydrocarbon–water contact distributions from competing geological limits.
-Core in `hcwc/core/`, tabs in `hcwc/ui/` and `app.py`, tests in `tests/` (run with the anaconda
+Core in `hcwc/core/` (no Streamlit; defaults in `core/defaults.py`), tabs in `hcwc/ui/` with `app.py`
+a shell, shared figures in `hcwc/plotting/`, files and exports in `hcwc/io/`, the article and its
+figures in `paper/`, developer notes in `docs/` (`ARCHITECTURE_FINAL.md`, `ASSUMPTIONS.md`,
+`VALIDATION.md`, `BASELINE.md`, `reviews/`), retired material in `archive/`; tests in `tests/` (run with the anaconda
 interpreter at `C:/Users/lhjel/anaconda3/python.exe`; the Store `python` stub on PATH is not one).
 The full suite runs locally before every PR; CI runs `-m "not render"` on pull requests and
 everything on `main`, because Actions minutes are scarce. A test that renders `app.py` through
@@ -39,7 +42,8 @@ plainly, and give the unit.
 Rewrite status: all eight tabs done. Since 16 Sep 2026 the method is stated once, in
 `docs/THEORY.md` rendered as tab 8.1 (8.1.1 to 8.1.8, since 18 Sep 2026); tabs 2 to 6 say what is entered, what the
 output means and what to check, and point at "Method: see 8.1.x". The notes 8.1 replaced are
-kept in `docs/superseded/`. `docs/DHI_alignment.md` keeps its voice: it is a signed, dated working note.
+kept in `archive/superseded_notes/`; `archive/development_notes/DHI_alignment.md` is a signed, dated
+working note kept for its history. Nothing under `archive/` is imported or rendered.
 
 ## Structure, 15 Sep 2026
 

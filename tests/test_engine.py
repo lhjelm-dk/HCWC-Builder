@@ -122,7 +122,7 @@ class TestExceedanceAndPos:
         assert r.exceedance(0.0)[0] == pytest.approx(1.0)
 
     def test_pos_is_exceedance_read_at_the_assessment_minimum(self):
-        """The point of `docs/DHI_alignment.md`: POS is a reading, not a separate number."""
+        """The point of `archive/development_notes/DHI_alignment.md`: POS is a reading, not a separate number."""
         base = reference_prospect()
         ls = LimitSet(apex=base.apex, limits=base.limits, min_column_m=150.0)
         r = engine.run(ls, N)

@@ -31,7 +31,7 @@ class TestAreaDepthIntegration:
         assert table.deepest_m == 2400.0
 
     def test_grv_reproduces_the_cached_column_exactly(self, table):
-        cached = pd.read_csv(charge.REFERENCE / "area_depth.csv",
+        cached = pd.read_csv(charge.REFERENCE / "defaults" / "area_depth.csv",
                              comment="#").grv_1e6m3_cached.to_numpy(float)
         assert np.allclose(table.grv_1e6m3, cached, rtol=1e-9, atol=1e-9)
 

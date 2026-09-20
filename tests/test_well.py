@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 from hcwc.core import dhi, engine, well
-from hcwc.core.limits import LimitSet, reference_prospect
+from hcwc.core.limits import reference_prospect
 from hcwc.core.well import WellControl
 
 
