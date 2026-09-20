@@ -7,8 +7,8 @@ typed: every image is what the app draws. Run from the repository root::
 
     python scripts/post_images.py
 
-Output: ``docs/post/*.png``, listed in ``docs/LINKEDIN_POST.md``, and the article's figures in
-``docs/figures/`` (Lars, 17 Sep 2026: the article's figures are the app's, same look; the
+Output: ``paper/post/*.png``, listed in ``paper/LINKEDIN_POST.md``, and the article's figures in
+``paper/figures/`` (Lars, 17 Sep 2026: the article's figures are the app's, same look; the
 matplotlib set they replace is kept in ``archive/old_figures/``). The workflow figure that opens the
 article is drawn by ``scripts/workflow_figure.py``; the concept sketch ``fig5`` by
 ``scripts/paper_figures.py``.
@@ -25,7 +25,7 @@ import numpy as np
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-OUT = ROOT / "docs" / "post"
+OUT = ROOT / "paper" / "post"
 
 #: Exhibit label -> file name and the width to draw it at. Order is the post's order.
 FIGURES = [
@@ -40,7 +40,7 @@ FIGURES = [
     ("Figure 6.7a", "11_benchmark_family.png", 1400, 760),
 ]
 
-#: Exhibit label -> file name in docs/figures, for docs/ARTICLE.md and the long manuscript.
+#: Exhibit label -> file name in paper/figures, for paper/ARTICLE.md and the long manuscript.
 ARTICLE = [
     ("Figure 4.1.1a", "fig1_competing_limits.png", 1400, 700),
     ("Figure 4.1.2a", "fig2_controlling_mechanism.png", 1400, 700),
@@ -48,7 +48,7 @@ ARTICLE = [
     ("Figure 5.1.4a", "fig4_dhi_update.png", 1400, 620),
     ("Figure 5.1.5a", "fig6_chance_before_after.png", 1400, 700),
 ]
-FIGURES_DIR = ROOT / "docs" / "figures"
+FIGURES_DIR = ROOT / "paper" / "figures"
 
 
 def main() -> None:

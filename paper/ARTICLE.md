@@ -3,7 +3,7 @@
 ### Hydrocarbon column height from competing geological limits and DHI evidence
 
 *Lars Hjelm, September 2026. The long-form manuscript this shortens is kept as
-`docs/ARTICLE_LONG_2026-09.md`; the method is stated in full on tab 8.1 of the HCWC
+`paper/ARTICLE_LONG_2026-09.md`; the method is stated in full on tab 8.1 of the HCWC
 Distribution Builder.*
 
 ---

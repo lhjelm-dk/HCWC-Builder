@@ -1,7 +1,7 @@
 # LinkedIn post — draft
 
-*Companion to the article `docs/ARTICLE.md`. The post is the hook; the article is the argument.
-Overlap between them is limited to the closing line and one figure. Images are in `docs/post/`,
+*Companion to the article `paper/ARTICLE.md`. The post is the hook; the article is the argument.
+Overlap between them is limited to the closing line and one figure. Images are in `paper/post/`,
 regenerated from the app by `scripts/post_images.py`; nothing in them is typed. Replace the
 three placeholders before posting: `ARTICLE_URL` (the LinkedIn article), `APP_URL`
 (https://hcwc-builder.streamlit.app unless the deployment is named otherwise), `GITHUB_URL`
@@ -98,9 +98,9 @@ distribution.
 - Overlap with the article: the closing line, the 40 → 64 % / 130 → 99 m / 4 872 numbers, and
   images 4, 5, 9 and 10 (the article's Figures 2 to 5). Everything else in the post is picture-led and the article
   carries the derivation.
-- The article's figures are the app's own too (`docs/figures/fig1…fig6`, from the same run
+- The article's figures are the app's own too (`paper/figures/fig1…fig6`, from the same run
   as the post's images), so a reader who opens the app recognises them; the article opens with
-  the workflow figure (`docs/figures/fig0_workflow.png`), which the post does not carry.
+  the workflow figure (`paper/figures/fig0_workflow.png`), which the post does not carry.
 - `GITHUB_URL` requires the repository to be public; until then, drop the line or link the
   app only.
 - The strength / σ / c settings behind images 7–10 are the shipped defaults with strength 20 and
