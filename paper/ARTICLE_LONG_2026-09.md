@@ -1077,4 +1077,4 @@ Bulletin* **63**(5), 723–760.
 *Figures 1 to 4 and 6 are the implementation's own figures, exported by
 `scripts/post_images.py` from its default prospect at 10,000 realisations; Figure 5 is drawn by
 `scripts/paper_figures.py`, which also writes the prospect definition alongside them as
-`docs/figures/prospect.json`.*
+`paper/figures/prospect.json`.*

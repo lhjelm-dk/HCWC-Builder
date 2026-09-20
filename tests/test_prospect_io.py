@@ -169,7 +169,13 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
                  # The area-depth grid's own machinery. What is saved is the *table* -- three flat
                  # lists written by `_area_depth_inputs` -- not the editor's edit-diff, the reset
                  # button or the uploader, none of which describe the prospect.
-                 "charge_ad_editor", "charge_ad_reset", "charge_ad_upload"}
+                 "charge_ad_editor", "charge_ad_reset", "charge_ad_upload",
+                 # Tabs 7 and 8 moved out of app.py into hcwc/ui on 18 Sep 2026, so the scan
+                 # sees them now: the export and report buttons and downloads are one-shot
+                 # actions, the report note is written for one document, and the
+                 # walkthrough's table is a display element.
+                 "build_full_report", "download_figures", "download_full_report",
+                 "render_figures", "report_note", "t8_likelihood_table"}
     missed = {k for k in literal
               if k not in prospect.EXACT and not k.startswith(prospect.PREFIXES)
               and k not in transient and not k.startswith(("r1_", "sub_el_", "z_entry_"))}

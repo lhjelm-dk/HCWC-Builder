@@ -1719,11 +1719,13 @@ class TestTheArgumentsLiveInDocuments:
         import re
 
         root = pathlib.Path(__file__).resolve().parent.parent
-        source = (root / "app.py").read_text(encoding="utf-8")
+        # tab 8 lives in hcwc/ui/theory.py since the clean-up of 18 Sep 2026
+        source = (root / "hcwc" / "ui" / "theory.py").read_text(encoding="utf-8")
         named = set(re.findall(r'"([A-Z_]+\.md|[A-Za-z_]+\.md)"', source))
         assert named, "no documents are registered at all"
-        missing = sorted(name for name in named if not (root / "docs" / name).exists())
-        assert not missing, f"registered but absent from docs/: {missing}"
+        missing = sorted(name for name in named
+                         if not ((root / "docs" / name).exists() or (root / "paper" / name).exists()))
+        assert not missing, f"registered but absent from docs/ or paper/: {missing}"
 
     #: Tab 8.0 was restructured on 7 Sep 2026 into Theory / The paper / References; on
     #: 15 Sep 2026 the theory became one document with nine numbered sub-sections, so a reader
@@ -1772,7 +1774,8 @@ class TestTheArgumentsLiveInDocuments:
         assert not missing, f"a superseded note was deleted rather than moved: {missing}"
         readme = (root / "archive" / "superseded_notes" / "README.md").read_text(encoding="utf-8")
         assert all(n in readme for n in notes), "archive/superseded_notes/README.md does not list every note"
-        source = (root / "app.py").read_text(encoding="utf-8")
+        source = "\n".join((root / f).read_text(encoding="utf-8")
+                           for f in ("app.py", "hcwc/ui/theory.py", "hcwc/ui/concept.py"))
         assert not [n for n in notes if n in source], "a superseded note is back on screen"
 
     def test_the_references_are_numbered_sub_sections(self):
@@ -1810,7 +1813,8 @@ class TestTheArgumentsLiveInDocuments:
         missing = [n for n in reviews if not (root / "docs" / n).exists()]
         assert not missing, f"a review was deleted rather than kept: {missing}"
 
-        source = (root / "app.py").read_text(encoding="utf-8")
+        source = "\n".join((root / f).read_text(encoding="utf-8")
+                           for f in ("app.py", "hcwc/ui/theory.py", "hcwc/ui/concept.py"))
         surfaced = [n for n in reviews if f'"{n}"' in source]
         assert not surfaced, f"a review is back on screen: {surfaced}"
 
@@ -1900,7 +1904,7 @@ class TestThePaperAgreesWithTheAppItDescribes:
     are the alarm.
     """
 
-    ARTICLE = "docs/ARTICLE.md"
+    ARTICLE = "paper/ARTICLE.md"
     #: Since 17 Sep 2026 the figures are the app's own, exported by scripts/post_images.py,
     #: plus the workflow figure (scripts/workflow_figure.py); the long manuscript, kept as
     #: docs/ARTICLE_LONG_2026-09.md, adds the chance against depth and keeps the concept
@@ -1926,18 +1930,18 @@ class TestThePaperAgreesWithTheAppItDescribes:
         text = self._text()
         for name in self.FIGURES:
             assert f"figures/{name}" in text, f"the paper no longer references {name}"
-            assert (self._root() / "docs" / "figures" / name).exists(), \
-                f"docs/figures/{name} is missing -- run scripts/post_images.py"
-        long_text = (self._root() / "docs" / "ARTICLE_LONG_2026-09.md").read_text(encoding="utf-8")
+            assert (self._root() / "paper" / "figures" / name).exists(), \
+                f"paper/figures/{name} is missing -- run scripts/post_images.py"
+        long_text = (self._root() / "paper" / "ARTICLE_LONG_2026-09.md").read_text(encoding="utf-8")
         for name in self.LONG_FIGURES:
             assert f"figures/{name}" in long_text, f"the manuscript no longer references {name}"
-            assert (self._root() / "docs" / "figures" / name).exists(), \
-                f"docs/figures/{name} is missing -- run scripts/post_images.py"
+            assert (self._root() / "paper" / "figures" / name).exists(), \
+                f"paper/figures/{name} is missing -- run scripts/post_images.py"
 
     def test_the_worked_prospect_is_reproducible(self):
         """The prospect definition ships beside the figures, so the numbers can be re-derived."""
         import json
-        path = self._root() / "docs" / "figures" / "prospect.json"
+        path = self._root() / "paper" / "figures" / "prospect.json"
         assert path.exists(), "the prospect the figures were drawn from was not written out"
         spec = json.loads(path.read_text(encoding="utf-8"))
         assert spec["min_column_m"] == 120.0, (
@@ -1987,7 +1991,7 @@ class TestThePaperAgreesWithTheAppItDescribes:
 
         root = pathlib.Path(self._root())
         problems = []
-        for path in sorted((root / "docs").glob("*.md")):
+        for path in sorted([*(root / "docs").glob("*.md"), *(root / "paper").glob("*.md")]):
             lines = path.read_text(encoding="utf-8").split("\n")
             open_display = None
             for number, line in enumerate(lines, 1):
@@ -2012,10 +2016,12 @@ class TestThePaperAgreesWithTheAppItDescribes:
         """`st.markdown` cannot resolve a relative image path, so the images would render broken
         rather than raise. The app splits them out; this is the check that it still does."""
         import pathlib
-        source = (pathlib.Path(self._root()) / "app.py").read_text(encoding="utf-8")
-        assert "_render_with_figures" in source, (
+        root = pathlib.Path(self._root())
+        theory = (root / "hcwc" / "ui" / "theory.py").read_text(encoding="utf-8")
+        renderer = (root / "hcwc" / "ui" / "markdown.py").read_text(encoding="utf-8")
+        assert "render_with_figures(_paper_text" in theory, (
             "the article is being passed straight to st.markdown, which cannot load its figures")
-        assert "st.image(str(target)" in source
+        assert "st.image(str(target)" in renderer
 
 
 class TestTheIndependenceAssumptionsAreStatedWhereTheyBite:

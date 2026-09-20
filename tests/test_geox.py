@@ -153,7 +153,9 @@ def test_the_app_never_exports_without_a_stated_basis():
     import pathlib
     import re
 
-    app = (pathlib.Path(__file__).resolve().parent.parent / "app.py").read_text(encoding="utf-8")
+    # tab 7 lives in hcwc/ui/export.py since the clean-up of 18 Sep 2026
+    app = (pathlib.Path(__file__).resolve().parent.parent / "hcwc" / "ui" / "export.py").read_text(
+        encoding="utf-8")
     calls = re.findall(r"geox\.percentile_table\((.*?)\)", app, re.S)
     assert calls, "the export moved — this test needs pointing at it"
     for call in calls:

@@ -40,12 +40,13 @@ two-minute subset CI runs on pull requests.
 
 | path | what |
 |---|---|
-| `app.py` | the Streamlit entry: tab layout, tabs 1, 7 and 8 |
+| `app.py` | the Streamlit shell: the tab strip and the prospect restore; each tab is a module |
 | `hcwc/core/` | the scientific model; no Streamlit import |
 | `hcwc/ui/` | the tabs |
 | `hcwc/io/` | prospect files, imports, exports, the report, reference data loaders |
 | `reference/` | shipped data: Edmundson (2021) columns, area–depth table, examples |
-| `docs/` | theory (8.1), article (8.2), references (8.3), audits, reviews, plans, figures |
+| `docs/` | theory (8.1), references (8.3), audits, reviews, plans, the workflow SVGs |
+| `paper/` | the article (8.2), the manuscript, the post, their figures and images |
 | `scripts/` | figure and image generators, censoring analysis |
 | `tests/` | the suite; `docs/BASELINE.md` records what it pins |
 | `archive/` | superseded notes and figures, kept and never imported |

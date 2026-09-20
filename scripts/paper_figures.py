@@ -1,4 +1,4 @@
-"""The article's concept sketch (fig5) and the worked prospect's definition, docs/figures/prospect.json.
+"""The article's concept sketch (fig5) and the worked prospect's definition, paper/figures/prospect.json.
 
 Run:  python scripts/paper_figures.py
 
@@ -12,7 +12,7 @@ written beside the figures so the inputs travel with the outputs.
 thing -- ``limits.reference_prospect()`` is the tests' fixture, while the app opens on *Tiramisu-C4*
 built by ``hcwc.ui.limiters_tab.SPECS``, with charge and top-seal capacity computed rather than
 typed. So the script starts an ``AppTest``, lifts the resolved limit set and element chances out
-of session state, and writes them as ``docs/figures/prospect.json``.
+of session state, and writes them as ``paper/figures/prospect.json``.
 """
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 from hcwc.core import engine
 from hcwc.core.limits import DepthDistribution, Group, Limit, LimitSet
 
-OUT = ROOT / "docs" / "figures"
+OUT = ROOT / "paper" / "figures"
 
 #: The assessment minimum the article states. Everything is read at this column height.
 HMIN = 120.0
