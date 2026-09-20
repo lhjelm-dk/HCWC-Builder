@@ -27,6 +27,7 @@ import plotly.graph_objects as go
 
 from hcwc.core import decompose, engine
 from hcwc.core.limits import COLUMN, DEPTH, Limit, convert
+from hcwc.plotting.app.colours import limit_colours
 from hcwc.ui import theme
 
 MODES = ("Exceedance curves", "Violin", "Half violin", "Histogram", "Points")
@@ -85,7 +86,7 @@ def figure(result, *, space: str = DEPTH, mode: str = "Exceedance curves",
     # Ordering follows the basis too. Ranking the lanes geologically and then drawing them under
     # the posterior puts them in an order the figure itself contradicts.
     ranked = [name for name, _ in engine.limit_ranking(result, weights=posterior)]
-    colour_of = _limit_colours(limit_set)
+    colour_of = limit_colours(limit_set)
 
     lo, hi = window if window else default_window(result, space, apex, _spill(result, apex))
     lo, hi = min(lo, hi), max(lo, hi)
@@ -425,16 +426,6 @@ def _datums(fig, result, space, apex) -> None:
         fig.add_hline(y=y, line=dict(color="#8A8A8A", width=1, dash="dot"),
                       annotation_text=label, annotation_position="top left",
                       annotation_font_size=10)
-
-
-def _limit_colours(limit_set) -> dict[str, str]:
-    from hcwc.core.limits import Group
-    out: dict[str, str] = {}
-    for group in Group:
-        members = [n for n, g in zip(limit_set.names, limit_set.groups) if g is group]
-        for name, colour in zip(members, theme.element_shades(group.value, len(members))):
-            out[name] = colour
-    return out
 
 
 def _spill(result, apex: float) -> float | None:

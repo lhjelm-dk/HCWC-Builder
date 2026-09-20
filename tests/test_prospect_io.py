@@ -290,7 +290,7 @@ class TestTheAllowListMatchesTheApp:
     def test_no_exact_entry_is_dead(self):
         """`stack_space` and `stack_mode` sat here without the tab number the real keys carry, so
         they matched nothing: the settings were never saved and the entries were decoration."""
-        from hcwc.ui import limit_stack
+        from hcwc.plotting.app import limit_stack
         assert set(prospect.STACK_MODES) == set(limit_stack.MODES)
 
     def test_the_version_field_refuses_with_the_right_reason(self):

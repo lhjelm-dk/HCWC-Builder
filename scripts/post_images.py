@@ -49,13 +49,20 @@ ARTICLE = [
     ("Figure 5.1.5a", "fig6_chance_before_after.png", 1400, 700),
 ]
 FIGURES_DIR = ROOT / "paper" / "figures"
+#: The number each exported file carries in paper/ARTICLE.md (the manuscript's numbering is its own).
+ARTICLE_NUMBERS = {"fig1_competing_limits.png": "Figure 2", "fig2_controlling_mechanism.png": "Figure 3",
+                   "fig3_chance_against_depth.png": "manuscript Figure 3",
+                   "fig4_dhi_update.png": "Figure 4", "fig6_chance_before_after.png": "Figure 5"}
 
 
 def main() -> None:
     warnings.filterwarnings("ignore")
+    # Captions carry ≥ and ×; a cp1252 console must not stop the export over a print.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     import plotly.io as pio
     from streamlit.testing.v1 import AppTest
 
+    from hcwc.plotting.paper import manifest
     from hcwc.ui import numbering
 
     at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=900)
@@ -68,6 +75,7 @@ def main() -> None:
     figures = at.session_state[numbering.FIGURES_KEY]
     OUT.mkdir(parents=True, exist_ok=True)
 
+    entries = []
     for folder, table in ((OUT, FIGURES), (FIGURES_DIR, ARTICLE)):
         for label, name, width, height in table:
             fig, caption = figures[label]
@@ -75,6 +83,25 @@ def main() -> None:
                               margin=dict(l=70, r=30, t=30, b=70))
             pio.write_image(fig, folder / name, width=width, height=height, scale=2)
             print(f"  {folder.name}/{name}  <- {label}: {caption}")
+            if folder is FIGURES_DIR:
+                entries.append(manifest.Entry(ARTICLE_NUMBERS.get(name, "-"), name,
+                                              f"`scripts/post_images.py`, the app's {label}", caption))
+
+    # ---- the manifest: number, file, source, caption and the run behind every paper figure ----
+    entries.insert(0, manifest.Entry("Figure 1", "fig0_workflow.png",
+                                     "`scripts/workflow_figure.py`, the conceptual version",
+                                     "The model as two rows: geological, the prior; DHI evidence, "
+                                     "the update; each ending in the probability of meeting the "
+                                     "threshold."))
+    entries.append(manifest.Entry("manuscript Figure 5", "fig5_truncate_vs_terminate.png",
+                                  "`scripts/paper_figures.py`, drawn from a two-limit sketch",
+                                  "Terminating versus truncating at spill."))
+    manifest.write(FIGURES_DIR / "MANIFEST.md", entries, {
+        "prospect": "the shipped default (Tiramisu-C4), `paper/figures/prospect.json`",
+        "seed": 20260825, "realisations": 10_000, "assessment minimum h_min": "120 m",
+        "DHI evidence index": 20.0, "pick sigma": "10 m", "contact attribution c": 0.36,
+        "detection": "h50 25 m, width 8 m, ceiling 0.90, false positive 0.5"})
+    print(f"  {FIGURES_DIR.name}/MANIFEST.md")
 
     # ---- the at-a-glance card: four metrics, before and after --------------------------------
     import matplotlib

@@ -21,7 +21,9 @@ from hcwc.core import engine, sensitivity, trust
 from hcwc.core import limits as limits_mod
 from hcwc.core.limits import Group
 from hcwc.core import pos
-from hcwc.ui import limit_stack, run, theme, trust_panel
+from hcwc.plotting.app import limit_stack
+from hcwc.plotting.app.colours import limit_colours
+from hcwc.ui import run, theme, trust_panel
 from hcwc.ui.numbering import Numbering
 
 TAB = 4
@@ -35,24 +37,6 @@ TRUST_SLOT_KEY = "_trust_slot"
 #: slice and not a fraction of the trial count: a mean of a hundred effective realisations is
 #: coarse but reportable, and twenty-seven is not.
 MIN_TORNADO_SUPPORT = 100
-
-
-def limit_colours(limit_set) -> dict[str, str]:
-    """One colour per limit: a **variation of its risk element's hue**.
-
-    Lars's rule, 25 Aug 2026: fault leakage and the seals are retention mechanisms, so they are
-    greens — but not *the* retention green, which stays reserved for the element itself. Hue says
-    which element a limit belongs to at a glance; lightness separates the limits inside it. That
-    matters because colouring purely by element left five retention limits in one indistinguishable
-    red, which defeats the point of a diagnostic whose whole job is to name mechanisms.
-    """
-    out: dict[str, str] = {}
-    for group in Group:
-        members = [name for name, g in zip(limit_set.names, limit_set.groups) if g is group]
-        for name, colour in zip(members, theme.element_shades(group.value, len(members))):
-            out[name] = colour
-    return out
-
 
 
 def _within_bin_move(result, edges, weights) -> float:
