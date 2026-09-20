@@ -210,7 +210,7 @@ empirical data and updated with DHI or well evidence. Method: see 8.1.
     prospect_tab.example_buttons("tab1_example")
 
     theme.heading(1, "1 · What can set a hydrocarbon–water contact")
-    concept_png = ROOT / "reference" / "concept.png"
+    concept_png = ROOT / "reference" / "defaults" / "concept.png"
     if concept_png.exists():
         st.image(str(concept_png), width="stretch")
         st.caption(

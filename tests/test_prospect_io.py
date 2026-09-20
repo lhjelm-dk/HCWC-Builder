@@ -336,14 +336,14 @@ class TestTheShippedExamplesLoad:
 
     @pytest.mark.parametrize("name", FILES)
     def test_it_reads(self, name):
-        text = (self.ROOT / "reference" / name).read_text(encoding="utf-8")
+        text = (self.ROOT / "reference" / "defaults" / name).read_text(encoding="utf-8")
         inputs = prospect.read(text)
         assert inputs["prospect_name"]
         assert "stack_mode" not in inputs and "stack_space" not in inputs
 
     def test_the_dead_keys_are_dropped_not_refused(self):
         import json
-        text = (self.ROOT / "reference" / self.FILES[0]).read_text(encoding="utf-8")
+        text = (self.ROOT / "reference" / "defaults" / self.FILES[0]).read_text(encoding="utf-8")
         doc = json.loads(text)
         doc["inputs"]["stack_mode"] = "Exceedance curves"
         doc["inputs"]["stack_space"] = "depth"
@@ -360,7 +360,7 @@ class TestTheShippedExamplesLoad:
         for name in self.FILES:
             at = AppTest.from_file(str(self.ROOT / "app.py"), default_timeout=900)
             at.session_state["_pending_load"] = prospect.read(
-                (self.ROOT / "reference" / name).read_text(encoding="utf-8"))
+                (self.ROOT / "reference" / "defaults" / name).read_text(encoding="utf-8"))
             at.run()
             assert not at.exception, name
             ls = at.session_state["limit_set"]

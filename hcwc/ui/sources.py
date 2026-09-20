@@ -59,7 +59,7 @@ def render_charge(key: str, n_trials: int, seed: int,
         try:
             table = ch.AreaDepthTable.reference()
         except FileNotFoundError:
-            st.error("`reference/area_depth.csv` is missing from this checkout.")
+            st.error("`reference/defaults/area_depth.csv` is missing from this checkout.")
             return None
 
     rng = np.random.default_rng(seed + 991)
@@ -722,7 +722,7 @@ def current_area_depth() -> "ch.AreaDepthTable | None":
     The grid on tab 3.0 is the single source of truth, and two other places read it: the WellVolPOS
     export writes an area and a gross rock volume per realisation, and the DHI area cross-check on
     tab 5.0 turns an anomaly's areal extent into a contact depth. Both used to load
-    ``reference/area_depth.csv`` directly, which was harmless while the table was fixed and would
+    ``reference/defaults/area_depth.csv`` directly, which was harmless while the table was fixed and would
     have been a silent lie the moment it became editable — an export describing a structure the
     assessor had replaced.
 
@@ -747,7 +747,7 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
     """The structure the charge has to fill — shown, editable, and importable.
 
     **The table used to be invisible and fixed.** It was read straight off
-    ``reference/area_depth.csv`` on every render and drawn as a chart, so a reader could see the
+    ``reference/defaults/area_depth.csv`` on every render and drawn as a chart, so a reader could see the
     shape of the structure and not one of the numbers behind it, and could not describe their own
     prospect at all. It is the input the whole charge calculation rests on.
 
@@ -782,7 +782,7 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
         try:
             st.session_state[AREA_DEPTH_ROWS] = _seed_rows()
         except FileNotFoundError:
-            st.error("`reference/area_depth.csv` is missing from this checkout, so there is no "
+            st.error("`reference/defaults/area_depth.csv` is missing from this checkout, so there is no "
                      "table to start from. Upload one below.")
             st.session_state[AREA_DEPTH_ROWS] = pd.DataFrame(
                 {"Depth (m TVDSS)": [], "Top area (km²)": [], "Base area (km²)": []})
@@ -807,7 +807,7 @@ def _area_depth_panel() -> "ch.AreaDepthTable | None":
                 st.session_state[AREA_DEPTH_ROWS] = _seed_rows()
                 st.rerun()
             except FileNotFoundError:
-                st.error("`reference/area_depth.csv` is not in this checkout.")
+                st.error("`reference/defaults/area_depth.csv` is not in this checkout.")
 
     if upload is not None and st.session_state.get("charge_ad_upload_name") != upload.name:
         try:

@@ -13,6 +13,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
+from hcwc.core import defaults
 from hcwc.core import dhi as dhi_core
 from hcwc.core import engine
 from hcwc.core import dhi_comparison as comparison
@@ -45,7 +46,7 @@ OBSERVATIONS = (CONFORMING, PARTIAL, ABSENT)
 #: Five rather than seven is a slightly more conservative opening position on the same axis — still
 #: above the crossing point, so an assessor who moves nothing states a barely-supportive DHI rather
 #: than a neutral one, which is the property the E-POS default was chosen for.
-OPENING_STRENGTH = 5.0
+OPENING_STRENGTH = defaults.OPENING_EVIDENCE_INDEX
 
 #: Where `p_valid` opens: an even chance that the picked event is a fluid contact.
 #: Deliberately a round number and not `R/(R+1)` at the opening strength, because it is a
@@ -58,14 +59,14 @@ OPENING_STRENGTH = 5.0
 #: ambiguous fit to structure, diffuse terminations and an absent fluid-contact reflection. The
 #: floor under the pick is then 0.64, so an untouched slider lets the pick say at most 0.56 : 1
 #: against any contact depth; a well-conformed event is claimed by moving it.
-DEFAULT_CONTACT_GIVEN_HC = 0.36
+DEFAULT_CONTACT_GIVEN_HC = defaults.DEFAULT_CONTACT_GIVEN_HC
 
 #: The three routes to c on tab 5.1.3, as the radio names them.
 C_STATED, C_FROM_ATTRIBUTES, C_FROM_SCORE = ("Stated", "Graded attributes",
                                              "DHI score, Monigle et al. (2025)")
 #: The DHI score whose calibrated rule gives the shipped c, so the untouched route agrees with
 #: the untouched slider: 2 x 0.18 = 0.36.
-DEFAULT_DHI_SCORE = 0.18
+DEFAULT_DHI_SCORE = defaults.DEFAULT_DHI_SCORE
 
 #: The three **contact** attributes, after Monigle et al. (2025), who separate them from the
 #: *body* attributes that grade the amplitude. These answer whether the picked event is the
@@ -74,32 +75,9 @@ DEFAULT_DHI_SCORE = 0.18
 #: applied. The shipped selections (:data:`DEFAULT_ATTRIBUTE_LEVELS`) give c = 0.36, the
 #: slider's own default, so applying the suggestion on an untouched tab moves nothing.
 #: The option each attribute opens on: the levels whose geometric mean is the shipped c.
-DEFAULT_ATTRIBUTE_LEVELS: dict[str, str] = {
-    "Fit to structure": "Ambiguous",
-    "Amplitude terminations": "Diffuse or long",
-    "Fluid contact reflection": "Absent, where one was expected",
-}
+DEFAULT_ATTRIBUTE_LEVELS: dict[str, str] = defaults.DEFAULT_ATTRIBUTE_LEVELS
 
-CONTACT_ATTRIBUTES: dict[str, dict[str, float]] = {
-    "Fit to structure": {
-        "Flat, conformable, cuts dipping structure": 0.95,
-        "Broadly conformable": 0.75,
-        "Ambiguous": 0.45,
-        "Follows stratigraphy, not structure": 0.15,
-    },
-    "Amplitude terminations": {
-        "Sharp, at the picked depth": 0.90,
-        "Moderate": 0.65,
-        "Diffuse or long": 0.35,
-        "No clear termination": 0.15,
-    },
-    "Fluid contact reflection": {
-        "Clear FCR": 0.95,
-        "Weak or possible": 0.70,
-        "Absent, and not expected here": 0.60,
-        "Absent, where one was expected": 0.30,
-    },
-}
+CONTACT_ATTRIBUTES: dict[str, dict[str, float]] = defaults.CONTACT_ATTRIBUTES
 
 
 def well_control() -> well_core.WellControl | None:
@@ -339,8 +317,8 @@ def render(n: Numbering | None = None) -> None:
     # 98 % of the prior rather than outside its full range, so a prospect whose contact cannot
     # plausibly reach 2 250 m opens on its own median instead of on an update built from a handful
     # of realisations.
-    DEFAULT_SIGMA_M = 10.0
-    PROSPECT_PICK_M = 2_250.0
+    DEFAULT_SIGMA_M = defaults.DEFAULT_PICK_SIGMA_M
+    PROSPECT_PICK_M = defaults.DEFAULT_PICK_M
     lo_prior, hi_prior = np.percentile(result.contact_m, [1.0, 99.0])
     default_contact = (PROSPECT_PICK_M if lo_prior <= PROSPECT_PICK_M <= hi_prior
                        else float(np.percentile(result.contact_m, 50)))
@@ -998,19 +976,20 @@ def render(n: Numbering | None = None) -> None:
         "says about the chance. Method: see 8.1.5."
     )
     d1, d2, d3, d4 = st.columns(4)
-    h50 = d1.number_input("50 % detection column (m)", 1.0, 500.0, 25.0, 1.0,
+    h50 = d1.number_input("50 % detection column (m)", 1.0, 500.0, defaults.DETECTION_H50_M, 1.0,
                           help="Roughly the tuning thickness for this reservoir and frequency.")
     steep = d2.number_input(
-        "Transition width (m)", 1.0, 200.0, 8.0, 1.0,
+        "Transition width (m)", 1.0, 200.0, defaults.DETECTION_WIDTH_M, 1.0,
         help="How sharply detection turns on. Small means a clean threshold at the column above; "
              "large means a gradual rise, which is the safer assumption when the reservoir "
              "properties vary across the closure.")
-    ceiling = d3.number_input("Ceiling", 0.05, 1.0, 0.90, 0.01,
+    ceiling = d3.number_input("Ceiling", 0.05, 1.0, defaults.DETECTION_CEILING, 0.01,
                               help="Below 1 on purpose. A thick column can still fail to show, and "
                                    "a function reaching certainty would make an absent anomaly "
                                    "infinitely strong evidence.")
     false_positive = d4.number_input(
-        "False-positive assumption (barren trap shows, relative)", 0.0, 1.0, 0.5, 0.05,
+        "False-positive assumption (barren trap shows, relative)", 0.0, 1.0,
+        defaults.DETECTION_FALSE_POSITIVE, 0.05,
         key="dhi_in_false_positive",
         help="How often a trap with no hydrocarbons shows an anomaly of this class, as a fraction "
              "of how often a hydrocarbon-filled trap of this geometry does. 0 says a barren trap "

@@ -118,8 +118,8 @@ def main() -> None:
 
     # ---- the concept figure travels as is --------------------------------------------------
     import shutil
-    shutil.copy(ROOT / "reference" / "concept.png", OUT / "01_concept.png")
-    print("  01_concept.png  <- reference/concept.png")
+    shutil.copy(ROOT / "reference" / "defaults" / "concept.png", OUT / "01_concept.png")
+    print("  01_concept.png  <- reference/defaults/concept.png")
 
 
 if __name__ == "__main__":

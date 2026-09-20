@@ -41,7 +41,7 @@ def _fit():
 
 
 #: The shipped errors-in-variables curve. See :func:`_bias_curve`.
-_BIAS_CURVE = benchmarks.REFERENCE / "bias_curve.json"
+_BIAS_CURVE = benchmarks.REFERENCE / "empirical" / "bias_curve.json"
 
 
 @st.cache_data(show_spinner=False, max_entries=4, ttl=3600)
