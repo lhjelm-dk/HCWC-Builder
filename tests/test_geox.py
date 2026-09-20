@@ -8,6 +8,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from hcwc.core import engine
+
 from hcwc.io import geox
 
 
@@ -31,8 +33,12 @@ class TestConvention:
     def test_p90_is_the_low_side_case(self, contacts):
         """P90 = 90% chance of being at least this deep = a shallow contact = small volume."""
         t = geox.percentile_table(contacts).table.set_index("Percentile")["Value"]
-        assert t[90] == pytest.approx(np.percentile(contacts, 10.0), rel=1e-9)
-        assert t[10] == pytest.approx(np.percentile(contacts, 90.0), rel=1e-9)
+        # the engine's estimator (Hazen midpoints) since 18 Sep 2026, so the export and the
+        # tabs print one number; numpy's linear form agrees to the last digit, not exactly
+        assert t[90] == pytest.approx(engine.weighted_percentiles(contacts, None, 90.0)[0], rel=1e-9)
+        assert t[10] == pytest.approx(engine.weighted_percentiles(contacts, None, 10.0)[0], rel=1e-9)
+        assert t[90] == pytest.approx(np.percentile(contacts, 10.0), rel=1e-3)
+        assert t[10] == pytest.approx(np.percentile(contacts, 90.0), rel=1e-3)
 
 
 class TestShape:
@@ -67,8 +73,8 @@ class TestTails:
 
     def test_truncated_endpoints_are_the_half_percent_points(self, contacts):
         t = geox.percentile_table(contacts).table.set_index("Percentile")["Value"]
-        assert t[100] == pytest.approx(np.percentile(contacts, 0.5))
-        assert t[0] == pytest.approx(np.percentile(contacts, 99.5))
+        assert t[100] == pytest.approx(engine.weighted_percentiles(contacts, None, 99.5)[0])
+        assert t[0] == pytest.approx(engine.weighted_percentiles(contacts, None, 0.5)[0])
 
     def test_the_interior_is_untouched_by_truncation(self, contacts):
         raw = geox.percentile_table(contacts, tail_mode="raw").table.Value.to_numpy()

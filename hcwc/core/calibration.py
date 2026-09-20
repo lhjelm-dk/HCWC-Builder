@@ -29,6 +29,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from hcwc.core import engine
 
 #: How far from P50 a prospect must sit before the verdict stops saying "in line". Below this the
 #: difference is inside what a few thousand Monte Carlo realisations can produce on their own.
@@ -102,8 +103,8 @@ def compare(built: np.ndarray, benchmark: np.ndarray, name: str) -> Comparison:
         )
     if benchmark.size == 0:
         raise ValueError("the benchmark drew no samples at this relief.")
-    b90, b50, b10 = (float(np.percentile(built, p)) for p in (10, 50, 90))
-    k90, k50, k10 = (float(np.percentile(benchmark, p)) for p in (10, 50, 90))
+    b90, b50, b10 = (float(v) for v in engine.weighted_percentiles(built, None, [90.0, 50.0, 10.0]))
+    k90, k50, k10 = (float(v) for v in engine.weighted_percentiles(benchmark, None, [90.0, 50.0, 10.0]))
     return Comparison(name=name, built_p90=b90, built_p50=b50, built_p10=b10,
                       bench_p90=k90, bench_p50=k50, bench_p10=k10,
                       p50_lands_at=exceedance_percentile(b50, benchmark))
@@ -125,8 +126,8 @@ def quantile_pairs(built: np.ndarray, benchmark: np.ndarray,
     on every other figure in the app, which is how it read until Lars caught it on 27 Aug 2026.
     """
     probabilities = np.linspace(1.0, 99.0, n)
-    return (np.percentile(np.asarray(built, dtype=float), probabilities),
-            np.percentile(np.asarray(benchmark, dtype=float), probabilities))
+    return (engine.weighted_percentiles(np.asarray(built, dtype=float), None, 100.0 - probabilities),
+            engine.weighted_percentiles(np.asarray(benchmark, dtype=float), None, 100.0 - probabilities))
 
 
 def exceedance_grid(n: int = 99) -> np.ndarray:

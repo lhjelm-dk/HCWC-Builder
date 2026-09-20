@@ -418,8 +418,8 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
                 capacity = benchmarks.shrink_toward(elicited, reference, weight)
             r1, r2, r3 = st.columns(3)
             for col, p, label in ((r1, 10, "P90"), (r2, 50, "P50"), (r3, 90, "P10")):
-                col.metric(f"NCS {label}", f"{np.percentile(reference, p):,.0f} m",
-                           f"calculator {np.percentile(elicited, p):,.0f} m", delta_color="off")
+                col.metric(f"NCS {label}", f"{engine.weighted_percentiles(reference, None, 100.0 - p)[0]:,.0f} m",
+                           f"calculator {engine.weighted_percentiles(elicited, None, 100.0 - p)[0]:,.0f} m", delta_color="off")
             fit = benchmarks._capacity_fit()
             st.caption(
                 f"The capacities the NCS record implies at {burial:,.0f} m burial, from the "
@@ -434,14 +434,14 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
 
     m1, m2, m3 = st.columns(3)
     shrunk = capacity is not elicited
-    m1.metric("P90 capacity", f"{np.percentile(capacity, 10):,.0f} m",
-              f"before shrinking {np.percentile(elicited, 10):,.0f} m" if shrunk else None,
+    m1.metric("P90 capacity", f"{engine.weighted_percentiles(capacity, None, 90.0)[0]:,.0f} m",
+              f"before shrinking {engine.weighted_percentiles(elicited, None, 90.0)[0]:,.0f} m" if shrunk else None,
               delta_color="off")
-    m2.metric("P50 capacity", f"{np.percentile(capacity, 50):,.0f} m",
-              f"before shrinking {np.percentile(elicited, 50):,.0f} m" if shrunk else None,
+    m2.metric("P50 capacity", f"{engine.weighted_percentiles(capacity, None, 50.0)[0]:,.0f} m",
+              f"before shrinking {engine.weighted_percentiles(elicited, None, 50.0)[0]:,.0f} m" if shrunk else None,
               delta_color="off")
-    m3.metric("P10 capacity", f"{np.percentile(capacity, 90):,.0f} m",
-              f"before shrinking {np.percentile(elicited, 90):,.0f} m" if shrunk else None,
+    m3.metric("P10 capacity", f"{engine.weighted_percentiles(capacity, None, 10.0)[0]:,.0f} m",
+              f"before shrinking {engine.weighted_percentiles(elicited, None, 10.0)[0]:,.0f} m" if shrunk else None,
               delta_color="off")
 
     from plotly.subplots import make_subplots
@@ -452,9 +452,9 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     fig.add_scatter(x=grid, y=engine.exceedance(capacity, grid), mode="lines",
                     name="Probability of exceedance", secondary_y=True,
                     line=dict(color="#DD8452", width=2.4))
-    for label, value in (("P90", np.percentile(capacity, 10)),
-                         ("P50", np.percentile(capacity, 50)),
-                         ("P10", np.percentile(capacity, 90))):
+    for label, value in (("P90", engine.weighted_percentiles(capacity, None, 90.0)[0]),
+                         ("P50", engine.weighted_percentiles(capacity, None, 50.0)[0]),
+                         ("P10", engine.weighted_percentiles(capacity, None, 10.0)[0])):
         fig.add_vline(x=float(value), line=dict(color="#888", width=1, dash="dash"),
                       annotation_text=f"{label}: {value:,.0f}", annotation_font_size=10)
     fig.update_layout(height=330, margin=dict(t=30), bargap=0.02,
@@ -489,8 +489,8 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     if thickness:
         st.caption(
             f"The limit is the capacity plus the reservoir thickness. This seal holds "
-            f"{np.percentile(capacity, 50):,.0f} m at P50, starting {thickness:,.0f} m below the "
-            f"structural apex, so it applies at {np.percentile(capacity + thickness, 50):,.0f} m "
+            f"{engine.weighted_percentiles(capacity, None, 50.0)[0]:,.0f} m at P50, starting {thickness:,.0f} m below the "
+            f"structural apex, so it applies at {engine.weighted_percentiles(capacity + thickness, None, 50.0)[0]:,.0f} m "
             f"of column, which is the number the engine competes on."
         )
     return Handover(DepthDistribution.from_samples(capacity + thickness), 1.0,
@@ -658,12 +658,12 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
     # What the engine competes on: the capacity, carried down to where this seal actually is.
     limit = capacity + float(thickness)
     m1, m2, m3 = st.columns(3)
-    m1.metric("P90 limit", f"{np.percentile(limit, 10):,.0f} m",
-              f"capacity {np.percentile(capacity, 10):,.0f} m", delta_color="off")
-    m2.metric("P50 limit", f"{np.percentile(limit, 50):,.0f} m",
-              f"capacity {np.percentile(capacity, 50):,.0f} m", delta_color="off")
-    m3.metric("P10 limit", f"{np.percentile(limit, 90):,.0f} m",
-              f"capacity {np.percentile(capacity, 90):,.0f} m", delta_color="off")
+    m1.metric("P90 limit", f"{engine.weighted_percentiles(limit, None, 90.0)[0]:,.0f} m",
+              f"capacity {engine.weighted_percentiles(capacity, None, 90.0)[0]:,.0f} m", delta_color="off")
+    m2.metric("P50 limit", f"{engine.weighted_percentiles(limit, None, 50.0)[0]:,.0f} m",
+              f"capacity {engine.weighted_percentiles(capacity, None, 50.0)[0]:,.0f} m", delta_color="off")
+    m3.metric("P10 limit", f"{engine.weighted_percentiles(limit, None, 10.0)[0]:,.0f} m",
+              f"capacity {engine.weighted_percentiles(capacity, None, 10.0)[0]:,.0f} m", delta_color="off")
     st.caption(
         f"Both numbers are metres of column below the structural apex, and they differ by the "
         f"reservoir thickness. The capacity is what this shale holds, the top seal's number "
@@ -942,7 +942,7 @@ def calibration_figure(rho_w: float, rho_hc: float, burial_m: float | None,
                       annotation_text=f"this prospect, {burial_m:,.0f} m",
                       annotation_position="top left", annotation_font_size=10)
         if capacity is not None and len(capacity):
-            p90, p50, p10 = np.percentile(capacity, [10, 50, 90])
+            p90, p50, p10 = engine.weighted_percentiles(capacity, None, [90.0, 50.0, 10.0])
             fig.add_scatter(x=[burial_m, burial_m], y=[p90, p10], mode="lines",
                             name="selected input", legendgroup="input",
                             line=dict(color=theme.INK, width=6), opacity=0.55,
@@ -1040,7 +1040,7 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
     m1.metric("Headroom at the crest", f"{headroom:,.0f} bar",
               f"{np.mean(s_hmin):,.0f} − {np.mean(p_pore):,.0f}", delta_color="off")
     for col, p, label in ((m2, 10, "P90"), (m3, 50, "P50"), (m4, 90, "P10")):
-        col.metric(f"{label} column", f"{np.percentile(column, p):,.0f} m", delta_color="off")
+        col.metric(f"{label} column", f"{engine.weighted_percentiles(column, None, 100.0 - p)[0]:,.0f} m", delta_color="off")
 
     st.caption(
         f"At {crest:,.0f} m those are gradients of "
@@ -1061,7 +1061,7 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
     # never appears in the controlling-limit statistics. It is also the honest reading of Grant's
     # own Figure 5c, where the mechanical seal holds "a long oil column" and nothing else happens.
     relief = _structural_relief_m()
-    median = float(np.percentile(column, 50))
+    median = float(engine.weighted_percentiles(column, None, 50.0)[0])
     if relief and median > 3.0 * relief:
         st.info(
             f"This trap is far from its fracture limit. {headroom:,.0f} bar of headroom is about "

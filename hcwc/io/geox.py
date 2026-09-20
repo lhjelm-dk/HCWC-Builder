@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
+from hcwc.core import engine
 import pandas as pd
 
 TailMode = Literal["truncate", "raw", "extrapolate"]
@@ -117,7 +118,8 @@ def percentile_table(samples: np.ndarray, *, points: int | tuple[int, ...] = 101
         cumulative = np.clip(cumulative, lo, hi)
         truncated = (lo, hi)
 
-    values = np.percentile(samples, cumulative)
+    # One estimator with the engine and the tabs (18 Sep 2026): Hazen midpoints, unit weights.
+    values = engine.weighted_percentiles(samples, None, 100.0 - cumulative)
     return PercentileExport(
         table=pd.DataFrame({"Percentile": list(exceedance), "Value": values}),
         tail_mode=tail_mode,
