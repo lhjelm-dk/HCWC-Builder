@@ -281,7 +281,8 @@ the split is this tool's, not theirs, since their five feed one score. The evide
 of the first: it is conditional on hydrocarbons being present, because every realisation it
 weights was drawn on that assumption, and no expression built from the amplitude strength can
 supply it. The tab offers it three ways: stated, opening at 0.36; as the geometric mean of
-three graded attributes, a heuristic and not a calibration; or from a DHI score in Monigle et
+three graded attributes, a heuristic and not a calibration, opening at 0.25 so the two are seen
+to differ; or from a DHI score in Monigle et
 al.'s (2025) sense through their rule `w = min(2 × score, 0.95)`, calibrated on 400+ drilled DHI
 prospects in their database and not on any one basin, and on their five-attribute score rather
 than on this tool's evidence index. That rule is the one externally calibrated number on this
