@@ -8,7 +8,8 @@ from hcwc.core import decompose as dc
 from hcwc.core import pos, trust
 from hcwc.io import geox, report
 from hcwc.io import wellvolpos as wvp
-from hcwc.ui import numbering, results_tab, sources, theme
+from hcwc.plotting.app.colours import limit_colours
+from hcwc.ui import numbering, sources, theme
 from hcwc.ui import run as engine_run
 from hcwc.ui.numbering import Numbering
 
@@ -201,7 +202,7 @@ def render() -> None:
                               seed=int(st.session_state.get("seed", 20260825)),
                               source_file=st.session_state.get("_loaded_name", "")),
             checks=_checks, p_geological=_p_g,
-            colours=results_tab.limit_colours(limit_set),
+            colours=limit_colours(limit_set),
             note=st.session_state.get("report_note", ""))
         st.text_area("A note for the sheet (optional)", key="report_note", height=68,
                      placeholder="One or two sentences: the seal argument, the analogue, "
@@ -225,7 +226,7 @@ def render() -> None:
                 st.session_state.get(numbering.FIGURES_KEY) or {},
                 tables=st.session_state.get(numbering.TABLES_KEY) or {},
                 checks=_checks, p_geological=_p_g,
-                colours=results_tab.limit_colours(limit_set),
+                colours=limit_colours(limit_set),
                 note=st.session_state.get("report_note", ""))
             if _missing:
                 st.warning("These figures would not render and are absent from the report "

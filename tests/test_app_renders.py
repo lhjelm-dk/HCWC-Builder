@@ -769,7 +769,7 @@ class TestTheLimitStackGroupsWhatItDraws:
         _, layout = self._stack(_run(**{"stack_mode_5": mode}))
         headings = {str(a.get("text")) for a in layout.get("annotations", [])
                     if a.get("yref") == "paper"}
-        from hcwc.ui import limit_stack
+        from hcwc.plotting.app import limit_stack
         assert {limit_stack.LIMITS_GROUP, limit_stack.EVIDENCE_GROUP,
                 limit_stack.RESULT_GROUP} <= headings, f"headings found: {headings}"
 
@@ -807,7 +807,7 @@ class TestTheLimitStackGroupsWhatItDraws:
                 x = np.frombuffer(base64.b64decode(trace["x"]["bdata"]),
                                   dtype=np.dtype(trace["x"].get("dtype", "f8")))
                 # Peak-normalised into a lane of width LANE_FILL, so it spans at most that.
-                from hcwc.ui import limit_stack
+                from hcwc.plotting.app import limit_stack
                 assert (x.max() - x.min()) <= limit_stack.LANE_FILL + 1e-6
                 return
         raise AssertionError("the amplitude lane was not drawn")
