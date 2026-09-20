@@ -31,10 +31,13 @@ def test_the_detection_function_reads_its_defaults():
         defaults.DETECTION_FALSE_POSITIVE) == (25.0, 8.0, 0.9, 0.5)
 
 
-def test_the_three_routes_to_c_agree_on_an_untouched_tab():
+def test_the_routes_to_c_open_where_they_are_meant_to():
+    """Lars, 20 Sep 2026: the graded attributes open at 0.25, below the stated 0.36, so an
+    untouched tab shows the two side by side and different; the score route still gives 0.36."""
     scores = [defaults.CONTACT_ATTRIBUTES[a][lv] for a, lv in defaults.DEFAULT_ATTRIBUTE_LEVELS.items()]
     geometric = float(np.prod(scores) ** (1.0 / len(scores)))
-    assert geometric == pytest.approx(defaults.DEFAULT_CONTACT_GIVEN_HC, abs=0.005)
+    assert geometric == pytest.approx(0.25, abs=0.005)
+    assert defaults.DEFAULT_CONTACT_GIVEN_HC == 0.36
     assert dhi.contact_weight_from_score(defaults.DEFAULT_DHI_SCORE) == pytest.approx(
         defaults.DEFAULT_CONTACT_GIVEN_HC)
 

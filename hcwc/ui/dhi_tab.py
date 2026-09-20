@@ -55,10 +55,10 @@ OPENING_STRENGTH = defaults.OPENING_EVIDENCE_INDEX
 #: `P(the picked event is the contact | there is hydrocarbon)` — the conditional factor the
 #: geophysicist supplies. `p_valid` is this times the amplitude-updated `P(G)`, so the two
 #: judgements stay separate and the product cannot exceed the chance of any hydrocarbon.
-#: 0.36 since 15 Sep 2026 (Lars), from 0.70: a cautious opening value, the geometric mean of an
-#: ambiguous fit to structure, diffuse terminations and an absent fluid-contact reflection. The
-#: floor under the pick is then 0.64, so an untouched slider lets the pick say at most 0.56 : 1
-#: against any contact depth; a well-conformed event is claimed by moving it.
+#: 0.36 since 15 Sep 2026 (Lars), from 0.70: a cautious opening value. The floor under the
+#: pick is then 0.64, so an untouched slider lets the pick say at most 0.56 : 1 against any
+#: contact depth; a well-conformed event is claimed by moving it. The graded attributes open at
+#: a geometric mean of 0.25 since 20 Sep 2026, so the stated value and the suggestion differ.
 DEFAULT_CONTACT_GIVEN_HC = defaults.DEFAULT_CONTACT_GIVEN_HC
 
 #: The three routes to c on tab 5.1.3, as the radio names them.
@@ -72,9 +72,9 @@ DEFAULT_DHI_SCORE = defaults.DEFAULT_DHI_SCORE
 #: *body* attributes that grade the amplitude. These answer whether the picked event is the
 #: base of the column; the strength slider answers whether there is a column. The numbers are
 #: elicited judgements, not a calibration -- which is why the result is offered rather than
-#: applied. The shipped selections (:data:`DEFAULT_ATTRIBUTE_LEVELS`) give c = 0.36, the
-#: slider's own default, so applying the suggestion on an untouched tab moves nothing.
-#: The option each attribute opens on: the levels whose geometric mean is the shipped c.
+#: applied. The shipped selections (:data:`DEFAULT_ATTRIBUTE_LEVELS`) give c = 0.25, one level
+#: below the slider's 0.36 on fit to structure, so an untouched tab shows the stated value and
+#: the graded suggestion side by side and different (Lars, 20 Sep 2026).
 DEFAULT_ATTRIBUTE_LEVELS: dict[str, str] = defaults.DEFAULT_ATTRIBUTE_LEVELS
 
 CONTACT_ATTRIBUTES: dict[str, dict[str, float]] = defaults.CONTACT_ATTRIBUTES
@@ -638,7 +638,7 @@ def render(n: Numbering | None = None) -> None:
     # as a function rather than one number (Lars, 18 Sep 2026). Same curves, same prior.
     _lr_axis = np.array([model.r_at(float(v)) for v in axis])
     _post_axis = np.array([dhi_core.simm_update(_p_g_prior, float(v)) for v in _lr_axis])
-    figr = make_subplots(rows=1, cols=2, horizontal_spacing=0.1)
+    figr = make_subplots(rows=1, cols=3, horizontal_spacing=0.08)
     figr.add_scatter(x=axis, y=_lr_axis, mode="lines", name="LR(s) = f(s | HC) / f(s | NoHC)",
                      line=dict(color=theme.INK, width=2.2), row=1, col=1)
     figr.add_scatter(x=[strength], y=[model.r_at(strength)], mode="markers", showlegend=False,
@@ -652,18 +652,48 @@ def render(n: Numbering | None = None) -> None:
     figr.add_annotation(x=axis[0], y=_p_g_prior, text=f"prior P(G) = {_p_g_prior:.2f}",
                         xanchor="left", yshift=9, showarrow=False,
                         font=dict(size=10, color="#4C72B0"), row=1, col=2)
+    # Third panel: the update as a function of the prior, P(G | s) against P(G) from 1 % to
+    # 99 %, at this prospect's index in red and at reference indices -50 to 50 in grey, labelled at the
+    # curve's end (Lars, 20 Sep 2026). The 0 curve is the diagonal: neutral evidence returns
+    # the prior. Same LR, same two-state update, no new quantity.
+    _priors = np.linspace(0.01, 0.99, 99)
+    for _ref in (-50.0, -40.0, -30.0, -20.0, -10.0, -5.0, 0.0, 5.0, 10.0, 20.0, 30.0, 40.0,
+                 50.0):
+        _lr_ref = model.r_at(_ref)
+        _post_ref = np.array([dhi_core.simm_update(float(p), _lr_ref) for p in _priors])
+        figr.add_scatter(x=_priors, y=_post_ref, mode="lines", showlegend=False,
+                         line=dict(color="#b8bec7" if _ref != 0.0 else "#7d8794", width=1.2,
+                                   dash="solid" if _ref != 0.0 else "dot"),
+                         hovertemplate=f"index {_ref:+.0f}, LR {_lr_ref:.2f}<br>"
+                                       "P(G) %{x:.2f} → %{y:.2f}<extra></extra>",
+                         row=1, col=3)
+        # labelled at a prior of 0.5, where the curves are furthest apart; at 1 they all meet
+        figr.add_annotation(x=0.5, y=float(np.interp(0.5, _priors, _post_ref)),
+                            text=f"{_ref:+.0f}", xanchor="left", xshift=4, showarrow=False,
+                            font=dict(size=9, color="#7d8794"), row=1, col=3)
+    _lr_now = model.r_at(strength)
+    figr.add_scatter(x=_priors, y=[dhi_core.simm_update(float(p), _lr_now) for p in _priors],
+                     mode="lines", name=f"P(G | s) at this index, {strength:+.0f}",
+                     line=dict(color=POSTERIOR, width=2.2), row=1, col=3)
+    figr.add_scatter(x=[_p_g_prior], y=[dhi_core.simm_update(_p_g_prior, _lr_now)],
+                     mode="markers", showlegend=False, marker=dict(color=POSTERIOR, size=10),
+                     row=1, col=3)
     figr.update_xaxes(title_text="DHI evidence index", range=[-60, 60], row=1, col=1)
     figr.update_xaxes(title_text="DHI evidence index", range=[-60, 60], row=1, col=2)
+    figr.update_xaxes(title_text="prior P(G)", range=[0, 1], dtick=0.1, row=1, col=3)
     figr.update_yaxes(title_text="likelihood ratio", type="log", row=1, col=1)
     figr.update_yaxes(title_text="P(G | DHI)", range=[0, 1], row=1, col=2)
-    figr.update_layout(height=320, margin=dict(t=20, b=40),
+    figr.update_yaxes(title_text="P(G | DHI)", range=[0, 1], dtick=0.1, row=1, col=3)
+    figr.update_layout(height=340, margin=dict(t=20, b=40),
                        legend=dict(orientation="h", y=-0.28))
     n.plot(figr, f"Left: the likelihood ratio against the index, capped at "
-                 f"{dhi_core.R_SINGLE_CHANNEL:.0f} : 1 either way. Right: the posterior "
+                 f"{dhi_core.R_SINGLE_CHANNEL:.0f} : 1 either way. Middle: the posterior "
                  f"P(G | s) it gives against the prior P(G) = {_p_g_prior:.2f} from tab 2.0. "
-                 f"The dot is this prospect's reading. The model weights evidence about "
-                 f"hydrocarbon presence; it says nothing about the depth of the contact, which "
-                 f"§3 carries. Method: see 8.1.4.")
+                 f"Right: the same update as a function of the prior, from 1 % to 99 %, at this "
+                 f"prospect's index in red and at indices −50 to 50 in grey (every 10, and ±5); "
+                 f"the 0 line is the diagonal, neutral evidence returning the prior. The dots are "
+                 f"this prospect. The model weights evidence about hydrocarbon presence; it says "
+                 f"nothing about the depth of the contact, which §3 carries. Method: see 8.1.4.")
 
     # "POS on strength alone" is deliberately absent: it needs the prior, which is not computed
     # until the channels are combined, and a chance is a result rather than an input.
