@@ -1,10 +1,10 @@
-"""The article's concept sketch (fig5) and the worked prospect's definition, docs/figures/prospect.json.
+"""The article's concept sketch (fig5) and the worked prospect's definition, paper/figures/prospect.json.
 
 Run:  python scripts/paper_figures.py
 
 Since 17 Sep 2026 the article's other figures are the app's own, exported by
 ``scripts/post_images.py`` with the same look as the tabs; the matplotlib set this script drew
-before is kept as ``docs/superseded/paper_figures_mpl_2026-09-17.py``. What stays here is the
+before is kept as ``archive/old_figures/paper_figures_mpl_2026-09-17.py``. What stays here is the
 figure that has no app counterpart, the terminating-versus-truncating sketch, and the prospect
 written beside the figures so the inputs travel with the outputs.
 
@@ -12,7 +12,7 @@ written beside the figures so the inputs travel with the outputs.
 thing -- ``limits.reference_prospect()`` is the tests' fixture, while the app opens on *Tiramisu-C4*
 built by ``hcwc.ui.limiters_tab.SPECS``, with charge and top-seal capacity computed rather than
 typed. So the script starts an ``AppTest``, lifts the resolved limit set and element chances out
-of session state, and writes them as ``docs/figures/prospect.json``.
+of session state, and writes them as ``paper/figures/prospect.json``.
 """
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 from hcwc.core import engine
 from hcwc.core.limits import DepthDistribution, Group, Limit, LimitSet
 
-OUT = ROOT / "docs" / "figures"
+OUT = ROOT / "paper" / "figures"
 
 #: The assessment minimum the article states. Everything is read at this column height.
 HMIN = 120.0

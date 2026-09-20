@@ -41,7 +41,7 @@ def _fit():
 
 
 #: The shipped errors-in-variables curve. See :func:`_bias_curve`.
-_BIAS_CURVE = benchmarks.REFERENCE / "bias_curve.json"
+_BIAS_CURVE = benchmarks.REFERENCE / "empirical" / "bias_curve.json"
 
 
 @st.cache_data(show_spinner=False, max_entries=4, ttl=3600)
@@ -57,7 +57,6 @@ def _bias_curve(sigmas: tuple[float, ...]):
     stale curve would be worse than a slow one. Regenerate with ``scripts/bias_curve.py``.
     """
     if _BIAS_CURVE.exists():
-        import json
         cached = json.loads(_BIAS_CURVE.read_text(encoding="utf-8"))
         if tuple(cached.get("sigmas_m", ())) == tuple(sigmas):
             return cached["naive"], cached["censored"]

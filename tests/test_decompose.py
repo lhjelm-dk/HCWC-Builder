@@ -291,7 +291,6 @@ class TestLimitCurvesAtDepth:
         this prospect the correlated seal pairs push it a couple of points above that. Both
         relations are asserted so a future indexing slip cannot satisfy one by accident.
         """
-        from hcwc.core.limits import Group
         d = decompose.decompose(result)
         per_limit = decompose.limit_curves_at_depth(result, d.depths_m)
         checked = 0

@@ -27,7 +27,6 @@ import streamlit as st
 
 from hcwc.core import dhi as dhi_core
 from hcwc.core import engine
-from hcwc.core import censoring
 from hcwc.io import benchmarks
 from hcwc.ui import theme
 from hcwc.ui.numbering import Numbering
@@ -83,7 +82,7 @@ def _add_prospect_violin(fig, x: float, samples: np.ndarray, width: float,
                    points=False, line_color=colour, fillcolor=fill,
                    name=name, hoverinfo="skip", spanmode="hard")
     for pct, dash in ((90, "dot"), (50, "solid"), (10, "dot")):
-        v = float(np.percentile(samples, 100 - pct))
+        v = float(engine.weighted_percentiles(samples, None, float(pct))[0])
         fig.add_scatter(x=[x - width / 2, x + width / 2], y=[v, v], mode="lines",
                         line=dict(color=colour, width=2, dash=dash),
                         showlegend=False, hovertext=f"{name} · P{pct} = {v:.0f} m",
@@ -279,8 +278,9 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
              "comparable, and they are compared against the discoveries the fit was made on "
              "rather than against each other in the abstract.")
     cc.metric("Empirical prior, P50 column",
-              f"{np.percentile(prior, 50):.0f} m",
-              f"P90 {np.percentile(prior, 10):.0f} m · P10 {np.percentile(prior, 90):.0f} m",
+              f"{engine.weighted_percentiles(prior, None, 50.0)[0]:.0f} m",
+              f"P90 {engine.weighted_percentiles(prior, None, 90.0)[0]:.0f} m · "
+              f"P10 {engine.weighted_percentiles(prior, None, 10.0)[0]:.0f} m",
               delta_color="off")
 
     show = st.radio("Regression shown", ["Both", "As published (OLS)",
@@ -322,7 +322,8 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                          name=f"censored MLE — median seal capacity (r = {mle_r:.2f})",
                          line=dict(color=FITTED, width=3))
     _add_prospect_violin(figA, closure, prior, width=45.0)
-    drawn_a = _overlay_models(figA, closure, 45.0) if show_models else []
+    if show_models:
+        _overlay_models(figA, closure, 45.0)
     # Column height increases downward (Lars, 16 Sep 2026): a column is a depth below the apex,
     # and every other depth axis in the tool reads that way.
     figA.update_layout(xaxis_title="Closure height (m)",
@@ -706,11 +707,11 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         drawn = samples[closure]
         rows.append({
             "Closure height (m)": f"{closure:,.0f}",
-            "P90 column (m)": f"{np.percentile(drawn, 10):,.0f}",
-            "P50 column (m)": f"{np.percentile(drawn, 50):,.0f}",
-            "P10 column (m)": f"{np.percentile(drawn, 90):,.0f}",
+            "P90 column (m)": f"{engine.weighted_percentiles(drawn, None, 90.0)[0]:,.0f}",
+            "P50 column (m)": f"{engine.weighted_percentiles(drawn, None, 50.0)[0]:,.0f}",
+            "P10 column (m)": f"{engine.weighted_percentiles(drawn, None, 10.0)[0]:,.0f}",
             "Fills to spill": f"{np.mean(drawn >= closure - 1e-9):.0%}",
-            "Fill fraction, P50": f"{np.percentile(drawn, 50) / closure:.0%}",
+            "Fill fraction, P50": f"{engine.weighted_percentiles(drawn, None, 50.0)[0] / closure:.0%}",
         })
     n.table(pd.DataFrame(rows),
             "The same family as numbers. Fill fraction is the P50 column as a share of the "
@@ -1089,7 +1090,6 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                 if fuse_weight > 0:
                     curves.append((f"{basis} + benchmark, weight {fuse_weight:.2f}",
                                    fused_by_basis[basis], colour, "dot", 3.0))
-            fused = fused_by_basis[theme.GEOLOGICAL]
 
             curves.append((f"{bench_source}, at {own_relief:,.0f} m relief", bench,
                            "#8172B2", "dash", 2.4))
@@ -1120,8 +1120,8 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                     st.caption(f"Combined with the benchmark, on the {basis} model")
                 f1, f2, f3 = st.columns(3)
                 for col, pct_ in ((f1, 90), (f2, 50), (f3, 10)):
-                    mine_v = float(np.percentile(columns, 100 - pct_))
-                    fused_v = float(np.percentile(fused_by_basis[basis], 100 - pct_))
+                    mine_v = float(engine.weighted_percentiles(columns, None, float(pct_))[0])
+                    fused_v = float(engine.weighted_percentiles(fused_by_basis[basis], None, float(pct_))[0])
                     col.metric(f"Combined P{pct_}", f"{fused_v:,.0f} m",
                                f"model {mine_v:,.0f} m", delta_color="off")
 
@@ -1188,7 +1188,6 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                 fill_bases.append((theme.evidence_basis(), _updated))
             shares = {basis: _fill_shares(columns) for basis, columns in fill_bases}
             mine = shares[theme.GEOLOGICAL][:3]
-            mine_spill = shares[theme.GEOLOGICAL][3]
             theirs = [float(cell.p_fill_0_50), float(cell.p_fill_51_75),
                       float(cell.p_fill_76_99)]
 

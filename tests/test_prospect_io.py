@@ -169,7 +169,13 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
                  # The area-depth grid's own machinery. What is saved is the *table* -- three flat
                  # lists written by `_area_depth_inputs` -- not the editor's edit-diff, the reset
                  # button or the uploader, none of which describe the prospect.
-                 "charge_ad_editor", "charge_ad_reset", "charge_ad_upload"}
+                 "charge_ad_editor", "charge_ad_reset", "charge_ad_upload",
+                 # Tabs 7 and 8 moved out of app.py into hcwc/ui on 18 Sep 2026, so the scan
+                 # sees them now: the export and report buttons and downloads are one-shot
+                 # actions, the report note is written for one document, and the
+                 # walkthrough's table is a display element.
+                 "build_full_report", "download_figures", "download_full_report",
+                 "render_figures", "report_note", "t8_likelihood_table"}
     missed = {k for k in literal
               if k not in prospect.EXACT and not k.startswith(prospect.PREFIXES)
               and k not in transient and not k.startswith(("r1_", "sub_el_", "z_entry_"))}
@@ -284,7 +290,7 @@ class TestTheAllowListMatchesTheApp:
     def test_no_exact_entry_is_dead(self):
         """`stack_space` and `stack_mode` sat here without the tab number the real keys carry, so
         they matched nothing: the settings were never saved and the entries were decoration."""
-        from hcwc.ui import limit_stack
+        from hcwc.plotting.app import limit_stack
         assert set(prospect.STACK_MODES) == set(limit_stack.MODES)
 
     def test_the_version_field_refuses_with_the_right_reason(self):
@@ -336,14 +342,14 @@ class TestTheShippedExamplesLoad:
 
     @pytest.mark.parametrize("name", FILES)
     def test_it_reads(self, name):
-        text = (self.ROOT / "reference" / name).read_text(encoding="utf-8")
+        text = (self.ROOT / "reference" / "defaults" / name).read_text(encoding="utf-8")
         inputs = prospect.read(text)
         assert inputs["prospect_name"]
         assert "stack_mode" not in inputs and "stack_space" not in inputs
 
     def test_the_dead_keys_are_dropped_not_refused(self):
         import json
-        text = (self.ROOT / "reference" / self.FILES[0]).read_text(encoding="utf-8")
+        text = (self.ROOT / "reference" / "defaults" / self.FILES[0]).read_text(encoding="utf-8")
         doc = json.loads(text)
         doc["inputs"]["stack_mode"] = "Exceedance curves"
         doc["inputs"]["stack_space"] = "depth"
@@ -360,7 +366,7 @@ class TestTheShippedExamplesLoad:
         for name in self.FILES:
             at = AppTest.from_file(str(self.ROOT / "app.py"), default_timeout=900)
             at.session_state["_pending_load"] = prospect.read(
-                (self.ROOT / "reference" / name).read_text(encoding="utf-8"))
+                (self.ROOT / "reference" / "defaults" / name).read_text(encoding="utf-8"))
             at.run()
             assert not at.exception, name
             ls = at.session_state["limit_set"]

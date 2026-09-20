@@ -6,7 +6,7 @@
   each line naming the tab it lives on and what is entered or read there, so the figure is a
   map of the app (Lars, 17 Sep 2026).
 
-Both are also rasterised to PNG beside the SVG through kaleido's Chromium, for the article and
+Both are also rasterised to PNG in ``paper/figures/`` through kaleido's Chromium, for the article and
 the post, where SVG is not accepted; the PNG is the SVG as a browser draws it.
 
 The layout is a 2 x 2 grid. Rows: the geological model, the prior, on top; the DHI evidence,
@@ -29,6 +29,8 @@ import base64
 from pathlib import Path
 
 FIGURES = Path(__file__).resolve().parent.parent / "docs" / "figures"
+#: The rasterised copies for the article and the post, which cannot take SVG.
+PAPER_FIGURES = Path(__file__).resolve().parent.parent / "paper" / "figures"
 
 INK, MUTED, GEO, DHI, JOIN = "#333333", "#7d8794", "#4C72B0", "#C44E52", "#2F6B3F"
 FONT = "font-family='Segoe UI, Helvetica, Arial, sans-serif'"
@@ -230,7 +232,8 @@ def main() -> None:
         svg = FIGURES / f"{texts['file']}.svg"
         svg.write_text(draw(texts), encoding="utf-8")
         print(svg)
-        png = svg.with_suffix(".png")
+        PAPER_FIGURES.mkdir(parents=True, exist_ok=True)
+        png = PAPER_FIGURES / (svg.stem + ".png")
         rasterise(svg, png)
         print(png)
 

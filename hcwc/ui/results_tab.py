@@ -2,7 +2,7 @@
 
 1. The exceedance curve, `F(h) = P(column >= h)`, which is the primary risk output. **Never a bare
    POS**: every chance quoted here carries the threshold it was read at, because a POS read at one
-   threshold and a volume read at another is the specific error `docs/DHI_alignment.md` exists to
+   threshold and a volume read at another is the specific error `archive/development_notes/DHI_alignment.md` exists to
    prevent.
 2. Which limit controlled the contact, against depth — the question a distribution alone cannot
    answer, and the reason the engine keeps the argmin.
@@ -20,7 +20,10 @@ import streamlit as st
 from hcwc.core import engine, sensitivity, trust
 from hcwc.core import limits as limits_mod
 from hcwc.core.limits import Group
-from hcwc.ui import limit_stack, run, theme, trust_panel
+from hcwc.core import pos
+from hcwc.plotting.app import limit_stack
+from hcwc.plotting.app.colours import limit_colours
+from hcwc.ui import run, theme, trust_panel
 from hcwc.ui.numbering import Numbering
 
 TAB = 4
@@ -34,24 +37,6 @@ TRUST_SLOT_KEY = "_trust_slot"
 #: slice and not a fraction of the trial count: a mean of a hundred effective realisations is
 #: coarse but reportable, and twenty-seven is not.
 MIN_TORNADO_SUPPORT = 100
-
-
-def limit_colours(limit_set) -> dict[str, str]:
-    """One colour per limit: a **variation of its risk element's hue**.
-
-    Lars's rule, 25 Aug 2026: fault leakage and the seals are retention mechanisms, so they are
-    greens — but not *the* retention green, which stays reserved for the element itself. Hue says
-    which element a limit belongs to at a glance; lightness separates the limits inside it. That
-    matters because colouring purely by element left five retention limits in one indistinguishable
-    red, which defeats the point of a diagnostic whose whole job is to name mechanisms.
-    """
-    out: dict[str, str] = {}
-    for group in Group:
-        members = [name for name, g in zip(limit_set.names, limit_set.groups) if g is group]
-        for name, colour in zip(members, theme.element_shades(group.value, len(members))):
-            out[name] = colour
-    return out
-
 
 
 def _within_bin_move(result, edges, weights) -> float:
@@ -133,7 +118,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     column_pos = pos_at(h_min)
 
     element_pos = st.session_state.get("element_pos") or {}
-    p_geological = float(np.prod([float(v) for v in element_pos.values()])) if element_pos else 1.0
+    p_geological = pos.accumulation_chance(element_pos)
     prospect_pos = p_geological * column_pos
 
     if h_min <= 0:

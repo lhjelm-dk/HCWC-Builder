@@ -1,4 +1,4 @@
-"""The DHI update, and the claim `docs/DHI_alignment.md` was written to make.
+"""The DHI update, and the claim `archive/development_notes/DHI_alignment.md` was written to make.
 
 That claim is testable in one line: the updated POS and the updated contact distribution must be
 the *same object*, read at different thresholds. If `pos()` is ever anything other than
@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from hcwc.core import dhi, engine
+from hcwc.core import dhi_comparison as comparison
 from hcwc.core.dhi import DetectionFunction, DhiObservation
 from hcwc.core.limits import DepthDistribution, Group, Limit, LimitSet, reference_prospect
 
@@ -162,28 +163,28 @@ class TestScenarioSwitch:
 
     def test_it_moves_the_contact_but_not_pos(self):
         result = run(100.0)
-        switched = dhi.scenario_switch(result, 0.655, 2300.0, 20.0)
+        switched = comparison.scenario_switch(result, 0.655, 2300.0, 20.0)
         assert switched.shape == result.contact_m.shape
         assert not np.allclose(switched, result.contact_m)
 
     def test_p_valid_zero_leaves_the_contact_untouched(self):
         result = run()
-        assert np.allclose(dhi.scenario_switch(result, 0.0, 2300.0, 20.0), result.contact_m)
+        assert np.allclose(comparison.scenario_switch(result, 0.0, 2300.0, 20.0), result.contact_m)
 
     def test_p_valid_one_replaces_every_contact(self):
         result = run()
-        switched = dhi.scenario_switch(result, 1.0, 2300.0, 20.0)
+        switched = comparison.scenario_switch(result, 1.0, 2300.0, 20.0)
         assert switched.mean() == pytest.approx(2300.0, abs=1.0)
 
     def test_the_switched_fraction_matches_p_valid(self):
         result = run()
-        switched = dhi.scenario_switch(result, 0.655, 2300.0, 5.0)
+        switched = comparison.scenario_switch(result, 0.655, 2300.0, 5.0)
         replaced = np.abs(switched - result.contact_m) > 1e-9
         assert replaced.mean() == pytest.approx(0.655, abs=0.01)
 
     def test_an_out_of_range_validity_is_refused(self):
         with pytest.raises(ValueError, match=r"\[0, 1\]"):
-            dhi.scenario_switch(run(), 1.5, 2300.0, 20.0)
+            comparison.scenario_switch(run(), 1.5, 2300.0, 20.0)
 
 
 class TestAreaCrossCheck:
@@ -373,20 +374,20 @@ class TestEachChannelIsBoundedBeforeCombining:
     """The geometry ratio is reported raw and used clipped, and the two are different numbers."""
 
     def test_a_runaway_geometry_ratio_cannot_walk_into_the_combination(self):
-        loose = dhi.CombinedUpdate(0.4, r_geometry=4_000.0, r_strength=1.0, dependence=0.0)
+        loose = comparison.CombinedUpdate(0.4, r_geometry=4_000.0, r_strength=1.0, dependence=0.0)
         assert loose.r_combined == pytest.approx(dhi.R_SINGLE_CHANNEL)
 
     def test_a_runaway_ratio_downward_is_bounded_too(self):
-        loose = dhi.CombinedUpdate(0.4, r_geometry=1e-6, r_strength=1.0, dependence=0.0)
+        loose = comparison.CombinedUpdate(0.4, r_geometry=1e-6, r_strength=1.0, dependence=0.0)
         assert loose.r_combined == pytest.approx(1.0 / dhi.R_SINGLE_CHANNEL)
 
     def test_a_missing_geometry_channel_still_bounds_the_strength(self):
-        c = dhi.CombinedUpdate(0.4, r_geometry=float("nan"), r_strength=1_000.0)
+        c = comparison.CombinedUpdate(0.4, r_geometry=float("nan"), r_strength=1_000.0)
         assert c.r_combined == pytest.approx(dhi.R_SINGLE_CHANNEL)
 
     def test_two_bounded_channels_may_exceed_one(self):
         """The combination guard is looser on purpose: Kjonsberg measured 29 on a drilled gas find."""
-        both = dhi.CombinedUpdate(0.4, r_geometry=dhi.R_SINGLE_CHANNEL,
+        both = comparison.CombinedUpdate(0.4, r_geometry=dhi.R_SINGLE_CHANNEL,
                                   r_strength=dhi.R_SINGLE_CHANNEL, dependence=0.0)
         assert both.r_combined > dhi.R_SINGLE_CHANNEL
         assert both.r_combined <= dhi.R_CAP
@@ -489,33 +490,33 @@ class TestCombinedUpdate:
     """Two channels of one observation — and the double-count that multiplying them would be."""
 
     def test_dependence_zero_multiplies_the_two(self):
-        c = dhi.CombinedUpdate(0.4, r_geometry=2.5, r_strength=1.4, dependence=0.0)
+        c = comparison.CombinedUpdate(0.4, r_geometry=2.5, r_strength=1.4, dependence=0.0)
         assert c.r_combined == pytest.approx(2.5 * 1.4, rel=1e-6)
 
     def test_dependence_one_takes_the_stronger_alone(self):
-        c = dhi.CombinedUpdate(0.4, r_geometry=2.5, r_strength=1.4, dependence=1.0)
+        c = comparison.CombinedUpdate(0.4, r_geometry=2.5, r_strength=1.4, dependence=1.0)
         assert c.r_combined == pytest.approx(2.5, rel=1e-6)
 
     def test_a_half_dependence_sits_between(self):
-        half = dhi.CombinedUpdate(0.4, 2.5, 1.4, 0.5).r_combined
+        half = comparison.CombinedUpdate(0.4, 2.5, 1.4, 0.5).r_combined
         assert 2.5 < half < 2.5 * 1.4
 
     def test_the_posterior_uses_the_combined_ratio(self):
-        c = dhi.CombinedUpdate(0.432, 2.5, 1.4, 0.5)
+        c = comparison.CombinedUpdate(0.432, 2.5, 1.4, 0.5)
         assert c.posterior_pos == pytest.approx(dhi.simm_update(0.432, c.r_combined))
 
     def test_two_downward_channels_still_combine_downward(self):
-        c = dhi.CombinedUpdate(0.5, r_geometry=0.5, r_strength=0.4, dependence=0.0)
+        c = comparison.CombinedUpdate(0.5, r_geometry=0.5, r_strength=0.4, dependence=0.0)
         assert c.r_combined < 0.5
         assert c.posterior_pos < 0.5
 
     def test_a_missing_geometry_channel_falls_back_to_strength(self):
-        c = dhi.CombinedUpdate(0.4, r_geometry=float("nan"), r_strength=1.4)
+        c = comparison.CombinedUpdate(0.4, r_geometry=float("nan"), r_strength=1.4)
         assert c.r_combined == pytest.approx(1.4)
 
     def test_dependence_out_of_range_refused(self):
         with pytest.raises(ValueError, match="dependence must be"):
-            dhi.CombinedUpdate(0.4, 2.0, 1.5, dependence=1.5)
+            comparison.CombinedUpdate(0.4, 2.0, 1.5, dependence=1.5)
 
 
 class TestTheUpdateIsAnchoredToTheGeologicalPos:
@@ -754,7 +755,7 @@ class TestAbsenceIsEvidenceAgainst:
         post = dhi.update(result, DetectionFunction(), DhiObservation(seen=False))
         prior_pos = 0.408
         # With nothing seen there is no amplitude to grade, so the strength channel is neutral.
-        combined = dhi.CombinedUpdate(prior_pos, float(post.r_dhi), 1.0, dependence=0.5)
+        combined = comparison.CombinedUpdate(prior_pos, float(post.r_dhi), 1.0, dependence=0.5)
         assert combined.posterior_pos < prior_pos * 0.5
 
 
@@ -1150,13 +1151,13 @@ class TestANeutralAmplitudeDoesNothing:
     def test_a_neutral_strength_leaves_pos_exactly_alone(self):
         """The whole point. With the geometry channel undefined, the combination falls back to
         strength alone — and a strength of 0 is a likelihood ratio of exactly 1."""
-        combined = dhi.CombinedUpdate(prior_pos=0.408, r_geometry=float("nan"),
+        combined = comparison.CombinedUpdate(prior_pos=0.408, r_geometry=float("nan"),
                                       r_strength=1.0, dependence=0.5)
         assert combined.posterior_pos == pytest.approx(0.408, abs=1e-12)
 
     @pytest.mark.parametrize("dependence", [0.0, 0.5, 1.0])
     def test_neutral_stays_neutral_at_every_dependence(self, dependence):
-        combined = dhi.CombinedUpdate(prior_pos=0.408, r_geometry=float("nan"),
+        combined = comparison.CombinedUpdate(prior_pos=0.408, r_geometry=float("nan"),
                                       r_strength=1.0, dependence=dependence)
         assert combined.posterior_pos == pytest.approx(0.408, abs=1e-12)
 
@@ -1166,7 +1167,7 @@ class TestANeutralAmplitudeDoesNothing:
         `CombinedUpdate` is no longer the chance (see the classes below); this pins the class's
         own arithmetic, which the tab still draws as a comparison.
         """
-        combined = dhi.CombinedUpdate(prior_pos=0.408, r_geometry=2.34, r_strength=1.0,
+        combined = comparison.CombinedUpdate(prior_pos=0.408, r_geometry=2.34, r_strength=1.0,
                                       dependence=0.5)
         assert combined.posterior_pos > 0.408
 
@@ -1388,10 +1389,10 @@ class TestTheThreeCombinations:
 
     def _curve(self, method, **kw):
         result, detection, observation = self._setup(**kw)
-        return dhi.combination_exceedance(result, detection, observation, self.HS, method=method)
+        return comparison.combination_exceedance(result, detection, observation, self.HS, method=method)
 
     def test_every_method_returns_a_valid_exceedance_curve(self):
-        for method in dhi.COMBINATIONS:
+        for method in comparison.COMBINATIONS:
             got = self._curve(method)
             assert got.shape == self.HS.shape
             assert np.all((got >= 0.0) & (got <= 1.0)), method
@@ -1400,18 +1401,18 @@ class TestTheThreeCombinations:
     def test_the_three_do_not_agree(self):
         """The reason all three are offered. If this ever passes trivially, the tab is arguing
         about a distinction that no longer exists."""
-        curves = {m: self._curve(m) for m in dhi.COMBINATIONS}
-        assert not np.allclose(curves[dhi.SCENARIO], curves[dhi.BAYES], atol=0.01)
-        assert not np.allclose(curves[dhi.POOLED], curves[dhi.BAYES], atol=0.01)
+        curves = {m: self._curve(m) for m in comparison.COMBINATIONS}
+        assert not np.allclose(curves[comparison.SCENARIO], curves[comparison.BAYES], atol=0.01)
+        assert not np.allclose(curves[comparison.POOLED], curves[comparison.BAYES], atol=0.01)
 
     def test_an_unknown_method_is_refused_by_name(self):
         result, detection, observation = self._setup()
         with pytest.raises(ValueError, match="method must be one of"):
-            dhi.combination_exceedance(result, detection, observation, self.HS, method="blend")
+            comparison.combination_exceedance(result, detection, observation, self.HS, method="blend")
 
     def test_a_scalar_depth_still_returns_an_array(self):
         result, detection, observation = self._setup()
-        got = dhi.combination_exceedance(result, detection, observation, 150.0)
+        got = comparison.combination_exceedance(result, detection, observation, 150.0)
         assert got.shape == (1,)
 
 
@@ -1432,8 +1433,8 @@ class TestTheScenarioSwitchIsAMixture:
     def test_p_valid_zero_returns_the_geology_untouched(self):
         result = run(min_column_m=100.0)
         observation = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=10.0, p_valid=0.5)
-        got = dhi.combination_exceedance(result, DetectionFunction(), observation, self.HS,
-                                         method=dhi.SCENARIO, p_valid=0.0)
+        got = comparison.combination_exceedance(result, DetectionFunction(), observation, self.HS,
+                                         method=comparison.SCENARIO, p_valid=0.0)
         geological = np.array([float((result.column_m >= h).mean()) for h in self.HS])
         assert got == pytest.approx(geological)
 
@@ -1445,8 +1446,8 @@ class TestTheScenarioSwitchIsAMixture:
         obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=10.0, p_valid=0.5)
 
         def at(p):
-            return dhi.combination_exceedance(result, det, obs, self.HS,
-                                              method=dhi.SCENARIO, p_valid=p)
+            return comparison.combination_exceedance(result, det, obs, self.HS,
+                                              method=comparison.SCENARIO, p_valid=p)
 
         assert at(0.5) == pytest.approx(0.5 * (at(0.0) + at(1.0)), abs=1e-9)
 
@@ -1454,8 +1455,8 @@ class TestTheScenarioSwitchIsAMixture:
         result = run(min_column_m=100.0)
         obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=10.0)
         with pytest.raises(ValueError, match="must be in"):
-            dhi.combination_exceedance(result, DetectionFunction(), obs, self.HS,
-                                       method=dhi.SCENARIO, p_valid=1.4)
+            comparison.combination_exceedance(result, DetectionFunction(), obs, self.HS,
+                                       method=comparison.SCENARIO, p_valid=1.4)
 
     def test_an_explicit_p_valid_overrides_the_observation(self):
         """The override exists so the tab can sweep the parameter; the default must be the
@@ -1464,18 +1465,18 @@ class TestTheScenarioSwitchIsAMixture:
         result = run(min_column_m=100.0)
         det = DetectionFunction()
         obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=10.0, p_valid=0.9)
-        from_obs = dhi.combination_exceedance(result, det, obs, self.HS, method=dhi.SCENARIO)
-        overridden = dhi.combination_exceedance(result, det, obs, self.HS,
-                                                method=dhi.SCENARIO, p_valid=0.9)
+        from_obs = comparison.combination_exceedance(result, det, obs, self.HS, method=comparison.SCENARIO)
+        overridden = comparison.combination_exceedance(result, det, obs, self.HS,
+                                                method=comparison.SCENARIO, p_valid=0.9)
         assert from_obs == pytest.approx(overridden)
 
     def test_an_absent_anomaly_leaves_the_scenario_switch_with_nothing_to_say(self):
         """It has no branch for absence -- which is one of the things the likelihood form can do
         and this cannot, and the article says so."""
         result = run(min_column_m=100.0)
-        got = dhi.combination_exceedance(result, DetectionFunction(),
+        got = comparison.combination_exceedance(result, DetectionFunction(),
                                          DhiObservation(seen=False), self.HS,
-                                         method=dhi.SCENARIO)
+                                         method=comparison.SCENARIO)
         geological = np.array([float((result.column_m >= h).mean()) for h in self.HS])
         assert got == pytest.approx(geological)
 
@@ -1493,8 +1494,8 @@ class TestPooledIsBayesWithTheDetectionFunctionRemoved:
         result = run(min_column_m=100.0)
         obs = DhiObservation(**self.OBS)
         flat = DetectionFunction(h50_m=1e-6, steepness_m=1e-6, ceiling=1.0)
-        pooled = dhi.combination_exceedance(result, flat, obs, self.HS, method=dhi.POOLED)
-        bayes = dhi.combination_exceedance(result, flat, obs, self.HS, method=dhi.BAYES)
+        pooled = comparison.combination_exceedance(result, flat, obs, self.HS, method=comparison.POOLED)
+        bayes = comparison.combination_exceedance(result, flat, obs, self.HS, method=comparison.BAYES)
         assert bayes == pytest.approx(pooled, abs=1e-6)
 
     def test_the_shipped_detection_function_does_not_separate_them_on_a_seen_anomaly(self):
@@ -1512,8 +1513,8 @@ class TestPooledIsBayesWithTheDetectionFunctionRemoved:
         result = run(min_column_m=100.0)
         obs = DhiObservation(**self.OBS)
         det = DetectionFunction()
-        pooled = dhi.combination_exceedance(result, det, obs, self.HS, method=dhi.POOLED)
-        bayes = dhi.combination_exceedance(result, det, obs, self.HS, method=dhi.BAYES)
+        pooled = comparison.combination_exceedance(result, det, obs, self.HS, method=comparison.POOLED)
+        bayes = comparison.combination_exceedance(result, det, obs, self.HS, method=comparison.BAYES)
         assert np.abs(pooled - bayes).max() < 1e-4
 
     def test_it_separates_them_when_it_varies_where_the_pick_puts_the_weight(self):
@@ -1522,8 +1523,8 @@ class TestPooledIsBayesWithTheDetectionFunctionRemoved:
         result = run(min_column_m=100.0)
         obs = DhiObservation(**self.OBS)
         steep = DetectionFunction(h50_m=250.0, steepness_m=8.0)
-        pooled = dhi.combination_exceedance(result, steep, obs, self.HS, method=dhi.POOLED)
-        bayes = dhi.combination_exceedance(result, steep, obs, self.HS, method=dhi.BAYES)
+        pooled = comparison.combination_exceedance(result, steep, obs, self.HS, method=comparison.POOLED)
+        bayes = comparison.combination_exceedance(result, steep, obs, self.HS, method=comparison.BAYES)
         assert np.abs(pooled - bayes).max() > 0.3
         # The direction, which is the whole point of D(h) and is easy to get backwards. A high
         # h50 means only a *tall* column would have been detectable, so having seen an anomaly
@@ -1537,8 +1538,8 @@ class TestPooledIsBayesWithTheDetectionFunctionRemoved:
         det = DetectionFunction()
         absent = DhiObservation(seen=False)
         geological = np.array([float((result.column_m >= h).mean()) for h in self.HS])
-        pooled = dhi.combination_exceedance(result, det, absent, self.HS, method=dhi.POOLED)
-        bayes = dhi.combination_exceedance(result, det, absent, self.HS, method=dhi.BAYES)
+        pooled = comparison.combination_exceedance(result, det, absent, self.HS, method=comparison.POOLED)
+        bayes = comparison.combination_exceedance(result, det, absent, self.HS, method=comparison.BAYES)
         assert pooled == pytest.approx(geological)
         assert np.all(bayes <= geological + 1e-9)
         assert not np.allclose(bayes, geological, atol=1e-3)
@@ -1553,5 +1554,5 @@ class TestBayesMatchesTheUpdateItIsCompared:
         obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=15.0, p_valid=0.85)
         hs = TestTheThreeCombinations.HS
         direct = dhi.update(result, det, obs).exceedance(hs)
-        combined = dhi.combination_exceedance(result, det, obs, hs, method=dhi.BAYES)
+        combined = comparison.combination_exceedance(result, det, obs, hs, method=comparison.BAYES)
         assert combined == pytest.approx(direct, rel=1e-12)

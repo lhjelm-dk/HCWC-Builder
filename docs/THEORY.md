@@ -148,7 +148,9 @@ realisation as the shallowest active limit; `z_apex` is the apex depth, m TVDSS,
 same realisation; the contact depth is `z_HCWC = z_apex + H`, depth increasing downward; `z_well`
 is the well's reservoir entry depth; `h_min` is the assessment minimum, a column height. `F(h) =
 P(H ≥ h | G)` is defined in column-height space and every chance is read there; contact
-percentiles and histograms are reported as `z_HCWC`; the well is read in depth space against
+percentiles and histograms are reported as `z_HCWC`, every percentile the tool prints by one
+estimator (Hazen plotting positions on the sorted, weighted sample, P100 the shallowest and P0 the
+deepest); the well is read in depth space against
 `z_HCWC` realisation by realisation; a depth axis under a column-space curve places it at the
 median apex, a drawing convention and not a second model.
 

@@ -66,10 +66,14 @@ FRACTILES: tuple[int, ...] = (100, 90, 50, 10, 0)
 def stats_row(samples: np.ndarray) -> dict[str, float]:
     """P100/P90/P50/P10/P0 and the mean, in the **exceedance** convention.
 
-    ``P90`` is the value 90 % of realisations are *deeper* than, so it is the shallow end. That is
-    numpy's 10th percentile, and the inversion is done here once rather than at every call site.
+    ``P90`` is the value 90 % of realisations are *deeper* than, so it is the shallow end. One
+    estimator for every percentile the app prints, :func:`hcwc.core.engine.weighted_percentiles`
+    (Hazen midpoints, unit weights), since 18 Sep 2026; the linear order statistics this used
+    to read differed from the engine's in the last digit.
     """
-    out = {f"P{p}": float(np.percentile(samples, 100 - p)) for p in FRACTILES}
+    values = engine.weighted_percentiles(np.asarray(samples, dtype=float), None,
+                                         np.asarray(FRACTILES, dtype=float))
+    out = {f"P{p}": float(v) for p, v in zip(FRACTILES, values)}
     out["Mean"] = float(np.mean(samples))
     return out
 
@@ -156,9 +160,8 @@ def _figure(samples: np.ndarray, colour: str, unit: str) -> go.Figure:
     # every time it is called. Forty-five of them across the page is 190 ms of the render, against
     # 1 ms for the same lines declared once. Same picture, same annotations.
     rules, notes = [], []
-    for label, value in (("P90", np.percentile(samples, 10)),
-                         ("P50", np.percentile(samples, 50)),
-                         ("P10", np.percentile(samples, 90))):
+    for label, value in zip(("P90", "P50", "P10"),
+                            engine.weighted_percentiles(samples, None, [90.0, 50.0, 10.0])):
         value = float(value)
         rules.append(dict(type="line", x0=value, x1=value, y0=0, y1=1, yref="paper",
                           line=dict(color="#888", width=1, dash="dash")))

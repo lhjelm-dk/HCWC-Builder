@@ -360,7 +360,7 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
     """
     from hcwc.core import engine
     from hcwc.ui import run as engine_run
-    from hcwc.ui.results_tab import limit_colours
+    from hcwc.plotting.app.colours import limit_colours
 
     result = engine_run.run(limit_set.to_dict(), n_trials, seed)
     ranking = engine.limit_ranking(result)

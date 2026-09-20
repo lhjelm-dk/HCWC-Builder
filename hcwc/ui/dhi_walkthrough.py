@@ -24,6 +24,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from hcwc.core import dhi as dhi_core
+from hcwc.core import pos
 from hcwc.ui import theme
 from hcwc.ui.numbering import Numbering
 
@@ -54,8 +55,7 @@ def render(n: Numbering | None = None) -> None:
     h_min = float(overlay["h_min"])
     prior_pos, posterior_pos = float(overlay["prior_pos"]), float(overlay["posterior_pos"])
     element_pos = st.session_state.get("element_pos") or {}
-    element_product = (float(np.prod([float(v) for v in element_pos.values()]))
-                       if element_pos else 1.0)
+    element_product = pos.accumulation_chance(element_pos)
 
     st.markdown(
         "Nothing on this page changes a result. It is the update tab 5.1 performs, "
