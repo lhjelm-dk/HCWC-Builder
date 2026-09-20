@@ -6,7 +6,7 @@ no code was changed. Every value below is also pinned by a test where the table 
 
 ## Test suite
 
-`python -m pytest -q` at `main` `41ecd21` (after #56): **all passed**,
+`python -m pytest -q` at `main` `41ecd21` (after #56) and again after every commit of the clean-up: **all passed**,
 1 03x tests (884 test functions, of which the `render`-marked AppTest renders are run on `main`
 and locally, and skipped on pull requests by CI). No pre-existing failures. Runtime about
 12 minutes locally; ~2 minutes without the render marker.
