@@ -680,10 +680,10 @@ def render(n: Numbering | None = None) -> None:
                      row=1, col=3)
     figr.update_xaxes(title_text="DHI evidence index", range=[-60, 60], row=1, col=1)
     figr.update_xaxes(title_text="DHI evidence index", range=[-60, 60], row=1, col=2)
-    figr.update_xaxes(title_text="prior P(G)", range=[0, 1], row=1, col=3)
+    figr.update_xaxes(title_text="prior P(G)", range=[0, 1], dtick=0.1, row=1, col=3)
     figr.update_yaxes(title_text="likelihood ratio", type="log", row=1, col=1)
     figr.update_yaxes(title_text="P(G | DHI)", range=[0, 1], row=1, col=2)
-    figr.update_yaxes(title_text="P(G | DHI)", range=[0, 1], row=1, col=3)
+    figr.update_yaxes(title_text="P(G | DHI)", range=[0, 1], dtick=0.1, row=1, col=3)
     figr.update_layout(height=340, margin=dict(t=20, b=40),
                        legend=dict(orientation="h", y=-0.28))
     n.plot(figr, f"Left: the likelihood ratio against the index, capped at "
