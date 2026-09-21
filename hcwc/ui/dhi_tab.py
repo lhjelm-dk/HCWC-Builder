@@ -1334,13 +1334,13 @@ def render(n: Numbering | None = None) -> None:
     m1, m2, m3 = st.columns(3)
     m1.metric(f"Prospect POS at h ≥ {h_min:.0f} m", f"{posterior_pos:.1%}",
               f"prior {prior_pos:.1%}")
-    m2.metric("P(G | amplitude)", f"{p_g_updated:.1%}",
+    m2.metric("P(G | s)", f"{p_g_updated:.1%}",
               f"P(G) {element_product:.1%} from tab 2.0", delta_color="off")
     m3.metric(f"P(column ≥ {h_min:.0f} m | G, pick)", f"{posterior_geometric:.1%}",
               f"geological {geometric_prior:.1%}", delta_color="off")
 
     st.caption(
-        f"`P(G | amplitude)` = {element_product:.3f} updated by R = {r_applied:.2f} gives "
+        f"`P(G | s)` = {element_product:.3f} updated by the evidence index, LR = {r_applied:.2f}, gives "
         f"{p_g_updated:.3f} (§2). `P(column ≥ h_min | G, pick)` = {posterior_geometric:.3f}, "
         f"against {geometric_prior:.3f} from the geology alone (§1, §3). `Prospect POS` = "
         f"{p_g_updated:.3f} × {posterior_geometric:.3f} = {posterior_pos:.3f}. The chance and "
@@ -1487,7 +1487,7 @@ def render(n: Numbering | None = None) -> None:
                                 line=dict(width=3)),
                     name=f"posterior median contact, {median_contact:,.0f} m", hoverinfo="skip")
 
-    fig.update_layout(xaxis_title="Prospect POS  =  P(G | amplitude) × P(column ≥ h | G, pick)",
+    fig.update_layout(xaxis_title="Prospect POS  =  P(G | s) × P(column ≥ h | G, pick)",
                       xaxis_range=[0, min(1.0, max(element_product, p_g_updated,
                                                    0.05) * 1.15)],
                       yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
@@ -1502,8 +1502,8 @@ def render(n: Numbering | None = None) -> None:
             xaxis2=dict(overlaying="x", side="top", range=[0, peak * 3.0], showgrid=False,
                         tickformat=".0%", title="share of realisations per depth bin",
                         title_font_size=11, tickfont_size=10))
-    n.plot(fig, "The chance against threshold: P(G) × F(h) geological, P(G | amplitude) × "
-                "F(h | G, pick) updated. The amplitude scales the whole curve; the pick reshapes "
+    n.plot(fig, "The chance against threshold: P(G) × F(h) geological, P(G | s) × "
+                "F(h | G, pick) updated. The evidence index scales the whole curve; the pick reshapes "
                 "it, raising the chance near and above the indicated contact and lowering it below. "
                 "The open circle is the posterior median, which lands on the pick. Method: see "
                 "8.1.6."
@@ -1534,7 +1534,7 @@ def render(n: Numbering | None = None) -> None:
               dhi_core.strength_bands(r_applied)[0] if seen
               else f"(1 − d) / (1 − f·d), d = {float(np.mean(detection.at(result.column_m))):.2f}",
               delta_color="off")
-    c2.metric("P(G | amplitude)" if seen else "P(G | absence)", f"{p_g_updated:.1%}",
+    c2.metric("P(G | s)" if seen else "P(G | absence)", f"{p_g_updated:.1%}",
               f"P(G) {element_product:.1%}", delta_color="off")
     c3.metric(f"P(column ≥ {h_min:.0f} m | G, {'pick' if seen else 'absence'})",
               f"{posterior_geometric:.1%}",
