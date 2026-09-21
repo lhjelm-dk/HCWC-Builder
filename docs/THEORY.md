@@ -383,7 +383,7 @@ pick is that a flat spot may be a gas–oil contact rather than a hydrocarbon–
 tool assumes the latter, and on a two-phase prospect the amplitude alone does not settle which.
 
 A DHI reshapes the chance curve rather than lifting it: the pick raises the chance at
-thresholds near and above the picked contact and lowers it below, and the curves cross where
+thresholds near and above the indicated contact and lowers it below, and the curves cross where
 that changes. The posterior median lands on the pick, because an amplitude termination is an
 estimate of the contact and not a floor under it, so the chance read there is about half the
 one read at the assessment minimum.
@@ -402,26 +402,49 @@ on tab 5.2.4 and tab 5.3.4 alike; where tab 5.3.4 shows it per element, the upda
 by the index is spread over the elements by the allocation rule (8.1.3), a presentation that
 attributes nothing.
 
-Why a well at the picked contact does not read `P(G | s)`. A success rate is a count of one
-event, and `P(G | s)` counts hydrocarbons present in the trap: a well at the crest finds them
-whenever they are there, so at the crest the two numbers agree. A well 180 m down structure
-needs a second thing, a column at least 180 m tall, and the chance of that is not one. On the
-shipped prospect, evidence index +5 and `c = 0.36`, `P(G | s)` is 0.467 and a well at 2 230 m,
-20 m above the 2 250 m pick, reads 0.361. Of a thousand such prospects, 533 have no
-hydrocarbons, 107 have hydrocarbons with the contact above 2 230 m, and 361 have hydrocarbons
-at the well. The 107 are the prospects on which the flat event was not the contact and the
-real contact sits where the geology alone put it, above 2 230 m in 43 % of the geological
-realisations. Their number is set by `c`: the pick alone puts 0.98 on a contact below 2 230 m
-and the geology 0.57, and the posterior sits between them at 0.77, the mixture at the
-posterior attribution of 0.49 (the pick lands where the geology expected a contact, which
-raises 0.36 to 0.49). With `c = 0.99` the 107 become 10 and the well reads 0.458, the pick's
-own 2 % above 2 230 m accounting for the rest. A database success rate for prospects with this
-prior and this evidence is therefore compared with `P(G | s)` if its wells were drilled where a
-column of any size is found, and with `P(G | s) × F_post` at the entry depth if they were
-drilled at the flat event; the one number cannot serve both. The pairing matters as well: an
-event known to be the contact is a fluid-contact reflection, which is strong evidence of
-hydrocarbons and belongs high on the index, so a marginal index with `c` near one is the
-off-band pairing Figure 5.1.3a marks.
+What the DHI can turn out to have been. A DHI is an indication: a seismic response consistent
+with hydrocarbons, whose cause is not known until a well is drilled. Its depth is the indicated
+contact, the depth at which the response terminates, carried with the pick and depth-conversion
+uncertainty stated on tab 5.1.1; the band between the P99 and the P1 of that uncertainty is the
+indicated contact band. The indication can fail in two separate ways, and the model keeps them
+apart because different evidence governs each. It can fail as a hydrocarbon indicator: the trap
+is dry and the response had another cause. It can fail as a contact indicator: hydrocarbons are
+present and the response is not their base. The evidence index governs the first (8.1.4); the
+contact attribution `c` governs the second (8.1.5).
+
+Where the contact turns out to lie, relative to the indicated contact, names the outcome:
+
+| outcome | the contact is | the DHI was | a well entering there |
+|---|---|---|---|
+| no hydrocarbons | — | a false hydrocarbon indicator | finds water at every depth |
+| above the indicated contact | shallower than the band | not the contact; the response lies in the water leg | finds hydrocarbons whenever they are present |
+| at the indicated contact, because of it | within the band, the response being its base | the contact | finds hydrocarbons where the contact is at or below the well |
+| at the indicated contact, by coincidence | within the band, the geology having put it there | not the contact | the same for the well; not the same for the look-back |
+| below the indicated contact | deeper than the band | not the contact; the response lies inside the column, possibly a gas–oil contact | finds hydrocarbons where the contact is below the well |
+
+The mirror case, a response absent where one was expected over a trap that holds hydrocarbons,
+is the false negative; it belongs to the absent-amplitude observation (8.1.4, 8.1.5) and not to
+this axis.
+
+The four outcomes on the axis share the posterior probability of hydrocarbons, `P(G | s)`,
+between them, and each is read off the updated contact distribution (5.1.4): the posterior mass
+above the band, within it and below it. The two outcomes within the band are separated by the
+two branches of the geometry likelihood. The first branch, the response as the contact, puts
+mass in the band because that is what the pick says; the second, the response as something
+else, puts mass there because the geology by itself may put the contact near the indicated
+depth. A well that finds the contact within the band therefore confirms the DHI in proportion
+to the first branch's share of the band, and the model reports that share rather than assuming
+it. It is not small where the geological distribution already centres near the indicated
+contact, and that case is the common one: a flat event is picked where a contact is plausible.
+
+The chance a well finds hydrocarbons is the accumulation chance times the posterior chance the
+contact lies below the entry depth. `P(G | s)` is the chance of hydrocarbons in the trap at any
+depth, the sum of the four outcomes on the axis; it is what a well at the crest finds. A well
+entering at the top of the band finds hydrocarbons in the last three outcomes only, and one
+entering below the band in the last alone. The difference between `P(G | s)` and the well's
+chance is the mass of the outcomes the well enters beneath, and that mass is set by `c` and the
+geology, not by the evidence index: strong evidence of hydrocarbons raises every outcome on the
+axis together and does not move the contact.
 
 The scenario switch, `IF(DHI valid, DHI contact, geological contact)`, is the older method and
 Hood's rule: merge late, never blend into the input distribution. It moves the contact and not
@@ -584,7 +607,7 @@ mean rather than the median, because a volume is built from the mean and a media
 while the tail moves. After a DHI update the sensitivity keeps two kinds of input apart. The
 geology varies realisation by realisation and is sliced as before, with the means weighted by
 likelihood; the DHI's own numbers are single typed values, so their influence is found by moving
-each one and recomputing, the pick sigma halved and doubled, the picked contact by half a sigma,
+each one and recomputing, the pick sigma halved and doubled, the indicated contact by half a sigma,
 the detection parameters across the span an assessor cannot pin down. Each variation is a new set
 of weights on the same realisations, with no second Monte Carlo. Where a typed DHI number moves the
 answer further than the geology does, the posterior is a statement about the seismic assumptions

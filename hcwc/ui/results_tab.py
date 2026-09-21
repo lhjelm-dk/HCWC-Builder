@@ -946,7 +946,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             if posterior.observation.contact_m is not None:
                 fig_e.add_hline(y=float(posterior.observation.contact_m),
                                 line=dict(color="#B45309", dash="dash", width=1.2),
-                                annotation_text="picked contact", annotation_position="left")
+                                annotation_text="indicated contact", annotation_position="left")
             fig_e.update_layout(xaxis=dict(title="contact attribution c"),
                                 yaxis=dict(title="Contact at least this deep (m TVDSS)",
                                            autorange="reversed"),
@@ -954,7 +954,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             n.plot(fig_e, f"The updated contact over depth and c, as one surface: the family of "
                           f"the figure above with c across and depth down, coloured and contoured by "
                           f"F(h | G, evidence). At small c the contours are the geology's; as c "
-                          f"rises they bend toward the picked contact. The red line is the current "
+                          f"rises they bend toward the indicated contact. The red line is the current "
                           f"c, grey the geological P90 / P50 / P10, orange the pick. Strength does not "
                           f"enter. Method: see 8.1.6.")
 
@@ -1175,6 +1175,23 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
               delta_color="off")
     w3.metric("Column at the well, P50", f"{max(pct(50) - z_entry, 0.0):,.0f} m",
               f"P50 contact {pct(50):,.0f} m", delta_color="off")
+    _band = (_overlay or {}).get("indicated_band_m") if given_dhi else None
+    if _band is not None:
+        _top_b, _base_b = _band
+        if z_entry < _top_b:
+            _where = (f"above the indicated contact band ({_top_b:,.0f} to {_base_b:,.0f} m): "
+                      f"it finds hydrocarbons whenever they are present, whatever the DHI was")
+        elif z_entry > _base_b:
+            _where = (f"below the indicated contact band ({_top_b:,.0f} to {_base_b:,.0f} m): "
+                      f"it finds hydrocarbons only where the contact lies below the band, "
+                      f"the DHI then not having been the contact")
+        else:
+            _where = (f"within the indicated contact band ({_top_b:,.0f} to {_base_b:,.0f} m): "
+                      f"it finds hydrocarbons where the contact is at or below the well, "
+                      f"about half the cases in which the DHI is the contact")
+        st.caption(f"The well enters {_where}. The outcomes and their chances are on 5.1.4; "
+                   f"the difference between P(G | s) and P(well) is the chance of the outcomes "
+                   f"the well enters beneath. Method: see 8.1.6.")
     st.caption(
         f"P(well) includes the element risk and is read at the entry depth, not at the "
         f"assessment minimum; it is at most the prospect chance. The column at the well is the "

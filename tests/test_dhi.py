@@ -158,6 +158,79 @@ class TestDegenerateCases:
             DhiObservation(seen=True, contact_m=2300.0, pick_sigma_m=0.0)
 
 
+class TestOutcomes:
+    """What the DHI can turn out to have been (8.1.6): the outcome shares read off the posterior."""
+
+    def _posterior(self, c=0.5, contact=2250.0, sigma=10.0, seen=True, absent_below=None):
+        result = engine.run(reference_prospect(), 6_000, seed=2)
+        obs = dhi.DhiObservation(seen=seen, pick_sigma_m=sigma, p_valid=c,
+                                 contact_m=contact if seen and absent_below is None else None,
+                                 absent_below_m=absent_below)
+        return dhi.update(result, dhi.DetectionFunction(), obs)
+
+    def test_the_branches_sum_to_the_likelihood(self):
+        post = self._posterior()
+        valid, spurious = dhi.likelihood_branches(post.result, post.detection, post.observation)
+        np.testing.assert_allclose(valid + spurious, post.weights, rtol=1e-12)
+        assert (spurious > 0).all() and np.ptp(spurious) == 0.0, "the spurious branch is flat"
+
+    def test_the_branches_exist_only_for_a_seen_pick(self):
+        post = self._posterior(seen=False)
+        with pytest.raises(ValueError, match="seen, picked"):
+            dhi.likelihood_branches(post.result, post.detection, post.observation)
+        assert dhi.outcome_shares(post, 0.5) is None
+        partial = self._posterior(absent_below=2300.0)
+        assert dhi.outcome_shares(partial, 0.5) is None
+
+    def test_the_shares_sum_to_one_and_the_axis_shares_p_g_given_s(self):
+        o = dhi.outcome_shares(self._posterior(), 0.47)
+        assert sum(o.shares.values()) == pytest.approx(1.0, abs=1e-12)
+        assert o.shares[dhi.OUTCOME_NO_HC] == pytest.approx(0.53)
+        on_axis = sum(v for k, v in o.shares.items() if k != dhi.OUTCOME_NO_HC)
+        assert on_axis == pytest.approx(0.47, abs=1e-12)
+        assert o.p_g_given_s == pytest.approx(0.47)
+        assert all(v >= 0.0 for v in o.shares.values())
+
+    def test_the_band_is_the_pick_p99_to_p1(self):
+        o = dhi.outcome_shares(self._posterior(contact=2250.0, sigma=10.0), 0.5)
+        top, base = o.band_m
+        assert top == pytest.approx(2250.0 - 2.3263 * 10.0, abs=0.05)
+        assert base == pytest.approx(2250.0 + 2.3263 * 10.0, abs=0.05)
+
+    def test_a_certain_pick_leaves_the_band_only_through_its_own_tails(self):
+        o = dhi.outcome_shares(self._posterior(c=0.999), 0.5)
+        assert o.shares[dhi.OUTCOME_AT_BY_CHANCE] < 0.002
+        assert o.shares[dhi.OUTCOME_ABOVE] + o.shares[dhi.OUTCOME_BELOW] < 0.02
+        assert o.attribution > 0.99
+
+    def test_coincidence_is_the_geology_s_own_mass_in_the_band(self):
+        """With the DHI taken as almost certainly not the contact, the mass in the band is what
+        the geological prior puts there, and it is all 'by coincidence'."""
+        post = self._posterior(c=0.01)
+        o = dhi.outcome_shares(post, 1.0)
+        top, base = o.band_m
+        z = post.result.contact_m
+        prior_in_band = float(((z >= top) & (z <= base)).mean())
+        assert o.shares[dhi.OUTCOME_AT_BY_CHANCE] == pytest.approx(prior_in_band, abs=0.01)
+        assert o.shares[dhi.OUTCOME_AT_BY_DHI] < 0.03
+        assert o.attribution < 0.05
+
+    def test_the_attribution_rises_when_the_pick_lands_where_the_geology_expects_it(self):
+        """The stated c is the prior; the geology revises it. A pick at the geological P50 is
+        more plausibly the contact than a pick where the geology puts almost nothing."""
+        result = engine.run(reference_prospect(), 6_000, seed=2)
+        p50 = float(result.percentiles(50.0)[0])
+        far = float(result.contact_m.max()) - 5.0
+        at_p50 = dhi.update(result, dhi.DetectionFunction(),
+                            dhi.DhiObservation(seen=True, contact_m=p50, pick_sigma_m=10.0,
+                                               p_valid=0.36))
+        far_off = dhi.update(result, dhi.DetectionFunction(),
+                             dhi.DhiObservation(seen=True, contact_m=far, pick_sigma_m=10.0,
+                                                p_valid=0.36))
+        assert dhi.outcome_shares(at_p50, 0.5).attribution > 0.36
+        assert dhi.outcome_shares(far_off, 0.5).attribution < 0.36
+
+
 class TestScenarioSwitch:
     """Formulation A — the scenario switch."""
 

@@ -2144,6 +2144,31 @@ class TestTheCompetitionIsDrawnRealisationByRealisation:
         rings = next(t for t in fig.data if str(t.name).startswith("shallowest active limit"))
         assert len(rings.y) == 50
 
+    def test_the_outcomes_are_on_tab_5_1_4_and_the_well_names_its_interval(self):
+        """Lars, 21 Sep 2026: what the DHI can turn out to have been, as a bar, a table and the
+        shaded intervals on 5.1.4a; 5.2.4 says which interval the well enters."""
+        from hcwc.core import dhi
+
+        at = _run()
+        figures = at.session_state["_figures"]
+        tables = at.session_state["_tables"]
+        bar, cap = figures["Figure 5.1.4b"]
+        assert [t.name for t in bar.data] == list(dhi.OUTCOMES)
+        shares = [float(t.x[0]) for t in bar.data]
+        assert sum(shares) == pytest.approx(1.0, abs=1e-9)
+        overlay = at.session_state["dhi_overlay"]
+        assert shares[0] == pytest.approx(1.0 - overlay["p_g_given_amplitude"], abs=1e-9)
+        assert "Method: see 8.1.6" in cap
+        table, tcap, *_ = tables["Table 5.1.4c"]
+        assert list(table["Outcome"]) == list(dhi.OUTCOMES)
+        assert "posterior attribution" in tcap
+        hist, hcap = figures["Figure 5.1.4a"]
+        assert len(hist.layout.shapes) >= 3 and "indicated contact band" in hcap
+        top, base = overlay["indicated_band_m"]
+        assert top < overlay["picked_contact_m"] < base
+        assert any("The well enters" in str(c.value) and "indicated contact band" in str(c.value)
+                   for c in at.caption)
+
     def test_the_rings_take_their_controllers_colours(self):
         """An open marker's stroke is `marker.color`; per-point colours there are the point."""
         fig, _ = _run().session_state["_figures"]["Figure 4.1.1a"]

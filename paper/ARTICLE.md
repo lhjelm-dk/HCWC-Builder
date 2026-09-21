@@ -167,7 +167,7 @@ where the contact is given that there are.*
 
 *Figure 5. The chance against depth: P(G) × F(h) geological, P(G | strength) × F(h | G, pick)
 updated. The strength scales the whole curve; the pick reshapes it, raising the chance near and
-above the picked contact and lowering it below. The open circle is the updated median.*
+above the indicated contact and lowering it below. The open circle is the updated median.*
 
 Two things the update does not do. A strong amplitude raises $P(G)$ and does not narrow the
 contact: the depth uncertainty stays with the pick, the depth conversion and the attribution,
