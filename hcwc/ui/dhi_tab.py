@@ -1041,7 +1041,8 @@ def render(n: Numbering | None = None) -> None:
     figd.add_hline(y=apex + h50, line=dict(color="#888", dash="dot"),
                    annotation_text=f"50 % at {h50:.0f} m column")
     figd.update_layout(xaxis_title="P(detectable)", xaxis_range=[0, 1],
-                       yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
+                       yaxis_title="HCWC depth z (m TVDSS), median apex + h",
+                       yaxis=dict(autorange="reversed"),
                        height=380, margin=dict(t=20), showlegend=False)
     n.plot(figd, "The detection function, logistic in column height. Its shape is a modelling "
                  "choice, exposed rather than hard-coded. Method: see 8.1.5.")
@@ -1545,17 +1546,17 @@ def render(n: Numbering | None = None) -> None:
     # Tab 4.0 renders before this one, so it reads the value written on the previous run, a
     # one-frame lag that is invisible in practice because every interaction reruns both.
     # Storing the curve rather than the object keeps the dependency one-way.
-    depth_grid = apex + np.linspace(0.0, float(result.column_m.max()), 300)
+    depth_grid = pos.depth_grid(result, 300)
     st.session_state["dhi_overlay"] = {
         "depths_m": depth_grid,
         # Scaled to the prospect chance, not left conditional: the Risk against depth sub-tab
         # draws this against per-element curves that already carry the element chances. Each
         # curve is one constant times one exceedance function and reads its headline at h_min
         # by identity.
-        "pos_curve": dhi_core.prospect_pos_curve(element_product, r_applied, post,
-                                                 depth_grid - apex),
-        "prior_curve": element_product * np.asarray(
-            post.exceedance(depth_grid - apex, posterior=False), dtype=float),
+        # Exact in depth space: read on the realised contacts with the posterior weights, the
+        # same function the well reading uses (8.1.3).
+        "pos_curve": p_g_updated * pos.depth_exceedance(result, depth_grid, post.weights),
+        "prior_curve": element_product * pos.depth_exceedance(result, depth_grid),
         # A resampled set of contacts, so downstream code that needs samples rather than a
         # curve (the export, the benchmark comparison) gets the posterior distribution itself.
         # Importance resampling with replacement, exact in the limit and honest about the
@@ -1799,7 +1800,7 @@ def _well_only(result, n: Numbering) -> None:
     # the amplitude branch writes, with `picked_contact_m` as `None` because there is no pick.
     apex = float(np.median(result.apex_m))
     h_min = float(result.limit_set.min_column_m)
-    depth_grid = apex + np.linspace(0.0, float(result.column_m.max()), 300)
+    depth_grid = pos.depth_grid(result, 300)
     element_pos = st.session_state.get("element_pos") or {}
     product = pos.accumulation_chance(element_pos)
     prior_pos = product * posterior.pos(posterior=False)
@@ -1808,9 +1809,8 @@ def _well_only(result, n: Numbering) -> None:
         "depths_m": depth_grid,
         # The same quantity the amplitude branch writes, so the sibling sub-tab can draw either
         # without knowing which: P(G) times the exceedance, with no amplitude to update P(G).
-        "pos_curve": dhi_core.prospect_pos_curve(product, 1.0, posterior, depth_grid - apex),
-        "prior_curve": product * np.asarray(
-            posterior.exceedance(depth_grid - apex, posterior=False), dtype=float),
+        "pos_curve": product * pos.depth_exceedance(result, depth_grid, posterior.weights),
+        "prior_curve": product * pos.depth_exceedance(result, depth_grid),
         "contact_samples": _resample(result.contact_m[result.above_minimum],
                                      posterior.weights[result.above_minimum],
                                      int(st.session_state.get("n_trials", 10_000))),

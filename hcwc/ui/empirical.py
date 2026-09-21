@@ -626,14 +626,15 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         # The DHI-updated distribution, when there is one. Drawn because Lars asked to see both
         # against the data; the caption carries why the comparison is weaker than the geological
         # one, since the benchmarks cannot be conditioned the same way.
-        overlay = st.session_state.get("dhi_overlay")
-        if overlay is not None and st.session_state.get("dhi_on"):
-            posterior_column = np.asarray(overlay["depths_m"], dtype=float) - apex_mid
+        # Column space, as the benchmarks are: F_post(h) from the posterior itself, the same
+        # normalisation as the geological curve beside it. Until 21 Sep 2026 this read the
+        # depth-space chance curve back into columns through one apex and divided by the
+        # headline, which normalised it to one at h_min where the geological curve was not.
+        _posterior = st.session_state.get("dhi_posterior")
+        if _posterior is not None and st.session_state.get("dhi_on"):
             fam.add_scatter(
                 x=built_grid,
-                y=_y(np.interp(built_grid, posterior_column,
-                               np.asarray(overlay["pos_curve"], dtype=float)
-                               / max(float(overlay["posterior_pos"]), 1e-12))),
+                y=_y(np.asarray(_posterior.exceedance(built_grid), dtype=float)),
                 # Same weight and style as the geological curve, different colour. They are two
                 # readings of the same prospect and the question is which is deeper -- a dotted
                 # line reads as provisional or as a construction line, which this is not.

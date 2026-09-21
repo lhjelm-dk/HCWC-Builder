@@ -229,11 +229,9 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                         y=d.depths_m, mode="lines", name="prospect chance, after the DHI",
                         line=dict(color="#C44E52", width=3.5))
 
-        # **Where the curve reads the headline, and where it does not.** Read at the assessment
-        # minimum this curve IS the quoted prospect POS. Read at the picked contact it is roughly
-        # half of it -- because the DHI puts the posterior MEDIAN at the pick, so about half the
-        # remaining probability lies deeper. That is the DHI working, not the curve failing, and
-        # it is a reading confusing enough that both are now labelled.
+        # Two readings labelled: the median-apex equivalent of the assessment minimum, where the
+        # depth-space curve sits close to the headline (equal when the apex is pinned), and the
+        # indicated contact, where the posterior median lands and the curve reads about half.
         _apex = float(np.median(result.apex_m))
         def _pos_at(depth_m: float) -> float:
             return float(np.interp(depth_m, overlay["depths_m"], overlay["pos_curve"]))
