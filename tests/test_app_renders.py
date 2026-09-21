@@ -2070,7 +2070,10 @@ class TestTabsFourAndFiveOfferTheSameControls:
     on 5, and the only widget 5 has that 4 does not is the DHI's own basis switch.
     """
 
-    DHI_ONLY = {"controlling_view_N", "map_quantity_N", "map_depth_N"}
+    #: `competition_posterior`: the window on 5.2.1a can walk the posterior (21 Sep 2026);
+    #: tab 4.1 has no posterior to walk.
+    DHI_ONLY = {"controlling_view_N", "map_quantity_N", "map_depth_N",
+                "competition_posterior_N"}
 
     def test_the_tab_keyed_widgets_match(self):
         import re
