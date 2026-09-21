@@ -274,7 +274,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         "Draw what this tool produced beside it", value=True, key="empirical_show_models",
         help="Adds the geological contact distribution from tab 4.0, and the DHI-updated one from "
              "tab 5.0 where there is one, as violins next to the empirical prior. All three are "
-             "column height in metres and all three are success cases only, so they are directly "
+             "column height in metres and all three are conditional on the assessment minimum, so they are directly "
              "comparable, and they are compared against the discoveries the fit was made on "
              "rather than against each other in the abstract.")
     cc.metric("Empirical prior, P50 column",
@@ -766,8 +766,8 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         # reports POS 0.4 %, and from about 330 m there are no success cases left at all.
         st.info(
             "No realisation reaches the assessment minimum, so there is no column distribution "
-            "to place inside a benchmark. The prospect still has a contact distribution; it has "
-            "no success cases at this threshold. A lower minimum on tab 2.0 restores them."
+            "to place inside a benchmark. The prospect still has a contact distribution; no "
+            "realisation meets this assessment minimum. A lower minimum on tab 2.0 restores them."
         )
     else:
         from hcwc.core import calibration
@@ -1042,9 +1042,10 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         )
 
         fuse_weight = st.slider(
-            "Weight on the benchmark", 0.0, 1.0, 0.0, 0.05, key="fuse_benchmark",
-            help="0 is the model untouched; 1 is the benchmark. In between, the two quantile "
-                 "functions are averaged, the same operation the seal limit offers on tab 3.0.")
+            "Benchmark blend weight", 0.0, 1.0, 0.0, 0.05, key="fuse_benchmark",
+            help="A blend, not an update: 0 is the model untouched, 1 is the benchmark, and in "
+                 "between the two quantile functions are averaged at this weight, the same "
+                 "operation the seal limit offers on tab 3.0.")
 
         bench_source = st.selectbox(
             "Benchmark to combine with", sources, key="fuse_source",
@@ -1089,7 +1090,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                 curves.append((f"this model, {basis}", columns, colour, "solid", 3.2))
                 fused_by_basis[basis] = benchmarks.shrink_toward(columns, bench, fuse_weight)
                 if fuse_weight > 0:
-                    curves.append((f"{basis} + benchmark, weight {fuse_weight:.2f}",
+                    curves.append((f"{basis}, blended with the benchmark at weight {fuse_weight:.2f}",
                                    fused_by_basis[basis], colour, "dot", 3.0))
 
             curves.append((f"{bench_source}, at {own_relief:,.0f} m relief", bench,
@@ -1229,8 +1230,8 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                     + (f"{theme.basis_tag(theme.GIVEN_DHI)} &nbsp; "
                        if len(fill_bases) > 1 else "&nbsp; ")
                     + f"The competing limits against the {int(cell.n)} NCS discoveries in the same "
-                   f"trap-height and burial-depth cell, restricted to the success cases because "
-                   "every one of theirs is a discovery.\n\n"
+                   f"trap-height and burial-depth cell, restricted to the realisations meeting "
+                   f"the assessment minimum because every one of theirs is a discovery.\n\n"
                    "The bottom pair reads apart from the other three. The 100 % bar is not a fill "
                    "outcome; it is the share of traps whose seal capacity was not observed, "
                    "because geometry stopped the column first. It is a right-censoring rate, and "

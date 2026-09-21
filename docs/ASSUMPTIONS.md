@@ -31,7 +31,7 @@ claimed better).
 | assumption | label | in the code | stated |
 |---|---|---|---|
 | The evidence index is a relative scale, 0 neutral, no physical units | convention | `core/dhi.StrengthModel` | 8.1.4, 5.1.2 |
-| `f(s \| HC)` and `f(s \| NoHC)` are Gaussians given by P1/P99; the shipped pair is a reference relationship, not a basin calibration | elicited (defaults) | `core/defaults.EVIDENCE_INDEX_*`, `core/dhi.StrengthCase` | 8.1.4, 5.1.2 |
+| `f(s \| HC)` and `f(s \| NoHC)` are Gaussians given by P1/P99; the shipped pair is a reference relationship, not a basin calibration | reference distributions (defaults; editable, not elicited) | `core/defaults.EVIDENCE_INDEX_*`, `core/dhi.StrengthCase` | 8.1.4, 5.1.2 |
 | `LR(s) = f(s \| HC) / f(s \| NoHC)` updates `P(G)` by the two-state form; the reference outcomes are presence, not a volume criterion | modelling choice, mapping | `core/dhi.simm_update`, `p_g_given_strength` | 8.1.4 |
 | A single channel's LR is capped at 10 : 1 either way; the combined ratio at 50 | modelling choice (Simm; Kjønsberg) | `core/dhi.R_SINGLE_CHANNEL`, `R_CAP` | 8.1.4, 8.1.6 |
 | The index carries no contact-depth information and never touches the weights | modelling choice | `core/dhi.likelihood` (no strength argument), `tests/test_dhi_audit.py` | 8.1.4, 8.1.6 |
