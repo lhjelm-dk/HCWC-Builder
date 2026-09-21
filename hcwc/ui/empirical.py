@@ -432,7 +432,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.9.
             "twice as much. Method: see 8.1.9."
         )
 
-        with st.expander("Why not simply drop the filled-to-spill points?"):
+        with st.expander("Why dropping the filled-to-spill points does not help"):
             st.markdown(
                 """
     Dropping them trades censoring bias for truncation bias. Simulated with seal capacity

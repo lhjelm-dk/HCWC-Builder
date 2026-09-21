@@ -530,10 +530,10 @@ def build_full(result: EngineResult, provenance: Provenance, figures: dict, *,
 {body}
 <div class="sheet">
   <h2>Every figure drawn</h2>
-  <p class="note"><b>The working record, not the summary.</b> Nobody reads this end to end. It
-  exists so a number quoted six months from now can be traced to the figure it came from, and so a
-  reviewer can disagree with a specific chart rather than with the tool. Each caption is the one
-  shown in the app, including what the figure <i>cannot</i> tell you.</p>
+  <p class="note">The working record, not the summary. It exists so a number quoted later can be
+  traced to the figure it came from, and so a reviewer can disagree with a specific chart rather
+  than with the tool. Each caption is the one shown in the app, including what the figure does
+  not show.</p>
   {missing}
   {''.join(blocks)}
 </div>
