@@ -783,7 +783,7 @@ class TestTheShippedSpillIsADepthCoupledToTheApex:
         assert np.median(depths[0.0]) == pytest.approx(np.median(depths[0.9]), abs=2.0)
 
     def test_the_closure_height_spread_falls_with_the_correlation(self):
-        """The claim the Correlations sub-tab makes, and 8.1.5 states: independent, the derived
+        """The claim the Correlations sub-tab makes, and 8.1.7 states: independent, the derived
         closure height carries the apex error and the spill error in quadrature; at 0.9 most of
         the apex error cancels. About 30 m against about 14 m here."""
         _, independent = self._closure_m(0.0)

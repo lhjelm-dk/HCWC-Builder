@@ -17,7 +17,7 @@ the *actual joint sample*. It therefore respects the copula for free: correlate 
 spill and the spill's bar changes, because the slices are taken from correlated draws rather than
 from a one-at-a-time perturbation that would have to assume independence.
 
-**Mean, not P50** (Lars, 28 Aug 2026). The mean is what a volume is built from, it moves when the
+**Mean, not P50**. The mean is what a volume is built from, it moves when the
 tail moves, and a median can sit still while a limit reshapes the distribution underneath it.
 
 **Presence is a separate bar.** A limit with ``p_active < 1`` has two kinds of influence: where it

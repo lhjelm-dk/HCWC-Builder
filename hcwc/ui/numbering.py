@@ -1,6 +1,6 @@
 """Figure and table numbers: ``2.1``, ``2.2``, ``3.1`` — one sequence per tab, or per sub-tab.
 
-Lars, 25 Aug 2026: *"plot 2.2 is the second plot in tab 2, and table 4.3 is the 3rd table in tab 4.
+*"plot 2.2 is the second plot in tab 2, and table 4.3 is the 3rd table in tab 4.
 It's either a plot or a table so no 2.3 plot **and** 2.3 table!"*
 
 That last clause decides the design. If plots and tables each had their own counter, "Figure 2.3"
@@ -50,7 +50,7 @@ def render_caption(label: str, caption: str, basis: str | None = None) -> None:
     """One numbered caption, whole.
 
     There was briefly a Full/Brief control that folded everything after the first paragraph behind
-    a "why". Lars removed it (28 Aug 2026): a caption that can be half-read is a caption whose
+    a "why". It was removed: a caption that can be half-read is a caption whose
     second half nobody reads, and the second half is where the caveats are. If the captions are too
     long the answer is to write shorter ones, not to hide the end of them.
 
@@ -119,7 +119,7 @@ class Numbering:
     #: on tab 7.0 ships every figure with its caption and no banner, and so does the camera button
     #: on any chart. Nineteen exhibits on tabs 4.0 and 5.0 carried **byte-identical captions** across
     #: the two tabs -- `Figure 4.1.1` and `Figure 5.3.1` were the same words over two different
-    #: distributions -- and nothing on either said which. Lars, 4 Sep 2026, asking exactly that.
+    #: distributions -- and nothing on either said which. That question was asked.
     #:
     #: Set on the sequence rather than passed at each call because the failure mode is *forgetting*,
     #: and the three exhibits that had a chip were the three somebody had remembered.
@@ -154,7 +154,7 @@ class Numbering:
     def _label(self, kind: Kind) -> str:
         """``Figure 4.1.3a``: the section the exhibit sits under, then its place inside it.
 
-        **Exhibits are numbered by section, with a letter** (Lars, 17 Sep 2026). Until then
+        **Exhibits are numbered by section, with a letter**. Until then
         exhibits ran in their own sequence beside the sections' -- section 4.1.3 held Figure
         4.1.7 and "Figure 4.1.3" was somewhere else -- so one number named two things. Now
         ``4.1.3`` names the section, ``4.1.3a`` its first exhibit, and figures and tables share
@@ -171,7 +171,7 @@ class Numbering:
     def optional(self, kind: Kind) -> str:
         """A number for an exhibit that only appears sometimes: ``4.1.3b.1``, ``4.1.3b.2``, …
 
-        Lars, 27 Aug 2026, on wanting consistent numbering when some figures are conditional. The
+        The requirement of consistent numbering when some figures are conditional. The
         problem is real: a figure that appears only when the DHI is on, or only when a calculator
         is opened, **renumbers everything after it** when it comes and goes. Two readers looking at
         the same tab in different states then disagree about what "Figure 4.6" is, which is worse
@@ -244,7 +244,7 @@ class Numbering:
     def image(self, path, caption: str, *, basis: str | None = INHERIT) -> str:
         """Render an image file with a numbered caption beneath it. Returns the label.
 
-        For a figure that is drawn outside Plotly, such as the workflow diagram of 8.1.1, an
+        For a figure that is drawn outside Plotly, such as the workflow diagram of 8.1.2, an
         SVG laid out by ``scripts/workflow_figure.py``. Registered like any figure, with the
         path as the payload, so the report carries it in number order.
         """

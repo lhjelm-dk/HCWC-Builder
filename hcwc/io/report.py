@@ -63,7 +63,7 @@ h2 { font-size: 10pt; margin: 5mm 0 1.5mm; text-transform: uppercase; letter-spa
 .cols { display: flex; gap: 4mm; align-items: flex-start; }
 /* `min-width:0` is what stops a flex item refusing to shrink below its content's intrinsic
    width. Without it the two SVG panels held their natural pixel width, the row grew past the
-   sheet and the right margin was eaten -- which is what Lars saw. The SVGs scale by viewBox. */
+   sheet and the right margin was eaten -- which is what was seen. The SVGs scale by viewBox. */
 .cols > div { flex: 1 1 0; min-width: 0; }
 .cols svg { width: 100%; height: auto; display: block; }
 table { width: 100%; border-collapse: collapse; font-size: 8.4pt; table-layout: fixed; }
@@ -273,7 +273,7 @@ def build(result: EngineResult, provenance: Provenance, *, checks=(),
     given-the-DHI basis, and then ``p_geological`` is ``P(G | s)``, the chance updated by the
     evidence index: the percentiles, ``F(h_min)``, the curve and the controlling shares are all
     read on the weights, the same estimators as tab 5. Until 21 Sep 2026 a sheet labelled given
-    the DHI carried the geological numbers under that label (Lars, 21 Sep 2026).
+    the DHI carried the geological numbers under that label.
     """
     limit_set = result.limit_set
     h_min = float(limit_set.min_column_m)

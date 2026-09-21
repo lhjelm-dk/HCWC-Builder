@@ -33,7 +33,7 @@ class Group(str, Enum):
     """The risk element a limit belongs to.
 
     These are the E-POS pillar names. ``CLOSURE`` is what is elsewhere called "trap geometry":
-    it is the element that *defines* the closure, and Lars's ruling (25 Aug 2026) is
+    it is the element that *defines* the closure, and the ruling is
     that fault geometry belongs here while fault *leakage* belongs to retention — they are
     different failure mechanisms even when they sit on the same fault.
 

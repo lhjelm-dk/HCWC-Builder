@@ -213,4 +213,4 @@ Geoscience; Hood, K. C. (2019, 2024), Rose & Associates; Lowry, D. C., Suttill, 
 Taylor, R. J. (2005), The APPEA Journal 45(1); Simm, R. & Bacon, M. (2014), Seismic Amplitude:
 An Interpreter's Handbook, Cambridge; Simm, R. (2020), First Break 38(2); Kjønsberg, H. et al.
 (2010), Geophysics 75(2); Monigle, P. W. et al. (2025), AAPG Bulletin 109(5); Roden, R., Forrest,
-M. & Holeywell, R. (2012), The Leading Edge 31(9). Full references on tab 8.3 of the tool.
+M. & Holeywell, R. (2012), The Leading Edge 31(9). Full references in section 8.1.11 of the tool.

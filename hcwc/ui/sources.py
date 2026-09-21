@@ -31,7 +31,7 @@ from hcwc.ui import theme
 
 
 #: Gross reservoir thickness, and so the offset between the top seal's crest and the base seal's.
-#: Lars's number, 2 Sep 2026.
+#: the shipped number, 2 Sep 2026.
 DEFAULT_RESERVOIR_THICKNESS_M = 50.0
 
 
@@ -321,7 +321,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
     # The one pairing that is quietly wrong. The fluid selector drives the interfacial-tension
     # correlation and the density slider drives the buoyancy, and nothing tied them together: the
     # shipped default used to be gas tension against an oil density contrast, which is the most
-    # generous combination the calculator can produce and is not a fluid. Lars asked what these
+    # generous combination the calculator can produce and is not a fluid. The question of what these
     # densities are; this is the check that goes with the answer.
     _mid_hc = 0.5 * (rho_hc[0] + rho_hc[1])
     if fluid == "Gas" and _mid_hc > GAS_OIL_DENSITY_BOUNDARY:
@@ -348,7 +348,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         "overstates the spread of the capacity; the correlation editor on sub-tab E cannot reach "
         "inside a calculator. Modelling choice. The seal and the charge calculator share a phase "
         "and not a fluid; tab 3.0 refuses a run in which the two phases differ. Method: see "
-        "8.1.5."
+        "8.1.7."
     )
 
     # Hood (2019) slide 18 wants a GOC and an OWC both set by capillary capacity, and this
@@ -362,7 +362,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
             "two are run as separate cases. A separate-case answer is not a two-phase answer: "
             "the column a two-phase trap holds is taller than either single-phase answer, not "
             "between them. Two-phase capacity is not implemented; `docs/PLAN_DUAL_PHASE_SEAL.md` "
-            "is the plan. Method: see 8.1.8."
+            "is the plan. Method: see 8.1.10."
         )
 
     net = st.toggle("Subtract the reservoir's own entry pressure", value=True, key=f"{key}_net",
@@ -401,7 +401,7 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         st.markdown(
             "The censoring-corrected NCS fit predicts the same quantity this calculator "
             "computes, a seal capacity in metres of column, so the two can be averaged. The fit "
-            "is used against burial depth alone. Method: see 8.1.7."
+            "is used against burial depth alone. Method: see 8.1.9."
         )
         weight = 0.0
         if not burial:
@@ -673,7 +673,7 @@ def render_seal_as_top(key: str, n_trials: int, seed: int) -> Handover | None:
     st.caption(
         "Sampled independently, top and base seal fail at different columns in the same "
         "realisation. Where it is one unit, the pair should be correlated on the Correlations "
-        "sub-tab, where it is already listed. Method: see 8.1.2."
+        "sub-tab, where it is already listed. Method: see 8.1.5."
     )
     return Handover(DepthDistribution.from_samples(limit), 1.0,
                     f"as top seal +{thickness:,.0f} m — {read('fluid').lower()}, "
@@ -1052,7 +1052,7 @@ def render_mechanical(key: str, n_trials: int, seed: int) -> Handover | None:
         "the reason this mechanism controls a column at all.\n\n"
         "Stress and pore pressure are sampled as independent uniforms, which overstates the "
         "spread of the headroom and its low tail; the correlation editor on sub-tab E cannot "
-        "reach inside this calculator. Modelling choice. Method: see 8.1.2."
+        "reach inside this calculator. Modelling choice. Method: see 8.1.5."
     )
 
     # **Say when it cannot bite.** A normally pressured trap at two kilometres has hundreds of bar

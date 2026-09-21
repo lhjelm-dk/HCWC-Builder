@@ -83,7 +83,7 @@ def test_no_two_sub_tabs_can_produce_the_same_figure_number():
     root = pathlib.Path(__file__).resolve().parent.parent
     source = (root / "app.py").read_text(encoding="utf-8")
 
-    # Tab 5 had four sub-tabs until 16 Sep 2026, when the walkthrough moved to 8.1.6.
+    # Tab 5 had four sub-tabs until 16 Sep 2026, when the walkthrough moved to 8.1.8.
     for tab, count in ((4, 2), (5, 3)):
         # The sequence carries a `basis=` as well since 4 Sep 2026, so the pattern stops at the
         # sub number rather than at a closing bracket that is no longer there.
