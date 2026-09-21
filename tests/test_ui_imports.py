@@ -390,3 +390,26 @@ def test_every_widget_in_the_shared_depth_risk_function_is_keyed():
             unkeyed.append(f"line {src[:match.start()].count(chr(10)) + 1}: {match.group(1)}")
 
     assert not unkeyed, "unkeyed widgets in a function rendered on two tabs: " + "; ".join(unkeyed)
+
+
+def test_pyproject_mirrors_requirements():
+    """Audit P2-3, 21 Sep 2026: requirements.txt is the canonical list and pyproject.toml must
+    carry the same floors, kaleido included. Two lists that disagree is one too many."""
+    import pathlib
+    import re
+    import tomllib
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    req = {}
+    for line in (root / "requirements.txt").read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            name, floor = re.match(r"([A-Za-z0-9_-]+)>=([0-9.]+)", line).groups()
+            req[name.lower()] = floor
+    proj = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    pyp = {}
+    for dep in proj["project"]["dependencies"]:
+        name, floor = re.match(r"([A-Za-z0-9_-]+)>=([0-9.]+)", dep).groups()
+        pyp[name.lower()] = floor
+    assert pyp == req, f"pyproject {pyp} differs from requirements.txt {req}"
+    assert "kaleido" in req
