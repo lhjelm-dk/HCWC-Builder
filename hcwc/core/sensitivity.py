@@ -231,7 +231,7 @@ def dhi_tornado(posterior, *, space: str = "column") -> list[Effect]:
     if observation.seen and observation.contact_m is not None:
         half = 0.5 * observation.pick_sigma_m
         variations.append(
-            ("Picked contact", _dc.replace(observation, contact_m=observation.contact_m - half),
+            ("Indicated contact", _dc.replace(observation, contact_m=observation.contact_m - half),
              _dc.replace(observation, contact_m=observation.contact_m + half)))
 
     for name, low_obs, high_obs in variations:

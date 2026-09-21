@@ -416,6 +416,90 @@ def likelihood(result: EngineResult, detection: DetectionFunction,
             * spurious_density(result.limit_set.contact_support_m()))
 
 
+def likelihood_branches(result: EngineResult, detection: DetectionFunction,
+                        observation: DhiObservation) -> tuple[np.ndarray, np.ndarray]:
+    """The two branches of the seen-pick likelihood, each already carrying its mixing weight.
+
+    ``valid = c · D(h) · Pick(z)`` is the DHI as the contact; ``spurious = (1 − c) · s`` is the
+    DHI as something else, flat in depth. Their sum is :func:`likelihood`, which keeps its own
+    arithmetic so the weights stay bit-identical to the pinned baseline. Kept apart so that
+    the posterior mass inside the indicated contact band can be split into the part the pick
+    put there and the part the geology put there by itself (:func:`outcome_shares`; 8.1.6).
+    Seen, picked observations only; the absent and partial forms have no indicated contact.
+    """
+    if not observation.seen or observation.is_partial:
+        raise ValueError("the likelihood has two branches only for a seen, picked anomaly")
+    d = detection.at(result.column_m)
+    valid = observation.p_valid * d * observation.pick_pdf(result.contact_m)
+    if observation.p_valid >= 1.0:
+        return valid, np.zeros_like(valid)
+    spurious = np.full_like(valid, (1.0 - observation.p_valid)
+                            * spurious_density(result.limit_set.contact_support_m()))
+    return valid, spurious
+
+
+#: The outcomes of a seen DHI, in depth order, as 8.1.6 names them. The first is off the depth
+#: axis; the four others share P(G | s) between them.
+OUTCOME_NO_HC = "no hydrocarbons"
+OUTCOME_ABOVE = "above the indicated contact"
+OUTCOME_AT_BY_DHI = "at the indicated contact, because of it"
+OUTCOME_AT_BY_CHANCE = "at the indicated contact, by coincidence"
+OUTCOME_BELOW = "below the indicated contact"
+OUTCOMES: tuple[str, ...] = (OUTCOME_NO_HC, OUTCOME_ABOVE, OUTCOME_AT_BY_DHI,
+                             OUTCOME_AT_BY_CHANCE, OUTCOME_BELOW)
+
+
+@dataclass(frozen=True)
+class OutcomeShares:
+    """What the DHI can turn out to have been, with the chance of each (8.1.6).
+
+    ``band_m`` is the indicated contact band, the P99 to P1 of the pick. ``shares`` sum to one:
+    ``no hydrocarbons`` is ``1 − P(G | s)``, and the four outcomes on the depth axis are the
+    posterior mass of the contact above the band, within it and below it, times ``P(G | s)``;
+    the mass within the band is split by the branch of the likelihood that put it there.
+    ``attribution`` is the posterior chance the DHI is the contact, the valid branch's share of
+    all the posterior mass, band or not.
+    """
+    band_m: tuple[float, float]
+    shares: dict[str, float]
+    attribution: float
+
+    @property
+    def p_g_given_s(self) -> float:
+        return 1.0 - self.shares[OUTCOME_NO_HC]
+
+
+def outcome_shares(posterior: DhiPosterior, p_g_given_s: float) -> OutcomeShares | None:
+    """The outcomes of 8.1.6 on this posterior, or ``None`` when the observation is not a pick.
+
+    Everything here is read off objects the update already holds: the weights, the two branches
+    of the likelihood, and the pick's own percentiles. Nothing is re-simulated. The shares use
+    every realisation, not the success cases only, because the outcomes are about where the
+    contact is and not about a threshold.
+    """
+    obs = posterior.observation
+    if not obs.seen or obs.is_partial:
+        return None
+    top, base = (float(v) for v in obs.pick_ppf(np.array([0.01, 0.99])))
+    valid, spurious = likelihood_branches(posterior.result, posterior.detection, obs)
+    total = float(valid.sum() + spurious.sum())
+    if not np.isfinite(total) or total <= 0.0:
+        return None
+    z = posterior.result.contact_m
+    above, within, below = z < top, (z >= top) & (z <= base), z > base
+    p = float(np.clip(p_g_given_s, 0.0, 1.0))
+    mass = lambda w, m: float(w[m].sum()) / total  # noqa: E731
+    shares = {
+        OUTCOME_NO_HC: 1.0 - p,
+        OUTCOME_ABOVE: p * (mass(valid, above) + mass(spurious, above)),
+        OUTCOME_AT_BY_DHI: p * mass(valid, within),
+        OUTCOME_AT_BY_CHANCE: p * mass(spurious, within),
+        OUTCOME_BELOW: p * (mass(valid, below) + mass(spurious, below)),
+    }
+    return OutcomeShares(band_m=(top, base), shares=shares,
+                         attribution=float(valid.sum()) / total)
+
+
 @dataclass(frozen=True)
 class DhiPosterior:
     """The prior and posterior as one object, because they are one object."""
