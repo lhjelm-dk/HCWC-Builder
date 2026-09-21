@@ -116,7 +116,7 @@ def _svg_exceedance(result: EngineResult, weights: np.ndarray | None = None, *,
     """
     contacts = result.contact_m[result.above_minimum]
     if contacts.size < 2:
-        return "<p class='note'>Too few successful realisations to draw a curve.</p>"
+        return "<p class='note'>Too few realisations meet the assessment minimum to draw a curve.</p>"
 
     pad_l, pad_r, pad_t, pad_b = 40, 8, 8, 26
     apex = float(np.percentile(result.apex_m, 50))
@@ -185,7 +185,7 @@ def _svg_control(result: EngineResult, colours: dict[str, str] | None = None,
     shares = result.controlling_shares(successes_only=True, weights=weights)
     rows = sorted(shares.items(), key=lambda kv: -kv[1])[:8]
     if not rows or rows[0][1] == 0:
-        return "<p class='note'>No limit controlled a successful realisation.</p>"
+        return "<p class='note'>No realisation meets the assessment minimum.</p>"
 
     colours = colours or {}
     pad_l, pad_r, pad_t = 118, 30, 6
@@ -343,16 +343,16 @@ def build(result: EngineResult, provenance: Provenance, *, checks=(),
   f'<code>P(G | s) = {p_geological:.3f}</code> is the product of the four element chances updated '
   f'by the DHI evidence index (tab 5.1.2). ')}
 The second term is everything on this page: the competing limits, <b>conditional on the elements
-having worked</b>. The contact percentiles are success cases only, on the same conditioning — the
+having worked</b>. The contact percentiles are conditional on the assessment minimum, on the same conditioning — the
 distribution is the primary object and the chance multiplies it, never the other way round.</p>
 
 <h2>The answer, and what produced it</h2>
 <div class="cols">
   <div>{_svg_exceedance(result, weights)}</div>
   <div>{_svg_control(result, colours, weights)}
-    <p class="note" style="margin-left:2mm">Share of <i>successful</i> realisations in which each
-    limit set the contact. A limit that usually kills the prospect outright is under-represented
-    here, because it is the most severe.</p>
+    <p class="note" style="margin-left:2mm">Share of the realisations meeting the assessment
+    minimum in which each limit set the contact. A limit that usually stops the column short of
+    the minimum is under-represented here, because it is the most severe.</p>
   </div>
 </div>
 

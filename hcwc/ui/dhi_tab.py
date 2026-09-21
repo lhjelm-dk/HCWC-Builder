@@ -799,8 +799,9 @@ def render(n: Numbering | None = None) -> None:
     dhi_score = sc1.number_input(
         "DHI score (Monigle et al. 2025), 0 to 1", 0.0, 1.0, DEFAULT_DHI_SCORE, 0.01,
         key="dhi_in_dhi_score", disabled=c_source != C_FROM_SCORE,
-        help="A chance of success from the seismic alone, as their five-attribute score rates "
-             "it. Opens at 0.18, the score whose rule gives the shipped c of 0.36.")
+        help="Their five-attribute score of the DHI, a chance that the accumulation is there "
+             "read from the seismic alone. Opens at 0.18, the score whose rule gives the "
+             "shipped c of 0.36.")
     score_c = dhi_core.contact_weight_from_score(dhi_score)
     sc2.caption(
         f"Monigle et al.'s rule gives c = {score_c:.2f} from a score of {dhi_score:.2f}: "
@@ -1045,7 +1046,7 @@ def render(n: Numbering | None = None) -> None:
                        yaxis=dict(autorange="reversed"),
                        height=380, margin=dict(t=20), showlegend=False)
     n.plot(figd, "The detection function, logistic in column height. Its shape is a modelling "
-                 "choice, exposed rather than hard-coded. Method: see 8.1.5.")
+                 "choice; its parameters are exposed as modelling assumptions. Method: see 8.1.5.")
 
     # ------------------------------------------------------------------ the update
     observation = DhiObservation(
