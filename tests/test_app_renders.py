@@ -1938,6 +1938,38 @@ class TestThePaperAgreesWithTheAppItDescribes:
             assert (self._root() / "paper" / "figures" / name).exists(), \
                 f"paper/figures/{name} is missing -- run scripts/post_images.py"
 
+    @pytest.mark.render
+    def test_the_article_and_the_post_quote_paper_facts(self):
+        """Audit P1-10 to P1-12, 21 Sep 2026: `scripts/paper_facts.py` is the one numerical
+        source. The headline numbers the article and the post quote must be its output at the
+        stated scenario, so a change in a default is caught here and not by a reader."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "paper_facts", self._root() / "scripts" / "paper_facts.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        f = module.facts()
+        article = self._text()
+        post = (self._root() / "paper" / "LINKEDIN_POST.md").read_text(encoding="utf-8")
+
+        def pct(x):
+            return f"{100 * x:.0f} %"
+
+        for text in (article, post):
+            assert pct(f["POS geological"]) in text and pct(f["POS given the DHI"]) in text
+            assert f"{f['prior P90-P10 spread (m)']:.0f} m" in text
+            assert f"{f['posterior P90-P10 spread (m)']:.0f} m" in text
+            ess = f"{f['effective sample size']:,.0f}".replace(",", " ")
+            assert ess in text, f"the effective sample size {ess} is not quoted"
+            assert "effective sample size" in text
+        p90, p50, p10 = f["prior HCWC P90/P50/P10 (m)"]
+        assert f"{p90:,.0f} / {p50:,.0f} / {p10:,.0f}".replace(",", " ") in article
+        shares = f["controlling shares (h >= h_min)"]
+        for name, share in shares.items():
+            if share > 0.03:
+                assert pct(share) in article, f"{name} at {pct(share)} is not in the article"
+        assert pct(f["P(well) given the DHI"]) in article
+
     def test_the_worked_prospect_is_reproducible(self):
         """The prospect definition ships beside the figures, so the numbers can be re-derived."""
         import json
