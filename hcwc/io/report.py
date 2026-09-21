@@ -106,7 +106,8 @@ def _e(text) -> str:
     return html.escape(str(text))
 
 
-def _svg_exceedance(result: EngineResult, *, width: int = 380, height: int = 230) -> str:
+def _svg_exceedance(result: EngineResult, weights: np.ndarray | None = None, *,
+                    width: int = 380, height: int = 230) -> str:
     """The exceedance curve, at report size, on the tool's own axis convention.
 
     Depth downward on y, probability on x, and the assessment minimum drawn as the horizontal line
@@ -126,7 +127,7 @@ def _svg_exceedance(result: EngineResult, *, width: int = 380, height: int = 230
         y_hi = y_lo + 1.0
 
     grid = np.linspace(y_lo, y_hi, 160)
-    f = result.exceedance(grid - apex)
+    f = engine.exceedance(result.column_m, grid - apex, weights)
 
     def px(p: float) -> float:
         return pad_l + p * (width - pad_l - pad_r)
@@ -149,7 +150,7 @@ def _svg_exceedance(result: EngineResult, *, width: int = 380, height: int = 230
             f"<text x='{px(p):.1f}' y='{height - 14}' font-size='7' fill='#6b7684' "
             f"text-anchor='middle'>{p * 100:.0f}</text>")
 
-    pos = result.pos
+    pos = _pos(result, weights)
     marker = (
         f"<line x1='{pad_l}' y1='{py(minimum_depth):.1f}' x2='{width - pad_r}' "
         f"y2='{py(minimum_depth):.1f}' stroke='#C44E52' stroke-width='1' "
@@ -171,6 +172,7 @@ def _svg_exceedance(result: EngineResult, *, width: int = 380, height: int = 230
 
 
 def _svg_control(result: EngineResult, colours: dict[str, str] | None = None,
+                 weights: np.ndarray | None = None,
                  *, width: int = 380, height: int = 230) -> str:
     """Controlling shares as horizontal bars, successes only.
 
@@ -179,7 +181,7 @@ def _svg_control(result: EngineResult, colours: dict[str, str] | None = None,
     denominators on one sheet. The unconditional view stays on tab 4.0, where there is room to explain
     the difference.
     """
-    shares = result.controlling_shares(successes_only=True)
+    shares = result.controlling_shares(successes_only=True, weights=weights)
     rows = sorted(shares.items(), key=lambda kv: -kv[1])[:8]
     if not rows or rows[0][1] == 0:
         return "<p class='note'>No limit controlled a successful realisation.</p>"
@@ -209,15 +211,23 @@ def _svg_control(result: EngineResult, colours: dict[str, str] | None = None,
             f"xmlns='http://www.w3.org/2000/svg'>{''.join(parts)}</svg>")
 
 
-def _limit_rows(result: EngineResult) -> str:
-    shares = result.controlling_shares(successes_only=True)
+def _pos(result: EngineResult, weights: np.ndarray | None) -> float:
+    """``F(h_min)`` on the geological sample or on the posterior weights: the same estimator as
+    ``EngineResult.pos`` and ``DhiPosterior.pos``."""
+    if weights is None:
+        return float(result.pos)
+    return float(engine.exceedance(result.column_m, result.limit_set.min_column_m, weights)[0])
+
+
+def _limit_rows(result: EngineResult, weights: np.ndarray | None = None) -> str:
+    shares = result.controlling_shares(successes_only=True, weights=weights)
     out = []
     for i, limit in enumerate(result.limit_set.limits):
         drawn = result.sampled_m[:, i]
         active = result.active[:, i]
         if active.any():
-            p90, p50, p10 = (float(v) for v in
-                             engine.weighted_percentiles(drawn[active], None, [90.0, 50.0, 10.0]))
+            p90, p50, p10 = (float(v) for v in engine.weighted_percentiles(
+                drawn[active], None if weights is None else weights[active], [90.0, 50.0, 10.0]))
             spread = f"{p90:,.0f} / {p50:,.0f} / {p10:,.0f}"
         else:
             spread = "—"
@@ -248,7 +258,7 @@ def _strip(text: str) -> str:
 
 def build(result: EngineResult, provenance: Provenance, *, checks=(),
           p_geological: float = 1.0, colours: dict[str, str] | None = None,
-          note: str = "") -> str:
+          note: str = "", weights: np.ndarray | None = None) -> str:
     """The whole page, as a self-contained HTML string.
 
     ``p_geological`` is ``P(G)``, the element product from tab 2.0 — the chance the prospect works at
@@ -257,21 +267,33 @@ def build(result: EngineResult, provenance: Provenance, *, checks=(),
     without it, and the page then says in as many words that no element risk was supplied, rather
     than printing a conditional number under an unconditional heading. That is the mistake this
     page made on its first draft and it is the one a well proposal cannot afford.
+
+    ``weights`` are the DHI posterior's per-realisation weights when the sheet is on the
+    given-the-DHI basis, and then ``p_geological`` is ``P(G | s)``, the chance updated by the
+    evidence index: the percentiles, ``F(h_min)``, the curve and the controlling shares are all
+    read on the weights, the same estimators as tab 5. Until 21 Sep 2026 a sheet labelled given
+    the DHI carried the geological numbers under that label (Lars, 21 Sep 2026).
     """
     limit_set = result.limit_set
     h_min = float(limit_set.min_column_m)
     apex = float(np.percentile(result.apex_m, 50))
-    contacts = result.percentiles(np.array([90.0, 50.0, 10.0]))
+    keep = result.above_minimum
+    contacts = engine.weighted_percentiles(result.contact_m[keep],
+                                           None if weights is None else weights[keep],
+                                           np.array([90.0, 50.0, 10.0]))
     columns = contacts - apex
     basis = provenance.basis if provenance.basis in BASIS_LABEL else "geological"
     stamp = _dt.datetime.now().strftime("%d %b %Y, %H:%M")
     p_geological = float(p_geological)
-    prospect_pos = p_geological * result.pos
+    f_min = _pos(result, weights)
+    prospect_pos = p_geological * f_min
+    p_g_name = "P(G)" if weights is None else "P(G | s)"
+    given = "G" if weights is None else "G, evidence"
 
     metrics = [
         (f"Prospect POS at h ≥ {h_min:,.0f} m", f"{prospect_pos:.1%}",
-         f"P(G) {p_geological:.3f} × {result.pos:.3f}"),
-        (f"P(column ≥ {h_min:,.0f} m | G)", f"{result.pos:.1%}", "conditional — limits only"),
+         f"{p_g_name} {p_geological:.3f} × {f_min:.3f}"),
+        (f"P(column ≥ {h_min:,.0f} m | {given})", f"{f_min:.1%}", "conditional — limits only"),
         ("Contact P90", f"{contacts[0]:,.0f} m", f"{columns[0]:,.0f} m column"),
         ("Contact P50", f"{contacts[1]:,.0f} m", f"{columns[1]:,.0f} m column"),
         ("Contact P10", f"{contacts[2]:,.0f} m", f"{columns[2]:,.0f} m column"),
@@ -311,20 +333,22 @@ def build(result: EngineResult, provenance: Provenance, *, checks=(),
 
 <div class="metrics">{metric_html}</div>
 <p class="note"><b>Two chances, and they are not the same number.</b>
-<code>Prospect POS = P(G) × P(column ≥ h | G)</code>.
+<code>Prospect POS = {p_g_name} × P(column ≥ h | {given})</code>.
 {'<b style="color:#8A2F33">No element risk was supplied, so P(G) is 1.0 and the two figures above '
  'are the same number. The prospect chance on this page is therefore the column term only, and is '
  'an overstatement.</b> ' if p_geological >= 1.0 else
- f'<code>P(G) = {p_geological:.3f}</code> is the product of the four element chances — the chance '
- f'the prospect works at all, and the number E-POS produces. '}
+ (f'<code>P(G) = {p_geological:.3f}</code> is the product of the four element chances — the chance '
+  f'the prospect works at all, and the number E-POS produces. ' if weights is None else
+  f'<code>P(G | s) = {p_geological:.3f}</code> is the product of the four element chances updated '
+  f'by the DHI evidence index (tab 5.1.2). ')}
 The second term is everything on this page: the competing limits, <b>conditional on the elements
 having worked</b>. The contact percentiles are success cases only, on the same conditioning — the
 distribution is the primary object and the chance multiplies it, never the other way round.</p>
 
 <h2>The answer, and what produced it</h2>
 <div class="cols">
-  <div>{_svg_exceedance(result)}</div>
-  <div>{_svg_control(result, colours)}
+  <div>{_svg_exceedance(result, weights)}</div>
+  <div>{_svg_control(result, colours, weights)}
     <p class="note" style="margin-left:2mm">Share of <i>successful</i> realisations in which each
     limit set the contact. A limit that usually kills the prospect outright is under-represented
     here, because it is the most severe.</p>
@@ -335,7 +359,7 @@ distribution is the primary object and the chance multiplies it, never the other
 <table>
 <thead><tr><th>Limit</th><th>Element</th><th class="n">P(active)</th><th>Form</th>
 <th class="n">P90 / P50 / P10 when active</th><th class="n">Controls</th></tr></thead>
-<tbody>{_limit_rows(result)}</tbody>
+<tbody>{_limit_rows(result, weights)}</tbody>
 </table>
 
 <h2>How much to trust this run</h2>
@@ -450,7 +474,7 @@ def _markdownish(text: str) -> str:
 
 def build_full(result: EngineResult, provenance: Provenance, figures: dict, *,
                tables: dict | None = None, checks=(), p_geological: float = 1.0, colours=None,
-               note: str = "") -> tuple[str, list[str]]:
+               note: str = "", weights: np.ndarray | None = None) -> tuple[str, list[str]]:
     """The working record: the one-page summary, then every exhibit with its caption.
 
     Returns the HTML and a list of figures that would not render, so the caller can say which are
@@ -487,7 +511,7 @@ def build_full(result: EngineResult, provenance: Provenance, figures: dict, *,
             continue
         blocks.append(_figure_block(label, caption, payload))
 
-    summary = build(result, provenance, checks=checks, p_geological=p_geological,
+    summary = build(result, provenance, checks=checks, p_geological=p_geological, weights=weights,
                     colours=colours, note=note)
     # The one-pager is a complete document; splice its body in rather than rebuilding it, so the
     # two can never disagree about a number.

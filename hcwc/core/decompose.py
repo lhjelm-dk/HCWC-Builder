@@ -271,14 +271,81 @@ def decompose(result: EngineResult, *, n_points: int = 200,
     )
 
 
+#: The elements WellVolPOS's equal cube-root rule spreads the location factor over. Reservoir is
+#: left alone by the rule and takes a share only when the other three are already at 1.
+_SPREAD_ORDER: tuple[Group, ...] = (Group.CHARGE, Group.CLOSURE, Group.RETENTION)
+
+
+def spread_by_rule(element_pos: dict[Group, float], factor: float) -> dict[Group, float]:
+    """WellVolPOS's equal cube-root rule, generalised to a factor that may exceed one.
+
+    Charge, closure and retention each take ``factor ** (1/3)``; reservoir is untouched. That is
+    the rule as shipped for the location factor ``r <= 1``. The DHI evidence index raises ``P(G)``
+    to ``P(G | s)``, and spreading that update by the same rule (Lars, 21 Sep 2026) means a factor
+    above one, which can push an element chance past 1 -- closure ships at 1.00. An element that
+    would exceed 1 is held at 1 and its excess is passed to the elements still below 1, so the
+    product of the four is ``prod(element_pos) x factor`` whenever that product is at most 1;
+    reservoir joins the sharing only when the other three are all at 1. A presentation, not a
+    claim about which element the evidence speaks to.
+    """
+    out = {e: float(element_pos.get(e, 1.0)) for e in ELEMENTS}
+    if not np.isfinite(factor) or factor <= 0.0:
+        return out
+    remaining = float(factor)
+    open_set = [e for e in _SPREAD_ORDER]
+    reservoir_joined = False
+    while open_set and abs(remaining - 1.0) > 1e-12:
+        share = remaining ** (1.0 / len(open_set))
+        capped = [e for e in open_set if out[e] * share > 1.0 + 1e-12]
+        if not capped:
+            for e in open_set:
+                out[e] = out[e] * share
+            remaining = 1.0
+            break
+        for e in capped:
+            remaining *= out[e]          # the part of the factor this element can still absorb
+            out[e] = 1.0
+            open_set.remove(e)
+        if not open_set and not reservoir_joined and remaining > 1.0 + 1e-12:
+            open_set = [Group.RESERVOIR]
+            reservoir_joined = True
+    return out
+
+
+def element_pos_given_index(element_pos: dict[Group, float],
+                            p_g_updated: float | None) -> dict[Group, float]:
+    """The element chances carrying the evidence-index update, spread by the rule.
+
+    The index updates ``P(G)`` as a total (8.1.4) and the model does not attribute it to an
+    element, so the ratio ``k = P(G | s) / P(G)`` is spread over charge, closure and retention
+    by :func:`spread_by_rule`. The result multiplies to ``P(G | s)`` and is what every
+    per-element reading given the DHI runs on: tab 5.3, the WellVolPOS element curves, the
+    comparison at a well. With ``p_g_updated`` ``None`` the chances come back unchanged, so a
+    geological reading passes through untouched.
+    """
+    out = {e: float(element_pos.get(e, 1.0)) for e in ELEMENTS}
+    if p_g_updated is None:
+        return out
+    total = float(np.prod(list(out.values())))
+    if total <= 0.0:
+        return out
+    return spread_by_rule(out, float(p_g_updated) / total)
+
+
 def allocation_comparison(decomposition: Decomposition, element_pos: dict[Group, float],
-                          z_entry_m: float) -> dict[str, float]:
+                          z_entry_m: float, p_g_updated: float | None = None) -> dict[str, float]:
     """This tool's derived element chances at a well depth, beside WellVolPOS's allocations.
 
     The three allocation schemes WellVolPOS ships all reproduce the *same* ``P_well`` and differ
     only in how they present it. The derived curves are a different kind of object: they can
     disagree with every scheme, because they carry information about which element actually binds
     at that depth rather than a rule for dividing one number.
+
+    ``p_g_updated`` is ``P(G | s)`` when the comparison is read given the DHI: the element
+    chances are first taken through :func:`element_pos_given_index`, and both halves of the
+    table run on those, so ``P_well = P(G | s) x r``. Until 21 Sep 2026 this function took the
+    geological ``P(G)`` with the posterior ``r``, and tab 5.3.4 read a different well chance
+    from tab 5.1.5 (Lars, 21 Sep 2026).
     """
     # Interpolated on the grid rather than read at the nearest of its points: the grid is about
     # 1.6 m apart, so the nearest point was up to 0.8 m off the typed entry depth (audit P3-6,
@@ -289,20 +356,20 @@ def allocation_comparison(decomposition: Decomposition, element_pos: dict[Group,
     def _at(curve: np.ndarray) -> float:
         return float(np.interp(z_entry_m, depths, curve))
 
-    derived = {e: _at(c) for e, c in decomposition.element_pos_at_depth(element_pos).items()}
-    p_well_derived = float(np.prod(list(derived.values()))) if derived else float("nan")
-
-    pos_total = 1.0
-    for element in ELEMENTS:
-        pos_total *= float(element_pos.get(element, 1.0))
+    applied = element_pos_given_index(element_pos, p_g_updated)
+    p_g_applied = float(np.prod(list(applied.values())))
     r = _at(decomposition.direct_depth)
+
+    derived = {e: _at(c) for e, c in decomposition.element_pos_at_depth(applied).items()}
+    p_well_derived = float(np.prod(list(derived.values()))) if derived else float("nan")
 
     out = {f"derived::{e.value}": v for e, v in derived.items()}
     out["derived::P_well"] = p_well_derived
-    out["allocated::P_well"] = pos_total * r
+    out["allocated::P_well"] = p_g_applied * r
     out["r_location"] = r
+    out["p_g_applied"] = p_g_applied
     # Equal cube-root, WellVolPOS's `equal_cube_root`: r^(1/3) on charge, closure and retention.
-    for element in (Group.CHARGE, Group.CLOSURE, Group.RETENTION):
-        out[f"allocated::{element.value}"] = float(element_pos.get(element, 1.0)) * r ** (1 / 3)
-    out[f"allocated::{Group.RESERVOIR.value}"] = float(element_pos.get(Group.RESERVOIR, 1.0))
+    allocated = spread_by_rule(applied, r)
+    for element in ELEMENTS:
+        out[f"allocated::{element.value}"] = allocated[element]
     return out

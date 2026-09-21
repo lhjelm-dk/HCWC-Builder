@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from hcwc.core import decompose as dc
+from hcwc.core import pos as pos_math
 from hcwc.core.decompose import ELEMENTS, ReservoirEffectiveness
 from hcwc.plotting.app.colours import limit_colours
 from hcwc.ui import run, theme
@@ -145,20 +146,34 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
             weights = w
     d = dc.decompose(result, reservoir=reservoir, weights=weights)
     d_geo = dc.decompose(result, reservoir=reservoir) if weights is not None else d
+    # Given the DHI the evidence index has updated P(G) to P(G | s) (8.1.4). The update is a
+    # total; the per-element curves carry it spread by the allocation rule, so their product is
+    # the posterior chance curve tab 5.1 draws and the well reads the same here as on 5.1.5.
+    # Until 21 Sep 2026 this tab ran on the geological element chances with the posterior weights
+    # and read 31.5 % at a well where 5.1.5 read 36.1 % (Lars, 21 Sep 2026).
+    _p_g_updated = (float(overlay["p_g_given_amplitude"])
+                    if weights is not None and "p_g_given_amplitude" in overlay else None)
 
     # ------------------------------------------------------------------ element curves
     theme.heading(tab, sub=n.sub, text="2 · Per-element chance against depth")
 
     # The four chances are set on tab 2 with the rest of the prospect's inputs. They used to be
     # typed here, after the results they feed, which put an input in the middle of an output.
-    pos = st.session_state.get("element_pos")
-    if not pos:
+    pos_stated = st.session_state.get("element_pos")
+    if not pos_stated:
         st.info("Set the element risk on tab 2.0 first.")
         return
+    pos = dc.element_pos_given_index(pos_stated, _p_g_updated)
     st.caption(
         "Element chances from tab 2.0: "
-        + " · ".join(f"{g.value} {v:.2f}" for g, v in pos.items())
+        + " · ".join(f"{g.value} {v:.2f}" for g, v in pos_stated.items())
         + ". This tab follows any change made there."
+        + (f" Given the DHI the evidence index takes P(G) {pos_math.accumulation_chance(pos_stated):.3f} to "
+           f"P(G | s) {pos_math.accumulation_chance(pos):.3f} (5.1.2); the update is spread over charge, "
+           f"closure and retention by the allocation rule, an element held at 1 passing its "
+           f"share on: "
+           + " · ".join(f"{g.value} {v:.2f}" for g, v in pos.items()) + "."
+           if _p_g_updated is not None else "")
     )
 
     sub_elements = st.toggle(
@@ -169,7 +184,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     show_dhi = with_dhi
 
     curves = d.element_pos_at_depth(pos)
-    geo_curves = d_geo.element_pos_at_depth(pos) if weights is not None else None
+    geo_curves = d_geo.element_pos_at_depth(pos_stated) if weights is not None else None
     fig = go.Figure()
     for element in ELEMENTS:
         if element not in curves:
@@ -277,7 +292,9 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
                   "both read at the same threshold", delta_color="off")
         st.caption(
             "The updated POS and the updated contact distribution are one object, read off this "
-            "one curve. The element curves below it are not updated. Method: see 8.1.6."
+            "one curve. The element curves carry the same two updates: the evidence index in the "
+            "element chances, spread by the allocation rule, and the geometry in the weights; "
+            "their product is the red curve. Method: see 8.1.6."
         )
 
     # ------------------------------------------------------------------ consistency
@@ -347,18 +364,21 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     _c2.number_input("or type it", _lo, _hi, step=5.0, key=_num, on_change=_from_number,
                      help="The same value as the slider, to the metre where the well plan gives "
                           "one; the slider rounds to 5 m.")
-    comp = dc.allocation_comparison(d, pos, z_entry)
     # **Both bases, side by side, when there is a posterior to compare against.** Lars, 4 Sep 2026:
     # this table was the DHI-updated allocation on tab 5.0 and the geological one on tab 4.0, drawn
     # identically, with nothing on either to say which — and the two differ by more than the
-    # rounding. They differ through `r` alone: `r = P(contact > z_entry | success)` is read off the
-    # contact distribution, which is the one thing the amplitude does move, while the element
-    # chances above it are untouched by construction. So the whole gap between the two pairs of
-    # columns below is the amplitude's opinion about depth, and nothing else.
-    comp_geo = dc.allocation_comparison(d_geo, pos, z_entry) if weights is not None else None
+    # rounding. They differ through two numbers: `r = P(contact > z_entry | G)`, read off the
+    # contact distribution the geometry channel moves, and `P(G | s)`, the accumulation chance
+    # the evidence index moves (8.1.4). Until 21 Sep 2026 only `r` was carried and the given-the-DHI
+    # half ran on the geological `P(G)`, so this section read 31.5 % at a well where 5.1.5 read
+    # 36.1 % (Lars, 21 Sep 2026). The index update is a total; it is spread by the allocation rule.
+    _overlay = overlay or {}
+    comp = dc.allocation_comparison(d, pos_stated, z_entry, p_g_updated=_p_g_updated)
+    comp_geo = (dc.allocation_comparison(d_geo, pos_stated, z_entry)
+                if weights is not None else None)
     rows = []
     for element in ELEMENTS:
-        row = {"Element": element.value, "Prospect POS": f"{pos[element]:.2f}"}
+        row = {"Element": element.value, "Prospect POS": f"{pos_stated[element]:.2f}"}
         if comp_geo is None:
             derived = comp.get(f"derived::{element.value}")
             row["Derived at the well"] = "—" if derived is None else f"{derived:.3f}"
@@ -372,11 +392,14 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
 
     n.table(pd.DataFrame(rows),
             ((f"At {z_entry:,.0f} m the location factor is r = {comp_geo['r_location']:.3f} "
-                f"geological and r = {comp['r_location']:.3f} {theme.evidence_basis()}, and "
-                f"every difference in the table follows from that one number. The element "
-                f"chances from tab 2.0 are identical in both halves, because evidence about "
-                f"where the contact is moves the total and may not re-attribute it between "
-                f"elements. "
+                f"geological and r = {comp['r_location']:.3f} {theme.evidence_basis()}; the "
+                f"accumulation chance is P(G) = {comp_geo['p_g_applied']:.3f} geological and "
+                f"P(G | s) = {comp['p_g_applied']:.3f} {theme.evidence_basis()}. The geometry "
+                f"channel moves r, the evidence index moves P(G), and every difference in the "
+                f"table follows from those two numbers. The index update is a total: the model "
+                f"does not say which element the evidence speaks to, so it is spread over "
+                f"charge, closure and retention by the same equal cube-root rule as r, an "
+                f"element held at 1 passing its share to the others. "
                 if comp_geo is not None else
                 f"At {z_entry:,.0f} m, r = {comp['r_location']:.3f}. ")
              + f"Derived and allocated are different kinds of object. The allocation divides one "
@@ -387,16 +410,15 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     # than the allocation rule beside it. Given the treatment tab 2.0 gives `P(G)`, and paired
     # with the two readings it is most often confused with: the prospect POS, which asks whether
     # there is a commercial column anywhere, and `r`, which is only the depth term.
-    _overlay = st.session_state.get("dhi_overlay") or {}
-    _pairs = [(theme.GEOLOGICAL, comp_geo or comp, _overlay.get("prior_pos"))]
+    _pairs = [(theme.GEOLOGICAL, comp_geo or comp, _overlay.get("prior_pos"), "P(G)")]
     if comp_geo is not None:
-        _pairs.append((theme.evidence_basis(), comp, _overlay.get("posterior_pos")))
+        _pairs.append((theme.evidence_basis(), comp, _overlay.get("posterior_pos"), "P(G | s)"))
 
     _accent = theme.accent(tab)
-    for _col, (_label, _table, _prospect) in zip(st.columns(len(_pairs)), _pairs):
+    for _col, (_label, _table, _prospect, _pg_name) in zip(st.columns(len(_pairs)), _pairs):
         _p_well = _table["allocated::P_well"]
-        _bits = [f"prospect POS {_prospect:.1%}" if _prospect is not None else None,
-                 f"r = {_table['r_location']:.3f}"]
+        _bits = [f"{_pg_name} {_table['p_g_applied']:.3f} × r {_table['r_location']:.3f}",
+                 f"prospect POS {_prospect:.1%}" if _prospect is not None else None]
         _under = " &nbsp;·&nbsp; ".join(b for b in _bits if b)
         _col.markdown(
             f"<div style='margin:0.6rem 0 0.2rem;padding:0.55rem 0.9rem;"
@@ -412,9 +434,11 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
 
     st.caption(
         f"Three readings, answering three questions. `P(well)` is the chance this well, entering "
-        f"at {z_entry:,.0f} m, finds hydrocarbon: the prospect chance times the chance the "
-        f"contact lies below that depth. The prospect POS above it asks whether there is a "
+        f"at {z_entry:,.0f} m, finds hydrocarbon: the accumulation chance times the chance the "
+        f"contact lies below that depth. Given the DHI the accumulation chance is P(G | s), "
+        f"updated by the evidence index, and r is read from the posterior contact distribution; "
+        f"the reading agrees with the well on 5.1.5. The prospect POS asks whether there is a "
         f"commercial column anywhere, and is always the larger. `r` is the depth term only and "
         f"carries no element risk. An element with no limit in the model has its element "
-        f"chance unchanged with depth. Method: see 8.1.3."
+        f"chance unchanged with depth. Method: see 8.1.3 and 8.1.6."
     )
