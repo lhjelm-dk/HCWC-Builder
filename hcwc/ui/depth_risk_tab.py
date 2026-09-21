@@ -148,9 +148,9 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     d_geo = dc.decompose(result, reservoir=reservoir) if weights is not None else d
     # Given the DHI the evidence index has updated P(G) to P(G | s) (8.1.4). The update is a
     # total; the per-element curves carry it spread by the allocation rule, so their product is
-    # the posterior chance curve tab 5.1 draws and the well reads the same here as on 5.1.5.
+    # the posterior chance curve tab 5.1 draws and the well reads the same here as on 5.2.4.
     # Until 21 Sep 2026 this tab ran on the geological element chances with the posterior weights
-    # and read 31.5 % at a well where 5.1.5 read 36.1 % (Lars, 21 Sep 2026).
+    # and read 31.5 % at a well where 5.2.4 read 36.1 % (Lars, 21 Sep 2026).
     _p_g_updated = (float(overlay["p_g_given_amplitude"])
                     if weights is not None and "p_g_given_amplitude" in overlay else None)
 
@@ -370,7 +370,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     # rounding. They differ through two numbers: `r = P(contact > z_entry | G)`, read off the
     # contact distribution the geometry channel moves, and `P(G | s)`, the accumulation chance
     # the evidence index moves (8.1.4). Until 21 Sep 2026 only `r` was carried and the given-the-DHI
-    # half ran on the geological `P(G)`, so this section read 31.5 % at a well where 5.1.5 read
+    # half ran on the geological `P(G)`, so this section read 31.5 % at a well where 5.2.4 read
     # 36.1 % (Lars, 21 Sep 2026). The index update is a total; it is spread by the allocation rule.
     _overlay = overlay or {}
     comp = dc.allocation_comparison(d, pos_stated, z_entry, p_g_updated=_p_g_updated)
@@ -437,7 +437,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         f"at {z_entry:,.0f} m, finds hydrocarbon: the accumulation chance times the chance the "
         f"contact lies below that depth. Given the DHI the accumulation chance is P(G | s), "
         f"updated by the evidence index, and r is read from the posterior contact distribution; "
-        f"the reading agrees with the well on 5.1.5. The prospect POS asks whether there is a "
+        f"the reading agrees with the well on 5.2.4. The prospect POS asks whether there is a "
         f"commercial column anywhere, and is always the larger. `r` is the depth term only and "
         f"carries no element risk. An element with no limit in the model has its element "
         f"chance unchanged with depth. Method: see 8.1.3 and 8.1.6."
