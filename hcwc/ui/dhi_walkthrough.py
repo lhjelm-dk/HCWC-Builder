@@ -312,6 +312,6 @@ def render(n: Numbering | None = None) -> None:
             f"the update: every realisation clears it. The {_geo} reshapes the contact "
             f"distribution and cannot move the chance here; the whole move comes from the "
             f"{_ev}. A minimum a real share of realisations miss lets the {_geo} reach the "
-            f"chance, and once it sits below the picked contact the pick lowers the chance, which "
+            f"chance, and once it sits below the indicated contact the pick lowers the chance, which "
             f"is the reading of being asked for more column than the amplitude supports."
         )

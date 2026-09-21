@@ -51,6 +51,7 @@ claimed better).
 | Absence within `G` reshapes the column as `1 − D(h)` | modelling choice | `core/dhi.likelihood` | 8.1.5 |
 | A well penetration is independent evidence multiplied in, with a floor `1 − p_connected` | modelling choice, elicited | `core/well` | 8.1.5 |
 | The two channels are one observation's two information channels; the factorisation assigns each to one factor and is not a generative model of the whole observation | modelling choice (limitation) | `core/dhi.prospect_pos` | 8.1.6, 8.1.8 |
+| The outcomes of a seen DHI are named by where the contact lies relative to the indicated contact band, the P99 to P1 of the pick; the mass within the band is split by the branch of the likelihood that put it there | convention (reading of the posterior) | `core/dhi.outcome_shares`, `likelihood_branches` | 8.1.6, 5.1.4 |
 
 ## The empirical comparison
 
