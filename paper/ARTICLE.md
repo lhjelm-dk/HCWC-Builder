@@ -98,9 +98,10 @@ draws stay independent, which is stated rather than hidden.
 
 On the worked prospect, a 350 m closure at 2 050 m with a computed seal capacity and a computed
 charge, the contact comes out at 2 191 / 2 246 / 2 322 m (P90 / P50 / P10), read over the
-realisations that reach the assessment minimum. Top-seal capillary
-capacity sets it in 32 % of realisations, fault leakage in 23 %, seal continuity in 16 %, fault
-geometry in 12 %, charge in 9 %, spill in 3 %. The share is not constant down the structure:
+realisations that meet the assessment minimum. Top-seal capillary
+capacity sets it in 32 % of those realisations, fault leakage in 23 %, seal continuity in 15 %,
+fault geometry in 13 %, charge in 9 %, preservation in 5 % and spill in 3 %; the remaining
+limits control under 1 % between them. The share is not constant down the structure:
 shallow contacts are seal-controlled, deep ones pass to fault geometry and spill (Figure 3).
 
 ![The controlling mechanism by depth](figures/fig2_controlling_mechanism.png)
@@ -151,8 +152,8 @@ ruled out by one interpretation.
 On the worked prospect a moderate anomaly with a 10 m pick at 2 250 m and $c = 0.36$ takes the
 prospect chance from 40 % to 64 % and narrows the P90–P10 spread of the contact from 130 m to
 99 m (Figures 4 and 5). The chance at a well entering at 2 230 m goes from 23 % to 50 %. The
-updated distribution rests on an effective 4 871 of the 10 000 realisations, which is the honest
-measure of how far the seismic displaced the geology: a low value does not mean the
+updated distribution has an effective sample size of 4 872 of the 10 000 realisations, which
+measures how far the seismic displaced the geology: a low value does not mean the
 interpretation is wrong, it means the answer depends on it.
 
 ![The contact distribution before and after the pick](figures/fig4_dhi_update.png)
