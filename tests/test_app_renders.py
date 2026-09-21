@@ -2194,7 +2194,8 @@ class TestTheCompetitionIsDrawnRealisationByRealisation:
         assert shares[0] == pytest.approx(1.0 - overlay["p_g_given_amplitude"], abs=1e-9)
         assert "Method: see 8.1.6" in cap
         table, tcap, *_ = tables["Table 5.1.4c"]
-        assert list(table["Outcome"]) == list(dhi.OUTCOMES)
+        assert list(table["DHI / contact relation"]) == list(dhi.OUTCOMES)
+        assert "A well entering there finds" not in table.columns
         assert "posterior attribution" in tcap
         hist, hcap = figures["Figure 5.1.4a"]
         assert len(hist.layout.shapes) >= 3 and "indicated contact band" in hcap

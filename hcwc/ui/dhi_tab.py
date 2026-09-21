@@ -1297,33 +1297,27 @@ def render(n: Numbering | None = None) -> None:
                      f"hydrocarbon indicator, {_sh[dhi_core.OUTCOME_NO_HC]:.0%}. The four others "
                      f"share P(G | s) = {p_g_updated:.0%}: the contact above the indicated "
                      f"contact band, within it because the DHI is the contact, within it by "
-                     f"coincidence, and below it. A well at the crest finds hydrocarbons in "
-                     f"the four; a well at the top of the band in the last three; a well below "
-                     f"the band in the last alone. Method: see 8.1.6.")
+                     f"coincidence, and below it. The chance at a well is read on 5.2.4, where "
+                     f"the entry depth is. Method: see 8.1.6.")
 
         _rows = {
-            dhi_core.OUTCOME_NO_HC: ("—", "a false hydrocarbon indicator",
-                                     "water at every depth"),
+            dhi_core.OUTCOME_NO_HC: ("—", "a false hydrocarbon indicator"),
             dhi_core.OUTCOME_ABOVE: (f"shallower than {_top:,.0f} m",
-                                     "not the contact; the response lies in the water leg",
-                                     "hydrocarbons whenever they are present"),
+                                     "not the contact; the response lies in the water leg"),
             dhi_core.OUTCOME_AT_BY_DHI: (f"{_top:,.0f} to {_base:,.0f} m, the DHI being its base",
-                                         "the contact",
-                                         "hydrocarbons where the contact is at or below the well"),
+                                         "the contact"),
             dhi_core.OUTCOME_AT_BY_CHANCE: (f"{_top:,.0f} to {_base:,.0f} m, the geology having "
-                                            f"put it there", "not the contact",
-                                            "the same for the well; not for the look-back"),
+                                            f"put it there", "not the contact"),
             dhi_core.OUTCOME_BELOW: (f"deeper than {_base:,.0f} m",
                                      "not the contact; the response lies inside the column, "
-                                     "possibly a gas–oil contact",
-                                     "hydrocarbons where the contact is below the well"),
+                                     "possibly a gas–oil contact"),
         }
-        n.table(pd.DataFrame([{"Outcome": _name, "Chance": f"{_sh[_name]:.1%}",
-                               "The contact is": _rows[_name][0],
-                               "The DHI was": _rows[_name][1],
-                               "A well entering there finds": _rows[_name][2]}
+        n.table(pd.DataFrame([{"DHI / contact relation": _name, "Chance": f"{_sh[_name]:.1%}",
+                               "The posterior contact is": _rows[_name][0],
+                               "The DHI was": _rows[_name][1]}
                               for _name in _order]),
-                f"The outcomes with their chances, summing to one. The two rows within the band "
+                f"The outcomes with their chances, summing to one: the posterior contact "
+                f"against the indicated contact band, not a well reading. The two rows within the band "
                 f"are separated by the branch of the likelihood that put the contact there: "
                 f"the posterior attribution, the chance the DHI is the contact given the "
                 f"geology as well, is {_outcomes.attribution:.2f} against the stated "
