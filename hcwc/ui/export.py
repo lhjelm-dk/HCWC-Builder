@@ -60,6 +60,17 @@ def render() -> None:
         )
     else:
         result = engine_run.current(limit_set)
+        # On the given-the-DHI basis every number in this section carries both updates: the
+        # geometry in the posterior weights and the evidence index in P(G | s). Until 21 Sep 2026
+        # the element curves and the one-page sheet took the geological result under the DHI
+        # label (Lars, 21 Sep 2026).
+        _posterior = st.session_state.get("dhi_posterior") if basis == theme.GIVEN_DHI else None
+        # `st.cache_data` hands back a copy, so the posterior's run is matched on content.
+        _weights = (np.asarray(_posterior.weights, dtype=float)
+                    if _posterior is not None and _posterior.result.n == result.n
+                    and np.array_equal(_posterior.result.contact_m, result.contact_m) else None)
+        _p_g_updated = (float(_overlay["p_g_given_amplitude"])
+                        if _weights is not None and "p_g_given_amplitude" in _overlay else None)
         if basis == theme.GIVEN_DHI:
             samples = np.asarray(_overlay["contact_samples"], dtype=float)
         else:
@@ -119,10 +130,16 @@ def render() -> None:
         if element_pos is None:
             st.info("The element-curve export needs the element risk on tab 2.0.")
         else:
-            curves = wvp.element_curve_table(dc.decompose(result), element_pos)
+            curves = wvp.element_curve_table(
+                dc.decompose(result, weights=_weights),
+                dc.element_pos_given_index(element_pos, _p_g_updated))
             n8.table(curves.iloc[::20], "Chance against depth, one column per element, plus the "
                                         "whole-prospect curve read directly from the contact "
-                                        "distribution. Every twentieth row shown.", height=240)
+                                        "distribution. Every twentieth row shown."
+                                        + (" Given the DHI: the element chances carry the "
+                                           "evidence-index update spread by the allocation "
+                                           "rule, the curves the posterior weights (8.1.6)."
+                                           if _weights is not None else ""), height=240)
             st.download_button("Download element curves (CSV)", curves.to_csv(index=False),
                                "hcwc_element_curves.csv", "text/csv")
         st.caption(wvp.provenance(result, int(st.session_state.get("seed", 20260825)),
@@ -178,15 +195,22 @@ def render() -> None:
         # ------------------------------------------------------------- one page
         theme.heading(7, "4 · One page, for the well proposal")
         _elements = st.session_state.get("element_pos") or {}
-        _p_g = pos.accumulation_chance(_elements)
+        _p_g = (pos.accumulation_chance(_elements) if _p_g_updated is None or not _elements
+                else _p_g_updated)
+        _p_g_name = "P(G)" if _weights is None else "P(G | s)"
+        _f_min = (result.pos if _weights is None
+                  else float(_posterior.exceedance(limit_set.min_column_m)[0]))
         st.markdown(
             f"Everything above is a CSV, and a CSV does not travel. This is the inputs, the "
             f"answer, the controlling-limit diagnostic, the trust checks and the provenance on "
             f"one sheet, printable to PDF from the browser.\n\n"
-            f"It carries `Prospect POS = P(G) × P(column ≥ h | G)` = "
-            f"{_p_g:.3f} × {result.pos:.3f} = {_p_g * result.pos:.3f} and both terms "
+            f"It carries `Prospect POS = {_p_g_name} × P(column ≥ h | G)` = "
+            f"{_p_g:.3f} × {_f_min:.3f} = {_p_g * _f_min:.3f} and both terms "
             f"separately, because the conditional term alone is {1 / _p_g if _p_g else 0:.1f}× the "
             f"prospect chance and reads like it."
+            + (" On the given-the-DHI basis the sheet reads the posterior: P(G | s) from the "
+               "evidence index, the percentiles, the curve and the controlling shares on the "
+               "posterior weights." if _weights is not None else "")
         )
         if not _elements:
             st.warning("No element risk is set on tab 2.0, so `P(G)` is 1.0 and the page says so "
@@ -201,7 +225,7 @@ def render() -> None:
                               trials=int(st.session_state.get("n_trials", 10_000)),
                               seed=int(st.session_state.get("seed", 20260825)),
                               source_file=st.session_state.get("_loaded_name", "")),
-            checks=_checks, p_geological=_p_g,
+            checks=_checks, p_geological=_p_g, weights=_weights,
             colours=limit_colours(limit_set),
             note=st.session_state.get("report_note", ""))
         st.text_area("A note for the sheet (optional)", key="report_note", height=68,
@@ -225,7 +249,7 @@ def render() -> None:
                                   source_file=st.session_state.get("_loaded_name", "")),
                 st.session_state.get(numbering.FIGURES_KEY) or {},
                 tables=st.session_state.get(numbering.TABLES_KEY) or {},
-                checks=_checks, p_geological=_p_g,
+                checks=_checks, p_geological=_p_g, weights=_weights,
                 colours=limit_colours(limit_set),
                 note=st.session_state.get("report_note", ""))
             if _missing:

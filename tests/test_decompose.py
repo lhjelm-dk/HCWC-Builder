@@ -230,6 +230,57 @@ class TestAllocationComparison:
         shallow = decompose.allocation_comparison(d, self.POS, float(d.depths_m[0]))
         assert shallow["r_location"] > deep["r_location"]
 
+    # -- the index update, spread by the rule (Lars, 21 Sep 2026) ---------------------------------
+
+    def test_without_an_updated_p_g_nothing_changes(self):
+        d = decompose.decompose(engine.run(reference_prospect(), 5000))
+        a = decompose.allocation_comparison(d, self.POS, 2230.0)
+        b = decompose.allocation_comparison(d, self.POS, 2230.0, p_g_updated=None)
+        assert a == b
+        assert a["p_g_applied"] == pytest.approx(0.9 * 1.0 * 0.6 * 0.8)
+
+    def test_given_the_dhi_p_well_is_p_g_given_s_times_r(self):
+        """The defect of 21 Sep 2026: tab 5.3.4 read P(G) x r_post where 5.1.5 read P(G | s) x
+        r_post. The comparison now takes the updated chance and reproduces it in the total."""
+        d = decompose.decompose(engine.run(reference_prospect(), 5000))
+        out = decompose.allocation_comparison(d, self.POS, 2230.0, p_g_updated=0.55)
+        assert out["p_g_applied"] == pytest.approx(0.55, rel=1e-9)
+        applied = decompose.element_pos_given_index(self.POS, 0.55)
+        assert np.prod(list(applied.values())) == pytest.approx(0.55, rel=1e-9)
+        assert applied[Group.CLOSURE] == 1.0 and applied[Group.RESERVOIR] == 0.6
+        assert out["allocated::P_well"] == pytest.approx(0.55 * out["r_location"], rel=1e-12)
+        rebuilt = np.prod([out[f"allocated::{e.value}"] for e in ELEMENTS])
+        assert rebuilt == pytest.approx(out["allocated::P_well"], rel=1e-9)
+
+    def test_element_pos_given_index_is_the_identity_without_an_update(self):
+        out = decompose.element_pos_given_index(self.POS, None)
+        assert out == {e: self.POS[e] for e in ELEMENTS}
+
+    def test_the_spread_is_the_shipped_rule_when_the_factor_is_at_most_one(self):
+        out = decompose.spread_by_rule(self.POS, 0.5)
+        for e in (Group.CHARGE, Group.CLOSURE, Group.RETENTION):
+            assert out[e] == pytest.approx(self.POS[e] * 0.5 ** (1 / 3))
+        assert out[Group.RESERVOIR] == self.POS[Group.RESERVOIR]
+
+    def test_an_element_is_held_at_one_and_passes_its_share_on(self):
+        """Closure ships at 1.00, so any factor above one caps it; the excess goes to the other
+        two, and the product of the four is still the target."""
+        out = decompose.spread_by_rule(self.POS, 1.2)
+        assert out[Group.CLOSURE] == 1.0
+        assert out[Group.RESERVOIR] == self.POS[Group.RESERVOIR]
+        assert out[Group.CHARGE] > self.POS[Group.CHARGE]
+        assert out[Group.RETENTION] > self.POS[Group.RETENTION]
+        assert np.prod(list(out.values())) == pytest.approx(0.9 * 0.6 * 0.8 * 1.2, rel=1e-9)
+
+    def test_reservoir_takes_a_share_only_when_the_other_three_are_at_one(self):
+        out = decompose.spread_by_rule(self.POS, 1.9)
+        assert all(out[e] == 1.0 for e in (Group.CHARGE, Group.CLOSURE, Group.RETENTION))
+        assert out[Group.RESERVOIR] == pytest.approx(0.9 * 0.6 * 0.8 * 1.9, rel=1e-9)
+
+    def test_the_spread_never_exceeds_one_anywhere(self):
+        out = decompose.spread_by_rule(self.POS, 10.0)
+        assert all(v <= 1.0 + 1e-12 for v in out.values())
+
 
 class TestLimitCurvesAtDepth:
     """The sub-element breakdown: one curve per *mechanism*, not per risk element.

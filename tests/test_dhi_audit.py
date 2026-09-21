@@ -339,6 +339,36 @@ class TestTheCriticalConsistencyIdentity:
         assert abs(mass_below_edge - f_post) < 0.06
 
     @pytest.mark.render
+    def test_the_well_reads_the_same_on_tab_5_1_5_and_tab_5_3_4(self):
+        """Lars, 21 Sep 2026: at a 2 230 m well tab 5.1.5 read 36.1 % and tab 5.3.4 read 31.5 %.
+        Both are P(well) given the DHI; 5.3.4 had kept the geological P(G) with the posterior r.
+        The comparison table now takes P(G | s) from the overlay and the two agree."""
+        import pathlib
+
+        from streamlit.testing.v1 import AppTest
+
+        from hcwc.core import decompose, engine
+
+        app = pathlib.Path(__file__).resolve().parent.parent / "app.py"
+        at = AppTest.from_file(str(app), default_timeout=900)
+        at.run()
+        assert not at.exception, "\n".join(str(e.value) for e in at.exception)
+        overlay = at.session_state["dhi_overlay"]
+        post = at.session_state["dhi_posterior"]
+        pos = at.session_state["element_pos"]
+        z = 2230.0
+        # Tab 5.1.5: P(G | s) times the weighted exceedance at the entry depth.
+        r_post = float(engine.exceedance(post.result.contact_m, np.array([z]), post.weights)[0])
+        well_515 = float(overlay["p_g_given_amplitude"]) * r_post
+        # Tab 5.3.4: the comparison table built the way the tab builds it.
+        d = decompose.decompose(post.result, weights=post.weights)
+        comp = decompose.allocation_comparison(d, pos, z,
+                                               p_g_updated=float(overlay["p_g_given_amplitude"]))
+        assert comp["allocated::P_well"] == pytest.approx(well_515, abs=2e-3)
+        assert comp["allocated::P_well"] > float(np.prod(list(pos.values()))) * r_post + 0.02, (
+            "the given-the-DHI well chance must carry the index update, not the prior P(G)")
+
+    @pytest.mark.render
     def test_the_identity_holds_on_the_rendered_tab(self):
         """The app's own numbers: the overlay tab 5.1 writes for tabs 4 and 6 carries the
         headline, the updated element chance, the threshold and the weights. The headline must be
