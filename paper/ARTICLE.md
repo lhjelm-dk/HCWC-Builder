@@ -136,7 +136,7 @@ to what works at the crest.
 
 A seismic amplitude with a picked termination is not a contact. It is evidence about one, and
 it carries two kinds. Its character, how hydrocarbon-like it reads, is evidence about whether
-there are hydrocarbons: a likelihood ratio $R$ from two elicited populations, applied to $P(G)$
+there are hydrocarbons: a likelihood ratio $R$ from two reference distributions of the evidence index, applied to $P(G)$
 by the two-state Bayesian update $P(G \mid s) = R\,P(G) / (R\,P(G) + 1 - P(G))$. Its geometry,
 where the picked event terminates, is evidence about how far down the column reaches, given
 that it exists: a likelihood over column height that reweights the geological realisations.

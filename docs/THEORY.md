@@ -157,7 +157,7 @@ by the apex spread when it is not; the well reading and every chance-against-dep
 the depth-space one. The assessment minimum is a column height; where it is marked on a depth
 axis it is drawn at the median apex and labelled as that equivalent.
 
-A probability of success refers to a stated threshold. In this tool that threshold is the
+A probability of meeting an assessment criterion refers to a stated threshold. In this tool that threshold is the
 assessment minimum: the smallest column, `h_min`, that would make the well a discovery. It is
 set on tab 2.0 and every chance downstream is read at it; the volume criterion enters here and
 nowhere else (8.1.1). The second factor, `F(h_min) = P(H ≥ h_min | G)`, is the share of
@@ -183,8 +183,8 @@ An element with no limit in the model never controls the contact, and its derive
 element chance unchanged with depth. Spreading one location factor across four elements by a
 rule presents the same number differently and adds no information about charge or closure;
 the allocation reproduces `P(well)` whatever rule is chosen, and the derived curves can disagree
-with it because they carry which element binds at that depth. `r` quoted as a chance of success
-overstates the well by `1 / P(G)`.
+with it because they carry which element binds at that depth. `r` quoted as the chance the well
+finds hydrocarbons overstates the well by `1 / P(G)`.
 
 The contact percentiles the tabs print are conditional on the assessment minimum: they are
 taken over the realisations whose column reaches `h_min`, with the same weights as
@@ -264,11 +264,13 @@ The geometry likelihood for a seen anomaly has two factors and a floor:
 
 `L(D | h, G) = c · D(h) · Pick(z | apex + h) + (1 − c) · s`
 
-`D(h)` is the detection function: the chance a column of height `h` produces a mappable anomaly,
-near zero below tuning thickness, rising through the resolution limit, flat below a ceiling. The
-ceiling is below 1 on purpose; a function reaching certainty would make an absent anomaly
-infinitely strong evidence. The logistic form is a modelling choice: a Class III sand can become
-less visible when very thick, as the top and base responses separate. `Pick(z | apex + h)` is the
+`D(h)` is a simplified detectability model, not a seismic forward model: the chance a column of
+height `h` produces a mappable anomaly, near zero below tuning thickness, rising through the
+resolution limit, flat below a ceiling. The ceiling is below 1 on purpose; a function reaching
+certainty would make an absent anomaly infinitely strong evidence. The form is logistic in `h`
+and its three parameters are exposed as modelling assumptions. Being monotone it cannot
+represent a response that weakens again with thickness, as a Class III sand's can when the top
+and base responses separate; that is a limitation of the form, not something it models. `Pick(z | apex + h)` is the
 chance the interpreted termination lands at `z` if the contact is at `apex + h`: a normal, PERT
 or uniform shape in metres TVDSS, its width the pick error plus the depth conversion, the second
 usually larger. Partial conformance, an anomaly bright over the crest and reliably absent below
