@@ -396,7 +396,32 @@ prospect failed, which element failed, a fluid indicator cannot say; the element
 are untouched by the update (Monigle et al. 2025: the adequacy of source is determined by the
 geologic factors alone). Given it worked and the contact is where the amplitude says, which
 mechanism stopped it there, the DHI can answer, because the controlling limit is coupled to the
-contact depth. That is why the controller is recorded.
+contact depth. That is why the controller is recorded. The well reading given the DHI is the
+same product read at the entry depth, `P(well) = P(G | s) × P(z_HCWC > z_well | G, geometry)`,
+on tab 5.1.5 and tab 5.3.4 alike; where tab 5.3.4 shows it per element, the update of `P(G)`
+by the index is spread over the elements by the allocation rule (8.1.3), a presentation that
+attributes nothing.
+
+Why a well at the picked contact does not read `P(G | s)`. A success rate is a count of one
+event, and `P(G | s)` counts hydrocarbons present in the trap: a well at the crest finds them
+whenever they are there, so at the crest the two numbers agree. A well 180 m down structure
+needs a second thing, a column at least 180 m tall, and the chance of that is not one. On the
+shipped prospect, evidence index +5 and `c = 0.36`, `P(G | s)` is 0.467 and a well at 2 230 m,
+20 m above the 2 250 m pick, reads 0.361. Of a thousand such prospects, 533 have no
+hydrocarbons, 107 have hydrocarbons with the contact above 2 230 m, and 361 have hydrocarbons
+at the well. The 107 are the prospects on which the flat event was not the contact and the
+real contact sits where the geology alone put it, above 2 230 m in 43 % of the geological
+realisations. Their number is set by `c`: the pick alone puts 0.98 on a contact below 2 230 m
+and the geology 0.57, and the posterior sits between them at 0.77, the mixture at the
+posterior attribution of 0.49 (the pick lands where the geology expected a contact, which
+raises 0.36 to 0.49). With `c = 0.99` the 107 become 10 and the well reads 0.458, the pick's
+own 2 % above 2 230 m accounting for the rest. A database success rate for prospects with this
+prior and this evidence is therefore compared with `P(G | s)` if its wells were drilled where a
+column of any size is found, and with `P(G | s) × F_post` at the entry depth if they were
+drilled at the flat event; the one number cannot serve both. The pairing matters as well: an
+event known to be the contact is a fluid-contact reflection, which is strong evidence of
+hydrocarbons and belongs high on the index, so a marginal index with `c` near one is the
+off-band pairing Figure 5.1.3a marks.
 
 The scenario switch, `IF(DHI valid, DHI contact, geological contact)`, is the older method and
 Hood's rule: merge late, never blend into the input distribution. It moves the contact and not

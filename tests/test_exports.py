@@ -177,3 +177,40 @@ def test_wellvolpos_maps_every_column_we_export(result, table):
     assert set(proposal.mapping) == {"trial", "contact", "crest", "spill", "area", "hc_grv"}
     assert all(canon == col for canon, col in proposal.mapping.items())
     assert proposal.missing_required == ["resource"]
+
+
+class TestTheOnePageSheetOnTheDhiBasis:
+    """Lars, 21 Sep 2026: a sheet labelled given the DHI carried the geological numbers under
+    that label. With the posterior weights the sheet reads P(G | s), the weighted F(h_min), the
+    weighted percentiles and the weighted controlling shares, the same estimators as tab 5."""
+
+    def _weights(self, result):
+        rng = np.random.default_rng(3)
+        w = rng.uniform(0.05, 1.0, result.n) * (result.column_m > 60.0) + 0.01
+        return w
+
+    def test_the_sheet_reads_the_posterior_when_weights_are_passed(self, result):
+        from hcwc.io import report
+
+        w = self._weights(result)
+        prov = report.Provenance(prospect="p", basis="given the DHI", trials=result.n, seed=1)
+        html = report.build(result, prov, p_geological=0.467, weights=w)
+        keep = result.above_minimum
+        f_min = float(engine.exceedance(result.column_m, result.limit_set.min_column_m, w)[0])
+        p90, p50, p10 = engine.weighted_percentiles(result.contact_m[keep], w[keep],
+                                                    np.array([90.0, 50.0, 10.0]))
+        assert f"{0.467 * f_min:.1%}" in html
+        assert f"P(G | s) 0.467 × {f_min:.3f}" in html
+        for v in (p90, p50, p10):
+            assert f"{v:,.0f} m" in html
+        assert "P(G | s) = 0.467" in html
+        # and not the geological reading under the DHI label
+        assert f"P(G) 0.467 × {result.pos:.3f}" not in html
+
+    def test_without_weights_the_sheet_is_the_geological_one(self, result):
+        from hcwc.io import report
+
+        prov = report.Provenance(prospect="p", basis="geological", trials=result.n, seed=1)
+        html = report.build(result, prov, p_geological=0.408)
+        assert f"P(G) 0.408 × {result.pos:.3f}" in html
+        assert "P(G | s)" not in html

@@ -119,7 +119,16 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
 
     element_pos = st.session_state.get("element_pos") or {}
     p_geological = pos.accumulation_chance(element_pos)
-    prospect_pos = p_geological * column_pos
+    # Given the DHI the accumulation chance is P(G | s): the evidence index's update, which tab
+    # 5.1 has written into the overlay by the time this tab draws (8.1.4). Every prospect chance
+    # on this tab multiplies that, not the geological P(G); until 21 Sep 2026 the headline and
+    # the §4 identity here used P(G) with the posterior column term and disagreed with 5.1.5
+    # (Lars, 21 Sep 2026). The leverage map's geological reference keeps P(G) on purpose.
+    _overlay = st.session_state.get("dhi_overlay") if given_dhi else None
+    _p_g_applied = (float(_overlay.get("p_g_given_amplitude", p_geological))
+                    if _overlay else p_geological)
+    _p_g_name = "P(G | s)" if given_dhi else "P(G)"
+    prospect_pos = _p_g_applied * column_pos
 
     if h_min <= 0:
         # **No number, rather than a number and a correction.** At a minimum of zero the column
@@ -1031,11 +1040,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # times the chance of a column at least this tall given the elements worked. On the
     # geological tab the first factor is P(G) from tab 2.0; given the DHI it is P(G) updated by
     # the amplitude, which tab 5.0 has already written into the overlay by the time its results
+    # (the same `_p_g_applied` the headline uses, decided once at the top of this function)
     # sub-tab draws this.
     theme.heading(tab, sub=n.sub, text="3 · How the chance changes with depth")
-    _overlay = st.session_state.get("dhi_overlay") if given_dhi else None
-    _p_g_applied = (float(_overlay.get("p_g_given_amplitude", p_geological))
-                    if _overlay else p_geological)
     _f = np.asarray(exceed(grid), dtype=float)
     _chance = _p_g_applied * _f
     _chance_prior = p_geological * np.asarray(result.exceedance(grid), dtype=float)
@@ -1133,11 +1140,16 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     theme.heading(tab, sub=n.sub, text="4 · The assessment minimum and the well")
     if h_min > 0:
         st.markdown(
-            f"`Prospect POS = P(G) × P(column ≥ h | G)` = "
-            f"{p_geological:.3f} × {column_pos:.3f} = {prospect_pos:.3f}. `P(G)` is the element "
-            f"chance from tab 2.0; `P(column ≥ h | G)` is read off the exceedance curve in "
-            f"section 1 at the assessment minimum, from the competing limits, conditional on "
-            f"the elements having worked."
+            f"`Prospect POS = {_p_g_name} × P(column ≥ h | G)` = "
+            f"{_p_g_applied:.3f} × {column_pos:.3f} = {prospect_pos:.3f}. "
+            + (f"`P(G | s)` is the element chance from tab 2.0 (P(G) = {p_geological:.3f}) "
+               f"updated by the DHI evidence index on 5.1.2; `P(column ≥ h | G, evidence)` is "
+               f"read off the posterior exceedance curve in section 1 at the assessment "
+               f"minimum."
+               if given_dhi else
+               f"`P(G)` is the element chance from tab 2.0; `P(column ≥ h | G)` is read off "
+               f"the exceedance curve in section 1 at the assessment minimum, from the "
+               f"competing limits, conditional on the elements having worked.")
         )
     from hcwc.ui.depth_risk_tab import DEFAULT_ENTRY_DEPTH_M
     _lo_z, _hi_z = float(result.contact_m.min()), float(result.contact_m.max())
@@ -1159,7 +1171,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     _r_well = float(engine.exceedance(result.contact_m, np.array([z_entry]), weights)[0])
     _p_well = _p_g_applied * _r_well
     w2.metric("P(well finds hydrocarbon)", f"{_p_well:.1%}",
-              f"P(G) {_p_g_applied:.3f} × P(contact ≥ {z_entry:,.0f} m | G) {_r_well:.3f}",
+              f"{_p_g_name} {_p_g_applied:.3f} × P(contact ≥ {z_entry:,.0f} m | G) {_r_well:.3f}",
               delta_color="off")
     w3.metric("Column at the well, P50", f"{max(pct(50) - z_entry, 0.0):,.0f} m",
               f"P50 contact {pct(50):,.0f} m", delta_color="off")
