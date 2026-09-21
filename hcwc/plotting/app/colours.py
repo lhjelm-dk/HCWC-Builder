@@ -8,7 +8,7 @@ from hcwc.ui import theme
 def limit_colours(limit_set) -> dict[str, str]:
     """One colour per limit: a **variation of its risk element's hue**.
 
-    Lars's rule, 25 Aug 2026: fault leakage and the seals are retention mechanisms, so they are
+    Rule: fault leakage and the seals are retention mechanisms, so they are
     greens -- but not *the* retention green, which stays reserved for the element itself. Hue says
     which element a limit belongs to at a glance; lightness separates the limits inside it. That
     matters because colouring purely by element left five retention limits in one indistinguishable

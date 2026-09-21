@@ -1,7 +1,7 @@
 # Validation (developer-facing)
 
 What is checked, by what, and where the numbers live. Written in Phase 7 of the clean-up
-(18 Sep 2026). The user-facing statement is 8.1.8; the pinned numbers are `docs/BASELINE.md`.
+(18 Sep 2026). The user-facing statement is 8.1.10; the pinned numbers are `docs/BASELINE.md`.
 
 ## The suite
 
@@ -39,7 +39,7 @@ minutes). Core and io import without Streamlit, so the numerical tests need no U
 ## Audits on record
 
 - `docs/AUDIT_2026-09-14.md`: the eleven core modules end to end; two defects fixed the same day.
-- `docs/DHI_AUDIT_2026-09-16.md`: the DHI chain against 8.1.4–8.1.6; no inconsistency found.
+- `docs/DHI_AUDIT_2026-09-16.md`: the DHI chain against 8.1.6–8.1.8; no inconsistency found.
 - The conversation audit of 18 Sep 2026 (summarised in `docs/REPO_AUDIT.md` §8): P(G) is the
   accumulation chance everywhere; the threshold enters once; each channel updates one factor;
   one weight array reads every posterior quantity.

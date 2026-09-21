@@ -23,7 +23,7 @@ TAB = 4
 #: How far above the spill point the reservoir-effectiveness decline begins, by default.
 #:
 #: The decline is a statement about the deepest part of a closure degrading, so it is measured from
-#: the spill point rather than from anywhere in the contact distribution. 50 m is Lars's number.
+#: the spill point rather than from anywhere in the contact distribution. 50 m is the shipped number.
 DECLINE_INTERVAL_M = 50.0
 
 #: The same tab, run against the DHI-updated model. See :func:`render`.
@@ -31,7 +31,7 @@ TAB_DHI = 5
 
 
 #: Where the entry-depth control opens, m TVDSS. A depth rather than a percentile of the
-#: run: Lars's worked well enters here, and a percentile moves under you whenever the limits
+#: run: the worked well enters here, and a percentile moves under you whenever the limits
 #: change. Clamped into the decomposition's own depth range, which a shallow prospect can
 #: sit entirely above.
 DEFAULT_ENTRY_DEPTH_M = 2230.0
@@ -77,12 +77,12 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         st.markdown(
             "The same decomposition as tab 4.0, after the update on tab 5.1. The geological "
             "curves are drawn underneath unchanged: the evidence may move the total and may not "
-            "re-attribute it between elements. Method: see 8.1.6."
+            "re-attribute it between elements. Method: see 8.1.8."
         )
     st.markdown(
         "Each element's curve is derived from the shallowest active limit within that element, "
         "its group minimum. WellVolPOS allocates one location factor across the elements by a "
-        "rule; the derived curves say which element binds at each depth. Method: see 8.1.3."
+        "rule; the derived curves say which element binds at each depth. Method: see 8.1.4."
     )
 
     # ------------------------------------------------------------------ reservoir effectiveness
@@ -90,7 +90,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.markdown(
         "A reservoir that ends at a surface (base or pinch-out) is a limit on tab 3.0 and moves "
         "the contact; a reservoir that degrades with depth is entered here and lowers the chance "
-        "without moving it. Method: see 8.1.3."
+        "without moving it. Method: see 8.1.4."
     )
     use_r1 = st.toggle(
         "Apply a reservoir-effectiveness decline", value=False, key=f"r1_on_{tab}",
@@ -109,7 +109,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         # closure the assessor stated on tab 2.0, not an output of the run being adjusted, so the
         # default does not move when the limits move.
         #
-        # Lars's values, 2 Sep 2026: the decline occupies the deepest 50 m of the closure.
+        # Shipped values: the decline occupies the deepest 50 m of the closure.
         _spill = st.session_state.get("spill_point")
         _none_default = (float(_spill) if _spill
                          else float(np.percentile(result.contact_m, 95)))
@@ -146,11 +146,11 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
             weights = w
     d = dc.decompose(result, reservoir=reservoir, weights=weights)
     d_geo = dc.decompose(result, reservoir=reservoir) if weights is not None else d
-    # Given the DHI the evidence index has updated P(G) to P(G | s) (8.1.4). The update is a
+    # Given the DHI the evidence index has updated P(G) to P(G | s) (8.1.6). The update is a
     # total; the per-element curves carry it spread by the allocation rule, so their product is
     # the posterior chance curve tab 5.1 draws and the well reads the same here as on 5.2.4.
     # Until 21 Sep 2026 this tab ran on the geological element chances with the posterior weights
-    # and read 31.5 % at a well where 5.2.4 read 36.1 % (Lars, 21 Sep 2026).
+    # and read 31.5 % at a well where 5.2.4 read 36.1 %.
     _p_g_updated = (float(overlay["p_g_given_amplitude"])
                     if weights is not None and "p_g_given_amplitude" in overlay else None)
 
@@ -263,7 +263,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     fig.update_layout(xaxis_title="Probability", xaxis_range=[0, 1],
                       yaxis_title="Depth (m TVDSS)", yaxis=dict(autorange="reversed"),
                       height=620, margin=dict(t=20),
-                      # To the right rather than beneath (Lars, 15 Sep 2026): given the DHI the
+                      # To the right rather than beneath: given the DHI the
                       # legend carries two entries per element and the row wrapped to three lines.
                       legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
     n.plot(fig, "Each element's chance curve, derived from the shallowest active limit within "
@@ -292,7 +292,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
             "The updated POS and the updated contact distribution are one object, read off this "
             "one curve. The element curves carry the same two updates: the evidence index in the "
             "element chances, spread by the allocation rule, and the geometry in the weights; "
-            "their product is the red curve. Method: see 8.1.6."
+            "their product is the red curve. Method: see 8.1.8."
         )
 
     # ------------------------------------------------------------------ consistency
@@ -300,7 +300,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.markdown(
         "Under independent limits, `∏ₑ Pₑ(z) = P(contact > z)`: the product of the element "
         "curves reproduces the contact distribution. The test runs on every rerun. Method: see "
-        "8.1.8."
+        "8.1.10."
     )
     c1, c2, c3 = st.columns(3)
     c1.metric("Max gap, column space", f"{d.max_abs_residual_column:.3f}",
@@ -329,7 +329,7 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     st.info(
         "The identity is exact in column-height space and approximate in depth space, where the "
         "elements share the apex draw; the difference between the two residuals is the apex's "
-        "contribution. Method: see 8.1.2."
+        "contribution. Method: see 8.1.3."
     )
 
     # ------------------------------------------------------------------ allocation comparison
@@ -362,14 +362,14 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
     _c2.number_input("or type it", _lo, _hi, step=5.0, key=_num, on_change=_from_number,
                      help="The same value as the slider, to the metre where the well plan gives "
                           "one; the slider rounds to 5 m.")
-    # **Both bases, side by side, when there is a posterior to compare against.** Lars, 4 Sep 2026:
+    # **Both bases, side by side, when there is a posterior to compare against.** Decision:
     # this table was the DHI-updated allocation on tab 5.0 and the geological one on tab 4.0, drawn
     # identically, with nothing on either to say which — and the two differ by more than the
     # rounding. They differ through two numbers: `r = P(contact > z_entry | G)`, read off the
     # contact distribution the geometry channel moves, and `P(G | s)`, the accumulation chance
-    # the evidence index moves (8.1.4). Until 21 Sep 2026 only `r` was carried and the given-the-DHI
+    # the evidence index moves (8.1.6). Until 21 Sep 2026 only `r` was carried and the given-the-DHI
     # half ran on the geological `P(G)`, so this section read 31.5 % at a well where 5.2.4 read
-    # 36.1 % (Lars, 21 Sep 2026). The index update is a total; it is spread by the allocation rule.
+    # 36.1 %. The index update is a total; it is spread by the allocation rule.
     _overlay = overlay or {}
     comp = dc.allocation_comparison(d, pos_stated, z_entry, p_g_updated=_p_g_updated)
     comp_geo = (dc.allocation_comparison(d_geo, pos_stated, z_entry)
@@ -438,5 +438,5 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
         f"the reading agrees with the well on 5.2.4. The prospect POS asks whether there is a "
         f"commercial column anywhere, and is always the larger. `r` is the depth term only and "
         f"carries no element risk. An element with no limit in the model has its element "
-        f"chance unchanged with depth. Method: see 8.1.3 and 8.1.6."
+        f"chance unchanged with depth. Method: see 8.1.4 and 8.1.8."
     )

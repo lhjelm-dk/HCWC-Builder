@@ -70,7 +70,7 @@ def example_buttons(key: str) -> None:
                 st.rerun()
 
 #: Element -> (play, conditional) starting values. The product is the element chance.
-#: Lars's values, 26 Aug 2026, in `hcwc.core.defaults.ELEMENT_CHANCES`; geological POS = 0.408.
+#: Elicited values, in `hcwc.core.defaults.ELEMENT_CHANCES`; geological POS = 0.408.
 DEFAULT_RISK: dict[Group, tuple[float, float]] = {
     group: defaults.ELEMENT_CHANCES[group.value] for group in ELEMENTS
 }
@@ -243,7 +243,7 @@ def render() -> None:
 
     # The assessment minimum sits with the geometry because it is the definition of success,
     # not a run setting: every chance downstream is the exceedance curve read at this height.
-    # Five metres rather than zero (Lars, 28 Aug 2026): a column of a metre or two cannot be
+    # Five metres rather than zero: a column of a metre or two cannot be
     # tested, and zero made the app open at a chance of 100 % by construction.
     st.session_state.setdefault("min_column_input", 5.0)
     m1, m2 = st.columns([1, 2])
@@ -258,7 +258,7 @@ def render() -> None:
         f"A discovery is a column of at least {min_column:,.0f} m, a contact at or below "
         f"{apex_mid + min_column:,.0f} m TVDSS at the mid apex. The limits on tab 3.0 say how "
         f"deep the column could reach; this says how deep it must reach to count. Method: see "
-        f"8.1.3."
+        f"8.1.4."
     )
     if min_column == 0:
         st.warning(
@@ -281,7 +281,7 @@ def render() -> None:
     st.info(
         "The chances here are for the element working at the crest. A trapping element that "
         "fails down-dip from the crest is a limit on tab 3.0, not a reduction of the chance "
-        "here. Method: see 8.1.1.\n\n"
+        "here. Method: see 8.1.2.\n\n"
         "Retention here is whether the seal holds anything. How much it holds is the top-seal "
         "capacity on tab 3.0. An E-POS Retention number that already means the full column belongs "
         "on tab 3.0."
@@ -357,12 +357,12 @@ def render() -> None:
         "P(G) is the chance that every element works at the crest; it carries no statement about "
         "how far down the column reaches. The geological POS is "
         "`P(G) × P(column ≥ h_min | G)`; tab 4.0 shows both terms and their product. Method: see "
-        "8.1.4."
+        "8.1.6."
     )
 
     # ------------------------------------------------------------------ DHI
     theme.heading(TAB, "3 · Direct hydrocarbon indicator")
-    # On by default, at Lars's request (27 Aug 2026). The reasoning that had it off was that a
+    # On by default, by decision. The reasoning that had it off was that a
     # tool assuming a DHI will find one -- but the tab is inert until an amplitude is actually
     # described, and leaving it off hid the whole DHI half of the app behind a switch most users
     # never found. A prospect without one turns it off in a click and the geological tabs are
@@ -445,7 +445,7 @@ def render() -> None:
         elif use_hc:
             st.warning(
                 "Hydrocarbons proven in this closure make the prospect a discovery. This tool uses "
-                "the depth only and does not change the element chances above. See 8.1.8."
+                "the depth only and does not change the element chances above. See 8.1.10."
             )
         if not use_hc and not use_water:
             st.info("At least one is required. A penetration that established neither fluid is not "

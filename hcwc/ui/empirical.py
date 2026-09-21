@@ -136,7 +136,7 @@ def _overlay_models(fig, x: float, width: float) -> list[str]:
 def dhi_columns(n_draw: int = 10_000) -> "np.ndarray | None":
     """This prospect's column distribution **given the evidence**, success cases only, or ``None``.
 
-    Section 8 compared the record against the geological model and nothing else -- Lars, 4 Sep 2026:
+    Section 8 compared the record against the geological model and nothing else -- Decision:
     *"it looks like it is only the geological that is being compared to stats. I want both."* He is
     right that it is the more interesting comparison: the geological model is what the limits allow,
     and the updated one is what the limits allow *after the amplitude or the well has spoken*. A
@@ -230,7 +230,7 @@ Edmundson et al. (2021) assembled 242 measured discoveries across the Norwegian 
 Shelf, each with an apex and a spill point picked from depth-converted maps, and published the
 raw table under CC-BY 4.0. What follows differs from the published analysis in one estimator,
 not in the data. Edmundson's trap height is this tool's closure height, one measurement under
-two names; their term is kept where their data are quoted. Method: see 8.1.7.
+two names; their term is kept where their data are quoted. Method: see 8.1.9.
 """
     )
 
@@ -267,7 +267,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                                   "corrected fit finds burial depth to be a much stronger control "
                                   "than the published analysis reported; see Table 6.3a.")
     prior = _empirical_prior(closure, burial)
-    # **On by arrival.** Lars, 4 Sep 2026. The empirical prior on its own is a statement about the
+    # **On by arrival.**  The empirical prior on its own is a statement about the
     # NCS record; the comparison is the reason anyone is on this tab, and a toggle defaulting off
     # made the more interesting of the two figures the one you had to know to ask for.
     show_models = st.toggle(
@@ -324,7 +324,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     _add_prospect_violin(figA, closure, prior, width=45.0)
     if show_models:
         _overlay_models(figA, closure, 45.0)
-    # Column height increases downward (Lars, 16 Sep 2026): a column is a depth below the apex,
+    # Column height increases downward: a column is a depth below the apex,
     # and every other depth axis in the tool reads that way.
     figA.update_layout(xaxis_title="Closure height (m)",
                        yaxis=dict(title="Hydrocarbon column height (m)", autorange="reversed"),
@@ -355,7 +355,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
             f"below {ols_cross:.0f} m it predicts a column the data cannot contain, and "
             f"{int((h < ols_cross).sum())} of {h.size} discoveries ({(h < ols_cross).mean():.0%}) "
             f"sit there; its intercept is {intercept:+.0f} m. Kept as published. Method: see "
-            f"8.1.7."
+            f"8.1.9."
         )
 
     # -------- Figure: their Fig 6B equivalent -------------------------------------------
@@ -410,7 +410,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     * Filled to spill (`C = H`): geometry bound it. All that is learned is `S ≥ H`. The observation
       is right-censored; the seal's capacity was not tested.
 
-    111 of 242 rows, 46 %, are of the second kind. Method: see 8.1.7.
+    111 of 242 rows, 46 %, are of the second kind. Method: see 8.1.9.
     """
         )
 
@@ -429,7 +429,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
 
         st.markdown(
             "Corrected, closure height matters less than published and burial depth roughly "
-            "twice as much. Method: see 8.1.7."
+            "twice as much. Method: see 8.1.9."
         )
 
         with st.expander("Why not simply drop the filled-to-spill points?"):
@@ -445,7 +445,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     | Censored MLE | −0.009 |
 
     Only the censored likelihood recovers the truth (`tests/test_censoring.py`). Method: see
-    8.1.7.
+    8.1.9.
     """
             )
 
@@ -472,7 +472,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         st.caption(
             f"Graham et al.'s global 40 % is a population average over closures below 250 m; on "
             f"the same basis the NCS gives {filled[h < 250].mean():.0%}, a regional difference, "
-            f"since the NCS is charge-rich. Method: see 8.1.7."
+            f"since the NCS is charge-rich. Method: see 8.1.9."
         )
 
         theme.heading(TAB, "5 · A second bias, which the correction does not remove")
@@ -487,7 +487,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     ```
 
     A depth-conversion error moves both the same way and manufactures a relationship no censored
-    estimator can see. Method: see 8.1.7.
+    estimator can see. Method: see 8.1.9.
     """
         )
         sigmas = (0.0, 10.0, 25.0, 50.0, 75.0, 100.0)
@@ -534,7 +534,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     st.markdown("The measured dataset is Norwegian, and there is no second one; a prospect "
                 "outside the NCS is compared against Norwegian rock, and an in-house trap-fill "
                 "database, loaded below, is the only way to a benchmark conditioned on its own "
-                "basin. Method: see 8.1.7.")
+                "basin. Method: see 8.1.9.")
     _render_import()
 
     # ------------------------------------------------------------------ family curves
@@ -543,7 +543,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         "Column height runs down the page and relief picks the curve. Each curve reads: for a "
         "closure of this relief, the probability that the column is at least this tall. The "
         "horizontal step at the bottom of each curve is the filled-to-spill probability mass, a "
-        "point mass rather than a tail. Method: see 8.1.7."
+        "point mass rather than a tail. Method: see 8.1.9."
     )
 
     options = ["NCS, censoring-corrected", "NCS, as the paper fits it", "Graham et al. (2015)"]
@@ -623,7 +623,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                                 name=f"benchmark at this prospect's relief ({own_relief:,.0f} m)",
                                 line=dict(color="#555555", width=3, dash="dash"))
 
-        # The DHI-updated distribution, when there is one. Drawn because Lars asked to see both
+        # The DHI-updated distribution, when there is one. Drawn so both are seen
         # against the data; the caption carries why the comparison is weaker than the geological
         # one, since the benchmarks cannot be conditioned the same way.
         # Column space, as the benchmarks are: F_post(h) from the posterior itself, the same
@@ -649,7 +649,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                         marker=dict(color=PROSPECT, size=11, symbol="diamond"),
                         hovertemplate="built P50 %{x:,.0f} m<extra></extra>")
 
-    # Column height down the page and probability across (Lars, 16 Sep 2026), so the family
+    # Column height down the page and probability across, so the family
     # reads like every other exceedance figure in the tool. The traces were built with the
     # column on x; they are transposed here in one place rather than at each of the nine sites.
     for _trace in fam.data:
@@ -672,7 +672,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         # against log and only -0.921 against linear. Offering probit with a linear column axis
         # would be offering the scale without the property it exists for, and the reader would
         # read the residual curvature as a finding.
-        # A fixed window on the log column axis, 9 to 1 001 m (Lars, 16 Sep 2026), so the
+        # A fixed window on the log column axis, 9 to 1 001 m, so the
         # probit view keeps the same frame whatever the family or prospect draws; reversed by
         # giving the range deep end first. Plotly takes log-axis ranges as log10 of the values.
         fam.update_yaxes(type="log", autorange=False,
@@ -723,7 +723,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
     if st.session_state.get("dhi_on") and st.session_state.get("dhi_overlay") is not None:
         st.markdown("The geological curve is the like-for-like comparison; the DHI curve shows "
                     "how far the evidence moved the prospect, not whether the model is "
-                    "calibrated. Method: see 8.1.7.")
+                    "calibrated. Method: see 8.1.9.")
 
     if imported is not None and source == imported_label(imported):
         st.info(
@@ -742,7 +742,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         st.markdown("This is the published estimator, drawn for comparison and not for use. "
                     "Fitted without treating the filled-to-spill discoveries as censored, it "
                     "under-fills small closures and over-fills the largest, and does not "
-                    "reproduce the dataset's own fill-to-spill rate. Method: see 8.1.7.")
+                    "reproduce the dataset's own fill-to-spill rate. Method: see 8.1.9.")
 
     # ------------------------------------------------------------------ summary
     # -------- Are we optimistic or pessimistic? ------------------------------------------
@@ -860,7 +860,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                     "discoveries are partly selected by other people's amplitudes, enriched in "
                     "long columns because that is what detectability does. A posterior judged "
                     "against them counts the DHI twice and reads as less optimistic than it is. "
-                    "Method: see 8.1.7.\n\n"
+                    "Method: see 8.1.9.\n\n"
                     "The updated row reads as displacement rather than as a score: how far the "
                     "evidence moved the prospect against a fixed backdrop. The distance between "
                     "the two rows is the quantity to quote."
@@ -952,7 +952,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                              height=600, margin=dict(t=20),
                              legend=dict(orientation="h", y=-0.16))
             qq.update_xaxes(range=[lo, hi])
-            # Reversed, as Lars asked, and consistent with every other column axis in the tool: a
+            # Reversed, consistent with every other column axis in the tool: a
             # taller column reaches further down the structure, so "further down the page" has to
             # mean "more column" whichever axis it is on. The consequence is that the optimistic
             # zone is the LOWER one, which is why both zones are labelled rather than left to
@@ -980,7 +980,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
             ratio = go.Figure()
             # **Exceedance, like every other percentile in this tool.** P100 is the shallowest
             # contact and P0 the deepest, so the shallow end of a column distribution is P99 and
-            # the deep end is P1. This axis said the opposite until Lars caught it on 27 Aug 2026
+            # the deep end is P1. This axis said the opposite until it was caught
             # -- `quantile_pairs` returns shallow-to-deep, which numpy indexes as an *ascending*
             # percentile, and the label was taken from the numpy call rather than from the
             # convention. The grid now comes from `calibration.exceedance_grid`, beside the pairs
@@ -1060,7 +1060,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
             "A weight, not a Bayesian update. The model is already built out of relief and burial, "
             "since the spill point is the relief, so multiplying in a record conditioned on both "
             "would count the geometry twice. Two priors combine by weighting, which is why this is "
-            "a slider starting at zero. Method: see 8.1.7."
+            "a slider starting at zero. Method: see 8.1.9."
         )
 
         bench_draw = _samples_for(bench_source, (round(own_relief, 1),), float(burial))
@@ -1073,8 +1073,8 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
             top = float(max(np.percentile(built_column, 99.5), np.percentile(bench, 99.5)))
             grid = np.linspace(0.0, top, 320)
 
-            # **Every basis gets a combined curve, not just the geological one.** Lars, 4 Sep
-            # 2026: *"in 6.12 is the combined just the geological, or what about the |DHI?"*
+            # **Every basis gets a combined curve, not just the geological one.**
+            # *"in 6.12 is the combined just the geological, or what about the |DHI?"*
             # It was the geological one, and drawing the updated model beside a fusion that
             # ignored it made the figure read as though the evidence had been folded in when
             # it had not. The fusion is a weighted quantile average, so it applies to either
@@ -1098,7 +1098,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
 
             fig_fuse = go.Figure()
             for label, sample, colour, dash, width in curves:
-                # Column height down the page, probability across (Lars, 16 Sep 2026).
+                # Column height down the page, probability across.
                 fig_fuse.add_scatter(x=engine.exceedance(sample, grid), y=grid, mode="lines",
                                      name=label,
                                      line=dict(color=colour, width=width, dash=dash))
@@ -1115,7 +1115,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                     + "Every curve is conditional on the prospect working: these are column "
                    "distributions, not chances. The combined curve is a weighted average of "
                    "quantiles, not a Bayesian update, so it lies between the two. Method: see "
-                   "8.1.7."))
+                   "8.1.9."))
 
             for basis, columns in bases:
                 if len(bases) > 1:
@@ -1130,14 +1130,14 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         st.warning(
             "A sanity check rather than a score: every benchmark is conditioned on discovery. A "
             "prospect can be optimistic on good grounds where the evidence for it can be named. "
-            "Method: see 8.1.7."
+            "Method: see 8.1.9."
         )
 
     theme.heading(TAB, "9 · The base rate for a comparable prospect")
     st.markdown(
         "Edmundson's §5.2 recommends base-rate figures beside the geological assessment: their "
         "matrix for a prospect of these dimensions, beside what the limits produced, with the "
-        "sample size in view. Nothing here changes a number. Method: see 8.1.7."
+        "sample size in view. Nothing here changes a number. Method: see 8.1.9."
     )
 
     matrix_limits = st.session_state.get("limit_set")
@@ -1179,7 +1179,7 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
                 return ([float(((fill > lo) & (fill <= hi)).mean()) for lo, hi in bands]
                         + [float((fill > 0.99).mean())])
 
-            # Both bases, as bars. Lars, 4 Sep 2026: *"in 6.13 maybe a bar for the |DHI?"* The base
+            # Both bases, as bars. *"in 6.13 maybe a bar for the |DHI?"* The base
             # rate is `P(trap fill | discovery)`, and what the amplitude or the well says about
             # where the contact sits changes the fill fraction directly -- so leaving the updated
             # model out compared the record against the half of the tool that had not heard the
@@ -1246,23 +1246,23 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
             if len(fill_bases) > 1:
                 st.caption(
                     "The updated bars are displacement against a fixed backdrop, not "
-                    "calibration. Method: see 8.1.7."
+                    "calibration. Method: see 8.1.9."
                 )
             st.warning(
                 f"This informs the contact distribution and never the chance: the matrix is "
                 f"`P(trap fill | discovery)`, and all {int(cell.n)} of those traps had "
                 f"hydrocarbons in them. {int(cell.n)} discoveries is a thin basis, which is why "
-                f"the two are shown side by side and not combined. Method: see 8.1.7."
+                f"the two are shown side by side and not combined. Method: see 8.1.9."
             )
 
             # Seven hundred words of argument about somebody else's arithmetic, with a
             # sourcing paragraph and a fixed-point table, and nothing on this page depends
-            # on it. Moved to docs on 5 Sep 2026, now 8.1.7 of docs/THEORY.md. The sentence that
+            # on it. Moved to docs on 5 Sep 2026, now 8.1.9 of docs/THEORY.md. The sentence that
             # governs what the reader does next stays here.
             st.caption(
                 "Side by side, not merged: the rule usually attached to base-rate neglect is "
                 "symmetric, returning the same answer when its two inputs are swapped, which no "
-                "Bayesian update does. Method: see 8.1.7."
+                "Bayesian update does. Method: see 8.1.9."
             )
 
     theme.heading(TAB, "10 · Scope of the claims")
@@ -1271,11 +1271,11 @@ two names; their term is kept where their data are quoted. Method: see 8.1.7.
         "conditioning, so this is `P(column | discovery)`, and left-truncation at the well's "
         "reservoir entry, which removes the small-column tail. Stacked, the record is truncated "
         "below and censored above, and both push it to look better filled than reality. "
-        "Method: see 8.1.7; limitations: 8.1.8."
+        "Method: see 8.1.9; limitations: 8.1.10."
     )
     st.caption(
         "Data: Edmundson, I., Davies, R., Frette, L.U., Mackie, S., Kavli, E.A., Rotevatn, A., "
         "Yielding, G. & Dunbar, A. (2021), AAPG Bulletin 105(12), 2381–2403, "
         "doi:10.1306/03122119223. Raw table https://osf.io/6ysbv/ under CC-BY 4.0. "
-        "Full references in 8.3."
+        "Full references in 8.1.11."
     )

@@ -93,7 +93,7 @@ AREA_DEPTH_METHODS: tuple[str, ...] = ("Two mapped surfaces", "Top surface and a
 def _area_depth_inputs(items: dict) -> dict:
     """The area–depth grid, flattened, **only when the charge calculator is actually in use**.
 
-    Lars's rule, 2 Sep 2026. A prospect whose Charge limit is typed has no use for thirty-seven rows
+    A prospect whose Charge limit is typed has no use for thirty-seven rows
     of somebody else's structure, and carrying them would make every saved file larger and invite
     the reader to think they meant something. When the calculator *is* the source they are the
     single most consequential input it has, and losing them on reload would be the same defect as

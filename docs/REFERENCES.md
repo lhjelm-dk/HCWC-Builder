@@ -137,7 +137,7 @@ reserve/resource calculations: Insights from a DHI consortium.* The Leading Edge
 > a DHI Index above 20 % approached full success. Also the list of what is misread as a flat
 > spot: channel bases and edges, low-angle faults, diagenetic boundaries, processing artefacts.
 > These are the characteristics `c` grades, so this ranking is why `c` and `LR` move
-> together at elicitation (8.1.6, Figure 5.1.3a).
+> together at elicitation (8.1.8, Figure 5.1.3a).
 
 **Nixon, S., Hallam, T. & Constantine, A. (2018)** · *Ranking DHI attributes for effective
 prospect risk assessment applied to the Otway Basin, Australia.* ASEG Extended Abstracts, AEGC
