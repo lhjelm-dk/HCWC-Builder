@@ -56,7 +56,9 @@ colours only.
 | Where is the science? | `hcwc/core/` |
 | Where are the tests? | `tests/`; what they pin, `docs/VALIDATION.md` and `docs/BASELINE.md` |
 | Where are the reference data? | `reference/`; the defaults, `hcwc/core/defaults.py` |
-| Where are the plots? | the tabs' own figures in `hcwc/ui/*` and `hcwc/plotting/app/`; the article's in `paper/figures/` with `MANIFEST.md`, drawn by `scripts/` |
+| Where are the plots? | the tabs' own figures in `hcwc/ui/*` and `hcwc/plotting/app/`; the article's in `paper/figures/` with `MANIFEST.md`, drawn by `scripts/` from the scenario in `scripts/paper_facts.py` |
+| Where are the paper's numbers? | `scripts/paper_facts.py` (prints them; `--json` writes `paper/figures/facts.json`); a render test pins the article and the post to it |
+| Which dependency list is canonical? | `requirements.txt`; `pyproject.toml` mirrors it and a test checks the floors agree |
 | Where is the paper? | `paper/ARTICLE.md` (tab 8.2), the manuscript and the post beside it |
 | What is obsolete? | `archive/`, each directory with a README |
 | What does the model assume? | `docs/ASSUMPTIONS.md`; the user-facing statement, 8.1.8 |
