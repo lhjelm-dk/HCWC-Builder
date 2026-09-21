@@ -36,7 +36,7 @@ PARTIAL = "Seen over the crest only"
 ABSENT = "Absent where one was expected"
 OBSERVATIONS = (CONFORMING, PARTIAL, ABSENT)
 
-#: Where the strength slider opens. Lars, 4 Sep 2026.
+#: Where the strength slider opens. 
 #:
 #: **Deliberately not** :data:`hcwc.core.dhi.DEFAULT_STRENGTH`, which is 7.0 and is a faithful copy
 #: of E-POS's ``DEFAULT_SLIDER``. That constant exists so the two tools agree about what E-POS's
@@ -55,7 +55,7 @@ OPENING_STRENGTH = defaults.OPENING_EVIDENCE_INDEX
 #: `P(the picked event is the contact | there is hydrocarbon)` — the conditional factor the
 #: geophysicist supplies. `p_valid` is this times the amplitude-updated `P(G)`, so the two
 #: judgements stay separate and the product cannot exceed the chance of any hydrocarbon.
-#: 0.36 since 15 Sep 2026 (Lars), from 0.70: a cautious opening value. The floor under the
+#: 0.36 since 15 Sep 2026, from 0.70: a cautious opening value. The floor under the
 #: pick is then 0.64, so an untouched slider lets the pick say at most 0.56 : 1 against any
 #: contact depth; a well-conformed event is claimed by moving it. The graded attributes open at
 #: a geometric mean of 0.25 since 20 Sep 2026, so the stated value and the suggestion differ.
@@ -74,7 +74,7 @@ DEFAULT_DHI_SCORE = defaults.DEFAULT_DHI_SCORE
 #: elicited judgements, not a calibration -- which is why the result is offered rather than
 #: applied. The shipped selections (:data:`DEFAULT_ATTRIBUTE_LEVELS`) give c = 0.25, one level
 #: below the slider's 0.36 on fit to structure, so an untouched tab shows the stated value and
-#: the graded suggestion side by side and different (Lars, 20 Sep 2026).
+#: the graded suggestion side by side and different.
 DEFAULT_ATTRIBUTE_LEVELS: dict[str, str] = defaults.DEFAULT_ATTRIBUTE_LEVELS
 
 CONTACT_ATTRIBUTES: dict[str, dict[str, float]] = defaults.CONTACT_ATTRIBUTES
@@ -238,7 +238,7 @@ def render(n: Numbering | None = None) -> None:
         st.markdown(
             "This prospect is not marked as a DHI prospect. The switch is on tab 2.0; with it on, "
             "a seismic amplitude enters as evidence here, and the geological model on tabs 3.0 "
-            "to 4.0 stands on its own either way. Method: see 8.1.6."
+            "to 4.0 stands on its own either way. Method: see 8.1.8."
         )
         # Otherwise a curve computed before the toggle was turned off would go on being drawn on
         # tab 4.0, which is the worst kind of stale: plausible, labelled, and wrong.
@@ -257,7 +257,7 @@ def render(n: Numbering | None = None) -> None:
     st.markdown(
         "One observation, two DHI information channels. The evidence index (§2) updates "
         "P(G), the chance of hydrocarbons; the contact geometry (§1, §3) updates the HCWC "
-        "distribution given G. Each enters the chance once. Method: see 8.1.6."
+        "distribution given G. Each enters the chance once. Method: see 8.1.8."
     )
     # The update at a glance (master brief §27): what moved, before and after, filled once the
     # chain below has run. The four numbers a reader wants first, above the inputs that set them.
@@ -300,7 +300,7 @@ def render(n: Numbering | None = None) -> None:
              "depth.")
     seen = anomaly != ABSENT
     partial = anomaly == PARTIAL
-    # **2 250 m, because that is the prospect's pick** -- Lars, 3 Sep 2026, asked for it back after
+    # **2 250 m, because that is the prospect's pick** -- restored after
     # a spell on the model's own median.
     #
     # The median was a reaction to a real fault and the fix for that fault is kept below. The
@@ -456,7 +456,7 @@ def render(n: Numbering | None = None) -> None:
                f"{below:.0%} of the geological realisations fall in the shaded side, and those "
                "are the ones the update acts on. A share near zero means the observation adds "
                "nothing the model did not already hold. The likelihood falls away below the "
-               "line at the rate the pick error sets. Method: see 8.1.5.")
+               "line at the rate the pick error sets. Method: see 8.1.7.")
 
         # Once the cutoff is above essentially the whole prior, every realisation is penalised
         # by the same saturated amount, the likelihood is flat apart from the floor, the
@@ -508,7 +508,7 @@ def render(n: Numbering | None = None) -> None:
                f"The pick is {sharper:,.0f} times sharper than the geology, centred where "
                f"{sits_at:.0%} of it lies shallower. Far narrower than the geology, the pick "
                "dominates the answer; centred in its tail, the posterior rests on few "
-               "realisations, which §6 reports as the effective sample size. Method: see 8.1.5.")
+               "realisations, which §6 reports as the effective sample size. Method: see 8.1.7.")
 
     # A penetration described on tab 2.0 is evidence present too, and its note belongs in §1;
     # it is computed after the update below, so the slot is reserved here and filled there.
@@ -531,7 +531,7 @@ def render(n: Numbering | None = None) -> None:
         "hydrocarbon-bearing outcomes and f(s | NoHC) for non-hydrocarbon ones; their ratio at "
         "the observed index is the likelihood ratio LR(s), the evidence weight. P(G) from tab "
         "2.0 is the prior it updates: P(G | s) = LR(s) P(G) / (LR(s) P(G) + 1 − P(G)). "
-        "Method: see 8.1.4."
+        "Method: see 8.1.6."
     )
 
     with st.expander("The two reference distributions"):
@@ -610,7 +610,7 @@ def render(n: Numbering | None = None) -> None:
             "Kjønsberg, Hauge, Kolbjørnsen and Buland (2010), *Bayesian Monte Carlo method for "
             "seismic predrill prospect assessment*, Geophysics 75(5), O9–O19: the strongest "
             "anomaly bought a factor of 29 and absence at the outskirts 0.70, carrying the "
-            "amplitude and the geometry together. Method: see 8.1.6."
+            "amplitude and the geometry together. Method: see 8.1.8."
         )
 
     r_strength = model.r_at(strength)
@@ -637,7 +637,7 @@ def render(n: Numbering | None = None) -> None:
                  f"marked heights, which is why the units on the axis do not matter.")
 
     # The likelihood ratio and the posterior against the index, so the reader sees the update
-    # as a function rather than one number (Lars, 18 Sep 2026). Same curves, same prior.
+    # as a function rather than one number. Same curves, same prior.
     _lr_axis = np.array([model.r_at(float(v)) for v in axis])
     _post_axis = np.array([dhi_core.simm_update(_p_g_prior, float(v)) for v in _lr_axis])
     figr = make_subplots(rows=1, cols=3, horizontal_spacing=0.08)
@@ -656,7 +656,7 @@ def render(n: Numbering | None = None) -> None:
                         font=dict(size=10, color="#4C72B0"), row=1, col=2)
     # Third panel: the update as a function of the prior, P(G | s) against P(G) from 1 % to
     # 99 %, at this prospect's index in red and at reference indices -50 to 50 in grey, labelled at the
-    # curve's end (Lars, 20 Sep 2026). The 0 curve is the diagonal: neutral evidence returns
+    # curve's end. The 0 curve is the diagonal: neutral evidence returns
     # the prior. Same LR, same two-state update, no new quantity.
     _priors = np.linspace(0.01, 0.99, 99)
     for _ref in (-50.0, -40.0, -30.0, -20.0, -10.0, -5.0, 0.0, 5.0, 10.0, 20.0, 30.0, 40.0,
@@ -695,12 +695,12 @@ def render(n: Numbering | None = None) -> None:
                  f"prospect's index in red and at indices −50 to 50 in grey (every 10, and ±5); "
                  f"the 0 line is the diagonal, neutral evidence returning the prior. The dots are "
                  f"this prospect. The model weights evidence about hydrocarbon presence; it says "
-                 f"nothing about the depth of the contact, which §3 carries. Method: see 8.1.4.")
+                 f"nothing about the depth of the contact, which §3 carries. Method: see 8.1.6.")
 
     # "POS on strength alone" is deliberately absent: it needs the prior, which is not computed
     # until the channels are combined, and a chance is a result rather than an input.
     #
-    # The two likelihoods are here because Lars asked where P(DHI | G) was and the answer was
+    # The two likelihoods are here because the question of where P(DHI | G) was had the answer
     # nowhere -- R arrived as a number with no visible parts, which is most of why it is hard to
     # argue with. They are the heights of the two dots in the figure above, divided by the curves'
     # common peak: both cases carry the same sd, so one peak serves both, the numbers land in
@@ -719,7 +719,7 @@ def render(n: Numbering | None = None) -> None:
         f"peak so they can be compared: how typical an index of {strength:,.0f} is for a "
         f"hydrocarbon-bearing outcome, and for a non-hydrocarbon one. Their ratio is the "
         f"likelihood ratio exactly ({_l_hc:.3f} / {_l_no:.3f} = {r_strength:.2f}). Densities, "
-        f"not probabilities; only the ratio survives the relative axis. Method: see 8.1.4."
+        f"not probabilities; only the ratio survives the relative axis. Method: see 8.1.6."
     )
     # Worked from OPENING_STRENGTH rather than typed. The caption below used to quote a
     # default of 7 and the 37.5 % that follows from it; the slider moved to 5 on 6 Sep and
@@ -729,7 +729,7 @@ def render(n: Numbering | None = None) -> None:
     st.caption(
         f"{band}: {band_note} At the opening reading of {OPENING_STRENGTH:.0f} the band is "
         f"{dhi_core.strength_bands(_opening_r)[0]}, and a 30 % prior becomes "
-        f"{_opening_shift:.1%}. The volume weight `R / (R + 1)` is not a POS. Method: see 8.1.4."
+        f"{_opening_shift:.1%}. The volume weight `R / (R + 1)` is not a POS. Method: see 8.1.6."
     )
 
     # ------------------------------------------------------------------ p_valid
@@ -748,14 +748,14 @@ def render(n: Numbering | None = None) -> None:
         "The second channel. A flat event can be lithology, a diagenetic front, fizz gas read "
         "as pay, or a processing artefact; this section states the chance that it is none of "
         "those, given a column here. With the pick (§1) and the detection model (3b) it "
-        "reweights the HCWC distribution within G. Method: see 8.1.5."
+        "reweights the HCWC distribution within G. Method: see 8.1.7."
     )
     picked_levels = {}
     with st.expander("Grade the three contact attributes, for a suggested value of c"):
         st.markdown(
             "Contact attributes bear on whether the picked event is the base of the column; "
             "body attributes, graded in §2, on whether there is hydrocarbon (Monigle et al. "
-            "2025). Method: see 8.1.5."
+            "2025). Method: see 8.1.7."
         )
         cols = st.columns(len(CONTACT_ATTRIBUTES))
         for col, (attribute, levels) in zip(cols, CONTACT_ATTRIBUTES.items()):
@@ -768,10 +768,10 @@ def render(n: Numbering | None = None) -> None:
         st.caption(
             f"Suggested c = {suggested_c:.2f}, the geometric mean of "
             f"{', '.join(f'{s:.2f}' for s in scores)}, so that one poor attribute pulls the "
-            f"value down. A heuristic, not a calibration. Method: see 8.1.5."
+            f"value down. A heuristic, not a calibration. Method: see 8.1.7."
         )
 
-    # Three routes to c (Lars, 17 Sep 2026): stated on the slider; the graded attributes'
+    # Three routes to c: stated on the slider; the graded attributes'
     # geometric mean, a heuristic; or a DHI score in Monigle et al.'s (2025) sense through their
     # calibrated rule w = min(2 x score, 0.95), the one external referent this quantity has. The
     # radio replaced a checkbox keyed `dhi_in_c_from_attributes`; a prospect saved with that
@@ -807,7 +807,7 @@ def render(n: Numbering | None = None) -> None:
         f"Monigle et al.'s rule gives c = {score_c:.2f} from a score of {dhi_score:.2f}: "
         f"w = min(2 × score, {dhi_core.CONTACT_WEIGHT_CEILING:.2f}), calibrated on 400+ drilled "
         f"DHI prospects in their database. The rule is theirs and the basin is not; a score "
-        f"above 0.475 reaches the ceiling. Method: see 8.1.5."
+        f"above 0.475 reaches the ceiling. Method: see 8.1.7."
     )
     _lev["c"] = st.empty()
     contact_given_hc = {C_STATED: stated_c, C_FROM_ATTRIBUTES: suggested_c,
@@ -820,7 +820,7 @@ def render(n: Numbering | None = None) -> None:
         f"The remaining {1 - p_valid:.2f} goes to a branch in which the pick says nothing about "
         f"depth, so the depth channel can say at most {p_valid / (1 - p_valid):.1f} : 1 against "
         f"any contact depth. It does not carry the chance of hydrocarbons, which enters once, "
-        f"in §5. Method: see 8.1.5."
+        f"in §5. Method: see 8.1.7."
     )
 
     st.caption(
@@ -839,7 +839,7 @@ def render(n: Numbering | None = None) -> None:
     )
 
     # ------------------------------------------------------------------ the two judgements, together
-    # The R-c plane returns without the surface it lost on 14 Sep 2026 (Lars, 17 Sep 2026).
+    # The R-c plane returns without the surface it lost on 14 Sep 2026.
     # Nothing in the arithmetic joins R and c, so nothing here is shaded by a product of them;
     # what is drawn is where the two judgements sit against each other. Simm's bands on R, the
     # slider's anchors on c, a diagonal band for the pairing body and contact attributes usually
@@ -879,7 +879,7 @@ def render(n: Numbering | None = None) -> None:
 
     # -- both panels: the slider's anchors as continuous bands on c, green to red -------------
     # Edges halfway between the anchor ranges (0.9 and up; 0.6 to 0.8; 0.3 to 0.5; below 0.2),
-    # dusty so the markers and the band read on top of them (Lars, 17 Sep 2026).
+    # dusty so the markers and the band read on top of them.
     for y0, y1, fill, label in ((0.85, 1.0, "#DCE9D5", "flat, conformable, cuts structure, FCR"),
                                 (0.55, 0.85, "#EDEFD0", "conformable, something missing"),
                                 (0.25, 0.55, "#F5E2CB", "flat, and lithology plausible"),
@@ -981,7 +981,7 @@ def render(n: Numbering | None = None) -> None:
            f"dash-dot line is the calibrated ceiling on the contact weight. The split of "
            f"Monigle et al.'s (2025) five attributes into body and contact is this tool's "
            f"reading. Nothing in the arithmetic joins the two axes: R does not propose c, and "
-           f"the band is a judgement, not a calibration. Method: see 8.1.5 and 8.1.6.")
+           f"the band is a judgement, not a calibration. Method: see 8.1.7 and 8.1.8.")
     if r_strength >= 1.5 and contact_given_hc < float(_band(_lr, -0.15)):
         st.caption(
             f"Bright body, unconvincing event: the evidence index argues for hydrocarbons "
@@ -1006,7 +1006,7 @@ def render(n: Numbering | None = None) -> None:
     st.markdown(
         "The chance a column of height h produces a detectable anomaly. It is what makes an "
         "absent anomaly usable evidence; the false-positive assumption sets how much absence "
-        "says about the chance. Method: see 8.1.5."
+        "says about the chance. Method: see 8.1.7."
     )
     d1, d2, d3, d4 = st.columns(4)
     h50 = d1.number_input("50 % detection column (m)", 1.0, 500.0, defaults.DETECTION_H50_M, 1.0,
@@ -1046,7 +1046,7 @@ def render(n: Numbering | None = None) -> None:
                        yaxis=dict(autorange="reversed"),
                        height=380, margin=dict(t=20), showlegend=False)
     n.plot(figd, "The detection function, logistic in column height. Its shape is a modelling "
-                 "choice; its parameters are exposed as modelling assumptions. Method: see 8.1.5.")
+                 "choice; its parameters are exposed as modelling assumptions. Method: see 8.1.7.")
 
     # ------------------------------------------------------------------ the update
     observation = DhiObservation(
@@ -1229,9 +1229,9 @@ def render(n: Numbering | None = None) -> None:
     if h_min > 0:
         figh.add_hline(y=apex + h_min, line=dict(color="#333", dash="dash", width=1.2),
                        annotation_text="assessment minimum", annotation_position="bottom right")
-    # The outcomes of 8.1.6: where the contact turns out to lie relative to the indicated
+    # The outcomes of 8.1.8: where the contact turns out to lie relative to the indicated
     # contact band (the P99 to P1 of the pick) names what the DHI was. Read off the posterior
-    # and the two branches of the likelihood; nothing new is computed (Lars, 21 Sep 2026).
+    # and the two branches of the likelihood; nothing new is computed.
     _outcomes = dhi_core.outcome_shares(post, p_g_updated)
     if _outcomes is not None:
         _top, _base = _outcomes.band_m
@@ -1264,7 +1264,7 @@ def render(n: Numbering | None = None) -> None:
                  "the posterior percentiles over the realisations above the assessment minimum. "
                  "The amplitude character does not enter this figure: it updates the chance of "
                  "hydrocarbons, not where the contact is given that there are."
-                 + (f" The shaded intervals are the outcomes of 8.1.6 relative to the indicated "
+                 + (f" The shaded intervals are the outcomes of 8.1.8 relative to the indicated "
                     f"contact band, {_top:,.0f} to {_base:,.0f} m (the P99 to P1 of the pick); "
                     f"each carries its chance as a share of all outcomes, hydrocarbons or not."
                     if _outcomes is not None else ""))
@@ -1299,7 +1299,7 @@ def render(n: Numbering | None = None) -> None:
                      f"share P(G | s) = {p_g_updated:.0%}: the contact above the indicated "
                      f"contact band, within it because the DHI is the contact, within it by "
                      f"coincidence, and below it. The chance at a well is read on 5.2.4, where "
-                     f"the entry depth is. Method: see 8.1.6.")
+                     f"the entry depth is. Method: see 8.1.8.")
 
         _rows = {
             dhi_core.OUTCOME_NO_HC: ("—", "a false hydrocarbon indicator"),
@@ -1323,7 +1323,7 @@ def render(n: Numbering | None = None) -> None:
                 f"the posterior attribution, the chance the DHI is the contact given the "
                 f"geology as well, is {_outcomes.attribution:.2f} against the stated "
                 f"c = {p_valid:.2f}. A well finding the contact within the band confirms the "
-                f"DHI in that proportion. Method: see 8.1.6.")
+                f"DHI in that proportion. Method: see 8.1.8.")
 
     # ------------------------------------------------------------------ 5 · the chance
     theme.heading(TAB, sub=n.sub, text="5 · Prospect POS, updated")
@@ -1332,16 +1332,16 @@ def render(n: Numbering | None = None) -> None:
               f"prior {prior_pos:.1%}")
     m2.metric("P(G | s)", f"{p_g_updated:.1%}",
               f"P(G) {element_product:.1%} from tab 2.0", delta_color="off")
-    m3.metric(f"P(column ≥ {h_min:.0f} m | G, pick)", f"{posterior_geometric:.1%}",
+    m3.metric(f"P(column ≥ {h_min:.0f} m | G, geometry)", f"{posterior_geometric:.1%}",
               f"geological {geometric_prior:.1%}", delta_color="off")
 
     st.caption(
         f"`P(G | s)` = {element_product:.3f} updated by the evidence index, LR = {r_applied:.2f}, gives "
-        f"{p_g_updated:.3f} (§2). `P(column ≥ h_min | G, pick)` = {posterior_geometric:.3f}, "
+        f"{p_g_updated:.3f} (§2). `P(column ≥ h_min | G, geometry)` = {posterior_geometric:.3f}, "
         f"against {geometric_prior:.3f} from the geology alone (§1, §3). `Prospect POS` = "
         f"{p_g_updated:.3f} × {posterior_geometric:.3f} = {posterior_pos:.3f}. The chance and "
         f"the contact distribution below are read off the same weighted realisations. Method: "
-        f"see 8.1.6."
+        f"see 8.1.8."
     )
 
     # **Multiplied through by the element product.** Drawn as the bare exceedance this figure read
@@ -1483,7 +1483,7 @@ def render(n: Numbering | None = None) -> None:
                                 line=dict(width=3)),
                     name=f"posterior median contact, {median_contact:,.0f} m", hoverinfo="skip")
 
-    fig.update_layout(xaxis_title="Prospect POS  =  P(G | s) × P(column ≥ h | G, pick)",
+    fig.update_layout(xaxis_title="Prospect POS  =  P(G | s) × P(column ≥ h | G, geometry)",
                       xaxis_range=[0, min(1.0, max(element_product, p_g_updated,
                                                    0.05) * 1.15)],
                       yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
@@ -1499,10 +1499,10 @@ def render(n: Numbering | None = None) -> None:
                         tickformat=".0%", title="share of realisations per depth bin",
                         title_font_size=11, tickfont_size=10))
     n.plot(fig, "The chance against threshold: P(G) × F(h) geological, P(G | s) × "
-                "F(h | G, pick) updated. The evidence index scales the whole curve; the pick reshapes "
+                "F(h | G, geometry) updated. The evidence index scales the whole curve; the geometry reshapes "
                 "it, raising the chance near and above the indicated contact and lowering it below. "
                 "The open circle is the posterior median, which lands on the pick. Method: see "
-                "8.1.6."
+                "8.1.8."
                 + _pooled_note(pooled_gap, floor_part))
 
     n.table(
@@ -1523,7 +1523,7 @@ def render(n: Numbering | None = None) -> None:
         "hydrocarbons, the pick updates the column distribution. Each enters once, and no "
         "dependence parameter is applied between them; the two judgements are related at "
         "elicitation, which is a heuristic and not a fitted joint distribution. Method: see "
-        "8.1.6."
+        "8.1.8."
     )
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("R, amplitude character" if seen else "R, absent anomaly", _fmt_r(r_applied),
@@ -1549,7 +1549,7 @@ def render(n: Numbering | None = None) -> None:
         # curve is one constant times one exceedance function and reads its headline at h_min
         # by identity.
         # Exact in depth space: read on the realised contacts with the posterior weights, the
-        # same function the well reading uses (8.1.3).
+        # same function the well reading uses (8.1.4).
         "pos_curve": p_g_updated * pos.depth_exceedance(result, depth_grid, post.weights),
         "prior_curve": element_product * pos.depth_exceedance(result, depth_grid),
         # A resampled set of contacts, so downstream code that needs samples rather than a
@@ -1580,7 +1580,7 @@ def render(n: Numbering | None = None) -> None:
         "Kish's (Σw)² / Σw²: how many of the realisations the updated distribution rests on. "
         "A low value does not mean the interpretation is wrong; it means the answer depends "
         "heavily on it. The geometry channel only; the evidence index updates one number and discards "
-        "nothing. Method: see 8.1.5."
+        "nothing. Method: see 8.1.7."
     )
     if post.effective_sample_size < 300:
         st.warning(
@@ -1622,7 +1622,7 @@ def render(n: Numbering | None = None) -> None:
         "rule).\n"
         "- Where every realisation clears the assessment minimum, the pick cannot move the "
         "chance.\n\n"
-        "Method: see 8.1.5 and 8.1.8."
+        "Method: see 8.1.7 and 8.1.10."
     )
 
     # ------------------------------------------------------------------ cross-checks
@@ -1641,7 +1641,7 @@ def render(n: Numbering | None = None) -> None:
         st.markdown(
             "Geological inputs are sliced by decile as on tab 4.0, with likelihood-weighted "
             "means; the DHI's typed numbers are moved one at a time and the realisations "
-            "reweighted. Method: see 8.1.8."
+            "reweighted. Method: see 8.1.10."
         )
         dhi_space = st.radio(
             "Swing measured on", ["Column below apex", "Contact depth"], horizontal=True,
@@ -1678,7 +1678,7 @@ def render(n: Numbering | None = None) -> None:
                    f"pin down.\n\n"
                    f"Where a typed DHI number moves the answer further than the geology does, the "
                    f"posterior is a statement about the seismic assumptions rather than about the "
-                   f"prospect. Method: see 8.1.8.")
+                   f"prospect. Method: see 8.1.10.")
         else:
             st.info("Not enough weight spread to slice a sensitivity from this posterior.")
 
@@ -1688,7 +1688,7 @@ def render(n: Numbering | None = None) -> None:
             "Among the realisations the evidence favours, which mechanisms are more frequent. "
             "It is not the DHI saying which element failed: the element chances on tab 2.0 are "
             "untouched, and the shares move only because the favoured contact depths do. "
-            "Method: see 8.1.6."
+            "Method: see 8.1.8."
         )
         weights = post.weights
         total_w = float(weights.sum())
@@ -1754,7 +1754,7 @@ def render(n: Numbering | None = None) -> None:
             "`IF(DHI valid, DHI contact, geological contact)` is the older method; it moves the "
             "contact and not the chance. A comparison, not an alternative model: its one "
             f"parameter lives inside the likelihood in §3 at p_valid = {p_valid:.2f}. Method: "
-            "see 8.1.6."
+            "see 8.1.8."
         )
         if seen:
             switched = comparison.scenario_switch(result, p_valid, contact, sigma)
@@ -1774,7 +1774,7 @@ def _well_only(result, n: Numbering) -> None:
     on tab 2.0 but was only ever *used* inside this tab, which renders nothing unless the prospect
     is marked as a DHI prospect. So a closure with a penetration and no bright spot -- an offset
     well through the same reservoir, a dry hole on the same structure -- could not reach the one
-    channel in the tool that needed no argument to be admissible. Lars, 4 Sep 2026, asking what well
+    channel in the tool that needed no argument to be admissible. The question of what well
     control was *for*: this is what it is for, and it was unreachable.
 
     The DHI path is untouched. There the amplitude updates P(G) and the pick updates the column

@@ -5,7 +5,7 @@ Two jobs.
 **The register.** Restrained type, a measure that does not run to the window edge, no dashboard
 chrome. This is a tool for geoscientists reading an argument, not a status board.
 
-**Tab colours.** Lars asked for numbered, differently coloured tabs, and specifically for the
+**Tab colours.** Numbered, differently coloured tabs were asked for, and specifically for the
 **tab chip's background** to carry the colour rather than its text — so the strip reads as a row of
 coloured chips with ordinary dark labels, not as coloured writing. Text stays at the body ink
 colour throughout, which also keeps the labels legible at every tint: coloured text on a light
@@ -47,7 +47,7 @@ TAB_COLOURS: dict[int, tuple[str, str]] = {
     2: ("#DD8452", "Prospect"),
     3: ("#E8A87C", "HCWC limiters"),
     # Named for the object, the contact, and what conditions it, matching the basis chips the
-    # tabs carry ("geological", "given the DHI", "given the well"). Lars, 15 Sep 2026: "Results"
+    # tabs carry ("geological", "given the DHI", "given the well"). "Results"
     # said nothing about what the result was, and tab 5 applies a well penetration as well as
     # a DHI, so its name says both. Brackets rather than a pipe: the pipe read as the separator
     # between tabs, so the strip once said "4.0 Results | 5.0 Results | DHI" and a first-time
@@ -75,7 +75,7 @@ def tab_labels() -> list[str]:
     # an *index* rather than a cross-reference, so a blanket substitution over prose corrupted it
     # silently. Computed from the key, it cannot drift again.
     #
-    # **`N.0`, not a circled glyph.** Lars, 3 Sep 2026. The circled numerals read well and were a
+    # **`N.0`, not a circled glyph.**  The circled numerals read well and were a
     # dead end: they stop at 20, they are invisible to a plain-text search of the source, and they
     # do not compose with the figure numbering a reader is already holding -- `4.0` sits in the same
     # scheme as `4.1` the sub-tab and `4.1.2` the figure, so one glance places all three.
@@ -242,7 +242,7 @@ _SECTION = re.compile(r"^(\d+[a-z]?)\s*·\s*(.*)$", re.DOTALL)
 
 #: The section each tab (and sub-tab) is currently drawing, recorded by :func:`heading` and read
 #: by :class:`hcwc.ui.numbering.Numbering` so an exhibit's number carries the section it sits
-#: under: ``Figure 4.1.3a`` is the first exhibit of section 4.1.3 (Lars, 17 Sep 2026). Keyed by
+#: under: ``Figure 4.1.3a`` is the first exhibit of section 4.1.3. Keyed by
 #: ``(tab, sub)``; reset when a tab's Numbering is created.
 CURRENT_SECTION: dict[tuple[int, int | None], str] = {}
 
@@ -299,18 +299,18 @@ def subsection(tab: int, text: str) -> None:
 
 
 def subheading_markdown(tab: int, section: int, item: int, text: str) -> str:
-    """``8.3.2 · Empirical column-height data`` as a level-4 Markdown heading in the tab's colour.
+    """``8.1.11 · Empirical column-height data`` as a level-4 Markdown heading in the tab's colour.
 
     A third level, for a section that is itself a list of documents or notes: tab 8's theory
-    sections (8.1.1 to 8.1.8) and its bibliography's parts (8.3.1 onward), added 15 Sep 2026 so a
-    reader can be sent to "8.1.5" rather than to a radio option.
+    sections (8.1.2 to 8.1.10) and its bibliography's parts (8.1.11 onward), added 15 Sep 2026 so a
+    reader can be sent to "8.1.7" rather than to a radio option.
     """
     return (f"<h4 style='color:{accent(tab)};margin-top:1.4rem'>"
             f"{tab}.{section}.{item} · {text}</h4>")
 
 
 def subheading(tab: int, section: int, item: int, text: str) -> None:
-    # A third-level heading is a section for numbering: the walkthrough under 8.1.6 numbers
+    # A third-level heading is a section for numbering: the walkthrough under 8.1.8 numbers
     # its exhibits 8.1.6a, 8.1.6b through the Numbering(8, sub=1) that draws them.
     CURRENT_SECTION[(tab, section)] = str(item)
     st.markdown(subheading_markdown(tab, section, item, text), unsafe_allow_html=True)
@@ -356,7 +356,7 @@ def evidence_title() -> str:
 def basis_banner(basis: str, detail: str = "") -> None:
     """A strip naming which contact distribution everything below it is built from.
 
-    Lars, 27 Aug 2026: *"I need better assurance that what I see in terms of HCWC distribution is a
+    *"I need better assurance that what I see in terms of HCWC distribution is a
     geological HCWC or a HCWC | DHI."* The honest fix is not a footnote. A tab either shows the
     geological model or the updated one, and the answer belongs at the top in a colour, before any
     figure, because a reader who has scrolled to Figure 7.2 will not scroll back to check.
@@ -388,7 +388,7 @@ def element_heading(element: str, text: str, subtitle: str = "") -> None:
     """A section heading in a **risk element's** colour rather than the tab's.
 
     Used on tab 3.0, where the sections are elements rather than steps, so the same hue that labels
-    Charge on tab 2.0 labels the Charge sub-tab here. The rule Lars set on 25 Aug 2026 still holds
+    Charge on tab 2.0 labels the Charge sub-tab here. The rule still holds
     one level down: the *element* gets the pure hue, and each individual limit inside it gets a
     variation of it, so the grouping is readable without the two levels competing.
     """
@@ -451,7 +451,7 @@ def rgba(hex_colour: str, alpha: float) -> str:
 def element_shades(element: str, count: int) -> list[str]:
     """``count`` distinguishable variations of one element's colour.
 
-    The rule Lars set: a limit is coloured a *variation of its element's hue* — fault leakage and
+    The rule: a limit is coloured a *variation of its element's hue* — fault leakage and
     the seals are retention mechanisms, so they are greens, but **not the retention green itself**.
     The pure pillar colour stays reserved for the element, so an element total and one of its
     limits can never be confused in a legend.

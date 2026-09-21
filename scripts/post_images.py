@@ -50,9 +50,26 @@ ARTICLE = [
 ]
 FIGURES_DIR = ROOT / "paper" / "figures"
 #: The number each exported file carries in paper/ARTICLE.md (the manuscript's numbering is its own).
-ARTICLE_NUMBERS = {"fig1_competing_limits.png": "Figure 2", "fig2_controlling_mechanism.png": "Figure 3",
+#: The app exports serve the long manuscript; the article's own figures are the paper_fig* set
+#: drawn by hcwc/plotting/paper/figures.py (scripts/paper_figures.py).
+ARTICLE_NUMBERS = {"fig1_competing_limits.png": "manuscript Figure 2",
+                   "fig2_controlling_mechanism.png": "manuscript Figure 3",
                    "fig3_chance_against_depth.png": "manuscript Figure 3",
-                   "fig4_dhi_update.png": "Figure 4", "fig6_chance_before_after.png": "Figure 5"}
+                   "fig4_dhi_update.png": "manuscript Figure 4",
+                   "fig6_chance_before_after.png": "manuscript Figure 5"}
+PAPER_FIGURES = (
+    ("Figure 1", "paper_fig1_competing_limits.png",
+     "Each limit's chance of permitting a contact at least this deep, the contact as their "
+     "lower envelope, and the contact distribution that follows."),
+    ("Figure 2", "paper_fig2_controlling_mechanism.png",
+     "The contact distribution stacked by the limit that set it, and the controlling shares."),
+    ("Figure 3", "paper_fig3_dhi_update.png",
+     "The contact distribution before and after the DHI, with the indicated contact band."),
+    ("Figure 4", "paper_fig4_chance_against_depth.png",
+     "The chance a well finds hydrocarbons against its entry depth, geological and given the DHI."),
+    ("Figure 5", "paper_fig5_empirical_check.png",
+     "The prospect beside the NCS record at its burial depth; inset, the filled-to-spill points."),
+)
 
 
 def main() -> None:
@@ -92,11 +109,14 @@ def main() -> None:
                                               f"`scripts/post_images.py`, the app's {label}", caption))
 
     # ---- the manifest: number, file, source, caption and the run behind every paper figure ----
-    entries.insert(0, manifest.Entry("Figure 1", "fig0_workflow.png",
+    entries.insert(0, manifest.Entry("tab 1 / 8.1.1", "fig0_workflow.png",
                                      "`scripts/workflow_figure.py`, the conceptual version",
                                      "The model as two rows: geological, the prior; DHI evidence, "
                                      "the update; each ending in the probability of meeting the "
                                      "threshold."))
+    for k, (number, name, caption) in enumerate(PAPER_FIGURES):
+        entries.insert(1 + k, manifest.Entry(
+            number, name, "`scripts/paper_figures.py`, hcwc/plotting/paper/figures.py", caption))
     entries.append(manifest.Entry("manuscript Figure 5", "fig5_truncate_vs_terminate.png",
                                   "`scripts/paper_figures.py`, drawn from a two-limit sketch",
                                   "Terminating versus truncating at spill."))

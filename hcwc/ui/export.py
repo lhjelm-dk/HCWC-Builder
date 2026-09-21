@@ -63,7 +63,7 @@ def render() -> None:
         # On the given-the-DHI basis every number in this section carries both updates: the
         # geometry in the posterior weights and the evidence index in P(G | s). Until 21 Sep 2026
         # the element curves and the one-page sheet took the geological result under the DHI
-        # label (Lars, 21 Sep 2026).
+        # label.
         _posterior = st.session_state.get("dhi_posterior") if basis == theme.GIVEN_DHI else None
         # `st.cache_data` hands back a copy, so the posterior's run is matched on content.
         _weights = (np.asarray(_posterior.weights, dtype=float)
@@ -138,7 +138,7 @@ def render() -> None:
                                         "distribution. Every twentieth row shown."
                                         + (" Given the DHI: the element chances carry the "
                                            "evidence-index update spread by the allocation "
-                                           "rule, the curves the posterior weights (8.1.6)."
+                                           "rule, the curves the posterior weights (8.1.8)."
                                            if _weights is not None else ""), height=240)
             st.download_button("Download element curves (CSV)", curves.to_csv(index=False),
                                "hcwc_element_curves.csv", "text/csv")

@@ -1,6 +1,6 @@
 """Am I optimistic or pessimistic against the empirical record?
 
-Lars, 27 Aug 2026: *"is there a good way to illustrate and quantify how the built HCWC varies from
+*"is there a good way to illustrate and quantify how the built HCWC varies from
 the statistical data … I would like an idea of whether I am over- or underestimating."*
 
 The comparison already existed as two curves on one axis and a reader judging the gap by eye. This
@@ -123,7 +123,7 @@ def quantile_pairs(built: np.ndarray, benchmark: np.ndarray,
     this tool's exceedance convention that is **P99 first and P1 last**, which is the opposite of
     the ascending percentile the ``numpy`` call uses internally. Use :func:`exceedance_grid` to
     label them; getting it backwards puts "P1 shallow" on an axis where P1 is the deepest contact
-    on every other figure in the app, which is how it read until Lars caught it on 27 Aug 2026.
+    on every other figure in the app, which is how it read before.
     """
     probabilities = np.linspace(1.0, 99.0, n)
     return (engine.weighted_percentiles(np.asarray(built, dtype=float), None, 100.0 - probabilities),

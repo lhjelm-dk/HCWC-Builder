@@ -74,7 +74,7 @@ class LimitSpec:
     expanded: bool = False
 
 
-#: Every ``p_active`` here is Lars's, 26 Aug 2026 — not a placeholder. A limit at **0.0** is in the
+#: Every ``p_active`` here is an elicited value, not a placeholder. A limit at **0.0** is in the
 #: list but never bites, which is the honest default for a mechanism this prospect does not have:
 #: it stays visible and auditable rather than silently absent, and turning it on is one number.
 SPECS: tuple[LimitSpec, ...] = (
@@ -300,14 +300,14 @@ def _render_correlations(names: tuple[str, ...]) -> dict[str, float]:
     st.info(
         "Apex to a depth-stated limit is the pair most worth setting: the spill point and the "
         "apex are picked off the same surface, and left independent a realisation can put the "
-        "spill above the apex. Method: see 8.1.2."
+        "spill above the apex. Method: see 8.1.5."
     )
     # Audit finding P1-1, 14 Sep 2026: the presence draws are outside the copula, and the place
     # to say so is beside the control that a reader would expect to reach them.
     st.caption(
         "Correlations couple depths and capacities only. Whether a limit is present is drawn "
         "independently of everything, including the presence of every other limit. Modelling "
-        "choice; a presence copula is not implemented. Method: see 8.1.2."
+        "choice; a presence copula is not implemented. Method: see 8.1.5."
     )
 
     if CORR_KEY not in st.session_state:
@@ -381,7 +381,7 @@ def _render_ranking(n: Numbering, limit_set: LimitSet, n_trials: int, seed: int)
            f"The share of realisations in which each limit set the contact, at the current "
            f"inputs. {live[0][0]} sets it in {live[0][1]:.0%} of realisations; limits near the "
            f"bottom can stay at rough values. All realisations, not only those meeting the minimum; the view "
-           f"restricted to them is on tab 4.1.2 (Figure 4.1.2b). Method: see 8.1.2.")
+           f"restricted to them is on tab 4.1.2 (Figure 4.1.2b). Method: see 8.1.3.")
     idle = [name for name, share in ranking if share <= 0.0005]
     if idle:
         st.caption(
@@ -399,7 +399,7 @@ def render() -> None:
         "belongs to. Each has a probability of being present and, given that it is, a "
         "distribution of the depth or capacity at which it applies. In every realisation the "
         "shallowest active limit sets the contact. Limits are sampled, not blended. Method: "
-        "see 8.1.2.\n\n"
+        "see 8.1.3.\n\n"
         "The ranking (3.1) and the summary (3.2) are the result and update as the inputs below "
         "change; the checks (3.3) follow them."
     )
@@ -409,7 +409,7 @@ def render() -> None:
     n_trials = int(st.session_state.get("n_trials", 10_000))
     seed = int(st.session_state.get("seed", 20260825))
 
-    # **Letters, not numbers.** Lars, 3 Sep 2026, settling the one place the `N.0` tab numbering
+    # **Letters, not numbers.** Settling the one place the `N.0` tab numbering
     # could not reach: numbering these `3.1`-`3.4` would collide head-on with `Figure 3.1` and
     # `Table 3.2`, and the whole point of the scheme is that a number names exactly one thing.
     # Letters sit outside that sequence entirely, so they can label a position without claiming one.

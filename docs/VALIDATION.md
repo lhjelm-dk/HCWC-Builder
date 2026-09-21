@@ -1,7 +1,7 @@
 # Validation (developer-facing)
 
 What is checked, by what, and where the numbers live. Written in Phase 7 of the clean-up
-(18 Sep 2026). The user-facing statement is 8.1.8; the pinned numbers are `docs/BASELINE.md`.
+(18 Sep 2026). The user-facing statement is 8.1.10; the pinned numbers are `docs/BASELINE.md`.
 
 ## The suite
 
@@ -39,7 +39,7 @@ minutes). Core and io import without Streamlit, so the numerical tests need no U
 ## Audits on record
 
 - `docs/AUDIT_2026-09-14.md`: the eleven core modules end to end; two defects fixed the same day.
-- `docs/DHI_AUDIT_2026-09-16.md`: the DHI chain against 8.1.4–8.1.6; no inconsistency found.
+- `docs/DHI_AUDIT_2026-09-16.md`: the DHI chain against 8.1.6–8.1.8; no inconsistency found.
 - The conversation audit of 18 Sep 2026 (summarised in `docs/REPO_AUDIT.md` §8): P(G) is the
   accumulation chance everywhere; the threshold enters once; each channel updates one factor;
   one weight array reads every posterior quantity.
@@ -49,4 +49,5 @@ minutes). Core and io import without Streamlit, so the numerical tests need no U
 `docs/BASELINE.md` pins the shipped prospect (P(G) 0.4082, F(h_min) 0.9874, POS 0.4031, the
 percentiles and shares), the DHI case (LR 2.6172, P(G | s) 0.6436, POS 0.6394, the posterior
 percentiles, ESS 4 872.3) and the core fixture. `docs/REFACTOR_VALIDATION.md` records what the
-clean-up changed numerically: the percentile estimator only, by the last digit.
+clean-up changed numerically: the percentile estimator only, by the last digit;
+`docs/FINAL_VALIDATION_2026-09.md` records the final review of 21 Sep 2026, which changed no number.

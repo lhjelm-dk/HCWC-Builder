@@ -1669,11 +1669,11 @@ class TestThePageIsNotAnEssay:
                           for e in at.get(kind))
         for phrase in (
             # Both were on tab 1 until 16 Sep 2026; they are stated once now, on tab 8.1.
-            "Beha et al. (2012)",                       # 8.1.2, the precedent
-            "the elicitation effort belongs on",        # 8.1.2, the ranking
-            "A prior and a likelihood are the same kind of object",   # tab 8.1.7, and its worked example
-            # Graham's own words moved from tab 6.0 §7 to 8.1.8 on 16 Sep 2026.
-            "hydrocarbon indicators (DHIs) or known fill controls",
+            "Beha et al. (2012)",                       # 8.1.3, the precedent
+            "two or three limits set",                  # 8.1.3, the ranking
+            "A prior and a likelihood are the same kind of object",   # tab 8.1.9, and its worked example
+            # Graham's own words moved from tab 6.0 §7 to 8.1.10 on 16 Sep 2026.
+            "in the absence of direct hydrocarbon indicators",
             "The censored MLE crossing is a prediction",  # tab 6.0 §2, folded
         ):
             assert phrase in blob, f"folding lost: {phrase!r}"
@@ -1697,7 +1697,7 @@ class TestThePageIsNotAnEssay:
 class TestTheArgumentsLiveInDocuments:
     """The docs split, 5 Sep 2026, moved three essays that were pure reasoning out of the tabs
     into `docs/`. On 15 Sep 2026 they and the other theory notes were folded into one document,
-    `docs/THEORY.md`, rendered on tab 8 as 8.1 and 8.1.1 to 8.1.8, with the superseded notes kept
+    `docs/THEORY.md`, rendered on tab 8 as 8.1 and 8.1.2 to 8.1.10, with the superseded notes kept
     under `archive/superseded_notes/`. The tabs state a conclusion and point at a number.
 
     **The viewer fails silently by design.** A missing file gets *"not found in this checkout"*
@@ -1729,14 +1729,16 @@ class TestTheArgumentsLiveInDocuments:
 
     #: Tab 8.0 was restructured on 7 Sep 2026 into Theory / The paper / References; on
     #: 15 Sep 2026 the theory became one document with nine numbered sub-sections, so a reader
-    #: can be sent to "8.1.6" rather than to a radio option.
+    #: can be sent to "8.1.8" rather than to a radio option.
     #: Eight sections since 18 Sep 2026 (Lars): the overview figure and the map of the sections
     #: render under the 8.1 heading, then the sections follow the figure's boxes.
-    THEORY_ORDER = ("Accumulation chance P(G)", "Competing limits and HCWC | G",
-                    "From column height to POS", "DHI evidence index update",
-                    "DHI geometry update", "Combined DHI result",
-                    "Empirical benchmarks and censoring",
-                    "Validation, assumptions and limitations")
+    #: The eleven sections of 21 Sep 2026 (the final review's brief U), in order.
+    THEORY_ORDER = ("Model overview", "P(G): accumulation chance", "Competing limits and HCWC",
+                    "Column height, HCWC and POS", "Correlation and dependence",
+                    "DHI evidence index and the update of P(G)",
+                    "DHI geometry and the update of HCWC | G",
+                    "Combined DHI posterior and POS", "Empirical benchmarks and censoring",
+                    "Validation, assumptions and limitations", "References")
 
     def test_the_moved_arguments_are_reachable_and_intact(self):
         at = _run()
@@ -1753,14 +1755,14 @@ class TestTheArgumentsLiveInDocuments:
 
     def test_the_walkthrough_and_the_worked_example_sit_under_their_sections(self):
         """Two live pieces of the tool render inside the theory: the DHI walkthrough under
-        8.1.6 and the base-rate worked example under 8.1.7. Order on the page is the check."""
+        8.1.8 and the base-rate worked example under 8.1.9. Order on the page is the check."""
         at = _run(dhi_toggle=True)
         blob = "\n".join(str(m.value) for m in at.get("markdown"))
-        i5, i6 = blob.index("8.1.6 · Combined DHI result"), blob.index("8.1.7 · Empirical")
-        assert i5 < blob.index("Step 1", i5) < i6, "the walkthrough is not under 8.1.6"
-        i7, i8 = blob.index("8.1.7 · Empirical"), blob.index("8.1.8 · Validation")
+        i5, i6 = blob.index("8.1.8 · Combined DHI posterior"), blob.index("8.1.9 · Empirical")
+        assert i5 < blob.index("Step 1", i5) < i6, "the walkthrough is not under 8.1.8"
+        i7, i8 = blob.index("8.1.9 · Empirical"), blob.index("8.1.10 · Validation")
         assert i7 < blob.index("counts the same belief twice", i7) < i8, (
-            "the worked example is not under 8.1.7")
+            "the worked example is not under 8.1.9")
 
     def test_the_superseded_notes_are_kept_off_screen(self):
         """*Files are moved, not deleted.* The five notes 8.1 replaced stay readable in
@@ -1778,18 +1780,20 @@ class TestTheArgumentsLiveInDocuments:
                            for f in ("app.py", "hcwc/ui/theory.py", "hcwc/ui/concept.py"))
         assert not [n for n in notes if n in source], "a superseded note is back on screen"
 
-    def test_the_references_are_numbered_sub_sections(self):
-        """8.3.1 onward, one per `## ` heading of docs/REFERENCES.md, with Beha in Method and
-        the companion tools naming ArianeLogiX (Lars, 15 Sep 2026). A DHI-evidence section
-        joined as 8.3.2 on 17 Sep 2026, so the companion tools are 8.3.8."""
+    def test_the_references_render_under_8_1_11(self):
+        """The bibliography is 8.1.11 since 21 Sep 2026: one unnumbered subsection per `## `
+        heading of docs/REFERENCES.md, with Beha in Method and the companion tools naming
+        ArianeLogiX. There is no tab 8.3."""
         at = _run()
         blob = "\n".join(str(m.value) for m in at.get("markdown"))
-        assert "8.3.1 · Method" in blob
-        assert "8.3.2 · DHI evidence" in blob
-        assert "8.3.8 · Companion tools" in blob, "the bibliography's sections changed"
-        method = blob[blob.index("8.3.1 · Method"):blob.index("8.3.2 ·")]
+        assert "8.1.11 · References" in blob
+        for group in ("Method", "DHI evidence", "Companion tools"):
+            assert f">{group}" in blob and "</h5>" in blob, (
+                f"the bibliography's {group} section is missing")
+        method = blob[blob.index(">Method"):]
         assert "Beha, A., Christensen, J. E. & Young, R. (2012)" in method
         assert "ariane-logix.com" in blob
+        assert "8.3 ·" not in blob and "3 · References" not in blob
 
     def test_the_paper_has_its_own_section_rather_than_a_picker_entry(self):
         """Lars's restructure, 7 Sep 2026. The article is the thing you hand to someone who does
@@ -1836,7 +1840,7 @@ class TestTheArgumentsLiveInDocuments:
             "whether it carries something the model has not already used",
         ):
             assert conclusion in blob, f"the conclusion went with the essay: {conclusion!r}"
-        assert "Method: see 8.1.7" in blob, "nothing points at 8.1.7"
+        assert "Method: see 8.1.9" in blob, "nothing points at 8.1.9"
         for stale in ("*Weight, not Bayes*", "*Base rates*", "*Prior or likelihood?*",
                       "tab 8.0", "Tab 8.0"):
             assert stale not in blob, f"a pointer still names the old essay or tab: {stale!r}"
@@ -1905,13 +1909,13 @@ class TestThePaperAgreesWithTheAppItDescribes:
     """
 
     ARTICLE = "paper/ARTICLE.md"
-    #: Since 17 Sep 2026 the figures are the app's own, exported by scripts/post_images.py,
-    #: plus the workflow figure (scripts/workflow_figure.py); the long manuscript, kept as
-    #: docs/ARTICLE_LONG_2026-09.md, adds the chance against depth and keeps the concept
-    #: sketch fig5 from scripts/paper_figures.py. The matplotlib set is in archive/old_figures/.
-    FIGURES = ("fig0_workflow.png", "fig1_competing_limits.png",
-               "fig2_controlling_mechanism.png", "fig4_dhi_update.png",
-               "fig6_chance_before_after.png")
+    #: Since 21 Sep 2026 the article's figures are drawn for the page by
+    #: hcwc/plotting/paper/figures.py (scripts/paper_figures.py) from the scenario in
+    #: scripts/paper_facts.py; the app exports (scripts/post_images.py) remain for the long
+    #: manuscript, paper/ARTICLE_LONG_2026-09.md, and the workflow figure for tab 1.
+    FIGURES = ("paper_fig1_competing_limits.png", "paper_fig2_controlling_mechanism.png",
+               "paper_fig3_dhi_update.png", "paper_fig4_chance_against_depth.png",
+               "paper_fig5_empirical_check.png")
     LONG_FIGURES = ("fig1_competing_limits.png", "fig2_controlling_mechanism.png",
                     "fig3_chance_against_depth.png", "fig4_dhi_update.png",
                     "fig5_truncate_vs_terminate.png", "fig6_chance_before_after.png")
@@ -2088,7 +2092,7 @@ class TestTheIndependenceAssumptionsAreStatedWhereTheyBite:
     def test_the_seal_note_is_labelled_a_modelling_choice(self):
         """CLAUDE.md, 15 Sep 2026: every assumption in the open is labelled elicited, heuristic
         or modelling choice."""
-        # The same sentence opens a paragraph of 8.1.5, so the search is over the captions, where
+        # The same sentence opens a paragraph of 8.1.7, so the search is over the captions, where
         # the note on tab 3.0 is, rather than over everything on screen.
         captions = "\n".join(str(c.value) for c in _run(**self.CALCULATORS).caption)
         start = captions.index("cannot reach inside a calculator")
@@ -2224,7 +2228,7 @@ class TestTheCompetitionIsDrawnRealisationByRealisation:
         assert sum(shares) == pytest.approx(1.0, abs=1e-9)
         overlay = at.session_state["dhi_overlay"]
         assert shares[0] == pytest.approx(1.0 - overlay["p_g_given_amplitude"], abs=1e-9)
-        assert "Method: see 8.1.6" in cap
+        assert "Method: see 8.1.8" in cap
         table, tcap, *_ = tables["Table 5.1.4c"]
         assert list(table["DHI / contact relation"]) == list(dhi.OUTCOMES)
         assert "A well entering there finds" not in table.columns

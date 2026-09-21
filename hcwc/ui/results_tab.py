@@ -101,7 +101,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # column-height term: given the four elements work, does the column reach the assessment
     # minimum. The reportable prospect chance is that times the element product from tab 2.0. The
     # app showed only the conditional one here and called it "POS", which is the exact confusion
-    # the rest of the tool is arranged to prevent -- Lars caught it on the report sheet, where a
+    # the rest of the tool is arranged to prevent -- it was caught on the report sheet, where a
     # 79.8 % read as a prospect chance when the prospect chance was 32.6 %.
     # Every probability below reads through these, so the basis is decided once rather than at
     # each of fifteen call sites -- one place to be wrong instead of fifteen.
@@ -121,10 +121,10 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     element_pos = st.session_state.get("element_pos") or {}
     p_geological = pos.accumulation_chance(element_pos)
     # Given the DHI the accumulation chance is P(G | s): the evidence index's update, which tab
-    # 5.1 has written into the overlay by the time this tab draws (8.1.4). Every prospect chance
+    # 5.1 has written into the overlay by the time this tab draws (8.1.6). Every prospect chance
     # on this tab multiplies that, not the geological P(G); until 21 Sep 2026 the headline and
     # the §4 identity here used P(G) with the posterior column term and disagreed with 5.2.4
-    # (Lars, 21 Sep 2026). The leverage map's geological reference keeps P(G) on purpose.
+    #. The leverage map's geological reference keeps P(G) on purpose.
     _overlay = st.session_state.get("dhi_overlay") if given_dhi else None
     _p_g_applied = (float(_overlay.get("p_g_given_amplitude", p_geological))
                     if _overlay else p_geological)
@@ -146,7 +146,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         st.caption(
             "The contact distribution stands; only the chance is undefined. With no minimum "
             "these percentiles are the whole distribution rather than the part above a minimum, and "
-            "there is no threshold to read a chance at. Method: see 8.1.3."
+            "there is no threshold to read a chance at. Method: see 8.1.4."
         )
     else:
         m1, m2, m3, m4, m5 = st.columns(5)
@@ -166,20 +166,20 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             + ", ".join(f"{name} {share:.0%}" for name, share in _top)
             + ". Every chance here carries its threshold and the conditioning it was computed "
             "under; the contact percentiles are conditional on the assessment minimum. Method: "
-            "see 8.1.3."
+            "see 8.1.4."
         )
 
     # ------------------------------------------------------------------ 1 · exceedance
     theme.heading(tab, sub=n.sub, text="1 · Where the contact is")
     # ------------------------------------------------------------------ 1 · the competition
-    # Lars, 17 Sep 2026: the paper's figure 1, live. Fifty realisations at a time, every active
+    # the paper's figure 1, live. Fifty realisations at a time, every active
     # limit's sampled depth as a dot and the shallowest ringed in the controller's colour; a
     # window slider walks the fifty through the whole run in run order. The right panel is the
     # whole distribution, with the fifty shown marked on it, so a reader sees where this window
     # sits in the ten thousand. Draws are the geology's whatever the basis; under the evidence
     # the right panel's bars and curve carry the weights, as every other exhibit on tab 5 does.
     _window = 50
-    # Given the DHI the window can walk the posterior instead of the run (Lars, 21 Sep 2026):
+    # Given the DHI the window can walk the posterior instead of the run:
     # the same realisations resampled by their weights, so a realisation the evidence favours
     # appears often and one it discounts seldom. Nothing is simulated anew; the DHI adds no
     # realisations and moves no sampled limit, it counts each realisation differently.
@@ -307,7 +307,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                  + f", and the {_idx.size} shown marked at their depths."
                  + (f" The DHI adds no realisations and moves no sampled depth: it gives each "
                     f"geological realisation a weight, and the bars and the solid curve count "
-                    f"the realisations by those weights (8.1.5)."
+                    f"the realisations by those weights (8.1.7)."
                     + (f" The {_idx.size} on the left are drawn from the run by that weight, "
                        f"with replacement, so a realisation the evidence favours appears often "
                        f"and may repeat; the hover names the run realisation each one is."
@@ -315,10 +315,10 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                        f" The {_idx.size} on the left are the run's own, in the order drawn, "
                        f"unweighted; the toggle above shows the posterior's instead.")
                     if given_dhi else "")
-                 + " Method: see 8.1.2.")
+                 + " Method: see 8.1.3.")
 
     # `grid` and `apex_med` feed the chance curve in section 3; the exceedance figure that used
-    # to sit here was replaced by the competition figure above (Lars, 17 Sep 2026), which carries
+    # to sit here was replaced by the competition figure above, which carries
     # the same curve on its right-hand panel.
     grid = np.linspace(0.0, float(result.column_m.max()) * 1.02, 400)
     apex_med = float(np.median(result.apex_m))
@@ -350,7 +350,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                         help="A DHI cannot say which element failed. It can say which limit set "
                              "the contact, because roughly where the contact sits is evidence "
                              "about which mechanism put it there.")
-    # On both tabs, since 15 Sep 2026 (Lars: why was it only on 5.3.2?). Scaled, the bars are
+    # On both tabs, since 15 Sep 2026 . Scaled, the bars are
     # shares of all realisations and bin height carries the contact distribution; unscaled, each
     # bin is normalised against itself, the classic diagnostic. Given the DHI the scaling is
     # also what makes the two bases differ visibly: normalising within a bin conditions on
@@ -446,12 +446,12 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      f"overall controlling share: here {gained} {moves[gained]:+.1%} and {lost} "
                      f"{moves[lost]:+.1%}. The evidence moves the depth distribution, and only "
                      "through it the mechanism mix; the element chances on tab 2.0 are unchanged. "
-                     "Method: see 8.1.6.")
+                     "Method: see 8.1.8.")
     else:
         n.plot(fig2, "The controlling mechanism at each depth, which changes down structure. Hue "
                      "is the risk element in E-POS's colours (salmon charge, blue closure, yellow "
                      "reservoir, green retention); lightness separates the limits within an "
-                     "element. Method: see 8.1.2."
+                     "element. Method: see 8.1.3."
                      + ("\n\nBars are shares of all realisations, so bin height carries the "
                         "contact distribution and each limit's bars sum across depth to its "
                         "overall share." if scaled else
@@ -565,7 +565,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                f"from how often it controls the contact (the figure above). Each bar is the "
                f"mean outcome with that input in its top tenth against its bottom tenth, from "
                f"the run on screen. Two kinds of bar: where a limit applies is its distribution; "
-               f"whether it is there is `P(active)`. Method: see 8.1.8.")
+               f"whether it is there is `P(active)`. Method: see 8.1.10.")
     else:
         st.info("Too few realisations to slice into deciles for a sensitivity.")
 
@@ -582,7 +582,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         n.table(table, optional=True,
                 caption="A limit that usually fails the prospect outright is under-represented "
                 "among the survivors. Both columns are needed; neither alone is the answer. "
-                "Method: see 8.1.2.")
+                "Method: see 8.1.3.")
 
     # ------------------------------------------------------------------ 2c, 2d · folded
     # Two further readings of the controls. Moved behind a fold on 16 Sep 2026 so the default
@@ -635,7 +635,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             help="Display only. The model always competes in column height, because that is the space "
                  "where comparing a seal capacity with a spill point means anything.")
         mode = c2.selectbox(
-            # **Violin, not the exceedance curves.** Lars's call, 3 Sep 2026, and it is the right one
+            # **Violin, not the exceedance curves.** A decision, and the right one
             # for an opening view: the curves are the analytic reading and reward knowing what a
             # flattening level means, while the violins show where each limit's mass actually sits,
             # which is the question a reader arrives with. Both tabs open the same way — a default that
@@ -682,7 +682,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                   if given_dhi else ""))
 
     # ------------------------------------------------------------------ 2e · strength and c
-    # Lars, 17 Sep 2026: what other readings of the two DHI judgements would give. The two act
+    # what other readings of the two DHI judgements would give. The two act
     # differently and the exhibits keep that visible: strength scales the chance and never
     # reshapes the contact, c reshapes the contact and does not touch the chance's first
     # factor; the headline is their product, so it is the one quantity that gets a map. Every
@@ -699,7 +699,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             "The evidence index scales the chance and never reshapes the contact; the contact "
             "attribution c reshapes the contact and does not enter the chance's first factor. "
             "The headline chance is their product. Each scenario below is the same realisations "
-            "reweighted, or the same curve rescaled. Method: see 8.1.6."
+            "reweighted, or the same curve rescaled. Method: see 8.1.8."
         )
         _obs = posterior.observation
         _det = posterior.detection
@@ -755,7 +755,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                       f"{_c_now:.2f}; dashed curves are the same realisations reweighted at other "
                       f"values, each labelled where it crosses 0.85; grey is the geology. As c "
                       f"rises the pick takes over; as it falls the geology returns. Strength does "
-                      f"not appear here because it does not move these curves. Method: see 8.1.6.")
+                      f"not appear here because it does not move these curves. Method: see 8.1.8.")
 
         # (b) the chance at other strengths ------------------------------------------------------
         _f_now = _f_at(posterior.weights, z_grid)
@@ -785,10 +785,10 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                       f"Solid is the current R = {_r_now:.2f}; each dashed curve is the same "
                       f"shape scaled by P(G | s), labelled at the apex with its R. Strength moves "
                       f"the whole curve and never its shape; the single-channel ceiling is 10 : 1 "
-                      f"either way. Method: see 8.1.6.")
+                      f"either way. Method: see 8.1.8.")
 
         # The two families above are the reading; the map, the c grid and the surfaces are
-        # the deeper look, folded (Lars, 17 Sep 2026). The label names the exhibits inside.
+        # the deeper look, folded. The label names the exhibits inside.
         with st.expander(f"Further sensitivity: the map over both judgements, what c alone "
                          f"does, the two surfaces and what the evidence is worth "
                          f"({n.upcoming('Figure', 1)} to {n.upcoming('Figure', 5)})",
@@ -869,7 +869,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                           f"of the updated contact distribution, so contours run diagonally where "
                           f"both inputs bite and vertically where the reading is 1 whatever c is, "
                           f"which the headline is at a minimum every realisation clears. Method: "
-                          f"see 8.1.6.")
+                          f"see 8.1.8.")
 
             # (d) what c alone does to the contact ---------------------------------------------------
             # Six readings against c, each with the geological value dashed where there is one and
@@ -954,7 +954,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                               f"ratio of the column height; the displacement from the geology, the mean "
                               f"absolute shift of the contact quantiles in metres; and the effective "
                               f"sample size. Dashed grey is the geological value where there is one. "
-                              f"None of the six depends on the evidence index. Method: see 8.1.6.")
+                              f"None of the six depends on the evidence index. Method: see 8.1.8.")
 
 
             # (e) the contact over depth and c, as one surface ---------------------------------------
@@ -990,7 +990,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                           f"F(h | G, evidence). At small c the contours are the geology's; as c "
                           f"rises they bend toward the indicated contact. The red line is the current "
                           f"c, grey the geological P90 / P50 / P10, orange the pick. Strength does not "
-                          f"enter. Method: see 8.1.6.")
+                          f"enter. Method: see 8.1.8.")
 
             # (f) the chance over depth and R, at the current c --------------------------------------
             _surface_r = np.outer(_f_now, _pgs)   # rows depth, columns R
@@ -1019,7 +1019,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                           f"column is the same curve scaled by P(G | s), so the contours are the "
                           f"depth curve's shape stretched sideways; the assessment minimum and the "
                           f"well entry are the two depths the chance is quoted at. Method: see "
-                          f"8.1.6.")
+                          f"8.1.8.")
 
             # (g) the update's net effect and leverage -----------------------------------------------
             # The geological reference for the quantity on the map: P(G) times the geological
@@ -1067,7 +1067,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                           f"white contour is where the evidence neither helps nor hurts. Right: the "
                           f"same as a factor, ×1 where it is neutral. Both are the map above shifted "
                           f"and scaled, so the shapes agree; the labels are what change. The cross is "
-                          f"the current setting. Method: see 8.1.6.")
+                          f"the current setting. Method: see 8.1.8.")
 
     # ------------------------------------------------------------------ 3 · the chance
     # The third question. Every point on this curve is a prospect chance: the element chance
@@ -1081,7 +1081,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     _chance = _p_g_applied * _f
     _chance_prior = p_geological * pos.depth_exceedance(result, z_grid)
 
-    # Lars, 17 Sep 2026: the chance curve alone is F(h) scaled by one number, so the figure now
+    # the chance curve alone is F(h) scaled by one number, so the figure now
     # carries the three things that make the reading: the controlling mechanism per depth bin
     # (shares of all realisations, as 4.1.2 scaled), F(h) in blue with the contact's P90, P50,
     # P10 and mean marked on it, and the prospect chance in red on the same 0-1 axis, so the
@@ -1167,7 +1167,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                  f"controlling limit per depth bin as shares of all realisations, the scaled "
                  f"view of 4.1.2. The assessment minimum is a column height; its mark is drawn "
                  f"at the median apex and carries the headline POS, read in column space. "
-                 f"Read at the well entry depth the red curve is P(well). Method: see 8.1.3.")
+                 f"Read at the well entry depth the red curve is P(well). Method: see 8.1.4.")
 
     # ------------------------------------------------------------------ 4 · the well
     # The last question: a well entering the reservoir at a depth finds hydrocarbon if the
@@ -1227,12 +1227,12 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                       f"about half the cases in which the DHI is the contact")
         st.caption(f"The well enters {_where}. The outcomes and their chances are on 5.1.4; "
                    f"the difference between P(G | s) and P(well) is the chance of the outcomes "
-                   f"the well enters beneath. Method: see 8.1.6.")
+                   f"the well enters beneath. Method: see 8.1.8.")
     st.caption(
         f"P(well) includes the element risk and is read at the entry depth, not at the "
         f"assessment minimum; it is at most the prospect chance. The column at the well is the "
         f"contact depth minus the entry depth. The per-element reading is on the Risk against "
-        f"depth sub-tab. Method: see 8.1.3."
+        f"depth sub-tab. Method: see 8.1.4."
     )
 
     # ------------------------------------------------------------------ 6 · trust

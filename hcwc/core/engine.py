@@ -79,7 +79,7 @@ class EngineResult:
             ``Prospect POS = P(G) x P(column >= h_min | G)``
 
         with ``P(G)`` the element product from tab 2.0 (E-POS's geological POS). Reporting this term
-        alone overstates the prospect by a factor of ``1 / P(G)``, which on Lars's defaults is
+        alone overstates the prospect by a factor of ``1 / P(G)``, which on the shipped defaults is
         2.5 — 79.8 % where the answer is 32.6 %. The one-page report did exactly that until he
         caught it on 27 Aug 2026, which is why the warning is here at the source rather than in
         the caller that got it wrong.

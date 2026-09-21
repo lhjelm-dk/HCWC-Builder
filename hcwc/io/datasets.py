@@ -102,7 +102,7 @@ class DatasetError(ValueError):
 #: There is no statistical reason for a ceiling -- more discoveries is strictly better -- so this is
 #: a memory limit, and it is here because this is the one path that accepts a file of any size from
 #: whoever is using the app. On a shared server a long-lived process holds every dataset anyone
-#: imports. 10 000 is Lars's number: comfortably past any published column-height compilation and
+#: imports. 10 000 is the shipped number: comfortably past any published column-height compilation and
 #: past the NCS record this tool ships with, so a file over it is a different kind of table rather
 #: than an unusually good discovery list.
 #:
@@ -239,7 +239,7 @@ def read_csv(text: str | bytes, *, name: str, source: str = "") -> Dataset:
             "**Apex depth used in place of burial depth.** They are not the same quantity — the "
             "apex is the crest of this closure, burial depth is where the reservoir sits — but "
             "they differ by less than the spread the fit is estimating, and using the apex keeps "
-            "burial as a predictor rather than dropping it. Lars's ruling, 28 Aug 2026.")
+            "burial as a predictor rather than dropping it. By decision.")
 
     predictors: tuple[str, ...] = ("trap_height",)
     if burial is not None and np.isfinite(burial).sum() >= 20 and np.nanmin(burial) > 0:

@@ -1,73 +1,36 @@
-"""The DHI branch: what a seismic amplitude does to the contact distribution, and to POS.
+"""The DHI: what a seismic observation does to P(G) and to the contact distribution (8.1.6 to 8.1.8).
 
-Worked out in ``archive/development_notes/DHI_alignment.md``. The short of it, because it decides the shape of this
-module:
+The geological model gives ``P(G)``, the accumulation chance, and a sample of column heights
+``h`` from ``p(h | G)`` (the engine's realisations, every one conditional on the elements having
+worked). A seismic observation carries two kinds of evidence and each updates one factor::
 
-**POS is not a number, it is a reading.** Everything is one function, ``F(h) = P(column >= h)``. The
-geological POS is ``F(h_min)``; the DHI-case probability is ``F(h_DHI)``; the well POS is
-``F(z_entry - apex)``. ``F`` is monotone, so ``F(h_min) >= F(h_DHI)`` always and there is nothing to
-reconcile — the two numbers were never competing. The error the tool exists to prevent is quoting a
-POS read at one threshold beside a volume read at another.
+    A.  evidence index s     ->  LR(s) = f(s | HC) / f(s | NoHC)                (StrengthModel.r_at)
+                             ->  P(G | s) = LR P(G) / (LR P(G) + 1 - P(G))      (p_g_given_strength)
+    B.  contact geometry     ->  L(D | h, G) = c D(h) Pick(z | apex + h) + (1 - c) s   (likelihood)
+                             ->  weights w_j ∝ L(D | h_j, G) on the same realisations  (update)
+    C.  POS(h) = P(G | s) x P(H >= h | G, geometry)                             (prospect_pos)
 
-**The DHI enters as a likelihood over column height**, because the seismic response depends on *how
-much* hydrocarbon is there, not merely whether any is::
+The index never reaches the weights and the geometry never reaches ``P(G)``; each enters once.
+One weight array (``DhiPosterior.weights``) serves the histogram, the percentiles, ``F_post``,
+the controlling shares and the chance; ``P(G | s) x F_post(h)`` passes through the headline at
+``h_min`` by identity, with no rescaling.
 
-    posterior(h) ∝ prior(h) × L(seismic | h)
+Terms of B. ``c = P(the indicated event is the contact | G, contact attributes)`` is conditional on
+``G`` and carries nothing of the index. ``D(h)`` is a simplified detectability model, logistic in
+column height with a ceiling below one. ``Pick`` is the pick's density in depth, its width the pick
+and depth-conversion error. ``s`` is the density of a spurious event over the declared contact
+range, so the mixture is a density whatever ``c`` is, and ``L / s >= 1 - c`` keeps every depth in
+play (Cromwell's rule). An absent anomaly is ``1 - D(h)`` within ``G`` and a separate ratio on
+``P(G)`` (``absence_ratio``); partial conformance is a censored pick.
 
-so the updated POS and the updated contact distribution are **the same object**, read at different
-thresholds. That is the answer to the question the note was written for.
+Diagnostics that are not part of the chance: the effective sample size, the geometry
+discrimination ratio ``r_dhi`` (two definitions, seen and absent), and the outcome shares of a
+seen DHI (``outcome_shares``). The comparison constructions, a scenario switch and a pooled
+update, are in ``hcwc.core.dhi_comparison`` and never supply a headline.
 
-**The chain, and what is conditional on what.** Settled 14 Sep 2026 after an audit found the
-strength evidence counted twice. The engine's realisations are draws from ``p(h | G)`` -- every one
-of them already assumes the four elements worked -- so anything applied to them must be conditional
-on ``G`` too. The chain is::
-
-    A.  P(G | strength)          = simm_update(P(G), R_strength)          the character channel
-    B.  p(h | G, geometry)       ∝ p(h | G) · L(geometry | h, G)          the pick, within G
-        L(geometry | h, G)       = c · D(h) · Pick(z | apex + h) + (1 − c) · s
-        c                        = P(the picked event is the contact | G, contact attributes)
-    C.  POS(h_min)               = P(G | strength) · P(h ≥ h_min | G, geometry)
-
-One posterior over ``h`` -- the weights from B -- supplies the histogram, the percentiles, ``F(h)``
-and the conditional term in C. The curve ``P(G | strength) · F_post(h)`` passes through the
-headline at ``h_min`` by construction rather than by rescaling.
-
-What was wrong before: ``p_valid`` was built as ``P(G | strength) · c``. A term conditional on
-``G`` had ``P(G)`` inside it, so the strength reached the geometry posterior through the mixture
-weight *and* again through a separate likelihood ratio blended with ``r_dhi``. Holding ``c`` at 0.70
-and moving the strength alone moved the posterior P50 by 17 m and the conditional term by six
-points -- evidence about *whether there is hydrocarbon* reshaping *where the contact is, given there
-is*. :func:`prospect_pos` is the corrected C; :class:`CombinedUpdate` is retained only for the
-teaching comparison and must not supply a headline.
-
-**There is one model, and two things it is worth being compared against.** The note offered the
-scenario switch and the likelihood as rival formulations, and that framing survived longer than it
-should have. What settled it was moving ``p_valid`` — the chance the picked event really is the
-contact — *inside* the likelihood, where it makes the update robust rather than dogmatic. The
-scenario switch's one genuine contribution was that parameter; with it accounted for, the other two
-formulations are not alternative models but arithmetic with a term left out:
-
-* **scenario switch** — ``IF(DHI valid, DHI contact, geological contact)``. A mixture, so it can
-  move the contact and *widen* the answer but can never sharpen it, and cannot move POS at all.
-  Hood's rule, and honest as far as it goes.
-* **pooled** — the prior times the pick likelihood alone. Literally the Bayesian update with the
-  detection function omitted, so it conditions on having seen an anomaly without accounting for the
-  fact that seeing one was more likely when the column is tall.
-* **Bayes** — ``prior x D(h) x pick``, mixed against a flat branch by ``p_valid``. The model.
-
-The first two stay in the code and on the tab as a **teaching comparison**, never as a choice of
-model, because seeing what a dropped term costs is the only way to make the argument concrete.
-
-**What the DHI may not do.** E-POS's ``logic/dfi_pillar_update.py`` sets the ceiling: a fluid
-indicator can sense whether a reservoir exists and -- more weakly, see the Kjonsberg note on the
-strength section -- what fluid fills it, but *not which of charge,
-closure or retention failed*. So a DHI may move POS and may assert a contact depth. It may **not**
-tell you which element failed.
-
-It *may* tell you which limit set the contact, because knowing roughly where the contact sits is
-evidence about which mechanism put it there. Those are two different claims and the older wording
-here forbade both: the controlling-limit diagnostic therefore has a geological reading and a
-DHI-updated one, and they are two figures rather than one figure with two meanings.
+What a DHI may not do: tell the model which geological element failed. The reweighting changes
+the relative frequency of mechanisms within the contact-depth ensemble the evidence favours; the
+element chances on tab 2.0 are untouched.
 """
 from __future__ import annotations
 
@@ -180,7 +143,7 @@ class DhiObservation:
     mixture for every realisation: the chance that the picked event is the contact is not made
     to depend on how tall the column is. A taller column could make a conformable event more
     likely to be its base; that dependence is not modelled, and ``D(h)`` is where the column
-    height enters the valid branch instead. Stated in 8.1.5 and pinned by
+    height enters the valid branch instead. Stated in 8.1.7 and pinned by
     ``tests/test_dhi_audit.py``.
 
     It defaults to 1.0 so that constructing an observation the old way reproduces the old numbers
@@ -424,7 +387,7 @@ def likelihood_branches(result: EngineResult, detection: DetectionFunction,
     DHI as something else, flat in depth. Their sum is :func:`likelihood`, which keeps its own
     arithmetic so the weights stay bit-identical to the pinned baseline. Kept apart so that
     the posterior mass inside the indicated contact band can be split into the part the pick
-    put there and the part the geology put there by itself (:func:`outcome_shares`; 8.1.6).
+    put there and the part the geology put there by itself (:func:`outcome_shares`; 8.1.8).
     Seen, picked observations only; the absent and partial forms have no indicated contact.
     """
     if not observation.seen or observation.is_partial:
@@ -438,7 +401,7 @@ def likelihood_branches(result: EngineResult, detection: DetectionFunction,
     return valid, spurious
 
 
-#: The outcomes of a seen DHI, in depth order, as 8.1.6 names them. The first is off the depth
+#: The outcomes of a seen DHI, in depth order, as 8.1.8 names them. The first is off the depth
 #: axis; the four others share P(G | s) between them.
 OUTCOME_NO_HC = "no hydrocarbons"
 OUTCOME_ABOVE = "above the indicated contact"
@@ -451,7 +414,7 @@ OUTCOMES: tuple[str, ...] = (OUTCOME_NO_HC, OUTCOME_ABOVE, OUTCOME_AT_BY_DHI,
 
 @dataclass(frozen=True)
 class OutcomeShares:
-    """What the DHI can turn out to have been, with the chance of each (8.1.6).
+    """What the DHI can turn out to have been, with the chance of each (8.1.8).
 
     ``band_m`` is the indicated contact band, the P99 to P1 of the pick. ``shares`` sum to one:
     ``no hydrocarbons`` is ``1 − P(G | s)``, and the four outcomes on the depth axis are the
@@ -470,7 +433,7 @@ class OutcomeShares:
 
 
 def outcome_shares(posterior: DhiPosterior, p_g_given_s: float) -> OutcomeShares | None:
-    """The outcomes of 8.1.6 on this posterior, or ``None`` when the observation is not a pick.
+    """The outcomes of 8.1.8 on this posterior, or ``None`` when the observation is not a pick.
 
     Everything here is read off objects the update already holds: the weights, the two branches
     of the likelihood, and the pick's own percentiles. Nothing is re-simulated. The shares use
@@ -600,7 +563,7 @@ def posterior_indices(posterior: DhiPosterior, n: int | None = None,
     """The posterior as a sequence of realisation indices, drawn by weight with replacement.
 
     Figure 5.2.1a walks a window of fifty through the run; given the DHI it can walk the same
-    window through the posterior instead (Lars, 21 Sep 2026), and what it then shows is the
+    window through the posterior instead, and what it then shows is the
     geological realisations resampled by their weights: each one is a run realisation, limits
     and controller intact, appearing as often as the evidence favours it. The order is one
     fixed draw so the slider is stable between reruns. All realisations, not the success
@@ -928,7 +891,7 @@ def contact_weight_from_score(score: float) -> float:
     Calibrated on 400+ drilled DHI prospects in their database, not on any one basin, and on
     their five-attribute machine-learning score rather than on this tool's strength reading.
     Offered on tab 5.1.3 as a third source of ``c`` beside the slider and the graded attributes
-    (Lars, 17 Sep 2026; open question 3 of 15 Sep).
+   .
     """
     return float(min(2.0 * float(np.clip(score, 0.0, 1.0)), CONTACT_WEIGHT_CEILING))
 

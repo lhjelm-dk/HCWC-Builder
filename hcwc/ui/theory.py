@@ -1,4 +1,4 @@
-"""Tab 8.0 Theory: 8.1 the method (docs/THEORY.md), 8.2 the article, 8.3 the references (from app.py, 18 Sep 2026)."""
+"""Tab 8.0 Theory: 8.1 the method (docs/THEORY.md, with the references as 8.1.11), 8.2 the article."""
 from __future__ import annotations
 
 import numpy as np
@@ -20,13 +20,11 @@ def render() -> None:
         "version and the bibliography carries the sources."
     )
 
-    # 8.1 is docs/THEORY.md: one `## ` section per numbered part, rendered in order (the master
-    # brief, 16 Sep 2026; eight sections since 18 Sep). The document's H1 is the 8.1 heading;
-    # the lines before its first section are the overview figure and the map of the sections,
-    # rendered under the heading. The sections are 8.1.1 Accumulation chance P(G) to 8.1.8
-    # Validation, assumptions and limitations. Two pieces of the tool render inside it, because
-    # they are the derivation on the live prospect and belong with the text that derives it:
-    # the DHI walkthrough under 8.1.6, and the worked base-rate example under 8.1.7.
+    # 8.1 is docs/THEORY.md: one `## ` section per numbered part, rendered in order, 8.1.2
+    # Model overview to 8.1.11 References. The document's H1 is the 8.1 heading; the italic
+    # subtitle before the first section is dropped, the tab intro above says the same. Three
+    # pieces of the tool render inside it: the DHI walkthrough under 8.1.10, the worked base-rate
+    # example under 8.1.9, and the bibliography (docs/REFERENCES.md) under 8.1.11.
     _theory = DOCS / "THEORY.md"
     if _theory.exists():
         _parts: list[tuple[str, list[str]]] = []
@@ -60,10 +58,12 @@ def render() -> None:
         for _k, (_title, _body) in enumerate(_parts):
             theme.subheading(8, 1, _k + 1, _title)
             render_with_figures("\n".join(_body), DOCS, demote=3, numbering=_n8)
-            if _k == 5:
+            if _title.startswith("Combined DHI"):
                 dhi_walkthrough.render(_n8)
-            if _k == 6:
+            if _title.startswith("Empirical"):
                 _worked_example_slot = st.container()
+            if _title == "References":
+                _render_references()
         if _worked_example_slot is None:
             _worked_example_slot = st.container()
     else:
@@ -82,7 +82,7 @@ def render() -> None:
             "A likelihood is a use rather than a kind of distribution, and to act as one the data "
             "must have been observed on this prospect.\n\n"
             "The test is therefore not whether the data is a probability but whether it carries "
-            "something the model has not already used. Method: see 8.1.7 above; the table below "
+            "something the model has not already used. Method: see 8.1.9 above; the table below "
             "shows what getting it wrong does to a real prospect."
         )
         _t8_limits = st.session_state.get("limit_set")
@@ -199,29 +199,21 @@ def render() -> None:
     else:
         st.info("`paper/ARTICLE.md` not found in this checkout.")
 
-    theme.heading(8, "3 · References")
-    st.markdown(
-        "Every source the tool leans on, with each DOI checked and each entry saying what was "
-        "taken from it. Open access is marked, because a claim that cannot be read is a claim "
-        "taken on trust."
-    )
+
+def _render_references() -> None:
+    """The bibliography, docs/REFERENCES.md, under 8.1.11: each `## ` group an unnumbered
+    subsection, the entries rendered beneath it."""
     _refs = DOCS / "REFERENCES.md"
-    if _refs.exists():
-        # Each `## ` section of the bibliography becomes 8.3.k (Lars, 15 Sep 2026), numbered
-        # here so the document keeps plain headings of its own. The heading is drawn as an
-        # element and the section under it rendered separately: the renderer escapes HTML, so
-        # an <h4> spliced into the text came out as its own source (16 Sep 2026).
-        _k = 0
-        _part: list[str] = []
-        for _line in _refs.read_text(encoding="utf-8").split("\n") + ["## "]:
-            if _line.startswith("## "):
-                if _part:
-                    render_with_figures("\n".join(_part), DOCS, demote=3)
-                    _part = []
-                if _line.strip() != "##":
-                    _k += 1
-                    theme.subheading(8, 3, _k, _line[3:].strip())
-            else:
-                _part.append(_line)
-    else:
+    if not _refs.exists():
         st.info("`docs/REFERENCES.md` not found in this checkout.")
+        return
+    _part: list[str] = []
+    for _line in _refs.read_text(encoding="utf-8").split("\n") + ["## "]:
+        if _line.startswith("## "):
+            if _part:
+                render_with_figures("\n".join(_part), DOCS, demote=3)
+                _part = []
+            if _line.strip() != "##":
+                theme.subsection(8, _line[3:].strip())
+        elif not _line.startswith("# "):
+            _part.append(_line)

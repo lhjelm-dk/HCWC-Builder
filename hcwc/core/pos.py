@@ -11,7 +11,7 @@ Column space is where the threshold lives: ``h_min`` is a column height and ``F(
 headline. Depth space is where a well and a figure with a depth axis live: the contact of each
 realisation is its own apex plus its column, so a chance against absolute depth is read on the
 realised contacts and not by shifting ``F(h)`` by one apex. The two agree when the apex is
-pinned and differ by the apex spread when it is not (8.1.3).
+pinned and differ by the apex spread when it is not (8.1.4).
 
 Until the clean-up of 18 Sep 2026 the product ``P(G) = prod(element chances)`` was written out in
 eight places in the tabs and the product ``P(G) x F(h)`` in two more. One implementation here;
@@ -19,7 +19,7 @@ the tabs call it. Nothing numerical changed: every caller computed the same prod
 
 ``P(G)`` is the geological accumulation chance: the geological elements work at the crest and a
 hydrocarbon column of some height exists. It carries no volume criterion; the assessment minimum
-enters once, through ``F(h_min)`` (``docs/THEORY.md`` 8.1.1, 8.1.3).
+enters once, through ``F(h_min)`` (``docs/THEORY.md`` 8.1.2, 8.1.4).
 """
 from __future__ import annotations
 
@@ -68,7 +68,7 @@ def depth_grid(result: EngineResult, n: int = 400) -> np.ndarray:
 def depth_axis(result: EngineResult, columns_m: np.ndarray | float) -> np.ndarray | float:
     """The median-apex equivalent of a column height: where ``h_min`` is drawn on a depth axis.
 
-    A reference mark and not a curve (8.1.3): a threshold is a column height, and the depth it
+    A reference mark and not a curve (8.1.4): a threshold is a column height, and the depth it
     corresponds to differs realisation by realisation with the apex. Figures that need to show
     the assessment minimum on a depth axis draw it here and label it as the median-apex
     equivalent; curves against depth use :func:`depth_exceedance`.

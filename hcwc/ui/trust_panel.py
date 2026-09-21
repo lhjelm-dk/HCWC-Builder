@@ -86,7 +86,7 @@ def render(n, result, *, posterior=None, tab: int,
     st.caption(
         "These checks concern the arithmetic, not the geology; the geological check is tab 6.0. "
         "A watch is not a defect: the number needs a sentence beside it when it travels. "
-        "Method: see 8.1.8."
+        "Method: see 8.1.10."
     )
     if posterior is None:
         st.caption("The DHI check is not run because no posterior has been built. It appears "

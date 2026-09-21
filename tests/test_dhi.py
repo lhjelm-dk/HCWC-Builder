@@ -190,7 +190,7 @@ class TestPosteriorIndices:
 
 
 class TestOutcomes:
-    """What the DHI can turn out to have been (8.1.6): the outcome shares read off the posterior."""
+    """What the DHI can turn out to have been (8.1.8): the outcome shares read off the posterior."""
 
     def _posterior(self, c=0.5, contact=2250.0, sigma=10.0, seen=True, absent_below=None):
         result = engine.run(reference_prospect(), 6_000, seed=2)

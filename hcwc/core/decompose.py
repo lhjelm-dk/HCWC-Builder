@@ -299,7 +299,7 @@ def spread_by_rule(element_pos: dict[Group, float], factor: float) -> dict[Group
 
     Charge, closure and retention each take ``factor ** (1/3)``; reservoir is untouched. That is
     the rule as shipped for the location factor ``r <= 1``. The DHI evidence index raises ``P(G)``
-    to ``P(G | s)``, and spreading that update by the same rule (Lars, 21 Sep 2026) means a factor
+    to ``P(G | s)``, and spreading that update by the same rule means a factor
     above one, which can push an element chance past 1 -- closure ships at 1.00. An element that
     would exceed 1 is held at 1 and its excess is passed to the elements still below 1, so the
     product of the four is ``prod(element_pos) x factor`` whenever that product is at most 1;
@@ -334,7 +334,7 @@ def element_pos_given_index(element_pos: dict[Group, float],
                             p_g_updated: float | None) -> dict[Group, float]:
     """The element chances carrying the evidence-index update, spread by the rule.
 
-    The index updates ``P(G)`` as a total (8.1.4) and the model does not attribute it to an
+    The index updates ``P(G)`` as a total (8.1.6) and the model does not attribute it to an
     element, so the ratio ``k = P(G | s) / P(G)`` is spread over charge, closure and retention
     by :func:`spread_by_rule`. The result multiplies to ``P(G | s)`` and is what every
     per-element reading given the DHI runs on: tab 5.3, the WellVolPOS element curves, the
@@ -363,7 +363,7 @@ def allocation_comparison(decomposition: Decomposition, element_pos: dict[Group,
     chances are first taken through :func:`element_pos_given_index`, and both halves of the
     table run on those, so ``P_well = P(G | s) x r``. Until 21 Sep 2026 this function took the
     geological ``P(G)`` with the posterior ``r``, and tab 5.3.4 read a different well chance
-    from tab 5.1.5 (Lars, 21 Sep 2026).
+    from tab 5.1.5.
     """
     # Interpolated on the grid rather than read at the nearest of its points: the grid is about
     # 1.6 m apart, so the nearest point was up to 0.8 m off the typed entry depth (audit P3-6,
