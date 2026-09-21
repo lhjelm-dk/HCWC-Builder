@@ -26,7 +26,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from hcwc.core.engine import EngineResult
-from hcwc.core import engine
+from hcwc.core import engine, pos
 from hcwc.core.limits import DEPTH
 
 #: The basis, spelled the way it must appear on paper. A reader of a bare page cannot recover
@@ -127,7 +127,7 @@ def _svg_exceedance(result: EngineResult, weights: np.ndarray | None = None, *,
         y_hi = y_lo + 1.0
 
     grid = np.linspace(y_lo, y_hi, 160)
-    f = engine.exceedance(result.column_m, grid - apex, weights)
+    f = pos.depth_exceedance(result, grid, weights)   # exact in depth space
 
     def px(p: float) -> float:
         return pad_l + p * (width - pad_l - pad_r)
@@ -150,14 +150,15 @@ def _svg_exceedance(result: EngineResult, weights: np.ndarray | None = None, *,
             f"<text x='{px(p):.1f}' y='{height - 14}' font-size='7' fill='#6b7684' "
             f"text-anchor='middle'>{p * 100:.0f}</text>")
 
-    pos = _pos(result, weights)
+    f_min = _pos(result, weights)
     marker = (
         f"<line x1='{pad_l}' y1='{py(minimum_depth):.1f}' x2='{width - pad_r}' "
         f"y2='{py(minimum_depth):.1f}' stroke='#C44E52' stroke-width='1' "
         f"stroke-dasharray='3 2'/>"
-        f"<circle cx='{px(pos):.1f}' cy='{py(minimum_depth):.1f}' r='2.8' fill='#C44E52'/>"
-        f"<text x='{px(pos) + 5:.1f}' y='{py(minimum_depth) - 4:.1f}' font-size='7.2' "
-        f"fill='#8A2F33' font-weight='700'>{pos:.1%} conditional, at the minimum</text>")
+        f"<circle cx='{px(f_min):.1f}' cy='{py(minimum_depth):.1f}' r='2.8' fill='#C44E52'/>"
+        f"<text x='{px(f_min) + 5:.1f}' y='{py(minimum_depth) - 4:.1f}' font-size='7.2' "
+        f"fill='#8A2F33' font-weight='700'>{f_min:.1%} conditional, at the minimum "
+        f"(median-apex equivalent)</text>")
 
     return (
         f"<svg viewBox='0 0 {width} {height}' preserveAspectRatio='xMidYMid meet' "

@@ -150,9 +150,12 @@ is the well's reservoir entry depth; `h_min` is the assessment minimum, a column
 P(H ≥ h | G)` is defined in column-height space and every chance is read there; contact
 percentiles and histograms are reported as `z_HCWC`, every percentile the tool prints by one
 estimator (Hazen plotting positions on the sorted, weighted sample, P100 the shallowest and P0 the
-deepest); the well is read in depth space against
-`z_HCWC` realisation by realisation; a depth axis under a column-space curve places it at the
-median apex, a drawing convention and not a second model.
+deepest). Two exceedances are read: `F(h) = P(H ≥ h | G)` in column space, where the
+threshold lives, and `P(z_HCWC ≥ z | G)` in depth space, read on the realised contacts, where
+a well and any figure with a depth axis live. The two agree when the apex is pinned and differ
+by the apex spread when it is not; the well reading and every chance-against-depth figure use
+the depth-space one. The assessment minimum is a column height; where it is marked on a depth
+axis it is drawn at the median apex and labelled as that equivalent.
 
 A probability of success refers to a stated threshold. In this tool that threshold is the
 assessment minimum: the smallest column, `h_min`, that would make the well a discovery. It is

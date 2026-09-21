@@ -242,17 +242,18 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                  orientation="h", name="share of realisations per depth bin", opacity=0.55,
                  marker_color="#B8BEC7", marker_line_width=0, xaxis="x2", yaxis="y",
                  hovertemplate="%{y:.0f} m TVDSS<br>%{x:.1%} of realisations<extra></extra>")
-    _grid = np.linspace(0.0, float(result.column_m.max()) * 1.02, 400)
+    # The curve is read on the realised contacts (exact in depth space), the same function the
+    # well reading uses; F(h) shifted by one apex would differ by the apex spread.
+    _zgrid = pos.depth_grid(result)
     if given_dhi:
         # The geological curve beside the updated one, dashed, so what the evidence moved is
-        # read on the same axis (Lars, 17 Sep 2026). Same realisations, unit weights.
-        figc.add_scatter(x=np.asarray(result.exceedance(_grid), dtype=float),
-                         y=float(np.median(result.apex_m)) + _grid, mode="lines",
-                         name="P(contact deeper than this), geological",
+        # read on the same axis. Same realisations, unit weights.
+        figc.add_scatter(x=pos.depth_exceedance(result, _zgrid), y=_zgrid, mode="lines",
+                         name="P(z_HCWC ≥ z | G), geological",
                          line=dict(color="#4C72B0", width=2, dash="dash"),
                          xaxis="x3", yaxis="y")
-    figc.add_scatter(x=exceed(_grid), y=float(np.median(result.apex_m)) + _grid, mode="lines",
-                     name="P(contact deeper than this)"
+    figc.add_scatter(x=pos.depth_exceedance(result, _zgrid, weights), y=_zgrid, mode="lines",
+                     name="P(z_HCWC ≥ z | G)"
                           + (f", {theme.evidence_basis()}" if given_dhi else ""),
                      line=dict(color="#4C72B0", width=3), xaxis="x3", yaxis="y")
     # The fifty shown, as ticks across the bars in their controllers' colours: where this
@@ -275,7 +276,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         _z_min = float(np.median(result.apex_m)) + h_min
         figc.add_shape(type="line", xref="x3", yref="y", x0=0, x1=1, y0=_z_min, y1=_z_min,
                        line=dict(color="#C44E52", dash="dash"))
-        figc.add_annotation(xref="x3", yref="y", x=0.0, y=_z_min, text="assessment minimum",
+        figc.add_annotation(xref="x3", yref="y", x=0.0, y=_z_min, text="assessment minimum (median-apex equivalent)",
                             showarrow=False, xanchor="left", yanchor="bottom", font_size=10,
                             font_color="#C44E52")
     _peak = float(np.max(_counts / _total)) if _total else 1.0
@@ -294,14 +295,14 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                     tickformat=".0%", range=[0, max(_peak, 1e-6) * 3.0], showgrid=False),
         xaxis3=dict(domain=[0.66, 1.0], overlaying="x2", side="top", range=[0, 1],
                     title="probability the contact is deeper"),
-        yaxis=dict(title="Depth (m TVDSS)", range=[_y_hi, _y_lo]),
+        yaxis=dict(title="HCWC depth z (m TVDSS)", range=[_y_hi, _y_lo]),
         height=620, margin=dict(t=48, b=40), barmode="overlay", bargap=0.04,
         legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
     n.plot(figc, f"The competition, realisation by realisation. Left: every active limit's "
                  f"sampled depth in {_idx.size} realisations, the shallowest ringed in the "
                  f"colour of the limit that set it; the slider walks the window through all "
                  f"{result.n:,}. Right: the whole distribution, its exceedance curve on the top "
-                 f"axis"
+                 f"axis, read on the realised contacts"
                  + (", with the geological curve dashed beside it" if given_dhi else "")
                  + f", and the {_idx.size} shown marked at their depths."
                  + (f" The DHI adds no realisations and moves no sampled depth: it gives each "
@@ -321,6 +322,12 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # the same curve on its right-hand panel.
     grid = np.linspace(0.0, float(result.column_m.max()) * 1.02, 400)
     apex_med = float(np.median(result.apex_m))
+    # Depth-space curves are read on the realised contacts; `grid` and `apex_med` remain for
+    # the assessment minimum's reference mark, which is a column height drawn at the median apex.
+    z_grid = pos.depth_grid(result)
+
+    def exceed_z(z, w=weights):
+        return pos.depth_exceedance(result, z, w)
 
     # ------------------------------------------------------------------ 2 · which limit controls
     theme.heading(tab, sub=n.sub, text="2 · What controls the contact")
@@ -707,21 +714,21 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                 _obs, p_valid=float(np.clip(c, 0.01, 0.99))))
             return well_core.combine(w, _well_w) if _well_w is not None else w
 
-        def _f_at(w: np.ndarray, columns: np.ndarray) -> np.ndarray:
-            return np.asarray(engine.exceedance(result.column_m, columns, w), dtype=float)
+        def _f_at(w: np.ndarray, depths: np.ndarray) -> np.ndarray:
+            return pos.depth_exceedance(result, depths, w)
 
         _c_ladder = sorted({0.05, 0.2, 0.36, 0.5, 0.7, 0.9, round(_c_now, 2)})
         _r_ladder = sorted({0.1, 1.0 / 3.0, 1.0, 3.0, 10.0, _r_now})
-        _depth = apex_med + grid
+        _depth = z_grid
 
         # (a) the contact at other c ------------------------------------------------------------
         fig_c = go.Figure()
-        fig_c.add_scatter(x=np.asarray(result.exceedance(grid), dtype=float), y=_depth,
+        fig_c.add_scatter(x=pos.depth_exceedance(result, z_grid), y=_depth,
                           mode="lines", name="geological, no evidence",
                           line=dict(color="#9aa3ad", width=2))
         for _c in _c_ladder:
             _w = _weights_at(_c)
-            _fc = _f_at(_w, grid)
+            _fc = _f_at(_w, z_grid)
             _is_now = abs(_c - _c_now) < 0.005
             fig_c.add_scatter(x=_fc, y=_depth, mode="lines",
                               name=f"c = {_c:.2f}" + (" (current)" if _is_now else ""),
@@ -738,9 +745,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                                  bgcolor="rgba(255,255,255,0.7)")
         if h_min > 0:
             fig_c.add_hline(y=apex_med + h_min, line=dict(color="#333", dash="dash", width=1),
-                            annotation_text="assessment minimum", annotation_position="bottom right")
-        fig_c.update_layout(xaxis=dict(title="F(h) = P(column ≥ h | G, evidence)", range=[0, 1.02]),
-                            yaxis=dict(title="Contact at least this deep (m TVDSS)",
+                            annotation_text="assessment minimum (median-apex equivalent)", annotation_position="bottom right")
+        fig_c.update_layout(xaxis=dict(title="P(z_HCWC ≥ z | G, evidence)", range=[0, 1.02]),
+                            yaxis=dict(title="HCWC depth z (m TVDSS)",
                                        autorange="reversed"),
                             height=520, margin=dict(t=20),
                             legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
@@ -751,7 +758,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                       f"not appear here because it does not move these curves. Method: see 8.1.6.")
 
         # (b) the chance at other strengths ------------------------------------------------------
-        _f_now = _f_at(posterior.weights, grid)
+        _f_now = _f_at(posterior.weights, z_grid)
         fig_s = go.Figure()
         for _r in _r_ladder:
             _pg = dhi_core.p_g_given_strength(p_geological, _r)
@@ -767,7 +774,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                                  yanchor="bottom", yshift=4, font=dict(size=10, color="#7d8794"))
         if h_min > 0:
             fig_s.add_hline(y=apex_med + h_min, line=dict(color="#333", dash="dash", width=1),
-                            annotation_text="assessment minimum", annotation_position="bottom right")
+                            annotation_text="assessment minimum (median-apex equivalent)", annotation_position="bottom right")
         fig_s.update_layout(xaxis=dict(title="prospect chance = P(G | s) × F(h), at the current c",
                                        range=[0, 1.02]),
                             yaxis=dict(title="Contact at least this deep (m TVDSS)",
@@ -954,7 +961,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             # The family of (a) drawn as a map: c across, depth down, colour and contours are
             # F(h | G, evidence). Where the pick takes hold reads as the contours bending toward
             # the picked depth as c rises.
-            _surface_c = np.array([_f_at(w, grid) for w in _w_by_c]).T   # rows depth, columns c
+            _surface_c = np.array([_f_at(w, z_grid) for w in _w_by_c]).T   # rows depth, columns c
             fig_e = go.Figure()
             fig_e.add_contour(x=_cs, y=_depth, z=_surface_c, colorscale="Blues",
                               contours=dict(showlabels=True, labelfont=dict(size=10),
@@ -998,7 +1005,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                             annotation_text=f"current R {_r_now:.2f}", annotation_position="top")
             if h_min > 0:
                 fig_f.add_hline(y=apex_med + h_min, line=dict(color="#333", dash="dash", width=1),
-                                annotation_text="assessment minimum", annotation_position="right")
+                                annotation_text="assessment minimum (median-apex equivalent)", annotation_position="right")
             fig_f.add_hline(y=_z_well_now, line=dict(color="#0369A1", dash="dot", width=1.2),
                             annotation_text="well entry", annotation_position="left")
             fig_f.update_layout(
@@ -1070,9 +1077,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # (the same `_p_g_applied` the headline uses, decided once at the top of this function)
     # sub-tab draws this.
     theme.heading(tab, sub=n.sub, text="3 · How the chance changes with depth")
-    _f = np.asarray(exceed(grid), dtype=float)
+    _f = exceed_z(z_grid)
     _chance = _p_g_applied * _f
-    _chance_prior = p_geological * np.asarray(result.exceedance(grid), dtype=float)
+    _chance_prior = p_geological * pos.depth_exceedance(result, z_grid)
 
     # Lars, 17 Sep 2026: the chance curve alone is F(h) scaled by one number, so the figure now
     # carries the three things that make the reading: the controlling mechanism per depth bin
@@ -1098,14 +1105,15 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     _peak7 = float(_stack.max()) if _stack.size else 1.0
 
     if given_dhi:
-        figp.add_scatter(x=_chance_prior, y=apex_med + grid, mode="lines",
+        figp.add_scatter(x=_chance_prior, y=z_grid, mode="lines",
                          name="prospect chance, geological",
                          line=dict(color="#7d8794", width=2, dash="dash"))
-    figp.add_scatter(x=_f, y=apex_med + grid, mode="lines",
-                     name="F(h) = P(column ≥ h | G), conditional",
+    figp.add_scatter(x=_f, y=z_grid, mode="lines",
+                     name="P(z_HCWC ≥ z | G), conditional",
                      line=dict(color="#4C72B0", width=3))
-    figp.add_scatter(x=_chance, y=apex_med + grid, mode="lines",
-                     name=f"prospect chance = P(G) × F(h), P(G) = {_p_g_applied:.2f}"
+    figp.add_scatter(x=_chance, y=z_grid, mode="lines",
+                     name=f"prospect chance = {_p_g_name} × P(z_HCWC ≥ z | G), "
+                          f"{_p_g_name} = {_p_g_applied:.2f}"
                           + (f", {theme.evidence_basis()}" if given_dhi else ""),
                      line=dict(color="#C44E52", width=3))
 
@@ -1120,7 +1128,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     for _label, _z in _marks:
         if not np.isfinite(_z):
             continue
-        _fx = float(np.interp(_z - apex_med, grid, _f))
+        _fx = float(np.interp(_z, z_grid, _f))
         _mx.append(_fx); _my.append(_z); _mt.append(f"{_label} {_z:,.0f} m")
     # P50 and the mean sit a few metres apart on most prospects, so their labels take
     # opposite sides of the point.
@@ -1138,27 +1146,28 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
 
     if h_min > 0:
         figp.add_hline(y=apex_med + h_min, line=dict(color="#C44E52", dash="dash"),
-                       annotation_text=f"assessment minimum: chance {prospect_pos if not given_dhi else _p_g_applied * column_pos:.1%}",
+                       annotation_text=f"assessment minimum (median-apex equivalent): POS {prospect_pos:.1%}",
                        annotation_position="bottom right")
     figp.update_layout(
         barmode="stack", bargap=0.05,
-        xaxis=dict(title="probability, on one axis: conditional F(h) and the prospect chance",
+        xaxis=dict(title="probability: P(z_HCWC ≥ z | G) and the prospect chance",
                    range=[0, 1.02]),
         xaxis2=dict(overlaying="x", side="top", range=[0, max(_peak7, 1e-6) * 3.0],
                     showgrid=False, tickformat=".0%",
                     title="share of all realisations per depth bin, by controlling limit",
                     title_font_size=11, tickfont_size=10),
-        yaxis=dict(title="Contact at least this deep (m TVDSS)", autorange="reversed"),
+        yaxis=dict(title="HCWC depth z (m TVDSS)", autorange="reversed"),
         height=620, margin=dict(t=58),
         legend=dict(orientation="v", x=1.02, y=1.0, xanchor="left"))
-    n.plot(figp, f"The chance against depth, and what makes it. Blue is F(h), the chance of a "
-                 f"column at least this tall given the elements worked, with the contact's "
-                 f"P90, P50, P10 and mean marked on it (h ≥ h_min). Red is the prospect "
-                 f"chance, P(G) = {_p_g_applied:.3f} times the blue curve; the gap between the "
-                 f"two is the element risk. The bars are the controlling limit per depth bin as "
-                 f"shares of all realisations, the scaled view of 4.1.2. Read at the assessment "
-                 f"minimum the red curve is the headline above; read at any other depth it is "
-                 f"the chance of a column reaching that depth. Method: see 8.1.3.")
+    n.plot(figp, f"The chance against depth, and what makes it. Blue is P(z_HCWC ≥ z | G), the "
+                 f"chance the contact lies at or below each depth, read on the realised "
+                 f"contacts, with the contact's P90, P50, P10 and mean marked on it (h ≥ h_min). "
+                 f"Red is the prospect chance, {_p_g_name} = {_p_g_applied:.3f} times the blue "
+                 f"curve; the gap between the two is the element risk. The bars are the "
+                 f"controlling limit per depth bin as shares of all realisations, the scaled "
+                 f"view of 4.1.2. The assessment minimum is a column height; its mark is drawn "
+                 f"at the median apex and carries the headline POS, read in column space. "
+                 f"Read at the well entry depth the red curve is P(well). Method: see 8.1.3.")
 
     # ------------------------------------------------------------------ 4 · the well
     # The last question: a well entering the reservoir at a depth finds hydrocarbon if the
