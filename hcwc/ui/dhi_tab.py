@@ -351,10 +351,12 @@ def render(n: Numbering | None = None) -> None:
     elif shape == dhi_core.NORMAL:
         o1, o2, o3 = st.columns(3)
         contact = o1.number_input(
-            "Picked contact (m TVDSS)", 0.0, 10000.0, default_contact, 5.0, disabled=not seen,
+            "Indicated contact (m TVDSS)", 0.0, 10000.0, default_contact, 5.0, disabled=not seen,
             key="dhi_in_contact",
-            help="The down-dip amplitude termination or flat spot. The tool takes it as the "
-                 "hydrocarbon–water contact and does not ask whether it is a gas–oil contact. "
+            help="The depth the DHI indicates: the down-dip amplitude termination or flat spot. An "
+                 "indication, not a detection; the contact attribution in section 3 says how "
+                 "far it is taken as the contact. The tool reads it as the hydrocarbon–water "
+                 "contact and does not ask whether it is a gas–oil contact. "
                  "On a two-phase prospect the amplitude is poor at resolving that, and a GOC "
                  "picked as an HCWC understates the column.")
         if seen:
@@ -1225,6 +1227,32 @@ def render(n: Numbering | None = None) -> None:
     if h_min > 0:
         figh.add_hline(y=apex + h_min, line=dict(color="#333", dash="dash", width=1.2),
                        annotation_text="assessment minimum", annotation_position="bottom right")
+    # The outcomes of 8.1.6: where the contact turns out to lie relative to the indicated
+    # contact band (the P99 to P1 of the pick) names what the DHI was. Read off the posterior
+    # and the two branches of the likelihood; nothing new is computed (Lars, 21 Sep 2026).
+    _outcomes = dhi_core.outcome_shares(post, p_g_updated)
+    if _outcomes is not None:
+        _top, _base = _outcomes.band_m
+        _z_lo, _z_hi = float(result.contact_m.min()), float(result.contact_m.max())
+        _sh = _outcomes.shares
+        # The labels sit at the band edges, where the bars are short, not at the band's
+        # centre, where the widest bar is. Placed as annotations anchored to the edge depth
+        # because the axis is reversed and a rectangle's own label lands on the wrong side.
+        _fills = ((_z_lo, _top, dhi_core.OUTCOME_ABOVE, _sh[dhi_core.OUTCOME_ABOVE],
+                   "rgba(140,183,252,0.10)", _top, "bottom"),
+                  (_top, _base, "at the indicated contact",
+                   _sh[dhi_core.OUTCOME_AT_BY_DHI] + _sh[dhi_core.OUTCOME_AT_BY_CHANCE],
+                   "rgba(196,78,82,0.10)", _top, "top"),
+                  (_base, _z_hi, dhi_core.OUTCOME_BELOW, _sh[dhi_core.OUTCOME_BELOW],
+                   "rgba(140,183,252,0.10)", _base, "top"))
+        for _y0, _y1, _name, _share, _fill, _y_label, _anchor in _fills:
+            if _y1 <= _y0:
+                continue
+            figh.add_hrect(y0=_y0, y1=_y1, fillcolor=_fill, line_width=0, layer="below")
+            figh.add_annotation(xref="paper", x=0.99, xanchor="right", y=_y_label,
+                                yanchor=_anchor, showarrow=False, font_size=10,
+                                font_color="#1c2128", bgcolor="rgba(255,255,255,0.85)",
+                                text=f"{_name} · {_share:.0%}")
     figh.update_layout(barmode="overlay", bargap=0.04, xaxis_title="Share of realisations per depth bin",
                        xaxis_tickformat=".0%", yaxis_title="Contact depth (m TVDSS)",
                        yaxis=dict(autorange="reversed"), height=420, margin=dict(t=20),
@@ -1233,20 +1261,86 @@ def render(n: Numbering | None = None) -> None:
                  "every realisation and conditional on the elements having worked; the lines are "
                  "the posterior percentiles over the realisations above the assessment minimum. "
                  "The amplitude character does not enter this figure: it updates the chance of "
-                 "hydrocarbons, not where the contact is given that there are.")
+                 "hydrocarbons, not where the contact is given that there are."
+                 + (f" The shaded intervals are the outcomes of 8.1.6 relative to the indicated "
+                    f"contact band, {_top:,.0f} to {_base:,.0f} m (the P99 to P1 of the pick); "
+                    f"each carries its chance as a share of all outcomes, hydrocarbons or not."
+                    if _outcomes is not None else ""))
+
+    if _outcomes is not None:
+        theme.subsection(TAB, "What the DHI can turn out to have been")
+        _order = list(dhi_core.OUTCOMES)
+        _bar_colours = {dhi_core.OUTCOME_NO_HC: "#B8BEC7",
+                        dhi_core.OUTCOME_ABOVE: "#8CB7FC",
+                        dhi_core.OUTCOME_AT_BY_DHI: POSTERIOR,
+                        dhi_core.OUTCOME_AT_BY_CHANCE: "#E4A3A5",
+                        dhi_core.OUTCOME_BELOW: "#4C72B0"}
+        figo = go.Figure()
+        for _name in _order:
+            figo.add_bar(x=[_sh[_name]], y=["outcomes"], orientation="h", name=_name,
+                         marker_color=_bar_colours[_name], marker_line_width=0,
+                         text=f"{_sh[_name]:.0%}", textposition="inside",
+                         insidetextanchor="middle", textfont=dict(size=11),
+                         hovertemplate=f"{_name}<br>%{{x:.1%}}<extra></extra>")
+        figo.add_vline(x=_sh[dhi_core.OUTCOME_NO_HC], line=dict(color="#333", width=1.2))
+        figo.add_annotation(x=_sh[dhi_core.OUTCOME_NO_HC], y=1.0, yref="paper", yanchor="bottom",
+                            xanchor="left", showarrow=False, font_size=10,
+                            text=f"  hydrocarbons in the trap, P(G | s) = {p_g_updated:.0%}")
+        figo.update_layout(barmode="stack", height=170, margin=dict(t=36, b=30, l=10, r=10),
+                           xaxis=dict(range=[0, 1], tickformat=".0%", title=None),
+                           yaxis=dict(showticklabels=False),
+                           legend=dict(orientation="h", y=-0.5, x=0, font_size=10,
+                                       traceorder="normal"))
+        n.plot(figo, f"The outcomes of a seen DHI, in depth order, as shares of all outcomes. "
+                     f"The first is off the depth axis: no hydrocarbons, the DHI a false "
+                     f"hydrocarbon indicator, {_sh[dhi_core.OUTCOME_NO_HC]:.0%}. The four others "
+                     f"share P(G | s) = {p_g_updated:.0%}: the contact above the indicated "
+                     f"contact band, within it because the DHI is the contact, within it by "
+                     f"coincidence, and below it. A well at the crest finds hydrocarbons in "
+                     f"the four; a well at the top of the band in the last three; a well below "
+                     f"the band in the last alone. Method: see 8.1.6.")
+
+        _rows = {
+            dhi_core.OUTCOME_NO_HC: ("—", "a false hydrocarbon indicator",
+                                     "water at every depth"),
+            dhi_core.OUTCOME_ABOVE: (f"shallower than {_top:,.0f} m",
+                                     "not the contact; the response lies in the water leg",
+                                     "hydrocarbons whenever they are present"),
+            dhi_core.OUTCOME_AT_BY_DHI: (f"{_top:,.0f} to {_base:,.0f} m, the DHI being its base",
+                                         "the contact",
+                                         "hydrocarbons where the contact is at or below the well"),
+            dhi_core.OUTCOME_AT_BY_CHANCE: (f"{_top:,.0f} to {_base:,.0f} m, the geology having "
+                                            f"put it there", "not the contact",
+                                            "the same for the well; not for the look-back"),
+            dhi_core.OUTCOME_BELOW: (f"deeper than {_base:,.0f} m",
+                                     "not the contact; the response lies inside the column, "
+                                     "possibly a gas–oil contact",
+                                     "hydrocarbons where the contact is below the well"),
+        }
+        n.table(pd.DataFrame([{"Outcome": _name, "Chance": f"{_sh[_name]:.1%}",
+                               "The contact is": _rows[_name][0],
+                               "The DHI was": _rows[_name][1],
+                               "A well entering there finds": _rows[_name][2]}
+                              for _name in _order]),
+                f"The outcomes with their chances, summing to one. The two rows within the band "
+                f"are separated by the branch of the likelihood that put the contact there: "
+                f"the posterior attribution, the chance the DHI is the contact given the "
+                f"geology as well, is {_outcomes.attribution:.2f} against the stated "
+                f"c = {p_valid:.2f}. A well finding the contact within the band confirms the "
+                f"DHI in that proportion. Method: see 8.1.6.")
 
     # ------------------------------------------------------------------ 5 · the chance
     theme.heading(TAB, sub=n.sub, text="5 · Prospect POS, updated")
     m1, m2, m3 = st.columns(3)
     m1.metric(f"Prospect POS at h ≥ {h_min:.0f} m", f"{posterior_pos:.1%}",
               f"prior {prior_pos:.1%}")
-    m2.metric("P(G | amplitude)", f"{p_g_updated:.1%}",
+    m2.metric("P(G | s)", f"{p_g_updated:.1%}",
               f"P(G) {element_product:.1%} from tab 2.0", delta_color="off")
     m3.metric(f"P(column ≥ {h_min:.0f} m | G, pick)", f"{posterior_geometric:.1%}",
               f"geological {geometric_prior:.1%}", delta_color="off")
 
     st.caption(
-        f"`P(G | amplitude)` = {element_product:.3f} updated by R = {r_applied:.2f} gives "
+        f"`P(G | s)` = {element_product:.3f} updated by the evidence index, LR = {r_applied:.2f}, gives "
         f"{p_g_updated:.3f} (§2). `P(column ≥ h_min | G, pick)` = {posterior_geometric:.3f}, "
         f"against {geometric_prior:.3f} from the geology alone (§1, §3). `Prospect POS` = "
         f"{p_g_updated:.3f} × {posterior_geometric:.3f} = {posterior_pos:.3f}. The chance and "
@@ -1393,7 +1487,7 @@ def render(n: Numbering | None = None) -> None:
                                 line=dict(width=3)),
                     name=f"posterior median contact, {median_contact:,.0f} m", hoverinfo="skip")
 
-    fig.update_layout(xaxis_title="Prospect POS  =  P(G | amplitude) × P(column ≥ h | G, pick)",
+    fig.update_layout(xaxis_title="Prospect POS  =  P(G | s) × P(column ≥ h | G, pick)",
                       xaxis_range=[0, min(1.0, max(element_product, p_g_updated,
                                                    0.05) * 1.15)],
                       yaxis_title="Contact depth (m TVDSS)", yaxis=dict(autorange="reversed"),
@@ -1408,9 +1502,9 @@ def render(n: Numbering | None = None) -> None:
             xaxis2=dict(overlaying="x", side="top", range=[0, peak * 3.0], showgrid=False,
                         tickformat=".0%", title="share of realisations per depth bin",
                         title_font_size=11, tickfont_size=10))
-    n.plot(fig, "The chance against threshold: P(G) × F(h) geological, P(G | amplitude) × "
-                "F(h | G, pick) updated. The amplitude scales the whole curve; the pick reshapes "
-                "it, raising the chance near and above the picked contact and lowering it below. "
+    n.plot(fig, "The chance against threshold: P(G) × F(h) geological, P(G | s) × "
+                "F(h | G, pick) updated. The evidence index scales the whole curve; the pick reshapes "
+                "it, raising the chance near and above the indicated contact and lowering it below. "
                 "The open circle is the posterior median, which lands on the pick. Method: see "
                 "8.1.6."
                 + _pooled_note(pooled_gap, floor_part))
@@ -1440,7 +1534,7 @@ def render(n: Numbering | None = None) -> None:
               dhi_core.strength_bands(r_applied)[0] if seen
               else f"(1 − d) / (1 − f·d), d = {float(np.mean(detection.at(result.column_m))):.2f}",
               delta_color="off")
-    c2.metric("P(G | amplitude)" if seen else "P(G | absence)", f"{p_g_updated:.1%}",
+    c2.metric("P(G | s)" if seen else "P(G | absence)", f"{p_g_updated:.1%}",
               f"P(G) {element_product:.1%}", delta_color="off")
     c3.metric(f"P(column ≥ {h_min:.0f} m | G, {'pick' if seen else 'absence'})",
               f"{posterior_geometric:.1%}",
@@ -1473,6 +1567,8 @@ def render(n: Numbering | None = None) -> None:
         # as its posterior twin rather than being handed one pre-computed curve.
         "weights": post.weights,
         "picked_contact_m": float(contact) if seen else None,
+        "indicated_band_m": (tuple(float(v) for v in _outcomes.band_m)
+                             if _outcomes is not None else None),
         "prior_pos": float(prior_pos),
         "posterior_pos": float(posterior_pos),
         "p_g_given_amplitude": float(p_g_updated),
@@ -1492,7 +1588,7 @@ def render(n: Numbering | None = None) -> None:
     )
     if post.effective_sample_size < 300:
         st.warning(
-            f"Effective sample size {post.effective_sample_size:,.0f}. The picked contact sits "
+            f"Effective sample size {post.effective_sample_size:,.0f}. The indicated contact sits "
             f"far out in the tail of the geological prior, so the posterior rests on very few "
             f"realisations. That is a finding about the model or the pick, not a number to "
             f"read off."
@@ -1581,7 +1677,7 @@ def render(n: Numbering | None = None) -> None:
             n.plot(figt,
                    f"What the DHI-updated mean rests on. Blue bars are geological inputs, sliced by "
                    f"decile and weighted by the likelihood; red bars are the DHI's own typed numbers, "
-                   f"each moved one at a time: the pick \u03c3 halved and doubled, the picked contact "
+                   f"each moved one at a time: the pick \u03c3 halved and doubled, the indicated contact "
                    f"by half a \u03c3, the detection parameters across the span an assessor cannot "
                    f"pin down.\n\n"
                    f"Where a typed DHI number moves the answer further than the geology does, the "
@@ -1720,6 +1816,7 @@ def _well_only(result, n: Numbering) -> None:
                                      int(st.session_state.get("n_trials", 10_000))),
         "weights": posterior.weights,
         "picked_contact_m": None,
+        "indicated_band_m": None,
         "prior_pos": prior_pos,
         "posterior_pos": posterior_pos,
         "p_g_given_amplitude": product,

@@ -44,6 +44,7 @@ colours only.
 | evidence index → LR(s) → P(G \| s) | `core.dhi.StrengthModel.r_at`, `core.dhi.p_g_given_strength` |
 | pick, c, D(h) → weights → HCWC \| G, evidence | `core.dhi.likelihood`, `core.dhi.update`, `core.well.combine` |
 | absence: within G, on G | `core.dhi.likelihood` (1 − D), `core.dhi.absence_ratio` |
+| what the DHI can turn out to have been: the outcomes by interval | `core.dhi.outcome_shares` on `core.dhi.likelihood_branches` |
 | the comparison constructions (not headline) | `core.dhi_comparison` |
 | benchmarks, censoring | `core.calibration`, `core.censoring`, `io.benchmarks`, `io.datasets` |
 
