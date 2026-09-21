@@ -64,22 +64,31 @@ class ReservoirEffectiveness:
     none_below_m: float = np.inf
 
     def __post_init__(self) -> None:
+        # A decline is two depths or none: one finite bound with the other at infinity has no
+        # ramp to draw and was read silently as "no decline" for one order and refused with a
+        # misleading message for the other.
+        if np.isfinite(self.full_to_m) != np.isfinite(self.none_below_m):
+            raise ValueError(
+                "a reservoir effectiveness decline needs both depths, the depth to which the "
+                "reservoir is fully effective and the depth below which it is none; give both "
+                "in m TVDSS or neither"
+            )
         if self.none_below_m < self.full_to_m:
             raise ValueError(
-                f"the reservoir cannot stop being effective ({self.none_below_m} m) above the "
-                f"depth to which it is fully effective ({self.full_to_m} m)"
+                f"the reservoir cannot stop being effective ({self.none_below_m:,.0f} m) above "
+                f"the depth to which it is fully effective ({self.full_to_m:,.0f} m)"
             )
 
     @property
     def active(self) -> bool:
-        return np.isfinite(self.full_to_m) or np.isfinite(self.none_below_m)
+        return np.isfinite(self.full_to_m)
 
     def at(self, depth_m: np.ndarray) -> np.ndarray:
+        """Effectiveness in [0, 1] at each depth: 1 to ``full_to_m``, 0 from ``none_below_m``,
+        linear between; a step where the two depths coincide."""
         z = np.asarray(depth_m, dtype=float)
         if not self.active:
             return np.ones_like(z)
-        if not np.isfinite(self.none_below_m):
-            return np.where(z <= self.full_to_m, 1.0, 1.0)
         if self.none_below_m == self.full_to_m:
             return np.where(z <= self.full_to_m, 1.0, 0.0)
         ramp = (self.none_below_m - z) / (self.none_below_m - self.full_to_m)
@@ -118,14 +127,23 @@ class Decomposition:
         return float(np.max(np.abs(self.residual_depth)))
 
     @property
-    def apex_contribution(self) -> float:
-        """How much of the depth-space gap is the shared apex rather than limit dependence.
+    def apex_effect(self) -> np.ndarray:
+        """The shared apex's effect on the depth-space residual, depth by depth.
 
-        The elements share one apex draw, so their *contact* curves are dependent even when their
-        *column* curves are not. This is the difference between the two residuals, and it is the
-        number that says whether the depth-space test can be read at face value.
+        ``columns_m`` is ``depths_m`` less the median apex, so the two residual grids are aligned
+        point for point: with the apex pinned at its median the depth-space residual would be
+        the column-space one, and the difference at each depth is what letting the apex vary
+        adds. Zero everywhere when the apex is certain.
         """
-        return self.max_abs_residual_depth - self.max_abs_residual_column
+        return self.residual_depth - self.residual_column
+
+    @property
+    def max_abs_apex_effect(self) -> float:
+        """The largest apex effect over the grid, at one depth: the number that says whether
+        the depth-space test can be read at face value. Until 21 Sep 2026 the tab showed the
+        difference of the two residual maxima, which are taken at different depths and do not
+        subtract to anything (audit P1-2)."""
+        return float(np.max(np.abs(self.apex_effect)))
 
     def element_pos_at_depth(self, element_pos: dict[Group, float]) -> dict[Group, np.ndarray]:
         """``POS_e x P_e(z)`` — the prospect's element chance, taken down structure.
