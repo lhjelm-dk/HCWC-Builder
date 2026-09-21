@@ -248,7 +248,14 @@ enters as a likelihood `L(D | h)` over those realisations, and the posterior is 
 with weights `w_j ∝ L(D | h_j)`. That is self-normalised importance sampling and, for this
 sample, an exact Bayesian update: nothing is re-simulated, each realisation keeps its controlling
 limit, and the prior and posterior are the same realisations, so `F_prior(h)` and `F_post(h)` are
-directly comparable.
+directly comparable. The DHI adds no realisations and moves no sampled limit. Where a sample of
+the posterior is needed rather than a curve, for the export, the benchmark comparison and the
+posterior window of Figure 5.2.1a, the realisations are drawn by their weights with
+replacement: each drawn realisation is one of the run's, limits and controller intact, and a
+realisation the evidence favours is drawn often. A scenario mixture, a contact from the pick
+with chance `c` and from the geology otherwise, is a different construction: it lets the pick
+set a contact the limits would not allow and cannot let the geology revise `c`; it is kept as a
+comparison (8.1.6).
 
 The geometry likelihood for a seen anomaly has two factors and a floor:
 

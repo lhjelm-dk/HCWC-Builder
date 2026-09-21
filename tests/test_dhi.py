@@ -158,6 +158,37 @@ class TestDegenerateCases:
             DhiObservation(seen=True, contact_m=2300.0, pick_sigma_m=0.0)
 
 
+class TestPosteriorIndices:
+    """The posterior as realisation indices, for the window on Figure 5.2.1a."""
+
+    def _posterior(self):
+        result = engine.run(reference_prospect(), 4_000, seed=1)
+        obs = dhi.DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=10.0, p_valid=0.5)
+        return dhi.update(result, dhi.DetectionFunction(), obs)
+
+    def test_it_draws_every_index_by_weight_with_replacement(self):
+        post = self._posterior()
+        idx = dhi.posterior_indices(post)
+        assert idx.shape == (post.result.n,)
+        assert idx.min() >= 0 and idx.max() < post.result.n
+        assert len(set(idx.tolist())) < post.result.n, "no repeats means no reweighting"
+        # the drawn contacts follow the weighted distribution, not the prior
+        drawn = post.result.contact_m[idx]
+        w = post.weights / post.weights.sum()
+        assert np.mean(drawn) == pytest.approx(float(np.sum(w * post.result.contact_m)), abs=3.0)
+
+    def test_the_draw_is_fixed_and_sized(self):
+        post = self._posterior()
+        np.testing.assert_array_equal(dhi.posterior_indices(post), dhi.posterior_indices(post))
+        assert dhi.posterior_indices(post, 50).shape == (50,)
+
+    def test_unnormalisable_weights_fall_back_to_the_run_order(self):
+        post = self._posterior()
+        broken = dhi.DhiPosterior(result=post.result, weights=np.zeros(post.result.n),
+                                  detection=post.detection, observation=post.observation)
+        np.testing.assert_array_equal(dhi.posterior_indices(broken), np.arange(post.result.n))
+
+
 class TestScenarioSwitch:
     """Formulation A — the scenario switch."""
 
