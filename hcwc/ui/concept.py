@@ -85,7 +85,7 @@ def render() -> None:
         # are stated once, on tab 8.1 (archive/development_notes/EXPLANATION_MAP_2026-09-16.md, tab 1).
         st.markdown(
             "A discovery is a column of at least the assessment minimum set on **2.0 Prospect**; the "
-            "chance of success is the contact distribution read at that depth. Method: see 8.1.3. "
+            "chance that the well finds hydrocarbons is the contact distribution read at that depth. Method: see 8.1.3. "
             "Limitations: see 8.1.8."
         )
         st.markdown(
