@@ -1670,10 +1670,10 @@ class TestThePageIsNotAnEssay:
         for phrase in (
             # Both were on tab 1 until 16 Sep 2026; they are stated once now, on tab 8.1.
             "Beha et al. (2012)",                       # 8.1.3, the precedent
-            "the elicitation effort belongs on",        # 8.1.3, the ranking
+            "two or three limits set",                  # 8.1.3, the ranking
             "A prior and a likelihood are the same kind of object",   # tab 8.1.9, and its worked example
             # Graham's own words moved from tab 6.0 §7 to 8.1.10 on 16 Sep 2026.
-            "hydrocarbon indicators (DHIs) or known fill controls",
+            "in the absence of direct hydrocarbon indicators",
             "The censored MLE crossing is a prediction",  # tab 6.0 §2, folded
         ):
             assert phrase in blob, f"folding lost: {phrase!r}"
@@ -1909,13 +1909,13 @@ class TestThePaperAgreesWithTheAppItDescribes:
     """
 
     ARTICLE = "paper/ARTICLE.md"
-    #: Since 17 Sep 2026 the figures are the app's own, exported by scripts/post_images.py,
-    #: plus the workflow figure (scripts/workflow_figure.py); the long manuscript, kept as
-    #: docs/ARTICLE_LONG_2026-09.md, adds the chance against depth and keeps the concept
-    #: sketch fig5 from scripts/paper_figures.py. The matplotlib set is in archive/old_figures/.
-    FIGURES = ("fig0_workflow.png", "fig1_competing_limits.png",
-               "fig2_controlling_mechanism.png", "fig4_dhi_update.png",
-               "fig6_chance_before_after.png")
+    #: Since 21 Sep 2026 the article's figures are drawn for the page by
+    #: hcwc/plotting/paper/figures.py (scripts/paper_figures.py) from the scenario in
+    #: scripts/paper_facts.py; the app exports (scripts/post_images.py) remain for the long
+    #: manuscript, paper/ARTICLE_LONG_2026-09.md, and the workflow figure for tab 1.
+    FIGURES = ("paper_fig1_competing_limits.png", "paper_fig2_controlling_mechanism.png",
+               "paper_fig3_dhi_update.png", "paper_fig4_chance_against_depth.png",
+               "paper_fig5_empirical_check.png")
     LONG_FIGURES = ("fig1_competing_limits.png", "fig2_controlling_mechanism.png",
                     "fig3_chance_against_depth.png", "fig4_dhi_update.png",
                     "fig5_truncate_vs_terminate.png", "fig6_chance_before_after.png")
