@@ -503,8 +503,8 @@ def render(n: Numbering | None = None) -> None:
         sits_at = float((result.contact_m <= contact).mean())
         n.plot(figv,
                "Blue is the geological contact distribution, the competing limits from tab 3.0 "
-               "and what tab 4.0 draws. Red is the pick. Everything downstream is these two "
-               "meeting; where this tab says prior, it means the blue one.\n\n"
+               "and what tab 4.0 draws. Red is the pick. The update combines the two; where "
+               "this tab says prior, it means the blue one.\n\n"
                f"The pick is {sharper:,.0f} times sharper than the geology, centred where "
                f"{sits_at:.0%} of it lies shallower. Far narrower than the geology, the pick "
                "dominates the answer; centred in its tail, the posterior rests on few "

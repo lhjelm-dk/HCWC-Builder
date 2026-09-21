@@ -262,9 +262,9 @@ def render(n: Numbering | None = None) -> None:
              r"{P(\mathrm{DHI} \mid \mathrm{no\ HC})}}_{R} \times "
              r"\underbrace{\frac{P(\mathrm{HC})}{P(\mathrm{no\ HC})}}_{\text{prior odds}}")
     st.markdown(
-        "That is the whole method. The only question a DHI has to answer is how much more "
-        "likely the observation was if the prospect works than if it does not, and the term "
-        "nobody could estimate is never computed.\n\n"
+        "That is the whole method. The one question a DHI has to answer is how much more "
+        "likely the observation was if the prospect works than if it does not; the absolute "
+        "probability of the observation is never computed.\n\n"
         "It also makes the two extremes legible:\n\n"
         "- R = 0 says the observation was impossible under G. Posterior odds zero, and no "
         "prior survives it, which is why step 4 exists.\n"
