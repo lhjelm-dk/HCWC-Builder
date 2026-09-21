@@ -546,49 +546,27 @@ class DhiPosterior:
 
     @property
     def r_dhi(self) -> float:
-        """Diagnostic ratio: how much the geometry likelihood favours tall columns over short ones.
+        """The geometry discrimination ratio: a diagnostic of the geometry likelihood, not ``LR(s)``.
 
-        **Not part of the chance, since 14 Sep 2026.** Both sets it compares are inside ``G`` --
-        realisations that clear the assessment minimum against those that fall short -- so it is
-        a ratio between two column-height hypotheses, not between success and failure of the
-        prospect. Applying it as a likelihood ratio on the prospect chance, as
-        :class:`CombinedUpdate` did, treated ``P(h < h_min | G)`` as if it were ``P(not G)``. The
-        geometry's effect on the chance is now read directly: ``P(h ≥ h_min | G, geometry)`` is
-        :meth:`pos`, and :func:`prospect_pos` multiplies it by ``P(G | strength)``. This property
-        stays as a readout of how much the pick discriminates, and for the trust panel.
+        Not part of the chance. Both sets it compares are inside ``G``, so it is a ratio between
+        two column-height hypotheses and never between an accumulation and none; the geometry's
+        effect on the chance is ``P(h ≥ h_min | G, geometry)`` (:meth:`pos`), and
+        :func:`prospect_pos` multiplies that by ``P(G | s)``. This number says how much the
+        geometry likelihood discriminates, for the trust panel and the comparison constructions.
 
-        For a **seen** anomaly this is E-POS's ``r_dfi`` construction — ``L`` averaged over the
-        success cases divided by ``L`` averaged over the failures — so the two tools report a
-        comparable number. The comparison there is between one column height and another, which is
-        the right question when the evidence is *where* an anomaly terminates.
+        Two definitions, one per observation, and the caller must show the one that applies:
 
-        For an **absent** anomaly it is not. Absence is evidence against the accumulation existing
-        at all, and comparing tall columns against short ones misses that entirely: it returns
-        ``nan`` whenever the assessment minimum is low enough that every realisation clears it,
-        which is exactly when the finding matters most. So the comparison is made against the
-        barren world instead::
+        * seen anomaly: ``E[L | h ≥ h_min] / E[L | h < h_min]``, the likelihood averaged over the
+          realisations that meet the assessment minimum divided by its average over those that
+          fall short (E-POS's ``r_dfi`` construction). Undefined (``nan``) when fewer than
+          :func:`min_failures_for_r` realisations fall short: a ratio from a handful of draws is
+          noise, and a neutral observation must not move anything.
+        * absent anomaly: ``E[1 − D(h) | h ≥ h_min] / 1``, the average chance that a column meeting
+          the minimum would have shown nothing, against a barren trap taken to show nothing with
+          certainty. The denominator is an assumption on the generous side: a barren trap can
+          throw a spurious event, and allowing for that would make absence weaker evidence still.
 
-            R = E[1 - D(h) | success] / P(no anomaly | no accumulation)
-
-        with the denominator taken as **1**: a trap with no hydrocarbon in it has nothing to show.
-        That is an assumption and a slightly generous one — a barren trap can still throw a
-        spurious bright event — but erring that way makes absence weaker evidence, not stronger,
-        which is the safe direction for a number this consequential.
-
-        **The denominator has to be a real sample.** The guard below used to catch only the case
-        where *every* realisation clears the minimum. Seven out of ten thousand slipped through it,
-        and seven is not a sample: on the shipped prospect at a 5 m minimum the ratio came out at
-        1.66 from those seven, which lifted a **neutral** amplitude -- strength 0, ``r_strength``
-        exactly 1 -- from 40.8 % to 53.3 %. An observation that says nothing must do nothing, and
-        E-POS agrees. Below :func:`min_failures_for_r` the ratio is undefined rather than noisy,
-        and :class:`CombinedUpdate` then falls back to the strength channel alone.
-
-        There is a deeper reason to be strict here. These "failures" are not failed *prospects* --
-        every realisation the engine draws is already conditional on the four elements working, and
-        that chance lives in ``P(G)`` on tab 2.0. They are short columns. Comparing tall columns with
-        short ones is the right question when the minimum is a real commercial threshold and a
-        useful share of realisations miss it; it is meaningless when the minimum is a 5 m physical
-        floor that only a rounding error fails to clear.
+        ``nan`` when the posterior carries no DHI observation (well control alone).
         """
         # No DHI, no `r_dhi`. A prospect updated by well control alone has a perfectly good
         # posterior and no likelihood ratio *against an amplitude* to report, and returning some
@@ -605,6 +583,16 @@ class DhiPosterior:
         if not success.any() or int((~success).sum()) < min_failures_for_r(self.result.n):
             return float("nan")
         return float(self.weights[success].mean() / self.weights[~success].mean())
+
+
+def geometry_ratio_definition(posterior: DhiPosterior) -> str:
+    """The definition of :attr:`DhiPosterior.r_dhi` that applies to this posterior, as text."""
+    obs = posterior.observation
+    if obs is None:
+        return "no DHI observation; the geometry ratio is not defined"
+    if not obs.seen:
+        return "E[1 − D(h) | h ≥ h_min] against a barren trap showing nothing"
+    return "E[L | h ≥ h_min] / E[L | h < h_min], the geometry likelihood's average over the columns that meet the minimum against those that fall short"
 
 
 def posterior_indices(posterior: DhiPosterior, n: int | None = None,
