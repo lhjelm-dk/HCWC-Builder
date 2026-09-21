@@ -1,4 +1,6 @@
-# What the app needs to run. Nothing here is optional.
+# What the app needs to run. Nothing here is optional. This is the canonical list: the
+# deployment installs it, and pyproject.toml mirrors it (tests/test_ui_imports.py checks).
+# The paper scripts also need matplotlib (pyproject's dev extra).
 #
 # **Floors, not pins**, matching WellVolPOS and E-POS: the test suite guards against
 # drift, while pinned versions break installation wherever no matching wheel exists.

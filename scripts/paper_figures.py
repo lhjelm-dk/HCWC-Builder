@@ -37,11 +37,13 @@ from hcwc.core.limits import DepthDistribution, Group, Limit, LimitSet
 
 OUT = ROOT / "paper" / "figures"
 
-#: The assessment minimum the article states. Everything is read at this column height.
-HMIN = 120.0
-#: The app's own default realisation count, the one a reader would reproduce.
-N = 10_000
-SEED = 20260825
+# The scenario is stated once, in scripts/paper_facts.py; these names are kept for the callers.
+sys.path.insert(0, str(ROOT / "scripts"))
+import paper_facts as _facts  # noqa: E402
+
+HMIN = _facts.H_MIN_M
+N = _facts.N_TRIALS
+SEED = _facts.SEED
 
 plt.rcParams.update({
     "font.size": 8.5, "axes.labelsize": 8.5, "axes.titlesize": 9.5,
@@ -53,18 +55,8 @@ plt.rcParams.update({
 
 
 def from_the_app() -> tuple[LimitSet, float]:
-    """The limit set and element product the app opens on, at the article's assessment minimum."""
-    warnings.filterwarnings("ignore")
-    from streamlit.testing.v1 import AppTest
-
-    at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=900)
-    at.session_state["min_column_input"] = HMIN
-    with contextlib.redirect_stderr(_io.StringIO()):
-        at.run()
-    limit_set = at.session_state["dhi_posterior"].result.limit_set
-    p_g = 1.0
-    for chance in at.session_state["element_pos"].values():
-        p_g *= float(chance)
+    """The limit set and P(G) of the paper scenario, read through the app (paper_facts)."""
+    limit_set, _, p_g = _facts.scenario()
     return limit_set, p_g
 
 
