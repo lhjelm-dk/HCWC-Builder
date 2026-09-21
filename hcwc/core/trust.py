@@ -37,7 +37,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from hcwc.core import correlate, engine
+from hcwc.core import correlate, dhi, engine
 from hcwc.core.engine import EngineResult
 
 #: Worst-first, so ``max(levels, key=ORDER.index)`` gives the headline.
