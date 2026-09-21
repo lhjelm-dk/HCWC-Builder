@@ -523,6 +523,27 @@ class DhiPosterior:
         return float(self.weights[success].mean() / self.weights[~success].mean())
 
 
+def posterior_indices(posterior: DhiPosterior, n: int | None = None,
+                      seed: int = 20260904) -> np.ndarray:
+    """The posterior as a sequence of realisation indices, drawn by weight with replacement.
+
+    Figure 5.2.1a walks a window of fifty through the run; given the DHI it can walk the same
+    window through the posterior instead (Lars, 21 Sep 2026), and what it then shows is the
+    geological realisations resampled by their weights: each one is a run realisation, limits
+    and controller intact, appearing as often as the evidence favours it. The order is one
+    fixed draw so the slider is stable between reruns. All realisations, not the success
+    cases only, because the figure draws the whole run. Returns ``np.arange(n)`` when the
+    weights cannot be normalised.
+    """
+    n_out = posterior.result.n if n is None else int(n)
+    weights = np.asarray(posterior.weights, dtype=float)
+    total = float(weights.sum())
+    if weights.size == 0 or not np.isfinite(total) or total <= 0:
+        return np.arange(n_out)
+    rng = np.random.default_rng(seed)
+    return rng.choice(weights.size, n_out, replace=True, p=weights / total)
+
+
 def posterior_columns(posterior: DhiPosterior, n: int = 10_000,
                       seed: int = 20260904) -> np.ndarray:
     """The updated column distribution as a **sample**, success cases only.

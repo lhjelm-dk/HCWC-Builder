@@ -17,6 +17,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from hcwc.core import dhi as dhi_core
 from hcwc.core import engine, sensitivity, trust
 from hcwc.core import limits as limits_mod
 from hcwc.core.limits import Group
@@ -178,12 +179,27 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # sits in the ten thousand. Draws are the geology's whatever the basis; under the evidence
     # the right panel's bars and curve carry the weights, as every other exhibit on tab 5 does.
     _window = 50
+    # Given the DHI the window can walk the posterior instead of the run (Lars, 21 Sep 2026):
+    # the same realisations resampled by their weights, so a realisation the evidence favours
+    # appears often and one it discounts seldom. Nothing is simulated anew; the DHI adds no
+    # realisations and moves no sampled limit, it counts each realisation differently.
+    _from_posterior = bool(given_dhi and st.toggle(
+        f"Show {_window} posterior realisations", value=True,
+        key=f"competition_posterior_{tab}",
+        help="On: the window walks the posterior, the geological realisations drawn by their "
+             "posterior weight, with replacement, so some repeat. Off: the window walks the "
+             "run in the order the engine drew it, as on tab 4.1."))
     _start = st.slider(
         "Realisations from", 0, max(result.n - _window, 0), 0, step=_window,
         key=f"competition_window_{tab}",
-        help=f"Which {_window} of the {result.n:,} realisations the left panel shows, in the "
-             "order the engine drew them. The right panel is always all of them.")
-    _idx = np.arange(_start, min(_start + _window, result.n))
+        help=f"Which {_window} of the {result.n:,} realisations the left panel shows"
+             + (", drawn from the posterior by weight" if _from_posterior else
+                ", in the order the engine drew them")
+             + ". The right panel is always all of them.")
+    _order = (dhi_core.posterior_indices(posterior) if _from_posterior
+              else np.arange(result.n))
+    _idx = _order[_start:min(_start + _window, result.n)]
+    _label = "posterior realisation" if _from_posterior else "realisation"
     _colours = limit_colours(limit_set)
     _live_names = [name for name, share in engine.limit_ranking(result, weights=weights)
                    if share > 0.0005]
@@ -210,9 +226,9 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                      # An open symbol takes its stroke from `marker.color`, not `marker.line`.
                      marker=dict(symbol="circle-open", size=13, line=dict(width=2.2),
                                  color=[_colours.get(c, "#111") for c in _ctrl]),
-                     customdata=_ctrl,
-                     hovertemplate="realisation %{x}<br>contact %{y:,.0f} m<br>"
-                                   "controlled by %{customdata}<extra></extra>",
+                     customdata=np.column_stack([_ctrl, _idx.astype(str)]),
+                     hovertemplate="run realisation %{customdata[1]}<br>contact %{y:,.0f} m<br>"
+                                   "controlled by %{customdata[0]}<extra></extra>",
                      xaxis="x", yaxis="y")
 
     # The whole distribution beside it: bars, the exceedance curve on a top axis, the window's
@@ -272,7 +288,8 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     _y_lo = min(float(np.percentile(_shown, 0.5)), float(result.contact_m.min())) - 10.0
     _y_hi = float(np.percentile(_shown, 97.0)) + 15.0
     figc.update_layout(
-        xaxis=dict(domain=[0.0, 0.6], title=f"realisation ({_start:,} to {_idx[-1]:,})"),
+        xaxis=dict(domain=[0.0, 0.6],
+                   title=f"{_label} ({_start:,} to {_start + _idx.size - 1:,})"),
         xaxis2=dict(domain=[0.66, 1.0], title="share of realisations per depth bin",
                     tickformat=".0%", range=[0, max(_peak, 1e-6) * 3.0], showgrid=False),
         xaxis3=dict(domain=[0.66, 1.0], overlaying="x2", side="top", range=[0, 1],
@@ -286,7 +303,18 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
                  f"{result.n:,}. Right: the whole distribution, its exceedance curve on the top "
                  f"axis"
                  + (", with the geological curve dashed beside it" if given_dhi else "")
-                 + f", and the {_idx.size} shown marked at their depths. Method: see 8.1.2.")
+                 + f", and the {_idx.size} shown marked at their depths."
+                 + (f" The DHI adds no realisations and moves no sampled depth: it gives each "
+                    f"geological realisation a weight, and the bars and the solid curve count "
+                    f"the realisations by those weights (8.1.5)."
+                    + (f" The {_idx.size} on the left are drawn from the run by that weight, "
+                       f"with replacement, so a realisation the evidence favours appears often "
+                       f"and may repeat; the hover names the run realisation each one is."
+                       if _from_posterior else
+                       f" The {_idx.size} on the left are the run's own, in the order drawn, "
+                       f"unweighted; the toggle above shows the posterior's instead.")
+                    if given_dhi else "")
+                 + " Method: see 8.1.2.")
 
     # `grid` and `apex_med` feed the chance curve in section 3; the exceedance figure that used
     # to sit here was replaced by the competition figure above (Lars, 17 Sep 2026), which carries
@@ -656,7 +684,6 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
             and posterior.detection is not None):
         import dataclasses
 
-        from hcwc.core import dhi as dhi_core
         from hcwc.core import well as well_core
         from hcwc.ui.dhi_tab import well_control
 
