@@ -405,7 +405,7 @@ geologic factors alone). Given it worked and the contact is where the amplitude 
 mechanism stopped it there, the DHI can answer, because the controlling limit is coupled to the
 contact depth. That is why the controller is recorded. The well reading given the DHI is the
 same product read at the entry depth, `P(well) = P(G | s) × P(z_HCWC > z_well | G, geometry)`,
-on tab 5.1.5 and tab 5.3.4 alike; where tab 5.3.4 shows it per element, the update of `P(G)`
+on tab 5.2.4 and tab 5.3.4 alike; where tab 5.3.4 shows it per element, the update of `P(G)`
 by the index is spread over the elements by the allocation rule (8.1.3), a presentation that
 attributes nothing.
 

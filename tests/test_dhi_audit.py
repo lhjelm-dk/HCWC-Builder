@@ -339,8 +339,8 @@ class TestTheCriticalConsistencyIdentity:
         assert abs(mass_below_edge - f_post) < 0.06
 
     @pytest.mark.render
-    def test_the_well_reads_the_same_on_tab_5_1_5_and_tab_5_3_4(self):
-        """Lars, 21 Sep 2026: at a 2 230 m well tab 5.1.5 read 36.1 % and tab 5.3.4 read 31.5 %.
+    def test_the_well_reads_the_same_on_tab_5_2_4_and_tab_5_3_4(self):
+        """Lars, 21 Sep 2026: at a 2 230 m well tab 5.2.4 read 36.1 % and tab 5.3.4 read 31.5 %.
         Both are P(well) given the DHI; 5.3.4 had kept the geological P(G) with the posterior r.
         The comparison table now takes P(G | s) from the overlay and the two agree."""
         import pathlib
@@ -357,7 +357,7 @@ class TestTheCriticalConsistencyIdentity:
         post = at.session_state["dhi_posterior"]
         pos = at.session_state["element_pos"]
         z = 2230.0
-        # Tab 5.1.5: P(G | s) times the weighted exceedance at the entry depth.
+        # Tab 5.2.4: P(G | s) times the weighted exceedance at the entry depth.
         r_post = float(engine.exceedance(post.result.contact_m, np.array([z]), post.weights)[0])
         well_515 = float(overlay["p_g_given_amplitude"]) * r_post
         # Tab 5.3.4: the comparison table built the way the tab builds it.

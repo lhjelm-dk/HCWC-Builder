@@ -123,7 +123,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
     # Given the DHI the accumulation chance is P(G | s): the evidence index's update, which tab
     # 5.1 has written into the overlay by the time this tab draws (8.1.4). Every prospect chance
     # on this tab multiplies that, not the geological P(G); until 21 Sep 2026 the headline and
-    # the §4 identity here used P(G) with the posterior column term and disagreed with 5.1.5
+    # the §4 identity here used P(G) with the posterior column term and disagreed with 5.2.4
     # (Lars, 21 Sep 2026). The leverage map's geological reference keeps P(G) on purpose.
     _overlay = st.session_state.get("dhi_overlay") if given_dhi else None
     _p_g_applied = (float(_overlay.get("p_g_given_amplitude", p_geological))
