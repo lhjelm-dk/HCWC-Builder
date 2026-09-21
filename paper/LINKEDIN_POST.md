@@ -1,108 +1,54 @@
-# LinkedIn post — draft
+# LinkedIn post
 
-*Companion to the article `paper/ARTICLE.md`. The post is the hook; the article is the argument.
-Overlap between them is limited to the closing line and one figure. Images are in `paper/post/`,
-regenerated from the app by `scripts/post_images.py`; nothing in them is typed. Replace the
-three placeholders before posting: `ARTICLE_URL` (the LinkedIn article), `APP_URL`
-(https://hcwc-builder.streamlit.app unless the deployment is named otherwise), `GITHUB_URL`
-(the repository must be public first). LinkedIn allows up to 20 images on a post; this uses 11.*
+*Companion to `paper/ARTICLE.md`: the post is the hook, the article is the argument. Its numbers
+are `scripts/paper_facts.py`'s. Replace the three placeholders before posting: `ARTICLE_URL`,
+`APP_URL` (https://hcwc-builder.streamlit.app unless the deployment is named otherwise),
+`GITHUB_URL` (the repository must be public first). Three images, in `paper/figures/`.*
 
 ---
 
 ## Post text
 
-Where is the hydrocarbon–water contact? In most prospect evaluations the answer is a
-distribution somebody typed in. Uniform from apex to spill. A three-point estimate. Whatever the
-company standard says.
+Where is the hydrocarbon–water contact? In most prospect evaluations the answer is a distribution
+somebody typed in: uniform from apex to spill, a three-point estimate, the company standard.
 
-I built a tool that refuses to answer that way. It asks the geology instead.
+A detailed Monte Carlo model can still answer the wrong geological question.
 
-Every mechanism that can stop a column — charge, spill, fault leak, seal capacity, seal
-continuity, fracture — gets two numbers: how likely it is to be there, and how deep it acts if it
-is. Ten thousand times over, the shallowest one wins. The contact distribution is what comes out.
-Nobody chose its shape.
+I built a tool that asks the geology instead. Every mechanism that can stop a column — charge,
+spill, a leaking fault, seal capacity, seal continuity, mechanical failure — gets two numbers:
+how likely it is to be there, and how deep it acts if it is. Ten thousand times over, the
+shallowest active one sets the contact. The distribution is the output, and the model records
+which mechanism set it in each realisation.
 
-That is not a new idea. Beha, Christensen and Young wrote it down in 2012; Hood, Grant and Lowry
-were there before and after. What I wanted was the whole chain in one place, with the receipts:
-which mechanism controlled each realisation, the chance read at any depth, a well tested against
-every draw, and a DHI treated as evidence rather than as a replacement contact.
+That second part is the one I use most. On the worked prospect the top seal sets the contact in
+32 % of realisations, a fault leak in 23 %, seal continuity in 15 %. Two or three limits carry the
+answer; the rest can stay rough. A reviewer can argue with a mechanism instead of a curve.
 
-The DHI part is the one I care most about. A bright amplitude with a picked termination does two
-different things. Its character, placed on an evidence index, says something about whether there
-are hydrocarbons at all; its
-geometry says something about how deep they go, if they are there. The tool keeps those apart. On
-the worked prospect a moderate anomaly takes the chance from 40 % to 64 %, narrows the contact
-from 130 m to 99 m, with an effective sample size of 4 872 of the 10 000 realisations. That last
-number says how far the seismic pushed the geology.
+The DHI is treated as evidence, not as a replacement contact. Its character, placed on an
+evidence index, updates the chance that hydrocarbons are there at all: 40 % to 64 % on the worked
+prospect. Its geometry reweights the same geological realisations: the contact narrows from a
+130 m to a 99 m P90–P10 spread, with an effective sample size of 4 872 of the 10 000. Strong DHI
+evidence can raise P(G) substantially while the contact depth stays uncertain — and a well 180 m
+below the crest reads 50 %, not 64 %, because it also needs the column to reach it.
 
-A strong DHI does not make the contact certain. It makes hydrocarbons likely. The depth
-uncertainty stays where it came from: the pick, the depth conversion, and whether that flat
-thing is a contact at all.
+The competing-limits idea is Beha, Christensen and Young's (2012); the tool puts it in one place
+with the DHI update and a censoring-aware comparison against the NCS record.
 
-The article has the reasoning and the maths, in about two thousand words: ARTICLE_URL
-
-The tool is open source, MIT, and runs in a browser without a geomodel: APP_URL
-Code, tests and the theory notes: GITHUB_URL
-
-The point is not to find a better distribution. It is to let the geology generate the
-distribution.
+Article: ARTICLE_URL
+App, open source, no geomodel needed: APP_URL
+Code and theory: GITHUB_URL
 
 ---
 
-## Images, in order, with their captions
+## Images
 
-1. `01_concept.png` — Every mechanism that can stop a column, on one section, with the depth at
-   which it acts. Filling works down from the apex, so every capacity is measured from there.
+1. `figures/paper_fig1_competing_limits.png` — Each limit's chance of permitting a contact at
+   least this deep; the contact is the lower envelope, and the distribution follows.
+2. `figures/paper_fig2_controlling_mechanism.png` — Which mechanism stops the column, and where.
+3. `figures/paper_fig3_dhi_update.png` — The contact distribution before and after the DHI: a
+   reweighting, with the prior still visible.
 
-2. `02_ranking.png` — Which limit sets the contact, and how often. On this prospect the top seal
-   and a fault leak are the competition; six of the thirteen limits never win and can stay rough.
+## First comment (post immediately after publishing)
 
-3. `03_all_limits_one_axis.png` — The competition drawn. Each violin is one limit's sampled
-   depth; the right-hand one is the shallowest active limit in every realisation, which is the
-   contact.
-
-4. `04_contact_distribution.png` — The competition, realisation by realisation. Left: fifty
-   draws, every active limit's depth, the shallowest ringed in the colour of the limit that
-   won. Right: the distribution all ten thousand make, with its exceedance curve. Every
-   probability of success in the workflow is a reading of that curve at a depth.
-
-5. `05_controlling_by_depth.png` — The same distribution coloured by what controls it. Shallow
-   contacts are seal-limited; deep ones pass to fault geometry and spill. A generic distribution
-   cannot draw this figure.
-
-6. `06_chance_against_depth.png` — The prospect chance against depth, element risk included.
-   Read at the assessment minimum it is the headline POS; read at a well's entry depth it is the
-   chance that well finds hydrocarbons.
-
-7. `07_the_pick_against_the_geology.png` — Enter the DHI. Blue is the geology; red is the
-   picked contact with its uncertainty. Everything downstream is these two meeting.
-
-8. `08_update_at_a_glance.png` — What the update did, and through which channel. The evidence index moved
-   P(G); geometry moved the contact and its spread; the effective sample size says how much
-   geology is left underneath.
-
-9. `09_dhi_updated_contact.png` — The contact distribution before and after. The DHI reshaped
-   it; it did not replace it, and nothing was ruled out.
-
-10. `10_chance_before_after.png` — The chance against depth, geological and updated, from the
-    same weighted realisations. The two curves meet the headline numbers by construction, not by
-    rescaling.
-
-11. `11_benchmark_family.png` — A reality check, not a score: the prospect beside 242 Norwegian
-    discoveries at the same relief, with the filled-to-spill ones treated as censored. Compared,
-    never multiplied in.
-
----
-
-## Notes for posting
-
-- Overlap with the article: the closing line, the 40 → 64 % / 130 → 99 m / 4 872 numbers, and
-  images 4, 5, 9 and 10 (the article's Figures 2 to 5). Everything else in the post is picture-led and the article
-  carries the derivation.
-- The article's figures are the app's own too (`paper/figures/fig1…fig6`, from the same run
-  as the post's images), so a reader who opens the app recognises them; the article opens with
-  the workflow figure (`paper/figures/fig0_workflow.png`), which the post does not carry.
-- `GITHUB_URL` requires the repository to be public; until then, drop the line or link the
-  app only.
-- The index / σ / c settings behind images 7–10 are the shipped defaults with the evidence index at 20 and
-  σ 10 m, the same case as the article, so the two documents quote one run.
+The tool runs in a browser and ships with a worked prospect; every number in the post is printed
+by one script from the code. The article has the method; tab 8.1 of the tool has it in full.
