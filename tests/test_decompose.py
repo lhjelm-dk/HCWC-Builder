@@ -83,25 +83,25 @@ class TestWhenTheIdentityShouldFail:
         d = decompose.decompose(engine.run(two_element_set(wide_apex), N))
         assert d.max_abs_residual_column < 0.02, "column space stays clean"
         assert d.max_abs_residual_depth > 0.03, "depth space should not"
-        assert d.apex_contribution > 0.02
+        assert d.max_abs_apex_effect > 0.02
 
-    def test_the_apex_contribution_grows_with_apex_uncertainty(self):
+    def test_the_apex_effect_grows_with_apex_uncertainty(self):
         got = []
         for half_width in (5.0, 100.0, 400.0):
             apex = DepthDistribution("normal_alt", {"p1": 0.01, "x1": 2000.0 - half_width,
                                                     "p2": 0.99, "x2": 2000.0 + half_width})
             got.append(decompose.decompose(
-                engine.run(two_element_set(apex), 30_000)).apex_contribution)
+                engine.run(two_element_set(apex), 30_000)).max_abs_apex_effect)
         assert got[0] < got[1] < got[2]
 
-    def test_a_certain_apex_leaves_no_apex_contribution(self):
+    def test_a_certain_apex_leaves_no_apex_effect(self):
         d = decompose.decompose(engine.run(two_element_set(), N))
-        assert abs(d.apex_contribution) < 0.01
+        assert d.max_abs_apex_effect < 0.01
 
     def test_a_tightly_picked_apex_is_narrow_enough_to_ignore(self):
         """2049-2051 m. On an apex this tight the subtlety can be left unremarked."""
         d = decompose.decompose(engine.run(reference_prospect(), N))
-        assert abs(d.apex_contribution) < 0.02
+        assert d.max_abs_apex_effect < 0.02
 
 
 class TestReservoirEffectiveness:
@@ -119,6 +119,18 @@ class TestReservoirEffectiveness:
     def test_an_inverted_pair_is_refused(self):
         with pytest.raises(ValueError, match="cannot stop being effective"):
             ReservoirEffectiveness(full_to_m=4000.0, none_below_m=3000.0)
+
+    def test_one_bound_without_the_other_is_refused(self):
+        """Audit P1-1, 21 Sep 2026: one finite bound read as 'no decline' in one order and
+        raised a misleading message in the other. A decline is two depths or none."""
+        with pytest.raises(ValueError, match="both depths"):
+            ReservoirEffectiveness(full_to_m=2200.0)
+        with pytest.raises(ValueError, match="both depths"):
+            ReservoirEffectiveness(none_below_m=2300.0)
+
+    def test_coincident_depths_are_a_step(self):
+        r = ReservoirEffectiveness(full_to_m=3000.0, none_below_m=3000.0)
+        np.testing.assert_array_equal(r.at(np.array([2999.0, 3000.0, 3001.0])), [1.0, 1.0, 0.0])
 
     def test_it_does_not_move_the_contact(self):
         """R1 is not a limit. It must not appear in the contact distribution."""

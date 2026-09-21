@@ -307,8 +307,8 @@ def render(tab: int = TAB, *, with_dhi: bool = False, n: Numbering | None = None
               "exact under independent limits", delta_color="off")
     c2.metric("Max gap, depth space", f"{d.max_abs_residual_depth:.3f}",
               "includes the shared apex", delta_color="off")
-    c3.metric("Attributable to the apex", f"{d.apex_contribution:+.3f}",
-              "difference between the two", delta_color="off")
+    c3.metric("Largest apex effect", f"{d.max_abs_apex_effect:.3f}",
+              "depth-space minus column-space residual, at one depth", delta_color="off")
 
     fig2 = go.Figure()
     fig2.add_scatter(x=d.product_depth, y=d.depths_m, mode="lines",
