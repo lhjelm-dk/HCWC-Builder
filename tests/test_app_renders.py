@@ -2070,7 +2070,10 @@ class TestTabsFourAndFiveOfferTheSameControls:
     on 5, and the only widget 5 has that 4 does not is the DHI's own basis switch.
     """
 
-    DHI_ONLY = {"controlling_view_N", "map_quantity_N", "map_depth_N"}
+    #: `competition_posterior`: the window on 5.2.1a can walk the posterior (21 Sep 2026);
+    #: tab 4.1 has no posterior to walk.
+    DHI_ONLY = {"controlling_view_N", "map_quantity_N", "map_depth_N",
+                "competition_posterior_N"}
 
     def test_the_tab_keyed_widgets_match(self):
         import re
@@ -2143,6 +2146,37 @@ class TestTheCompetitionIsDrawnRealisationByRealisation:
         assert fig.layout.xaxis.title.text == "realisation (5,000 to 5,049)"
         rings = next(t for t in fig.data if str(t.name).startswith("shallowest active limit"))
         assert len(rings.y) == 50
+
+    def test_tab_5_walks_the_posterior_and_can_walk_the_run(self):
+        """Lars, 21 Sep 2026: given the DHI the window shows the geological realisations drawn
+        by their posterior weight, so what is on the left is the posterior; the toggle returns
+        to the run's own order. The hover names the run realisation behind each one."""
+        import numpy as np
+
+        from hcwc.core import dhi
+
+        at = _run()
+        fig, caption = at.session_state["_figures"]["Figure 5.2.1a"]
+        assert fig.layout.xaxis.title.text == "posterior realisation (0 to 49)"
+        rings = next(t for t in fig.data if str(t.name).startswith("shallowest active limit"))
+        post = at.session_state["dhi_posterior"]
+        expect = dhi.posterior_indices(post)[:50]
+        assert [row[1] for row in rings.customdata] == [str(i) for i in expect]
+        np.testing.assert_allclose(np.asarray(rings.y, float), post.result.contact_m[expect])
+        assert "drawn from the run by that weight" in caption
+        # the posterior's fifty sit nearer the pick than the run's first fifty
+        assert (np.std(post.result.contact_m[expect])
+                < np.std(post.result.contact_m[:50]))
+
+        at.session_state["competition_posterior_5"] = False
+        at.run()
+        fig, caption = at.session_state["_figures"]["Figure 5.2.1a"]
+        assert fig.layout.xaxis.title.text == "realisation (0 to 49)"
+        rings = next(t for t in fig.data if str(t.name).startswith("shallowest active limit"))
+        assert [row[1] for row in rings.customdata] == [str(i) for i in range(50)]
+        assert "the run's own, in the order drawn" in caption
+        # tab 4.1 has no toggle
+        assert not any(t.key == "competition_posterior_4" for t in at.toggle)
 
     def test_the_rings_take_their_controllers_colours(self):
         """An open marker's stroke is `marker.color`; per-point colours there are the point."""

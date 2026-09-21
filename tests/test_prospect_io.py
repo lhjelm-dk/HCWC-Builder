@@ -143,6 +143,7 @@ def test_the_allow_list_covers_every_widget_key_the_app_creates():
                  # Which contact distributions to draw behind the chance curves. A way of
                  # looking at the answer, not a part of it.
                  "hcwc_hist_5", "competition_window_4", "competition_window_5",
+                 "competition_posterior_5",
                  "map_quantity_5", "map_depth_5",
                  # Whether tab 6.0 draws the built distributions beside the empirical one. The same
                  # kind of choice: it changes what is on the figure, not what the model says.
