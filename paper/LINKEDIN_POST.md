@@ -32,8 +32,8 @@ different things. Its character, placed on an evidence index, says something abo
 are hydrocarbons at all; its
 geometry says something about how deep they go, if they are there. The tool keeps those apart. On
 the worked prospect a moderate anomaly takes the chance from 40 % to 64 %, narrows the contact
-from 130 m to 99 m, and leaves 4 872 of the 10 000 realisations doing the work. That last number
-is the honest one: it says how far the seismic pushed the geology.
+from 130 m to 99 m, with an effective sample size of 4 872 of the 10 000 realisations. That last
+number says how far the seismic pushed the geology.
 
 A strong DHI does not make the contact certain. It makes hydrocarbons likely. The depth
 uncertainty stays where it came from: the pick, the depth conversion, and whether that flat

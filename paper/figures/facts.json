@@ -1,0 +1,72 @@
+{
+  "scenario": {
+    "seed": 20260825,
+    "trials": 10000,
+    "h_min_m": 120.0,
+    "evidence_index": 20.0,
+    "pick_m": 2250.0,
+    "pick_sigma_m": 10.0,
+    "contact_attribution_c": 0.36,
+    "well_entry_m": 2230.0,
+    "element_chances": {
+      "Charge": 0.9,
+      "Closure": 1.0,
+      "Reservoir": 0.63,
+      "Retention": 0.7200000000000001
+    }
+  },
+  "P(G)": 0.4082400000000001,
+  "F(h_min) geological": 0.9874,
+  "POS geological": 0.40309617600000014,
+  "LR(s)": 2.6172249198076076,
+  "P(G | s)": 0.6435644306562259,
+  "F_post(h_min)": 0.9935548583768683,
+  "POS given the DHI": 0.6394165667570364,
+  "prior HCWC P90/P50/P10 (m)": [
+    2191.3411084924796,
+    2245.911509696447,
+    2321.5634996267754
+  ],
+  "posterior HCWC P90/P50/P10 (m)": [
+    2198.157799006939,
+    2249.720903791774,
+    2297.6296956054966
+  ],
+  "prior P90-P10 spread (m)": 130.22239113429578,
+  "posterior P90-P10 spread (m)": 99.47189659855758,
+  "effective sample size": 4872.289822686652,
+  "P(z_HCWC >= z_well | G) geological": 0.5719000000000001,
+  "P(z_HCWC >= z_well | G, DHI)": 0.7720903769619748,
+  "P(well) geological": 0.23347245600000008,
+  "P(well) given the DHI": 0.4968899038646842,
+  "controlling shares (h >= h_min)": {
+    "Top seal (capillary)": 0.3173992303018027,
+    "Fault leakage 1": 0.23323880899331578,
+    "Top seal (continuity)": 0.15343325906420904,
+    "Fault geometry 1": 0.12578488960907433,
+    "Charge": 0.0930727162244278,
+    "Preservation / tilt": 0.045169131051245696,
+    "Closure / spill point": 0.03190196475592465,
+    "Fault geometry 2": 0.0,
+    "Wedge geometry": 0.0,
+    "Fault leakage 2": 0.0,
+    "Base seal (capillary)": 0.0,
+    "Base seal (continuity)": 0.0,
+    "Top seal (fracture)": 0.0
+  },
+  "six largest controls, summed": 0.9680980352440753,
+  "outcomes": {
+    "band_m": [
+      2226.7365212595914,
+      2273.2634787404086
+    ],
+    "attribution": 0.48848082356098455,
+    "shares": {
+      "no hydrocarbons": 0.3564355693437741,
+      "above the indicated contact": 0.138719819954707,
+      "at the indicated contact, because of it": 0.30812826779865615,
+      "at the indicated contact, by coincidence": 0.08085042647943837,
+      "below the indicated contact": 0.1158659164234244
+    }
+  }
+}
