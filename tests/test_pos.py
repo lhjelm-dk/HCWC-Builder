@@ -56,3 +56,61 @@ def test_the_exceedance_equals_the_broadcast_it_replaced():
     grid = np.linspace(capacity.min(), capacity.max(), 240)
     np.testing.assert_allclose(engine.exceedance(capacity, grid),
                                (capacity[None, :] >= grid[:, None]).mean(axis=1))
+
+
+class TestDepthSpace:
+    """The exact depth-space exceedance against the column-space one (8.1.3)."""
+
+    def test_a_wide_apex_separates_the_two_readings(self):
+        """With depth-conversion uncertainty on the apex, F(h) shifted by the median apex and
+        the exact depth-space curve differ; the well reads the exact one (P1-3 of the audit)."""
+        import dataclasses
+
+        from hcwc.core.limits import DepthDistribution
+        wide = dataclasses.replace(
+            reference_prospect(),
+            apex=DepthDistribution("normal_alt", {"p1": 0.10, "x1": 2020.0, "p2": 0.90, "x2": 2080.0}))
+        result = engine.run(wide, 4_000, seed=3)
+        assert np.ptp(result.apex_m) > 40.0
+        apex = float(np.median(result.apex_m))
+        z = np.linspace(2100.0, 2400.0, 60)
+        shifted = result.exceedance(z - apex)
+        exact = pos.depth_exceedance(result, z)
+        assert np.max(np.abs(shifted - exact)) > 0.02
+        # and the well reading is the exact one
+        z_well = 2230.0
+        well = float(engine.exceedance(result.contact_m, z_well)[0])
+        assert well == pytest.approx(float(pos.depth_exceedance(result, z_well)[0]))
+
+    def test_it_is_the_exceedance_of_the_realised_contacts(self):
+        result = engine.run(reference_prospect(), 3_000, seed=1)
+        z = np.array([2150.0, 2230.0, 2300.0])
+        np.testing.assert_allclose(pos.depth_exceedance(result, z),
+                                   engine.exceedance(result.contact_m, z))
+        w = np.random.default_rng(0).uniform(0.1, 1.0, result.n)
+        np.testing.assert_allclose(pos.depth_exceedance(result, z, w),
+                                   engine.exceedance(result.contact_m, z, w))
+
+    def test_it_equals_the_column_curve_when_the_apex_is_pinned(self):
+        result = engine.run(reference_prospect(), 3_000, seed=1)
+        apex = float(np.median(result.apex_m))
+        h = np.linspace(0.0, 350.0, 50)
+        by_column = result.exceedance(h)
+        by_depth = pos.depth_exceedance(result, apex + h)
+        # the shipped apex spans about 3 m, so the two agree to a few thousandths
+        assert np.max(np.abs(by_column - by_depth)) < 0.01
+
+    def test_the_well_reading_is_the_curve_at_the_entry_depth(self):
+        result = engine.run(reference_prospect(), 3_000, seed=1)
+        z_well = 2230.0
+        curve = pos.depth_exceedance(result, pos.depth_grid(result))
+        at_well = float(np.interp(z_well, pos.depth_grid(result), curve))
+        exact = float(pos.depth_exceedance(result, z_well)[0])
+        assert abs(at_well - exact) < 0.01
+
+    def test_the_grid_spans_the_run(self):
+        result = engine.run(reference_prospect(), 2_000, seed=1)
+        z = pos.depth_grid(result, 50)
+        assert z[0] == pytest.approx(float(result.apex_m.min()))
+        assert z[-1] >= float(result.contact_m.max())
+        assert z.shape == (50,)
