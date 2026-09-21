@@ -36,6 +36,7 @@ PICK_M = 2_250.0            #: the indicated contact, m TVDSS
 PICK_SIGMA_M = 10.0         #: one sigma of the pick and depth conversion, m
 CONTACT_ATTRIBUTION = 0.36  #: c = P(the DHI is the contact | G, contact attributes)
 WELL_ENTRY_M = 2_230.0      #: the well's reservoir entry depth, m TVDSS
+BURIAL_M = 2_500.0          #: the burial depth the benchmark is read at, m TVDSS (tab 2.0)
 FACTS_JSON = ROOT / "paper" / "figures" / "facts.json"
 
 
@@ -84,6 +85,7 @@ def facts() -> dict:
             "seed": SEED, "trials": N_TRIALS, "h_min_m": H_MIN_M,
             "evidence_index": EVIDENCE_INDEX, "pick_m": PICK_M, "pick_sigma_m": PICK_SIGMA_M,
             "contact_attribution_c": CONTACT_ATTRIBUTION, "well_entry_m": WELL_ENTRY_M,
+            "burial_m": BURIAL_M,
             "element_chances": element_pos,
         },
         "P(G)": p_g,

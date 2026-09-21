@@ -59,7 +59,7 @@ def test_the_exceedance_equals_the_broadcast_it_replaced():
 
 
 class TestDepthSpace:
-    """The exact depth-space exceedance against the column-space one (8.1.3)."""
+    """The exact depth-space exceedance against the column-space one (8.1.4)."""
 
     def test_a_wide_apex_separates_the_two_readings(self):
         """With depth-conversion uncertainty on the apex, F(h) shifted by the median apex and

@@ -22,7 +22,7 @@ FIGURES_KEY = "_figures"
 #: **The report shipped every figure and no table.** Thirty-three figures and twenty-odd tables are
 #: drawn on a run, and only the figures reached the document -- so the limits as entered, the group
 #: minima, the allocation comparison and the whole benchmark section were absent from "the full
-#: report". Lars, 4 Sep 2026: *"I want the tables."* They were never registered anywhere, which is
+#: report". *"I want the tables."* They were never registered anywhere, which is
 #: why nothing noticed.
 TABLES_KEY = "_tables"
 

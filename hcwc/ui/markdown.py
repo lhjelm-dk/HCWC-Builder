@@ -15,15 +15,15 @@ def render_with_figures(text: str, base: Path, demote: int = 0,
     ``demote`` pushes every Markdown heading down that many levels (``##`` with ``demote=3``
     renders as ``#####``), capped at six, and leaves fenced code alone. A document rendered
     under a numbered sub-heading of its own must not carry headings larger than it: the theory
-    notes' ``##`` sections rendered as h2 under an h4 "8.1.2", so "The construction" was larger
-    than the number it sat under (Lars, 16 Sep 2026).
+    notes' ``##`` sections rendered as h2 under an h4 "8.1.3", so "The construction" was larger
+    than the number it sat under.
 
     ``st.markdown`` resolves nothing relative to the file the text came from, so
     ``![](figures/x.png)`` renders as a *broken image* rather than as an error -- the
     failure mode where the article silently loses its five figures and nobody notices.
     The document is therefore split on its own image lines and those handed to
     ``st.image``, which does take a path. Everything else passes through untouched,
-    including the blockquote caption after each figure: Lars's rule of 28 Aug 2026 is that
+    including the blockquote caption after each figure: The rule is that
     a caption is never folded or separated from what it captions.
 
     Split on whole lines rather than by regular expression: an image line in this document is
@@ -33,7 +33,7 @@ def render_with_figures(text: str, base: Path, demote: int = 0,
     **It also breaks at every top-level heading, which is damage control rather than layout.**
     A ``$...$`` or ``$$...$$`` that opens on one line and closes on the next is an unterminated
     expression to a Markdown renderer, and it swallows everything after it until the next ``$``.
-    Lars found exactly that on 7 Sep 2026: one wrapped equation in section 2 turned the rest of
+    That happened: one wrapped equation in section 2 turned the rest of
     that section and all of section 3 into red LaTeX source. The wrapping is fixed and
     `TestThePaperAgreesWithTheAppItDescribes` now refuses a document that reintroduces it, but
     rendering section by section means the next one costs a section rather than the paper.
@@ -65,7 +65,7 @@ def render_with_figures(text: str, base: Path, demote: int = 0,
                 st.caption(f"`{src}` not found — run `scripts/post_images.py`.")
             elif numbering is not None:
                 # Numbered and captioned like any exhibit, with the image's alt text as the
-                # caption, so 8.1.1's workflow figure carries a number (Lars, 17 Sep 2026).
+                # caption, so 8.1.2's workflow figure carries a number.
                 numbering.image(target, alt)
             else:
                 st.image(str(target), width="stretch")

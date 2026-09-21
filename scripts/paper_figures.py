@@ -135,12 +135,19 @@ def main() -> None:
     print(f"  {(OUT / 'prospect.json').relative_to(ROOT)}")
     figure_5_truncate_vs_terminate()
 
+    # The article's five figures, drawn for the page from the same scenario.
+    from hcwc.plotting.paper import figures as paper_figures
+    for path in paper_figures.draw_all(
+            OUT, limit_set=limit_set, p_g=p_g, seed=SEED, n=N, h_min=HMIN,
+            evidence_index=_facts.EVIDENCE_INDEX, pick_m=_facts.PICK_M,
+            pick_sigma_m=_facts.PICK_SIGMA_M, c=_facts.CONTACT_ATTRIBUTION,
+            z_well=_facts.WELL_ENTRY_M, burial_m=_facts.BURIAL_M):
+        print(f"  {path.relative_to(ROOT)}")
+
     result = engine.run(limit_set, n=N, seed=SEED)
     f = float((result.column_m >= HMIN).mean())
-    contact = result.contact_m
     print(f"\n  P(G) = {p_g:.4f}    F({HMIN:.0f} m) = {f:.4f}    prospect POS = {p_g * f:.1%}")
-    print(f"  HCWC  P90 {np.percentile(contact, 10):,.0f} m   "
-          f"P50 {np.percentile(contact, 50):,.0f} m   P10 {np.percentile(contact, 90):,.0f} m")
+    print("  the article's numbers: python scripts/paper_facts.py")
 
 
 if __name__ == "__main__":

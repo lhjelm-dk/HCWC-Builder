@@ -1,7 +1,7 @@
 """Every limit and the answer, on **one** shared depth axis, drawn however you want to see it.
 
 This replaces three figures that were showing the same information three ways: a grid of small
-exceedance curves, an overlay of those curves, and a row of violin panels. Lars, 27 Aug 2026: *"the
+exceedance curves, an overlay of those curves, and a row of violin panels. *"the
 4.5 is not great in that there are 3 rows. I want all the curves on one depth y axis"* — and,
 looking at the two that remained, *"is 4.5 and 4.7 not the same?"* They were. One figure with a
 display mode is the honest version of all three.
@@ -35,7 +35,7 @@ MODES = ("Exceedance curves", "Violin", "Half violin", "Histogram", "Points")
 #: Vertical space one limit's density occupies, as a share of its lane.
 LANE_FILL = 0.86
 
-#: Empty space between the three groups of lanes, in lane widths. Lars, 3 Sep 2026, asking for
+#: Empty space between the three groups of lanes, in lane widths. The request was for
 #: *"the limit distributions and then the dhi distribution (not a limit) and then the one or two
 #: resulting distributions ... with just a bit of visual separation"*. The three are different
 #: kinds of thing -- twelve competing mechanisms, one piece of evidence, and the answer -- and a
@@ -56,7 +56,7 @@ LIMITS_GROUP, EVIDENCE_GROUP, RESULT_GROUP = ("Competing limits", "The evidence 
 def default_window(result, space: str, apex: float, spill: float | None) -> tuple[float, float]:
     """The default depth range: 1 % above the apex to 1 % below the spill point.
 
-    Lars's rule. Bounding by the *structure* rather than by the deepest thing any limit could have
+    Bounding by the *structure* rather than by the deepest thing any limit could have
     imposed keeps the picture on the part of the section that exists — several limits carry long
     tails reaching a kilometre below the apex, and letting those set the range pushes everything
     interesting into the top eighth of the plot.
@@ -312,7 +312,7 @@ class _Lane(NamedTuple):
 def _evidence_curve(contact: np.ndarray, weights: np.ndarray, grid: np.ndarray) -> np.ndarray:
     """What the amplitude says about depth **on its own**, peak-normalised.
 
-    Lars asked for the DHI beside the limits but *not as a limit*, which is exactly right: it is not
+    The DHI is drawn beside the limits but not as a limit: it is not
     a competing mechanism, it is the evidence the mechanisms are being judged against. The object
     that belongs in that lane is the likelihood as a function of depth — the factor the update
     multiplies the geology by — and it is recoverable from what is already here without any new
@@ -347,7 +347,7 @@ def _evidence_lane(fig, lane: "_Lane", centre: float, grid: np.ndarray, mode: st
                    lo: float, hi: float, n_points: int) -> None:
     """The amplitude's lane, drawn in whichever idiom the reader has chosen.
 
-    Lars, 3 Sep 2026: *"the amp alone is a violin even if you select half-violin or histogram or
+    *"the amp alone is a violin even if you select half-violin or histogram or
     points. make consistent."* It was, and it looked like the control had failed on that one lane.
 
     So the geometry follows the mode and the **distinction is carried by style instead**: a hollow
@@ -359,7 +359,7 @@ def _evidence_lane(fig, lane: "_Lane", centre: float, grid: np.ndarray, mode: st
     **Points is the awkward one and is labelled as such.** There are no realisations behind a
     likelihood, so the markers are drawn *from* the curve by inverse-transform sampling rather than
     observed. Open circles, and the caption says so. The alternative -- leaving one lane as a violin
-    while the other fourteen became points -- is what Lars was objecting to, and it reads as a bug
+    while the other fourteen became points -- reads as a bug
     rather than as a distinction.
     """
     # Drawn only where the curve is alive. Outside the floor it is zero, and a zero-width polygon

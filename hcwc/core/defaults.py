@@ -38,7 +38,7 @@ N_TRIALS = 10_000
 #: Element chance defaults as (play, conditional) per risk element, keyed by the element's name
 #: as `hcwc.core.limits.Group` values it. Product 0.90 x 1.00 x 0.63 x 0.72 = 0.408, the shipped
 #: P(G). Elicited defaults for the worked prospect; closure is 1.00 because the spill point is a
-#: limit on tab 3.0 and not a chance (8.1.1).
+#: limit on tab 3.0 and not a chance (8.1.2).
 ELEMENT_CHANCES: dict[str, tuple[float, float]] = {
     "Charge": (1.00, 0.90),
     "Closure": (1.00, 1.00),
@@ -54,12 +54,12 @@ ELEMENT_CHANCES: dict[str, tuple[float, float]] = {
 EVIDENCE_INDEX_HC_P1_P99: tuple[float, float] = (-50.0, 100.0)
 EVIDENCE_INDEX_NOHC_P1_P99: tuple[float, float] = (-100.0, 50.0)
 #: Where the evidence-index slider opens: just above the crossing point, so an untouched slider
-#: states barely supportive evidence rather than none (Lars, 4 Sep 2026). Deliberately not
+#: states barely supportive evidence rather than none. Deliberately not
 #: E-POS's own default of 7, which `dhi.DEFAULT_STRENGTH` keeps as a faithful copy.
 OPENING_EVIDENCE_INDEX = 5.0
 
 # ---- the contact geometry ------------------------------------------------------------------------
-#: c = P(the picked event is the contact | G, contact attributes). 0.36 since 15 Sep 2026 (Lars),
+#: c = P(the picked event is the contact | G, contact attributes). 0.36 since 15 Sep 2026,
 #: from 0.70: a cautious stated value. Since 20 Sep 2026 the graded attributes open one level
 #: lower on fit to structure (:data:`DEFAULT_ATTRIBUTE_LEVELS`, geometric mean 0.25), so an
 #: untouched tab shows a stated value beside a graded suggestion that differs from it; the DHI
@@ -95,7 +95,7 @@ CONTACT_ATTRIBUTES: dict[str, dict[str, float]] = {
     },
 }
 #: The level each attribute opens on: geometric mean 0.25 (0.15, 0.35, 0.30), deliberately
-#: below the stated 0.36 so the two routes are seen to differ (Lars, 20 Sep 2026).
+#: below the stated 0.36 so the two routes are seen to differ.
 DEFAULT_ATTRIBUTE_LEVELS: dict[str, str] = {
     "Fit to structure": "Follows stratigraphy, not structure",
     "Amplitude terminations": "Diffuse or long",
@@ -119,13 +119,13 @@ REGISTER: tuple[Parameter, ...] = (
     Parameter("ELEMENT_CHANCES", ELEMENT_CHANCES, "probability", "play and conditional chance per element; product is P(G)", "elicited, worked prospect", "0 to 1 each"),
     Parameter("EVIDENCE_INDEX_HC_P1_P99", EVIDENCE_INDEX_HC_P1_P99, "index (relative)", "f(s | HC) as P1, P99 of a Gaussian", "the shipped reference relationship (E-POS defaults)", "-200 to 200"),
     Parameter("EVIDENCE_INDEX_NOHC_P1_P99", EVIDENCE_INDEX_NOHC_P1_P99, "index (relative)", "f(s | NoHC) as P1, P99 of a Gaussian", "the shipped reference relationship (E-POS defaults)", "-200 to 200"),
-    Parameter("OPENING_EVIDENCE_INDEX", OPENING_EVIDENCE_INDEX, "index (relative)", "where the slider opens", "Lars, 4 Sep 2026", "the slider's axis, ended where LR reaches 10"),
-    Parameter("DEFAULT_CONTACT_GIVEN_HC", DEFAULT_CONTACT_GIVEN_HC, "probability", "c, the contact attribution, stated", "Lars, 15 Sep 2026; a cautious stated value", "0.05 to 1.0"),
+    Parameter("OPENING_EVIDENCE_INDEX", OPENING_EVIDENCE_INDEX, "index (relative)", "where the slider opens", "by decision", "the slider's axis, ended where LR reaches 10"),
+    Parameter("DEFAULT_CONTACT_GIVEN_HC", DEFAULT_CONTACT_GIVEN_HC, "probability", "c, the contact attribution, stated", "by decision; a cautious stated value", "0.05 to 1.0"),
     Parameter("DEFAULT_DHI_SCORE", DEFAULT_DHI_SCORE, "score 0 to 1", "Monigle et al.'s DHI score whose rule gives the shipped c", "2 x 0.18 = 0.36", "0 to 1"),
     Parameter("DEFAULT_PICK_M", DEFAULT_PICK_M, "m TVDSS", "the picked contact of the worked prospect", "worked prospect", "inside the closure"),
     Parameter("DEFAULT_PICK_SIGMA_M", DEFAULT_PICK_SIGMA_M, "m", "one-sigma pick and depth-conversion error", "worked prospect", "> 0"),
     Parameter("CONTACT_ATTRIBUTES", "table", "score 0 to 1", "score per graded level of the three contact attributes", "elicited after Monigle et al. (2025); heuristic", "0 to 1"),
-    Parameter("DEFAULT_ATTRIBUTE_LEVELS", DEFAULT_ATTRIBUTE_LEVELS, "-", "the level each attribute opens on; geometric mean 0.25", "Lars, 20 Sep 2026: differs from the stated c on purpose", "a level of each attribute"),
+    Parameter("DEFAULT_ATTRIBUTE_LEVELS", DEFAULT_ATTRIBUTE_LEVELS, "-", "the level each attribute opens on; geometric mean 0.25", "differs from the stated c on purpose", "a level of each attribute"),
     Parameter("DETECTION_H50_M", DETECTION_H50_M, "m", "column at 50 % detection", "roughly tuning thickness", "1 to 500"),
     Parameter("DETECTION_WIDTH_M", DETECTION_WIDTH_M, "m", "width of the logistic transition", "modelling choice", "1 to 200"),
     Parameter("DETECTION_CEILING", DETECTION_CEILING, "probability", "the most a column can be detected", "below 1 on purpose", "0.05 to 1.0"),

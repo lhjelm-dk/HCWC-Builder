@@ -40,7 +40,7 @@ Italics are for the titles of theory notes and papers. Never bold a phrase to ma
 plainly, and give the unit.
 
 Rewrite status: all eight tabs done. Since 16 Sep 2026 the method is stated once, in
-`docs/THEORY.md` rendered as tab 8.1 (8.1.1 to 8.1.8, since 18 Sep 2026); tabs 2 to 6 say what is entered, what the
+`docs/THEORY.md` rendered as tab 8.1 (8.1.1 Model overview to 8.1.11 References, since 21 Sep 2026); tabs 2 to 6 say what is entered, what the
 output means and what to check, and point at "Method: see 8.1.x". The notes 8.1 replaced are
 kept in `archive/superseded_notes/`; `archive/development_notes/DHI_alignment.md` is a signed, dated
 working note kept for its history. Nothing under `archive/` is imported or rendered.

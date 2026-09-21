@@ -31,8 +31,8 @@ def render() -> None:
         st.markdown("---\n\nNew here? The figure is the model with the tab each box lives on; the "
                     "tabs follow it left to right, top to bottom.")
         # The guide version of the workflow figure, drawn by scripts/workflow_figure.py: the same
-        # boxes as 8.1.1's conceptual one, each line naming the tab and what is entered or read
-        # there (Lars, 17 Sep 2026). Numbered 1.0a; tab 1's Numbering is created only for it, and
+        # boxes as 8.1.2's conceptual one, each line naming the tab and what is entered or read
+        # there. Numbered 1.0a; tab 1's Numbering is created only for it, and
         # tab 2's resets the exhibit registry, so the guide stays out of the results export.
         Numbering(1).image(
             DOCS / "figures" / "fig0_workflow_guide.svg",
@@ -77,7 +77,7 @@ def render() -> None:
                 "Every mechanism that can stop the column, on one section, with the distribution of "
                 "the depth at which it acts. Charge enters from below and fills downward from the "
                 "apex, so every capacity is measured from the apex. Figure by Lars Hjelm. "
-                "Method: see 8.1.2."
+                "Method: see 8.1.3."
             )
 
         # Trimmed 16 Sep 2026 to the operational statement. The argument for reading the chance
@@ -85,14 +85,14 @@ def render() -> None:
         # are stated once, on tab 8.1 (archive/development_notes/EXPLANATION_MAP_2026-09-16.md, tab 1).
         st.markdown(
             "A discovery is a column of at least the assessment minimum set on **2.0 Prospect**; the "
-            "chance that the well finds hydrocarbons is the contact distribution read at that depth. Method: see 8.1.3. "
-            "Limitations: see 8.1.8."
+            "chance that the well finds hydrocarbons is the contact distribution read at that depth. Method: see 8.1.4. "
+            "Limitations: see 8.1.10."
         )
         st.markdown(
             "Related tools: [E-POS](https://e-pos.streamlit.app) supplies the element chances on "
             "tab 2.0; [SCOPE-HC](https://scope-hc.streamlit.app) computes the volumes; "
             "[WellVolPOS](https://wellvolpos.streamlit.app) turns the export on tab 7.0 into "
-            "well-location chance and volume. See 8.3.7."
+            "well-location chance and volume. See 8.1.11."
         )
 
         st.divider()

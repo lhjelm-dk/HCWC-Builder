@@ -125,7 +125,7 @@ with tab5:
     # sequence counts in render order, which here is not reading order. Numbered by sub-tab,
     # `Figure 5.2.1` is the first exhibit on *The observation*, and it stays that whatever else moves.
     # Three sub-tabs since 16 Sep 2026: the walkthrough that opened this tab is the derivation
-    # and renders under 8.1.6, on the same live numbers.
+    # and renders under 8.1.8, on the same live numbers.
     _evidence, _contact_dhi, _depth_dhi = st.tabs(
         ["5.1 · The observation",
          "5.2 · Contact and chance (DHI + well)", "5.3 · Risk against depth (DHI + well)"])
