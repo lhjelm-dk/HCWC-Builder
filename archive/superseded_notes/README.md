@@ -12,3 +12,12 @@ the method. Kept as written for the record; not rendered by the app and not impo
 | WEIGHT_NOT_BAYES.md | 8.1.7 Empirical benchmarks and censoring |
 | BASE_RATE_NEGLECT.md | 8.1.7 Empirical benchmarks and censoring |
 | BENCHMARK_SOURCES.md | 8.1.7 Empirical benchmarks and censoring |
+
+## The first article draft (1 September 2026)
+
+`ARTICLE_DRAFT_2026-09-01.md` and `POST_OPTIONS_2026-09-01.md` were the untracked working copies in
+`reference/article/` before the paper moved to `paper/` (7 Sep 2026). Compared line by line on
+21 Sep 2026: the mechanism taxonomy, the Edmundson elasticities and the references it carries are
+in `docs/THEORY.md` 8.1.2 and 8.1.7 and `docs/REFERENCES.md`; the three post options and the
+suggested first comment are kept here for the post rewrite. Its six figures are in
+`archive/old_figures/article_draft_2026-09-01/`.

@@ -65,10 +65,14 @@ def main() -> None:
     from hcwc.plotting.paper import manifest
     from hcwc.ui import numbering
 
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import paper_facts as facts
+
     at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=900)
-    at.session_state["min_column_input"] = 120.0
-    at.session_state["dhi_in_strength"] = 20.0
-    at.session_state["dhi_in_sigma"] = 10.0
+    at.session_state["min_column_input"] = facts.H_MIN_M
+    at.session_state["dhi_in_strength"] = facts.EVIDENCE_INDEX
+    at.session_state["dhi_in_contact"] = facts.PICK_M
+    at.session_state["dhi_in_sigma"] = facts.PICK_SIGMA_M
     with contextlib.redirect_stderr(_io.StringIO()):
         at.run()
     assert not at.exception, "\n".join(str(e.value) for e in at.exception)
@@ -99,7 +103,7 @@ def main() -> None:
     manifest.write(FIGURES_DIR / "MANIFEST.md", entries, {
         "prospect": "the shipped default (Tiramisu-C4), `paper/figures/prospect.json`",
         "seed": 20260825, "realisations": 10_000, "assessment minimum h_min": "120 m",
-        "DHI evidence index": 20.0, "pick sigma": "10 m", "contact attribution c": 0.36,
+        "DHI evidence index": facts.EVIDENCE_INDEX, "pick sigma": f"{facts.PICK_SIGMA_M:.0f} m", "contact attribution c": facts.CONTACT_ATTRIBUTION,
         "detection": "h50 25 m, width 8 m, ceiling 0.90, false positive 0.5"})
     print(f"  {FIGURES_DIR.name}/MANIFEST.md")
 
@@ -138,8 +142,9 @@ def main() -> None:
                 transform=ax.transAxes)
         ax.add_patch(plt.Rectangle((0.03, 0.02), 0.94, 0.96, transform=ax.transAxes,
                                    fill=False, edgecolor="#C44E52", linewidth=1.4))
-    fig.suptitle("The DHI update at a glance: shipped prospect, strength 20, pick σ 10 m, "
-                 "c = 0.36", fontsize=12.5, color="#333333", y=1.02)
+    fig.suptitle(f"The DHI update at a glance: shipped prospect, evidence index "
+                 f"{facts.EVIDENCE_INDEX:+.0f}, pick σ {facts.PICK_SIGMA_M:.0f} m, "
+                 f"c = {facts.CONTACT_ATTRIBUTION:.2f}", fontsize=12.5, color="#333333", y=1.02)
     fig.savefig(OUT / "08_update_at_a_glance.png", bbox_inches="tight", facecolor="white")
     print("  08_update_at_a_glance.png  <- tab 5.1 metrics")
 

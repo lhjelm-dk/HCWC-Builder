@@ -8,3 +8,6 @@
 | `concept_full.png` | a concept sketch nothing references | `reference/concept.png` on tab 1 |
 
 Safe to ignore. Kept so the article's earlier figure set can be regenerated if wanted.
+
+`article_draft_2026-09-01/`: the six app screenshots the first article draft referenced
+(`archive/superseded_notes/ARTICLE_DRAFT_2026-09-01.md`); superseded by `paper/figures/`.
