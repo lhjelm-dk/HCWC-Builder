@@ -1275,14 +1275,14 @@ class TestTheCalibrationComparesBothBases:
         names = self._named_traces(_run(fuse_benchmark=0.4), "this model")
         assert any("this model, geological" == n for n in names)
         assert any("this model, given the DHI" == n for n in names)
-        assert any(n.startswith("geological + benchmark") for n in names)
-        assert any(n.startswith("given the DHI + benchmark") for n in names)
+        assert any(n.startswith("geological, blended with the benchmark") for n in names)
+        assert any(n.startswith("given the DHI, blended with the benchmark") for n in names)
 
     def test_the_fusion_draws_no_combined_curve_at_zero_weight(self):
         """At weight zero the combination *is* your model, and a second identical curve under a
         different name would invite reading it as a result."""
         names = self._named_traces(_run(fuse_benchmark=0.0), "this model")
-        assert not any("benchmark, weight" in n for n in names)
+        assert not any("blended with the benchmark" in n for n in names)
 
     def test_the_base_rate_gets_a_bar_for_each_basis(self):
         """*"in 6.13 maybe a bar for the |dhi?"*"""
