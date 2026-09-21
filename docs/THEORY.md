@@ -424,13 +424,17 @@ contact attribution `c` governs the second (8.1.5).
 
 Where the contact turns out to lie, relative to the indicated contact, names the outcome:
 
-| outcome | the contact is | the DHI was | a well entering there |
-|---|---|---|---|
-| no hydrocarbons | — | a false hydrocarbon indicator | finds water at every depth |
-| above the indicated contact | shallower than the band | not the contact; the response lies in the water leg | finds hydrocarbons whenever they are present |
-| at the indicated contact, because of it | within the band, the response being its base | the contact | finds hydrocarbons where the contact is at or below the well |
-| at the indicated contact, by coincidence | within the band, the geology having put it there | not the contact | the same for the well; not the same for the look-back |
-| below the indicated contact | deeper than the band | not the contact; the response lies inside the column, possibly a gas–oil contact | finds hydrocarbons where the contact is below the well |
+| DHI / contact relation | the posterior contact is | the DHI was |
+|---|---|---|
+| no hydrocarbons | — | a false hydrocarbon indicator |
+| above the indicated contact | shallower than the band | not the contact; the response lies in the water leg |
+| at the indicated contact, because of it | within the band, the response being its base | the contact |
+| at the indicated contact, by coincidence | within the band, the geology having put it there | not the contact |
+| below the indicated contact | deeper than the band | not the contact; the response lies inside the column, possibly a gas–oil contact |
+
+The table relates the posterior contact to the observation; it is not a well reading. What a
+well finds depends on its entry depth and the criterion it is read against, and is the chance
+against depth (below, and 5.2.4).
 
 The mirror case, a response absent where one was expected over a trap that holds hydrocarbons,
 is the false negative; it belongs to the absent-amplitude observation (8.1.4, 8.1.5) and not to
