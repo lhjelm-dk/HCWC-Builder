@@ -124,9 +124,9 @@ SPECS: tuple[LimitSpec, ...] = (
               "window, a breaching fault tip."),
     LimitSpec("Base seal (continuity)", Group.RETENTION, COLUMN, (120.0, 380.0), 0.0, "pert",
               "The same, below."),
-    LimitSpec("Preservation / tilt", Group.RETENTION, COLUMN, (150.0, 400.0), 0.2, "pert",
+    LimitSpec("Preservation / tilt", Group.RETENTION, COLUMN, (200.0, 375.0), 0.2, "pert",
               "Post-charge tilting that spills part of the column, or a palaeo-contact left "
-              "behind. It applies rarely, and can be severe when it does."),
+              "behind. It applies rarely, and can be severe when it does.", mode=350.0),
     # Grant (2020), eq. 8, added 4 Sep 2026. The mechanism the tool was missing: every other
     # Retention limit here fails because the pore throats are wide enough or because there is a hole
     # in the seal, and this one fails because the *rock parts*. The two are independent -- a shale

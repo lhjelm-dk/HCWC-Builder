@@ -1,7 +1,10 @@
-# Numerical baseline (Phase 1, 18 September 2026)
+# Numerical baseline (Phase 1, 18 September 2026; the shipped prospect re-pinned 22 September 2026)
 
 What the refactor must reproduce, on the shipped prospect and the core fixture, with the seed
-and configuration named. Produced by running the app through `AppTest` and the core directly;
+and configuration named. The shipped prospect's preservation/tilt limit was re-elicited on
+22 September 2026 (PERT 200 / 350 / 375 m, from a 150–400 m span with a derived mode of 250),
+which moved the contact percentiles, the shares, the spreads and the effective sample size in
+the rows below; every other row is as first pinned. Produced by running the app through `AppTest` and the core directly;
 no code was changed. Every value below is also pinned by a test where the table says so.
 
 ## Test suite
@@ -21,10 +24,10 @@ Seed 20260825, n = 10 000, assessment minimum h_min = 120 m, element chances 0.9
 | P(G) | 0.4082 | `test_app_renders`, article numbers |
 | F(h_min) = P(H ≥ 120 m \| G) | 0.9874 | `test_trust`, article |
 | POS geological = P(G) × F(h_min) | 0.4031 | `TestThePaperAgreesWithTheAppItDescribes` |
-| contact P90 / P50 / P10, h ≥ h_min, Hazen | 2 191.3 / 2 245.9 / 2 321.6 m | article (2 191 / 2 246 / 2 322) |
-| the same by `np.percentile`, all realisations | 2 190.6 / 2 244.8 / 2 321.2 m | — (the linear estimator; see risk R2) |
-| controlling shares, all | top seal capillary 0.320, fault leakage 0.230, top seal continuity 0.156, fault geometry 0.124, charge 0.094, preservation 0.045, spill 0.032 | article, manuscript Figure 2 |
-| controlling shares, h ≥ h_min | 0.317 / 0.233 / 0.153 / 0.126 / 0.093 / 0.045 / 0.032 | `test_engine` |
+| contact P90 / P50 / P10, h ≥ h_min, Hazen | 2 191.3 / 2 247.7 / 2 327.3 m | article (2 191 / 2 248 / 2 327) |
+| the same by `np.percentile`, all realisations | 2 190.6 / 2 246.5 / 2 326.7 m | — (the linear estimator; see risk R2) |
+| controlling shares, all | top seal capillary 0.336, fault leakage 0.230, top seal continuity 0.159, fault geometry 0.133, charge 0.100, spill 0.035, preservation 0.006 | article, manuscript Figure 2 |
+| controlling shares, h ≥ h_min | 0.334 / 0.233 / 0.156 / 0.135 / 0.099 / 0.036 / 0.007 | `test_engine` |
 
 ## DHI on the shipped prospect (index 20, σ 10 m, pick 2 250 m, c 0.36, detection defaults)
 
@@ -32,12 +35,12 @@ Seed 20260825, n = 10 000, assessment minimum h_min = 120 m, element chances 0.9
 |---|---:|---|
 | LR(s) at index 20 | 2.6172 | `test_dhi` (strength model) |
 | P(G \| s) | 0.6436 | `test_dhi_audit` |
-| F_post(h_min) | 0.9936 | |
-| POS given the DHI = P(G \| s) × F_post(h_min) | 0.6394 | article (40 → 64 %) |
+| F_post(h_min) | 0.9933 | |
+| POS given the DHI = P(G \| s) × F_post(h_min) | 0.6393 | article (40 → 64 %) |
 | POS(h_min) equals the curve at h_min | true (to 1e-12) | `test_dhi_audit` identity |
-| posterior P90 / P50 / P10 | 2 198.2 / 2 249.7 / 2 297.6 m | article (spread 130 → 99 m) |
-| effective sample size | 4 872.3 | article says 4 871 in one place and 4 872 in another (risk R5) |
-| controlling shares given the DHI, all | top seal capillary 0.388, top seal continuity 0.193, charge 0.124, fault leakage 0.118, fault geometry 0.091, preservation 0.069, spill 0.016 | 5.2.2 |
+| posterior P90 / P50 / P10 | 2 197.7 / 2 250.3 / 2 302.8 m | article (spread 136 → 105 m) |
+| effective sample size | 4 857.1 | article and post, 4 857 |
+| controlling shares given the DHI, all | top seal capillary 0.417, top seal continuity 0.204, charge 0.133, fault leakage 0.122, fault geometry 0.101, spill 0.019 | 5.2.2 |
 | well at z_entry 2 230 m: P(z_HCWC > z_entry \| G), geological / given the DHI | 0.5719 / 0.7721 | article (23 → 50 % with P(G)) |
 
 ## Core fixture (`limits.reference_prospect()`, seed 20260825, n 10 000)

@@ -3,7 +3,7 @@
 Run:  python scripts/paper_figures.py
 
 Since 17 Sep 2026 the article's other figures are the app's own, exported by
-``scripts/post_images.py`` with the same look as the tabs; the matplotlib set this script drew
+``scripts/export_exhibits.py`` with the same look as the tabs; the matplotlib set this script drew
 before is kept as ``archive/old_figures/paper_figures_mpl_2026-09-17.py``. What stays here is the
 figure that has no app counterpart, the terminating-versus-truncating sketch, and the prospect
 written beside the figures so the inputs travel with the outputs.
@@ -133,16 +133,12 @@ def main() -> None:
     (OUT / "prospect.json").write_text(json.dumps(limit_set.to_dict(), indent=2),
                                        encoding="utf-8")
     print(f"  {(OUT / 'prospect.json').relative_to(ROOT)}")
-    figure_5_truncate_vs_terminate()
 
-    # The article's five figures, drawn for the page from the same scenario.
-    from hcwc.plotting.paper import figures as paper_figures
-    for path in paper_figures.draw_all(
-            OUT, limit_set=limit_set, p_g=p_g, seed=SEED, n=N, h_min=HMIN,
-            evidence_index=_facts.EVIDENCE_INDEX, pick_m=_facts.PICK_M,
-            pick_sigma_m=_facts.PICK_SIGMA_M, c=_facts.CONTACT_ATTRIBUTION,
-            z_well=_facts.WELL_ENTRY_M, burial_m=_facts.BURIAL_M):
-        print(f"  {path.relative_to(ROOT)}")
+    # The paper's figures are the app's own exhibits since 22 Sep 2026: run
+    # `scripts/export_exhibits.py`, which writes every figure and table to `paper/figures` at the
+    # browser's ratio, named by number. `figure_5_truncate_vs_terminate` and
+    # `hcwc/plotting/paper/figures.py` stay here for reuse and are not run by this script; their
+    # output is in `archive/old_figures/superseded_2026-09-22/`.
 
     result = engine.run(limit_set, n=N, seed=SEED)
     f = float((result.column_m >= HMIN).mean())
