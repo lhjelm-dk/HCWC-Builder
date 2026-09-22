@@ -284,6 +284,8 @@ class TestTheAllowListMatchesTheApp:
         from hcwc.ui import dhi_tab
         assert prospect.ENUM_EXACT["dhi_in_c_source"] == {
             dhi_tab.C_STATED, dhi_tab.C_FROM_ATTRIBUTES, dhi_tab.C_FROM_SCORE}
+        # C_FROM_SCORE stays in the file's allow-list so a prospect saved on that route still
+        # loads; the tab then opens it on the stated value (comparison-only, 22 Sep 2026).
         for token in prospect.ENUM_EXACT["dhi_in_c_source"]:
             text = json.dumps({"format": 1, "inputs": {"dhi_in_c_source": token}})
             assert prospect.read(text)["dhi_in_c_source"] == token

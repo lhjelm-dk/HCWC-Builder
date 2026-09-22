@@ -773,22 +773,25 @@ def render(n: Numbering | None = None) -> None:
         )
 
     # Three routes to c: stated on the slider; the graded attributes'
-    # geometric mean, a heuristic; or a DHI score in Monigle et al.'s (2025) sense through their
-    # calibrated rule w = min(2 x score, 0.95), the one external referent this quantity has. The
-    # radio replaced a checkbox keyed `dhi_in_c_from_attributes`; a prospect saved with that
-    # checkbox on opens on the attributes route, so the file keeps its meaning.
+    # geometric mean, a heuristic. Monigle et al.'s (2025) weighting practice is shown beside
+    # them as a comparison only (comparison-only by decision, 22 Sep 2026): it is on their score
+    # and their construction, and cannot be selected as the source of c. The radio replaced a
+    # checkbox keyed `dhi_in_c_from_attributes`; a prospect saved with that checkbox on opens on
+    # the attributes route, and one saved on the score route opens on the stated value.
     if "dhi_in_c_source" not in st.session_state and \
             st.session_state.get("dhi_in_c_from_attributes") is True:
         st.session_state["dhi_in_c_source"] = C_FROM_ATTRIBUTES
+    if st.session_state.get("dhi_in_c_source") == C_FROM_SCORE:
+        st.session_state["dhi_in_c_source"] = C_STATED
+        st.info("This prospect was saved with c taken from a DHI score. That route is a "
+                "comparison now; c opens on the stated value, and the score's reading is shown "
+                "beside it.")
     c_source = st.radio(
-        "Source of c", [C_STATED, C_FROM_ATTRIBUTES, C_FROM_SCORE], horizontal=True,
+        "Source of c", [C_STATED, C_FROM_ATTRIBUTES], horizontal=True,
         key="dhi_in_c_source", format_func=lambda v: C_SOURCE_LABELS[v],
         help="Stated: the slider, a value the assessor defends. Graded attributes: the geometric "
-             "mean of the three gradings above, a heuristic. External reference: Monigle et "
-             "al.'s (2025) column-height weighting practice, w = min(2 × score, 0.95), applied "
-             "to their five-attribute score, an empirical relationship in their database and "
-             "not a calibration of c on this tool's inputs; a comparison, offered so a stated "
-             "c can be held against it.")
+             "mean of the three gradings above, a heuristic. The DHI-score reading below is a "
+             "comparison and cannot be the source.")
     stated_c = st.slider(
         "Contact attribution: given hydrocarbons, is the picked event the HCWC?",
         0.05, 1.0, DEFAULT_CONTACT_GIVEN_HC, 0.01, key="dhi_in_contact_given_hc",
@@ -799,22 +802,22 @@ def render(n: Numbering | None = None) -> None:
              "Conformance, flatness and whether it cuts structure answer it.")
     sc1, sc2 = st.columns([1, 2])
     dhi_score = sc1.number_input(
-        "DHI score (Monigle et al. 2025), 0 to 1", 0.0, 1.0, DEFAULT_DHI_SCORE, 0.01,
-        key="dhi_in_dhi_score", disabled=c_source != C_FROM_SCORE,
+        "Comparison: DHI score (Monigle et al. 2025), 0 to 1", 0.0, 1.0, DEFAULT_DHI_SCORE, 0.01,
+        key="dhi_in_dhi_score",
         help="Their five-attribute score of the DHI, a chance that the accumulation is there "
-             "read from the seismic alone. Opens at 0.18, the score whose rule gives the "
-             "shipped c of 0.36.")
+             "read from the seismic alone. Typed here so their weighting practice can be read "
+             "beside the c in use; it is not a source of c.")
     score_c = dhi_core.contact_weight_from_score(dhi_score)
     sc2.caption(
-        f"Monigle et al.'s weighting practice gives c = {score_c:.2f} from a score of "
-        f"{dhi_score:.2f}: w = min(2 × score, {dhi_core.CONTACT_WEIGHT_CEILING:.2f}), an "
-        f"empirical relationship in their drilled database, on their score and their "
-        f"scenario construction, not a calibration of this tool's c. The score is typed; the "
-        f"tool cannot place its own inputs on their scale. Method: see 8.1.7."
+        f"Comparison only. Monigle et al.'s weighting practice gives w = {score_c:.2f} from a "
+        f"score of {dhi_score:.2f}: w = min(2 × score, {dhi_core.CONTACT_WEIGHT_CEILING:.2f}), "
+        f"an empirical relationship in their drilled database, on their score and their "
+        f"scenario construction, not a calibration of this tool's c. The c in use is "
+        f"{ {C_STATED: stated_c, C_FROM_ATTRIBUTES: suggested_c}[c_source]:.2f}. Method: see "
+        f"8.1.7."
     )
     _lev["c"] = st.empty()
-    contact_given_hc = {C_STATED: stated_c, C_FROM_ATTRIBUTES: suggested_c,
-                        C_FROM_SCORE: score_c}[c_source]
+    contact_given_hc = {C_STATED: stated_c, C_FROM_ATTRIBUTES: suggested_c}[c_source]
     p_valid = float(np.clip(contact_given_hc, 0.01, 0.99))
 
     pv1, pv2 = st.columns([1, 2])
@@ -948,7 +951,7 @@ def render(n: Numbering | None = None) -> None:
                             font=dict(size=10, color=theme.INK), row=1, col=2)
 
     for other_c, symbol, name in ((suggested_c, "diamond-open", "the attributes' suggestion"),
-                                  (score_c, "square-open", "Monigle et al.'s rule")):
+                                  (score_c, "square-open", "Monigle et al.'s practice (comparison)")):
         if abs(other_c - contact_given_hc) > 0.005:
             figc.add_scatter(x=[_lr], y=[other_c], mode="markers",
                              marker=dict(color=POSTERIOR, size=11, symbol=symbol,
