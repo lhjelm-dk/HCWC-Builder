@@ -211,3 +211,33 @@ def test_a_stale_dhi_posterior_is_flagged_rather_than_averaged_in(real_minimum):
 
     # Same posterior, judged against the run it was actually built on: no complaint.
     assert trust.dhi_evidence(_Posterior(), other).level == "ok"
+
+
+class TestCrestFailure:
+    """Red team, 22 Sep 2026: a limit whose draws sit at the apex is a crest failure entered as a
+    limit, and double counts with the element chance."""
+
+    def test_the_reference_prospect_passes(self):
+        from hcwc.core.limits import reference_prospect
+        result = engine.run(reference_prospect(), 4_000, seed=1)
+        check = trust.crest_failure(result)
+        assert check.level == "ok"
+
+    def test_a_limit_with_mass_at_the_apex_is_flagged(self):
+        import dataclasses
+
+        from hcwc.core.limits import DepthDistribution, Group, Limit, reference_prospect
+        base = reference_prospect()
+        at_crest = Limit("Leak at the crest", Group.RETENTION, 1.0,
+                         DepthDistribution("uniform", {"minimum": 0.0, "maximum": 10.0}))
+        ls = dataclasses.replace(base, limits=base.limits + (at_crest,))
+        result = engine.run(ls, 4_000, seed=1)
+        check = trust.crest_failure(result)
+        assert check.level == "stop"
+        assert "Leak at the crest" in check.finding
+        assert "Retention" in check.meaning and "tab 2.0" in check.meaning
+
+    def test_it_is_in_the_review(self):
+        from hcwc.core.limits import reference_prospect
+        names = [c.name for c in trust.review(engine.run(reference_prospect(), 2_000, seed=1))]
+        assert "Limits act below the crest" in names

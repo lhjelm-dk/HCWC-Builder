@@ -47,6 +47,27 @@ mechanisms are limits on tab 3.0 (8.1.3), and only whether an element works at t
 `P(G)`. Folding a limit into `P(G)` understates the chance and, because volume is conditioned on
 it, overstates the volume (Beha et al. 2012).
 
+Assumption: the element chances are conditionally independent. `P(G)` is their product, the
+convention of prospect risking. Dependence between the presence probabilities, a charge and a
+reservoir that stand or fall on the same seismic interpretation, a closure and a fault seal that
+share a fault, is not modelled; the copula of 8.1.5 couples limit depths and capacities, not
+element chances.
+
+Element chance against limit. Each element chance answers "does the element work at the
+crest"; each limit under it answers "how far does the column extend, given that it does". The
+two are separate only if every input is read that way:
+
+| element | the element chance is | the limits under it are | the double count to avoid |
+|---|---|---|---|
+| Charge | hydrocarbons reached the trap | charge limitation: the delivered volume fills the trap to a depth; always active, since a finite volume is always delivered | a chance that already means "enough to be worth finding" |
+| Closure | a closure exists at the crest; 1.00 where a spill point is mapped | the spill point, always active; a fault-bounded geometry window with its own presence | none, once the spill is a limit and not a chance |
+| Reservoir | reservoir present at the crest | a base or pinch-out limit; an effectiveness decline (5.3) that lowers the chance without moving the contact | the same reservoir loss entered as both a pinch-out and a decline |
+| Retention | a seal exists at the crest and holds something | capillary capacity, always active; continuity holes, fault leakage, preservation and mechanical failure, each with a presence chance and a depth or capacity | a retention chance that already means "holds the full column"; a hole or a leak *at the crest* entered as a limit, which is a crest failure and belongs in the element chance |
+
+A limit's presence chance is the chance the mechanism exists below the crest; a mechanism whose
+depth distribution puts substantial mass at the apex is a crest failure entered in the wrong
+place, and the run checks (8.1.10) flag it.
+
 Limitation. An element chance imported from another tool is read as the chance the element works
 at the crest. If the source's definition carried a minimum volume, the threshold would be applied
 twice.
@@ -93,8 +114,10 @@ is always active, since every prospect has a spill point; a set in which the col
 unbounded is refused.
 
 Controlling mechanism. The index of the shallowest active limit is recorded per realisation. Its
-share over the sample is the ranking on tabs 3.1 and 4.1.2; in most cases two or three limits set
-the contact and the rest do not move the answer. The ranking is reported over all realisations and
+share over the sample is the ranking on tabs 3.1 and 4.1.2: a controlling-mechanism statistic,
+the frequency with which each mechanism sets the minimum, which is not a sensitivity (the
+tornado of 8.1.10 is). On the worked prospect a few mechanisms dominate the share; a mechanism
+with a small share is still part of the distribution. The ranking is reported over all realisations and
 over those meeting the assessment minimum. A limit that usually stops the column short of the
 minimum is under-represented among the realisations that meet it, because it is the most severe;
 that is the selection effect of the empirical record (8.1.9) one level up. The share is not
@@ -220,8 +243,9 @@ Bounds. A single channel's `LR` is capped at 10 : 1 either way (Simm & Bacon 201
 one line of fluid-indicator evidence rarely exceeds 3, and a value above 10 sends the assessor back
 to the inputs. The combined update is guarded above the one published measurement (8.1.8).
 
-Assumptions. The reference distributions the tool ships with are a reference relationship, not a
-calibration for any basin; they are editable on tab 5.1.2. They carry no information on contact
+Assumptions. The reference distributions the tool ships with are a reference evidence
+relationship, not a calibration for any basin and not a measured quantity; nothing in the
+repository reproduces them from data, and they are editable on tab 5.1.2. They carry no information on contact
 depth, trap height, spill point or assessment minimum: the index informs the probability of
 hydrocarbon presence and does not predict the HCWC. The two channels are two information channels
 from one observation, not two independent observations; their overlap is handled by the
@@ -280,14 +304,38 @@ index carries, and fit to structure, amplitude terminations and the fluid-contac
 contact attributes, which bear on whether the indicated event is the base of the column. The split
 is this tool's. `c` is conditional on `G`, because every realisation it weights was drawn on that
 assumption, and carries nothing of the index. It is offered three ways: stated; as the geometric
-mean of three graded attributes, a heuristic; or from a DHI score through Monigle et al.'s rule
-`w = min(2 × score, 0.95)`, calibrated on their drilled-prospect database and on their
-five-attribute score rather than on this tool's index. The ceiling of 0.95 is shared with Hood's
-(2019) high-confidence contact weight. `c` is taken independent of `h`; column height enters the
+mean of three graded attributes, a heuristic; or, as an external reference, from a DHI score
+through Monigle et al.'s (2025) column-height weighting practice `w = min(2 × score, 0.95)`, an
+empirical relationship reported for their drilled-prospect database on their five-attribute
+score and in a scenario construction. It is not a calibration of `c` on this tool's inputs, and
+its use as the mixture weight is this tool's mapping. The ceiling of 0.95 is the one Hood (2019)
+and Monigle et al. use in practice. `c` is taken independent of `h`; column height enters the
 valid branch through `D(h)` only.
 
 `s` is the density of a spurious event over the model's declared contact range, one over the
 support width.
+
+What in the likelihood is physics and what is judgement. None of the terms is a measured
+physical relationship; the arithmetic is exact given them, and they are the assumption:
+
+| term | class | what a reviewer can challenge |
+|---|---|---|
+| `c` | elicited (stated, graded by a heuristic, or an external practice) | held constant with column height; independent of the pick width and of `D(h)` |
+| `D(h)` | modelling convention with elicited parameters | logistic and monotone; `h50` identified with tuning thickness by heuristic; no weakening with thickness |
+| `Pick(z)` | elicited | pick and depth-conversion errors folded into one width; the depth conversion is shared with the apex pick and that is not carried |
+| `s` | modelling convention | a spurious event equally likely at any depth in the declared range; the floor's height depends on that range |
+| partial conformance | modelling convention | the spurious branch set to 1, a bound rather than a derivation |
+| absence: `1 − D(h)` and `f` | modelling convention; `f` elicited at 0.5 by ignorance | the false-positive rate tied to `d` for the behaviour at the ends |
+| independence of the terms | modelling convention | one interpreter grades all of them |
+| the well factor | a likelihood for depth evidence; `σ` and `p_connected` elicited | its depth conversion is the DHI's; the two are multiplied as independent |
+
+`c` is held constant with column height in the current model. Whether a flat event becomes a
+more plausible contact as the column thickens, and whether `c` should move with the pick width
+or with `D(h)`, are not modelled.
+
+The DHI's extent is not the assessment minimum. The geometry is evidence about the contact and
+the column; the assessment minimum is a separate criterion set on tab 2.0. A DHI that covers a
+large area does not make the minimum met, and a column that meets the minimum need not show.
 
 The floor. Since `Pick ≥ 0`, `L / s ≥ 1 − c` at every depth: no depth's likelihood falls below
 `1 − c` times the flat alternative, so no depth is excluded, and the posterior share of any
@@ -329,7 +377,8 @@ evidence about which element failed.
 Factorisation. The realisations are conditional on `G`, so a likelihood over them redistributes
 probability among column heights and cannot say whether `G` holds. The model is therefore
 factorised: the index updates `P(G)` (8.1.6) and the geometry updates `HCWC | G` (8.1.7). Each is
-a Bayesian update of the quantity it names. This is a modelling decision. The whole observation is
+a Bayesian update of the quantity it names, exact conditional on an observation model that is
+itself the assumption (8.1.6, 8.1.7). The factorisation is a modelling decision. The whole observation is
 not modelled generatively across `G` and `h` together; in such a model the valid-contact branch of
 the geometry likelihood would carry some evidence about `G` as well. The tool assigns that evidence
 to the index channel and uses the geometry within `G`, once. A second likelihood ratio on `P(G)`
@@ -419,7 +468,7 @@ numbers. Nothing on it changes a result.
 
 ## Empirical benchmarks and censoring
 
-Data. The one openly redistributable dataset relating column height to closure height is
+Data. The open dataset used here relating column height to closure height is
 Edmundson et al. (2021): 242 NCS discoveries, each with an apex and a spill point picked from
 depth-converted maps, published under CC-BY. Earlier compilations report column-height
 distributions with no trap geometry. A prospect outside the NCS is compared against Norwegian
@@ -428,8 +477,8 @@ rock; the import path for a company's own trap-fill database is the response.
 Censoring. A predrill model needs seal capacity `S`, the column the seal could hold; what is
 measured is `C = min(S, H)`, with `H` the closure height. Underfilled pools observe `S`. Pools
 filled to spill, 111 of 242, observe only `S ≥ H`: the column reached the structural limit, and
-the seal's capacity was not tested. The observation is right-censored, lower-bound information;
-it is not uninformative. Hood (2019) states the geology: pools controlled by geometric limits
+the seal's capacity was not tested. For the seal-capacity interpretation the observation is right-censored,
+lower-bound information; it is not uninformative. Hood (2019) states the geology: pools controlled by geometric limits
 document the minimum column the seal can support and not the upper limit.
 
 Estimator. Fitted as a Type-I Tobit, the closure-height elasticity falls from the published 0.880
