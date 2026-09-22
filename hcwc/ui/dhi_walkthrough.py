@@ -246,10 +246,10 @@ def render(n: Numbering | None = None) -> None:
                "The grey dashed line is the geological model, unchanged. That is branch ¬V: if "
                "the picked event is not the contact, tab 4.0's answer stands as it was.\n\n"
                "The mixture never leaves the corridor between the two branches, so it cannot reach "
-               "zero while the grey line is above zero. That is a guarantee: the depth channel "
-               f"can say at most "
-               f"{observation.p_valid / max(1 - observation.p_valid, 1e-9):.1f} : 1 against any "
-               "contact depth, however sharply the pick is drawn.")
+               "zero while the grey line is above zero. That is the guarantee: no contact depth "
+               f"is excluded, because every depth keeps at least {1 - observation.p_valid:.2f} of "
+               "the flat alternative. How strongly the pick favours one depth over another is "
+               "set by its width, not by c.")
 
     # ------------------------------------------------------------------ 5 · the ratio
     st.markdown("##### Step 5 · R, and where the intractable term went")
