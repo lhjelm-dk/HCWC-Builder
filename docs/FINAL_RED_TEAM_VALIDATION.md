@@ -64,4 +64,7 @@ depth-space exceedance. Nothing in the figures is typed.
 
 ## 6 · Full-suite record
 
-Filled in at merge.
+`python -m pytest -q` with the anaconda interpreter, 22 Sep 2026: after Phase 2 (`rt-p0`, merged
+as #72) exit 0, no failures; after Phases 3–6 (`rt-p1`, rebased on main) exit 0, no failures,
+943 test functions (1 076 baseline cases plus the tests of §3), render tests included, no
+warnings. Each PR merged on its own green run.
