@@ -333,7 +333,7 @@ Figure 5 reproduces this in the engine on a 500 m closure with a uniform seal ca
 difference is 125 m of mean column and 50 percentage points of fill-to-spill, from a modelling
 choice the assessor may not know they are making.
 
-![Terminating versus truncating at spill](figures/fig5_truncate_vs_terminate.png)
+![Terminating versus truncating at spill](figures/Figure_1.1a_every-mechanism-that-can-stop-the-column-on.png)
 
 > **Figure 5.** The same seal capacity on the same 500 m closure, linked to closure height
 > (terminated) or sampled independently and cut by spill (truncated). Terminating gives a mean
@@ -393,7 +393,7 @@ fault geometry, fault leakage, seal continuity and preservation limits. Element 
 minimum is 120 m of column. All results below are 10,000 realisations — the implementation's own
 default, so a reader can reproduce them.
 
-![Competing limits and the resulting distribution](figures/fig1_competing_limits.png)
+![Competing limits and the resulting distribution](figures/Figure_4.1.1a_the-competition-realisation-by-realisation.png)
 
 > **Figure 1.** Left: fifty consecutive realisations. Each coloured dot is one limit's sampled
 > depth in that realisation; the ringed dot is the minimum, which controls it, in the colour of
@@ -417,7 +417,7 @@ Reading the geological result:
 The fill-to-spill probability is a derived number, not an input: it is the share of realisations in
 which the spill point provided the minimum.
 
-![Controlling mechanism](figures/fig2_controlling_mechanism.png)
+![Controlling mechanism](figures/Figure_4.1.2a_the-controlling-mechanism-at-each-depth.png)
 
 > **Figure 2.** The controlling limit at each depth. Bars are shares of all realisations, so
 > each limit's bars sum across depth to its overall share: top-seal capillary capacity controls
@@ -436,7 +436,7 @@ At the same time, a mechanism with a small overall share is not necessarily unim
 shows fault geometry controlling a large fraction of the *deep* realisations, which are exactly the
 ones that carry the volume. Both readings come from the same array.
 
-![The chance against depth](figures/fig3_chance_against_depth.png)
+![The chance against depth](figures/Figure_4.1.3a_the-chance-against-depth-and-what-makes-it.png)
 
 > **Figure 3.** One curve, read in three places. The blue curve is $F(h)$, conditional on the
 > elements working, with the contact's P90, P50, P10 and mean marked on it; the red curve is
@@ -646,7 +646,7 @@ check first.
 One consequence of likelihood-based updating is that seismic evidence does not act as a
 multiplicative correction to POS. It changes the *shape* of the column-height distribution.
 
-![The contact distribution before and after the pick](figures/fig4_dhi_update.png)
+![The contact distribution before and after the pick](figures/Figure_5.1.4a_where-the-contact-is-before-and-after-the.png)
 
 > **Figure 4.** Where the contact is, before and after a 10 m pick at 2,250 m with contact
 > attribution $c = 0.36$ and a moderate evidence strength. Both histograms are over every
@@ -654,7 +654,7 @@ multiplicative correction to POS. It changes the *shape* of the column-height di
 > the realisations above the assessment minimum. The evidence strength does not enter this
 > figure: it updates the chance of hydrocarbons, not where the contact is given that there are.
 
-![The chance against depth, geological and updated](figures/fig6_chance_before_after.png)
+![The chance against depth, geological and updated](figures/Figure_5.1.5a_the-chance-against-threshold-p-g-f-h.png)
 
 > **Figure 6.** The chance against depth for the same observation: $P(G) \times F(h)$
 > geological, $P(G \mid \text{strength}) \times F(h \mid G, \text{pick})$ updated. The curve

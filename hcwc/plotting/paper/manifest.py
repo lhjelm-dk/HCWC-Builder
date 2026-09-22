@@ -1,6 +1,6 @@
 """The article's figure manifest: what each file is, where it came from, and the run behind it.
 
-Written by ``scripts/post_images.py`` to ``paper/figures/MANIFEST.md`` (Phase 6 of the clean-up,
+Written by ``scripts/export_exhibits.py`` to ``paper/figures/MANIFEST.md`` (Phase 6 of the clean-up,
 18 Sep 2026). Every paper figure is reproducible code with a stated seed and inputs; the
 manifest is the place a reader finds the number, the file, the caption, the source and the date
 without opening the scripts.
@@ -26,14 +26,17 @@ def strip_chips(caption: str) -> str:
     return " ".join(text.split())
 
 
-def write(path: pathlib.Path, entries: Iterable[Entry], settings: dict[str, object]) -> None:
-    lines = ["# Figures of the article: manifest", "",
-             f"Written {_dt.date.today().isoformat()} by `scripts/post_images.py`. Every figure below "
-             "is drawn by code from the shipped prospect at the settings stated; regenerate with the "
-             "scripts named and the same settings and the files are byte-for-byte the same.", "",
+def write(path: pathlib.Path, entries: Iterable[Entry], settings: dict[str, object],
+          *, script: str = "scripts/export_exhibits.py",
+          title: str = "Figures and tables: manifest") -> None:
+    lines = [f"# {title}", "",
+             f"Written {_dt.date.today().isoformat()} by `{script}`. Every exhibit below is drawn "
+             "by the app from the prospect and settings stated; rerun the script at the same "
+             "settings and the files are the same.", "",
              "## The run", "", "| setting | value |", "|---|---|"]
     lines += [f"| {k} | {v} |" for k, v in settings.items()]
-    lines += ["", "## The figures", "", "| article | file | source | caption |", "|---|---|---|---|"]
+    lines += ["", "## The exhibits", "", "| number | file | where in the app | caption |",
+              "|---|---|---|---|"]
     for e in entries:
         lines.append(f"| {e.figure} | `{e.file}` | {e.source} | {strip_chips(e.caption)} |")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")

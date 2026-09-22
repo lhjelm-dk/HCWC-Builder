@@ -21,33 +21,33 @@
   "POS geological": 0.40309617600000014,
   "LR(s)": 2.6172249198076076,
   "P(G | s)": 0.6435644306562259,
-  "F_post(h_min)": 0.9935548583768683,
-  "POS given the DHI": 0.6394165667570364,
+  "F_post(h_min)": 0.9933076336458192,
+  "POS given the DHI": 0.6392574617137546,
   "prior HCWC P90/P50/P10 (m)": [
     2191.3411084924796,
-    2245.911509696447,
-    2321.5634996267754
+    2247.653173182748,
+    2327.2809940039174
   ],
   "posterior HCWC P90/P50/P10 (m)": [
-    2198.157799006939,
-    2249.720903791774,
-    2297.6296956054966
+    2197.6822535384313,
+    2250.277750922061,
+    2302.8497417856247
   ],
-  "prior P90-P10 spread (m)": 130.22239113429578,
-  "posterior P90-P10 spread (m)": 99.47189659855758,
-  "effective sample size": 4872.289822686652,
-  "P(z_HCWC >= z_well | G) geological": 0.5719000000000001,
-  "P(z_HCWC >= z_well | G, DHI)": 0.7720903769619748,
-  "P(well) geological": 0.23347245600000008,
-  "P(well) given the DHI": 0.4968899038646842,
+  "prior P90-P10 spread (m)": 135.93988551143775,
+  "posterior P90-P10 spread (m)": 105.16748824719343,
+  "effective sample size": 4857.147759174387,
+  "P(z_HCWC >= z_well | G) geological": 0.575,
+  "P(z_HCWC >= z_well | G, DHI)": 0.7654575974692317,
+  "P(well) geological": 0.23473800000000003,
+  "P(well) given the DHI": 0.49262128290676865,
   "controlling shares (h >= h_min)": {
-    "Top seal (capillary)": 0.3173992303018027,
+    "Top seal (capillary)": 0.3339072311120113,
     "Fault leakage 1": 0.23323880899331578,
-    "Top seal (continuity)": 0.15343325906420904,
-    "Fault geometry 1": 0.12578488960907433,
-    "Charge": 0.0930727162244278,
-    "Preservation / tilt": 0.045169131051245696,
-    "Closure / spill point": 0.03190196475592465,
+    "Top seal (continuity)": 0.15626898926473567,
+    "Fault geometry 1": 0.1350010127607859,
+    "Charge": 0.09904800486125177,
+    "Closure / spill point": 0.03595300789953413,
+    "Preservation / tilt": 0.006582945108365404,
     "Fault geometry 2": 0.0,
     "Wedge geometry": 0.0,
     "Fault leakage 2": 0.0,
@@ -55,19 +55,19 @@
     "Base seal (continuity)": 0.0,
     "Top seal (fracture)": 0.0
   },
-  "six largest controls, summed": 0.9680980352440753,
+  "six largest controls, summed": 0.9934170548916346,
   "outcomes": {
     "band_m": [
       2226.7365212595914,
       2273.2634787404086
     ],
-    "attribution": 0.48848082356098455,
+    "attribution": 0.4688598131602565,
     "shares": {
       "no hydrocarbons": 0.3564355693437741,
-      "above the indicated contact": 0.138719819954707,
-      "at the indicated contact, because of it": 0.30812826779865615,
-      "at the indicated contact, by coincidence": 0.08085042647943837,
-      "below the indicated contact": 0.1158659164234244
+      "above the indicated contact": 0.14305606732291884,
+      "at the indicated contact, because of it": 0.29548018581982044,
+      "at the indicated contact, by coincidence": 0.0785509097603086,
+      "below the indicated contact": 0.12647726775317802
     }
   }
 }

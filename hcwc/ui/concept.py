@@ -32,9 +32,11 @@ def render() -> None:
                     "tabs follow it left to right, top to bottom.")
         # The guide version of the workflow figure, drawn by scripts/workflow_figure.py: the same
         # boxes as 8.1.2's conceptual one, each line naming the tab and what is entered or read
-        # there. Numbered 1.0a; tab 1's Numbering is created only for it, and
-        # tab 2's resets the exhibit registry, so the guide stays out of the results export.
-        Numbering(1).image(
+        # there. Numbered 1.0a, and the section sketch below it 1.1a, from one sequence: a second
+        # Numbering(1) would reset the section and number the sketch 1.0b. Tab 2's Numbering
+        # resets the exhibit registry, so both stay out of the results export.
+        n1 = Numbering(1)
+        n1.image(
             DOCS / "figures" / "fig0_workflow_guide.svg",
             "The model as a map of the app. Geological model, the prior: the element chances "
             "(2.0) give P(G), the accumulation chance; given an accumulation, the limits (3.0) "
@@ -72,12 +74,12 @@ def render() -> None:
         theme.heading(1, "1 · What can set a hydrocarbon–water contact")
         concept_png = REFERENCE / "defaults" / "concept.png"
         if concept_png.exists():
-            st.image(str(concept_png), width="stretch")
-            st.caption(
-                "Every mechanism that can stop the column, on one section, with the distribution of "
-                "the depth at which it acts. Charge enters from below and fills downward from the "
-                "apex, so every capacity is measured from the apex. Figure by Lars Hjelm. "
-                "Method: see 8.1.3."
+            n1.image(
+                concept_png,
+                "Every mechanism that can stop the column, on one section, with the distribution "
+                "of the depth at which it acts. Charge enters from below and fills downward from "
+                "the apex, so every capacity is measured from the apex. Figure by Lars Hjelm. "
+                "Method: see 8.1.3.",
             )
 
         # Trimmed 16 Sep 2026 to the operational statement. The argument for reading the chance
