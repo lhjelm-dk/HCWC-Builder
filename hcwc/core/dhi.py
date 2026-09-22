@@ -892,8 +892,8 @@ def contact_weight_from_score(score: float) -> float:
     empirical relationship reported for their drilled-prospect database, on their five-attribute
     score and in a scenario (substitution) construction; it is not a calibration of ``c`` on
     this tool's evidence index or graded attributes, and its use as the mixture weight of the
-    likelihood is this tool's mapping. Offered on tab 5.1.3 as an external reference beside
-    the stated value and the graded attributes.
+    likelihood is this tool's mapping. Shown on tab 5.1.3 as a comparison beside the c in use;
+    it is not a selectable source of ``c`` (comparison-only by decision, 22 Sep 2026).
     """
     return float(min(2.0 * float(np.clip(score, 0.0, 1.0)), CONTACT_WEIGHT_CEILING))
 
