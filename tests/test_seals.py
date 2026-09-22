@@ -436,6 +436,40 @@ class TestTheFractureHeadroom:
         assert got == pytest.approx([95.0, -20.0])
 
 
+class TestNegativeHeadroomIsRefusedNotClipped:
+    """Red team, 22 Sep 2026. A realisation whose aquifer already satisfies the fracture
+    criterion is a failed trap, `not G`, and belongs in Retention on tab 2.0. Clipping it to a
+    0 m column put it into the competition as a contact at the apex, the spike the engine refuses
+    for a depth-stated limit."""
+
+    def test_the_shipped_defaults_do_not_overlap(self):
+        inputs = seals.MechanicalSealInputs()
+        column = seals.sample_mechanical_column_m(inputs, 5_000)
+        assert (column > 0).all()
+
+    def test_a_partly_overlapping_range_is_refused_with_the_reason(self):
+        with pytest.raises(ValueError, match="failed trap"):
+            seals.MechanicalSealInputs(s_hmin_bar=(220.0, 330.0), pore_pressure_bar=(215.0, 240.0))
+
+    def test_a_totally_overlapping_range_is_still_refused(self):
+        with pytest.raises(ValueError, match="every realisation"):
+            seals.MechanicalSealInputs(s_hmin_bar=(200.0, 210.0), pore_pressure_bar=(215.0, 240.0))
+
+    def test_a_touching_range_is_refused(self):
+        """Equal at the corner: headroom zero in the limit, a 0 m column, refused."""
+        with pytest.raises(ValueError, match="overlaps"):
+            seals.MechanicalSealInputs(s_hmin_bar=(240.0, 330.0), pore_pressure_bar=(215.0, 240.0))
+
+    def test_a_direct_call_with_negative_headroom_is_refused(self):
+        with pytest.raises(ValueError, match="Retention"):
+            seals.mechanical_column_m(np.array([300.0, 200.0]), np.array([220.0, 220.0]), 1.05, 0.8)
+
+    def test_no_zero_metre_column_can_come_out(self):
+        inputs = seals.MechanicalSealInputs(s_hmin_bar=(241.0, 330.0), pore_pressure_bar=(215.0, 240.0))
+        column = seals.sample_mechanical_column_m(inputs, 20_000)
+        assert column.min() > 0.0
+
+
 class TestTheBarPerMetreConversion:
     """The unit trap on this path, and it fails *downward* -- which is why it needs pinning.
 
@@ -496,10 +530,12 @@ class TestTheMechanicalColumn:
         got = float(seals.mechanical_column_m(S_HMIN, P_PORE, MECH_RHO_W, MECH_RHO_HC))
         assert got > 3000.0
 
-    def test_spent_headroom_is_no_column_rather_than_a_negative_one(self):
+    def test_spent_headroom_is_refused_rather_than_clipped(self):
         """A negative column competing in the engine's `min` would win every realisation and
-        report a contact above the crest."""
-        assert float(seals.mechanical_column_m(200.0, 220.0, 1.05, 0.8)) == 0.0
+        report a contact above the crest; a clipped 0 m column would report a contact at the
+        apex, which is a failed trap wearing a geological result (red team, 22 Sep 2026)."""
+        with pytest.raises(ValueError, match="failed trap"):
+            seals.mechanical_column_m(200.0, 220.0, 1.05, 0.8)
         assert float(seals.mechanical_column_m(220.0, 220.0, 1.05, 0.8)) == 0.0
 
     def test_no_buoyancy_is_nan_rather_than_infinity(self):
@@ -521,10 +557,10 @@ class TestTheMechanicalColumn:
         assert gas < oil
 
     def test_it_is_vectorised_elementwise(self):
-        got = seals.mechanical_column_m([315.0, 200.0], [220.0, 220.0],
+        got = seals.mechanical_column_m([315.0, 300.0], [220.0, 220.0],
                                         [1.05, 1.05], [0.775, 0.8])
         assert got[0] == pytest.approx(3522.66, abs=0.01)
-        assert got[1] == 0.0
+        assert got[1] == pytest.approx(80.0 / ((1.05 - 0.8) * seals.BAR_PER_M_PER_G_CM3), rel=1e-9)
 
 
 class TestMechanicalSealInputs:
@@ -546,7 +582,7 @@ class TestMechanicalSealInputs:
 
     def test_a_trap_already_at_its_fracture_pressure_is_refused(self):
         """Not a short column -- a Retention failure, and the message has to say which."""
-        with pytest.raises(ValueError, match="trap failure rather than a column limit"):
+        with pytest.raises(ValueError, match="failed trap, not a column limit"):
             seals.MechanicalSealInputs(s_hmin_bar=(200.0, 210.0),
                                        pore_pressure_bar=(215.0, 225.0))
 

@@ -133,11 +133,8 @@ class DhiObservation:
     **``p_valid`` is ``P(the picked event is the contact | G, contact attributes)``.** Conditional
     on hydrocarbons being present, because every realisation it weights already is. It is the
     contact-attribute judgement -- conformance, flatness, whether the event cuts structure -- and
-    nothing else. It must not carry ``P(G)`` or any function of the amplitude strength: the
-    engine's sample is ``p(h | G)``, so a mixture weight with ``P(G)`` inside it counts the
-    chance of hydrocarbons once here and again wherever the strength channel is applied. Until
-    14 Sep 2026 the app passed ``P(G | strength) · c`` and the strength reached the geometry
-    posterior through this field.
+    nothing else: it carries neither ``P(G)`` nor any function of the evidence index, which would
+    count the chance of hydrocarbons twice (once here, once where the index is applied).
 
     **``p_valid`` is taken independent of ``h``** (audit, 16 Sep 2026). One number weights the
     mixture for every realisation: the chance that the picked event is the contact is not made
@@ -286,13 +283,14 @@ def likelihood(result: EngineResult, detection: DetectionFunction,
     the second branch, seeing the event had nothing to do with the column.
 
     In the second branch the likelihood is flat in ``h``, so the geological prior passes through
-    untouched. That is what gives the whole update its floor: since ``Pick(·) >= 0``,
+    untouched. That is what gives the update its floor: since ``Pick(·) >= 0``,
 
         L / s  >=  1 - p_valid
 
-    so the depth channel can never say more than ``p_valid / (1 - p_valid)`` against any hypothesis,
-    whatever shape the pick has. Nothing is ever ruled out by one seismic interpretation — which is
-    Cromwell's rule, and the reason a bounded pick shape is safe to offer at all.
+    at every depth. No depth is excluded by one seismic interpretation (Cromwell's rule), which
+    is what makes a bounded pick shape safe to offer. The floor is a bound from below on each
+    depth, not a cap on discrimination: the ratio of likelihoods between two depths is at most
+    ``1 + p_valid · D · Pick_max / ((1 - p_valid) · s)`` and grows as the pick narrows.
 
     **Partial conformance** -- bright over the crest, reliably absent below ``z_off``. Neither of
     the other two: something is there, so the strength channel applies in full, but there is no
