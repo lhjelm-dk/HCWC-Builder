@@ -70,9 +70,10 @@ seal-controlled, deep ones pass to fault geometry and spill.
 shows which mechanisms stop the column there. Right: the controlling shares over the
 realisations meeting the assessment minimum.*
 
-That table is the sensitivity analysis. Two or three limits set the answer and the rest do not
-move it, so the elicitation effort goes where it counts, and a reviewer can disagree with a
-mechanism rather than with a curve.
+These are controlling-mechanism statistics, the frequency with which each mechanism sets the
+minimum; the perturbational sensitivity is a separate tornado in the tool. In this worked case a
+few mechanisms dominate the controlling share, so the elicitation effort goes where it counts,
+and a reviewer can disagree with a mechanism rather than with a curve.
 
 ## The chance is a reading of the same curve
 
@@ -154,10 +155,10 @@ the evidence index.
 capped at the prospect's relief. Inset: the record itself, with the 111 of 242 discoveries that
 filled to spill on the 1:1 line.*
 
-The one openly redistributable dataset relating column height to closure height is
+The open dataset used here relating column height to closure height is
 Edmundson et al. (2021), 242 discoveries on the Norwegian shelf. 111 of them are filled to
 spill. A filled closure says the column reached the structural limit and the seal's capacity
-was not tested: a lower bound, not a measurement. Fitted as right-censored, the closure-height
+was not tested: for the seal-capacity interpretation, a lower bound. Fitted as right-censored, the closure-height
 control weakens and the burial-depth control roughly doubles, the direction compaction
 predicts. The tool draws the prospect beside the record for a closure of its size and reads
 optimistic or pessimistic against it. It never multiplies the record in: every trap in it was a

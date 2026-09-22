@@ -8,6 +8,7 @@
     "pick_sigma_m": 10.0,
     "contact_attribution_c": 0.36,
     "well_entry_m": 2230.0,
+    "burial_m": 2500.0,
     "element_chances": {
       "Charge": 0.9,
       "Closure": 1.0,

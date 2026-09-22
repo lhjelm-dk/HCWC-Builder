@@ -189,7 +189,7 @@ def render(n: Numbering | None = None) -> None:
     st.markdown("##### Step 4 · The case where the picked event is not the contact")
     st.markdown(
         "A flat event can be lithology, a diagenetic front, fizz gas read as pay, or a processing "
-        "artefact. Writing `V` for *the picked event really is the contact*, the likelihood is two "
+        "artefact. Writing `V` for *the indicated event is in fact the contact*, the likelihood is two "
         "stories, weighted:"
     )
     st.latex(r"L(E \mid G, h) = \underbrace{p_{\mathrm{valid}} \cdot D(h) \cdot "
@@ -217,7 +217,7 @@ def render(n: Numbering | None = None) -> None:
             valid_at = d_at * _norm.cdf(
                 (observation.absent_below_m - result.contact_m) / observation.pick_sigma_m)
             c = 1.0
-            labels = ("V alone — the edge really lies above the cutoff",
+            labels = ("V alone — the edge does lie above the cutoff",
                       "¬V alone — the bright event is not the column")
         else:
             valid_at = d_at * observation.pick_pdf(result.contact_m)
