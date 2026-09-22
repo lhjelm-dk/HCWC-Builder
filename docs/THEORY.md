@@ -105,6 +105,15 @@ breaching fault tip. Fault seal is a juxtaposition window, a depth, or a leak ca
 Mechanical failure is the column at which the crest pressure reaches the minimum horizontal
 stress, `H = (S_Hmin − P_p) / (grad_w − grad_h)` (Grant 2020).
 
+A limit is a leak point. Each limit's distribution is the depth at which hydrocarbons leave the
+accumulation through that mechanism, conditional on the accumulation existing, so filling stops
+there. It is not the depth at which the mechanism is locally exceeded. A mechanism that gives way
+while the hydrocarbon stays inside the closure does not set the contact: a base seal over a unit
+that is itself closed, a fault at capacity against a dead-end juxtaposition, a four-way closure
+with nowhere for the column to go. Trap style decides it, and the judgement is carried either by
+the mechanism's presence probability, the share of realisations in which an escape path exists,
+or by the depth stated for the limit; the minimum assumes it has been made.
+
 Units. A limit is stated as a column below the apex or as a depth in m TVDSS; the engine converts
 a depth to a column against the apex drawn in the same realisation. A capacity does not move when
 the apex moves; a mapped surface does (8.1.5).

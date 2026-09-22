@@ -102,7 +102,9 @@ SPECS: tuple[LimitSpec, ...] = (
     # ---- Retention --------------------------------------------------------------------------
     LimitSpec("Fault leakage 1", Group.RETENTION, COLUMN, (130.0, 170.0), 0.25, "pert",
               "The column a fault holds before it leaks. A capacity, so it is stated as a height "
-              "and does not move when the apex pick moves."),
+              "and does not move when the apex pick moves. A fault at capacity against a "
+              "juxtaposition that is itself closed does not drain the trap; the column this "
+              "limit states is the one at which hydrocarbon leaves the accumulation."),
     LimitSpec("Fault leakage 2", Group.RETENTION, COLUMN, (140.0, 320.0), 0.0, "pert",
               "A second fault, or a second segment of the same one. Off by default: most "
               "structures are bounded by one fault worth modelling, and a second left on shortens "
@@ -117,11 +119,17 @@ SPECS: tuple[LimitSpec, ...] = (
               "The same physics below the reservoir, with the same calculator. Same as the top "
               "seal takes the top seal's inputs wholesale, which is the usual case where one shale "
               "unit wraps the reservoir. Usually correlated with the top seal either way; see the "
-              "Correlations sub-tab.",
+              "Correlations sub-tab. Enter the depth at which hydrocarbon passing the base seal "
+              "leaves the accumulation: where the unit beneath is closed, or the trap is a "
+              "four-way with nowhere for the column to go, that depth may not exist and the "
+              "mechanism belongs at P(active) = 0 or at the share of realisations in which an "
+              "escape path is present. It ships off for that reason.",
               computed=("seal", "seal_as_top")),
     LimitSpec("Top seal (continuity)", Group.RETENTION, COLUMN, (100.0, 350.0), 0.3, "pert",
               "Not capillary failure but a hole in the seal: a sand-filled channel, an erosional "
-              "window, a breaching fault tip."),
+              "window, a breaching fault tip. The column at which hydrocarbon escapes through it "
+              "and leaves the accumulation, which is not the column at which the hole is first "
+              "reached where what lies beyond is itself closed."),
     LimitSpec("Base seal (continuity)", Group.RETENTION, COLUMN, (120.0, 380.0), 0.0, "pert",
               "The same, below."),
     LimitSpec("Preservation / tilt", Group.RETENTION, COLUMN, (200.0, 375.0), 0.2, "pert",
@@ -402,6 +410,18 @@ def render() -> None:
         "see 8.1.3.\n\n"
         "The ranking (3.1) and the summary (3.2) are the result and update as the inputs below "
         "change; the checks (3.3) follow them."
+    )
+    st.info(
+        "**A limit is a leak point.** Each distribution below is the depth at which hydrocarbons "
+        "leave the accumulation through that mechanism, so filling stops there, and not the depth "
+        "at which the mechanism is locally exceeded. Where the mechanism gives way but the "
+        "hydrocarbon stays inside the closure — a base seal over a unit that is itself "
+        "closed, a fault at capacity against a dead-end juxtaposition, a four-way closure with "
+        "nowhere for the column to go — the contact does not move, and the mechanism is not "
+        "a limit at that depth. The trap style decides it: in a three-way, a pinch-out or a "
+        "stratigraphic trap the escape path is usually mapped; in a four-way it often does not "
+        "exist. Carry that judgement in P(active), the share of realisations in which an escape "
+        "path is present, or in the depth stated here. Method: see 8.1.3."
     )
 
     summary_slot = st.container()
