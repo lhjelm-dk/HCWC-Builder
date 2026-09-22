@@ -21,15 +21,15 @@ shallowest active one sets the contact. The distribution is the output, and the 
 which mechanism set it in each realisation.
 
 That second part is the one I use most. On the worked prospect the top seal sets the contact in
-32 % of realisations, a fault leak in 23 %, seal continuity in 15 %. Two or three limits carry the
-answer; the rest can stay rough. A reviewer can argue with a mechanism instead of a curve.
+33 % of realisations, a fault leak in 23 %, seal continuity in 16 %. A few mechanisms carry the
+answer in this case; the rest can stay rough. A reviewer can argue with a mechanism instead of a curve.
 
 The DHI is treated as evidence, not as a replacement contact. Its character, placed on an
 evidence index, updates the chance that hydrocarbons are there at all: 40 % to 64 % on the worked
 prospect. Its geometry reweights the same geological realisations: the contact narrows from a
-130 m to a 99 m P90–P10 spread, with an effective sample size of 4 872 of the 10 000. Strong DHI
+136 m to a 105 m P90–P10 spread, with an effective sample size of 4 857 of the 10 000. Strong DHI
 evidence can raise P(G) substantially while the contact depth stays uncertain — and a well 180 m
-below the crest reads 50 %, not 64 %, because it also needs the column to reach it.
+below the crest reads 49 %, not 64 %, because it also needs the column to reach it.
 
 The competing-limits idea is Beha, Christensen and Young's (2012); the tool puts it in one place
 with the DHI update and a censoring-aware comparison against the NCS record.
@@ -42,10 +42,10 @@ Code and theory: GITHUB_URL
 
 ## Images
 
-1. `figures/paper_fig1_competing_limits.png` — Each limit's chance of permitting a contact at
+1. `figures/Figure_4.1.1a_the-competition-realisation-by-realisation.png` — Each limit's chance of permitting a contact at
    least this deep; the contact is the lower envelope, and the distribution follows.
-2. `figures/paper_fig2_controlling_mechanism.png` — Which mechanism stops the column, and where.
-3. `figures/paper_fig3_dhi_update.png` — The contact distribution before and after the DHI: a
+2. `figures/Figure_4.1.2a_the-controlling-mechanism-at-each-depth.png` — Which mechanism stops the column, and where.
+3. `figures/Figure_5.1.4a_where-the-contact-is-before-and-after-the.png` — The contact distribution before and after the DHI: a
    reweighting, with the prior still visible.
 
 ## First comment (post immediately after publishing)

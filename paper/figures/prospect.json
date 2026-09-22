@@ -586,9 +586,9 @@
       "distribution": {
         "kind": "pert",
         "params": {
-          "minimum": 150.0,
-          "mode": 250.0,
-          "maximum": 400.0
+          "minimum": 200.0,
+          "mode": 350.0,
+          "maximum": 375.0
         }
       },
       "note": "",
