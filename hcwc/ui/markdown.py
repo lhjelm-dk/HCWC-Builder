@@ -62,7 +62,7 @@ def render_with_figures(text: str, base: Path, demote: int = 0,
             alt = stripped[2:stripped.index("](")].strip()
             target = base / src
             if not target.exists():
-                st.caption(f"`{src}` not found — run `scripts/post_images.py`.")
+                st.caption(f"`{src}` not found — run `scripts/export_exhibits.py`.")
             elif numbering is not None:
                 # Numbered and captioned like any exhibit, with the image's alt text as the
                 # caption, so 8.1.2's workflow figure carries a number.

@@ -33,7 +33,7 @@ depth at which it acts. The shallowest active limit sets the contact, and the me
 set it is recorded. Ten thousand realisations give a contact distribution, a controlling share
 for each mechanism, and both as functions of depth.
 
-![Each limit's chance of permitting a contact at least this deep, the contact as their lower envelope, and the contact distribution that follows](figures/paper_fig1_competing_limits.png)
+![Each limit's chance of permitting a contact at least this deep, the contact as their lower envelope, and the contact distribution that follows](figures/Figure_4.1.1a_the-competition-realisation-by-realisation.png)
 
 *Figure 1. Left: each limit's chance of permitting a contact at least this deep, flattening at
 its probability of being present; the contact is the lower envelope of the active limits. Right:
@@ -52,19 +52,18 @@ suppresses the realisations above the leak and leaves the rest untouched, so the
 distribution corresponds to no geology, and adding a leak can raise the apparent volume (Hood
 2024). Taking the minimum keeps every realisation a column that some mechanism produces, at a
 depth that mechanism reaches. On the shipped prospect the contact comes out at
-2 191 / 2 246 / 2 322 m (P90 / P50 / P10), right-skewed with a step at the spill; the shape is
+2 191 / 2 248 / 2 327 m (P90 / P50 / P10), right-skewed with a step at the spill; the shape is
 an output.
 
 ## The model shows why the column stops
 
 Because the controller is recorded, the model says which mechanism stops the column and where.
-Top-seal capillary capacity sets the contact in 32 % of the realisations that meet the
-assessment minimum, fault leakage in 23 %, seal continuity in 15 %, fault geometry in 13 %,
-charge in 9 %, preservation in 5 % and spill in 3 %; the remaining limits control under 1 %
-between them. The share is not constant down the structure: shallow contacts are
+Top-seal capillary capacity sets the contact in 33 % of the realisations that meet the
+assessment minimum, fault leakage in 23 %, seal continuity in 16 %, fault geometry in 14 %,
+charge in 10 % and spill in 4 %; the remaining limits control under 1 % each. The share is not constant down the structure: shallow contacts are
 seal-controlled, deep ones pass to fault geometry and spill.
 
-![The contact distribution stacked by the limit that set it, and the shares over the run](figures/paper_fig2_controlling_mechanism.png)
+![The contact distribution stacked by the limit that set it, and the shares over the run](figures/Figure_4.1.2a_the-controlling-mechanism-at-each-depth.png)
 
 *Figure 2. Left: the contact distribution stacked by the limit that set it, so each depth bin
 shows which mechanisms stop the column there. Right: the controlling shares over the
@@ -117,11 +116,11 @@ alternative.
 
 On the shipped prospect a moderate anomaly, evidence index +20, with a 10 m pick at 2 250 m
 and $c = 0.36$, takes the prospect chance from 40 % to 64 % and narrows the P90–P10 spread of
-the contact from 130 m to 99 m. The updated distribution has an effective sample size of 4 872
+the contact from 136 m to 105 m. The updated distribution has an effective sample size of 4 857
 of the 10 000 realisations, which measures how far the seismic displaced the geology: a low
 value does not mean the interpretation is wrong, it means the answer depends on it.
 
-![The contact distribution before and after the DHI, with the indicated contact band](figures/paper_fig3_dhi_update.png)
+![The contact distribution before and after the DHI, with the indicated contact band](figures/Figure_5.1.4a_where-the-contact-is-before-and-after-the.png)
 
 *Figure 3. The contact distribution before and after the DHI, on one axis, with the indicated
 contact band shaded. The update reweights the geological realisations; the prior stays visible
@@ -135,13 +134,13 @@ frequent among the favoured realisations, but the element chances are untouched.
 
 ## The same posterior gives the chance against depth
 
-![The chance a well finds hydrocarbons against its entry depth, geological and given the DHI](figures/paper_fig4_chance_against_depth.png)
+![The chance a well finds hydrocarbons against its entry depth, geological and given the DHI](figures/Figure_4.1.3a_the-chance-against-depth-and-what-makes-it.png)
 
 *Figure 4. The chance a well finds hydrocarbons against its entry depth, read on the realised
 contacts: geological, and given the DHI. The well at 2 230 m and the assessment minimum are
 marked.*
 
-The chance at a well entering at 2 230 m goes from 23 % to 50 %. It is not 64 %: $P(G \mid s)$
+The chance at a well entering at 2 230 m goes from 23 % to 49 %. It is not 64 %: $P(G \mid s)$
 is the chance of hydrocarbons in the trap at any depth, and a well 180 m below the crest also
 needs the column to reach it. The difference between the two is the chance that hydrocarbons are
 present but the contact sits above the well, which the attribution $c$ and the geology set, not
@@ -149,7 +148,7 @@ the evidence index.
 
 ## A reality check, not a score
 
-![The prospect's column beside the NCS record at its burial depth; inset, the filled-to-spill points on the record](figures/paper_fig5_empirical_check.png)
+![The prospect's column beside the NCS record at its burial depth; inset, the filled-to-spill points on the record](figures/Figure_6.7a_orange-is-the-prospect-built-on-tab-3-0-the.png)
 
 *Figure 5. The prospect's column beside the NCS record's seal capacity at its burial depth,
 capped at the prospect's relief. Inset: the record itself, with the 111 of 242 discoveries that
