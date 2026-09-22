@@ -108,8 +108,11 @@ gives the contact, the chance against depth and the well.
 
 The geometry likelihood has a floor. The indicated event is the contact with a stated
 probability $c$, the contact attribution; with probability $1 - c$ it is lithology, a
-diagenetic front or an artefact, and then it says nothing about depth. So the geometry can
-never say more than $c/(1-c)$ against any contact depth, however sharply the pick is drawn.
+diagenetic front or an artefact, and then it says nothing about depth. So no contact depth is
+ever excluded by one interpretation: the floor keeps every depth in play and an attributed
+contact cannot become certain, however sharply the pick is drawn. It does not cap how strongly
+the pick discriminates between depths; that is set by the pick's width against the spurious
+alternative.
 
 On the shipped prospect a moderate anomaly, evidence index +20, with a 10 m pick at 2 250 m
 and $c = 0.36$, takes the prospect chance from 40 % to 64 % and narrows the P90–P10 spread of

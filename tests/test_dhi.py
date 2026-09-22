@@ -780,6 +780,25 @@ class TestNothingIsEverRuledOut:
         c = dhi.spurious_density(result.limit_set.contact_support_m())
         assert (weights / c).min() >= (1.0 - p_valid) - 1e-9
 
+    def test_the_floor_bounds_each_depth_but_does_not_cap_discrimination(self):
+        """Red team, 22 Sep 2026. The floor is `L / s >= 1 - c` at every depth; it is not a cap of
+        `c / (1 - c)` on the ratio between two depths, which grows as the pick narrows. The old
+        statement was false and is pinned here so it cannot return."""
+        result = run()
+        s = dhi.spurious_density(result.limit_set.contact_support_m())
+        d_max = DetectionFunction().ceiling
+        ratios = []
+        for sigma in (10.0, 5.0, 2.0):
+            obs = DhiObservation(seen=True, contact_m=2250.0, pick_sigma_m=sigma, p_valid=0.36)
+            L = dhi.likelihood(result, DetectionFunction(), obs)
+            assert (L / s).min() >= 0.64 - 1e-9                       # the floor holds
+            ratio = float(L.max() / L.min())
+            assert ratio > 0.36 / 0.64                                 # the old cap is exceeded
+            bound = 1.0 + 0.36 * d_max * float(obs.pick_pdf(np.array([2250.0]))[0]) / (0.64 * s)
+            assert ratio <= bound + 1e-9                               # the true bound holds
+            ratios.append(ratio)
+        assert ratios[0] < ratios[1] < ratios[2], "discrimination grows as the pick narrows"
+
     def test_a_bounded_pick_without_the_mixture_does_assign_zero(self):
         """The failure mode the mixture exists to prevent — pinned so it cannot creep back."""
         result = run()
