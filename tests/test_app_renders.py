@@ -2214,6 +2214,18 @@ class TestTheCompetitionIsDrawnRealisationByRealisation:
         # tab 4.1 has no toggle
         assert not any(t.key == "competition_posterior_4" for t in at.toggle)
 
+    def test_the_monigle_route_is_a_comparison_only(self):
+        """Comparison-only by decision, 22 Sep 2026: the radio offers the stated value and the
+        graded attributes; a prospect saved on the score route opens on the stated value with a
+        notice, and the score's reading stays on screen beside the c in use."""
+        at = _run(dhi_in_c_source="DHI score, Monigle et al. (2025)")
+        radio = next(r for r in at.radio if r.key == "dhi_in_c_source")
+        assert radio.options == ["Stated", "Graded attributes"]
+        assert radio.value == "Stated"
+        assert any("comparison now" in str(i.value) for i in at.info)
+        assert any("Comparison only. Monigle" in str(c.value) for c in at.caption)
+        assert at.session_state["dhi_posterior"].observation.p_valid == pytest.approx(0.36)
+
     def test_the_outcomes_are_on_tab_5_1_4_and_the_well_names_its_interval(self):
         """Lars, 21 Sep 2026: what the DHI can turn out to have been, as a bar, a table and the
         shaded intervals on 5.1.4a; 5.2.4 says which interval the well enters."""
