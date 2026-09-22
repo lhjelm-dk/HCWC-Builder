@@ -66,8 +66,8 @@ OPENING_EVIDENCE_INDEX = 5.0
 #: score route still gives 0.36. Range 0.05 to 1.0 on the slider, clipped to [0.01, 0.99] in use.
 DEFAULT_CONTACT_GIVEN_HC = 0.36
 #: The DHI score at which Monigle et al.'s weighting practice w = min(2 x score, 0.95) returns
-#: the shipped c; it exists so the external-reference route opens in agreement with the stated
-#: value and is not a calibration.
+#: the shipped c; the comparison on tab 5.1.3 opens in agreement with the stated value. It is
+#: not a calibration and not a source of c.
 DEFAULT_DHI_SCORE = 0.18
 #: The picked contact and its one-sigma error, m, the worked prospect's DHI (tab 5.1.1).
 DEFAULT_PICK_M = 2_250.0

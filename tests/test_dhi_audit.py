@@ -44,8 +44,8 @@ def _spread(post, *, posterior=True):
 
 
 # --------------------------------------------------------------------------- 1 · p_valid
-class TestMonigleRuleIsTheThirdRouteToC:
-    """`w = min(2 x score, 0.95)`, Monigle et al. (2025), offered beside the slider and the
+class TestMonigleRuleIsAComparisonOnly:
+    """`w = min(2 x score, 0.95)`, Monigle et al. (2025), shown beside the slider and the
     graded attributes (Lars, 17 Sep 2026). A source of c, not a change to what c does."""
 
     def test_the_rule_doubles_the_score_and_stops_at_the_ceiling(self):

@@ -304,12 +304,12 @@ index carries, and fit to structure, amplitude terminations and the fluid-contac
 contact attributes, which bear on whether the indicated event is the base of the column. The split
 is this tool's. `c` is conditional on `G`, because every realisation it weights was drawn on that
 assumption, and carries nothing of the index. It is offered three ways: stated; as the geometric
-mean of three graded attributes, a heuristic; or, as an external reference, from a DHI score
-through Monigle et al.'s (2025) column-height weighting practice `w = min(2 × score, 0.95)`, an
-empirical relationship reported for their drilled-prospect database on their five-attribute
-score and in a scenario construction. It is not a calibration of `c` on this tool's inputs, and
-its use as the mixture weight is this tool's mapping. The ceiling of 0.95 is the one Hood (2019)
-and Monigle et al. use in practice. `c` is taken independent of `h`; column height enters the
+mean of three graded attributes, a heuristic. Beside them, as a comparison and not a source,
+the tab shows what Monigle et al.'s (2025) column-height weighting practice
+`w = min(2 × score, 0.95)` gives from a typed DHI score in their sense: an empirical
+relationship reported for their drilled-prospect database on their five-attribute score and in
+a scenario construction, not a calibration of `c` on this tool's inputs. The ceiling of 0.95 is
+the one Hood (2019) and Monigle et al. use in practice. `c` is taken independent of `h`; column height enters the
 valid branch through `D(h)` only.
 
 `s` is the density of a spurious event over the model's declared contact range, one over the
