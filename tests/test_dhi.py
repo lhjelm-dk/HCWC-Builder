@@ -1679,3 +1679,30 @@ class TestBayesMatchesTheUpdateItIsCompared:
         direct = dhi.update(result, det, obs).exceedance(hs)
         combined = comparison.combination_exceedance(result, det, obs, hs, method=comparison.BAYES)
         assert combined == pytest.approx(direct, rel=1e-12)
+
+
+class TestDetectionFunctionEdges:
+    """Red team, 22 Sep 2026: units in metres of column; h50 the 50 % column; the ceiling below
+    one; no overflow at any column height."""
+
+    def test_h50_is_half_the_ceiling(self):
+        d = DetectionFunction(h50_m=25.0, steepness_m=8.0, ceiling=0.9)
+        assert float(d.at(25.0)) == pytest.approx(0.45)
+
+    def test_zero_and_very_large_columns(self):
+        d = DetectionFunction()
+        assert 0.0 < float(d.at(0.0)) < 0.1
+        assert float(d.at(1e6)) == pytest.approx(d.ceiling)
+        assert float(d.at(1e9)) == pytest.approx(d.ceiling)
+
+    def test_no_overflow_for_a_column_far_below_h50(self):
+        import warnings
+        d = DetectionFunction()
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            assert float(d.at(-1e6)) == pytest.approx(0.0)
+
+    def test_it_is_monotone(self):
+        d = DetectionFunction()
+        h = np.linspace(0.0, 400.0, 200)
+        assert np.all(np.diff(d.at(h)) >= 0.0)

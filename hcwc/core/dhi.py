@@ -37,6 +37,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.special import expit
 from scipy.stats import norm
 
 from hcwc.core import defaults, dists, engine
@@ -84,7 +85,9 @@ class DetectionFunction:
 
     def at(self, column_m: np.ndarray) -> np.ndarray:
         h = np.asarray(column_m, dtype=float)
-        return self.ceiling / (1.0 + np.exp(-(h - self.h50_m) / self.steepness_m))
+        # expit rather than 1 / (1 + exp(-x)): the same function, without the overflow the
+        # explicit form raises for a column far below h50.
+        return self.ceiling * expit((h - self.h50_m) / self.steepness_m)
 
 
 #: The smallest *share* of below-minimum realisations that can support ``r_dhi``'s denominator,
@@ -881,15 +884,16 @@ CONTACT_WEIGHT_CEILING = 0.95
 
 
 def contact_weight_from_score(score: float) -> float:
-    """Monigle et al.'s (2025) rule for the contact weight from a DHI score in their sense.
+    """Monigle et al.'s (2025) column-height weighting practice, from a DHI score in their sense.
 
     ``w = min(2 x score, 0.95)``: "high DHI scores (>0.50 rating) weight the HCWC at the rated
     DHI elevation to 95 % of the total trials; lower DHI scores weight the HCWC at the DHI
-    elevation relative to the rating outcome (double the DHI score for weighting value)".
-    Calibrated on 400+ drilled DHI prospects in their database, not on any one basin, and on
-    their five-attribute machine-learning score rather than on this tool's strength reading.
-    Offered on tab 5.1.3 as a third source of ``c`` beside the slider and the graded attributes
-   .
+    elevation relative to the rating outcome (double the DHI score for weighting value)". An
+    empirical relationship reported for their drilled-prospect database, on their five-attribute
+    score and in a scenario (substitution) construction; it is not a calibration of ``c`` on
+    this tool's evidence index or graded attributes, and its use as the mixture weight of the
+    likelihood is this tool's mapping. Offered on tab 5.1.3 as an external reference beside
+    the stated value and the graded attributes.
     """
     return float(min(2.0 * float(np.clip(score, 0.0, 1.0)), CONTACT_WEIGHT_CEILING))
 

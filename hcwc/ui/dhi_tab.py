@@ -58,7 +58,10 @@ DEFAULT_CONTACT_GIVEN_HC = defaults.DEFAULT_CONTACT_GIVEN_HC
 #: The three routes to c on tab 5.1.3, as the radio names them.
 C_STATED, C_FROM_ATTRIBUTES, C_FROM_SCORE = ("Stated", "Graded attributes",
                                              "DHI score, Monigle et al. (2025)")
-#: The DHI score whose calibrated rule gives the shipped c, so the untouched route agrees with
+#: What the radio shows for each source; the values above are what the prospect file stores.
+C_SOURCE_LABELS = {C_STATED: "Stated", C_FROM_ATTRIBUTES: "Graded attributes",
+                   C_FROM_SCORE: "External reference: DHI score (Monigle et al. 2025)"}
+#: The DHI score at which Monigle et al.'s weighting rule gives the shipped c, so the untouched route agrees with
 #: the untouched slider: 2 x 0.18 = 0.36.
 DEFAULT_DHI_SCORE = defaults.DEFAULT_DHI_SCORE
 
@@ -392,7 +395,9 @@ def render(n: Numbering | None = None) -> None:
             o3.metric("Bracket centre", f"{contact:,.0f} m")
     area = (o3 if partial else o4 if shape != dhi_core.NORMAL else o3).number_input(
         "Anomaly area (km²), optional", 0.0, 1000.0, 0.0, 0.5, key="dhi_in_area",
-        help="Used for the cross-check in §9. Leave at zero to skip.")
+        help="Used for the cross-check in §9. Leave at zero to skip. The DHI's extent is evidence "
+             "about the contact and the column, not the assessment minimum: a large anomaly does "
+             "not make the minimum met, and the minimum is set on tab 2.0.")
     if seen and area:
         # Containment, A(h_min) ≤ A_DHI, beside the input rather than only in the diagnostics
         # fold (master brief §16): if it fails, the DHI and the success case being risked are
@@ -566,12 +571,14 @@ def render(n: Numbering | None = None) -> None:
 
     strength = st.slider(
         "DHI evidence index", _s_lo, _s_hi, float(np.clip(OPENING_STRENGTH, _s_lo, _s_hi)), 1.0,
-        key="dhi_in_strength",
+        key="dhi_in_strength", disabled=not seen,
         help="Relative evidence scale. Positive values indicate increasingly positive DHI "
              "evidence; negative values indicate increasingly negative evidence. The scale is "
              f"conceptual and has no physical units. Neutral evidence is where the two reference "
              f"distributions cross; opens at {OPENING_STRENGTH:.0f}, just above it, so an "
-             f"untouched slider states barely supportive evidence rather than none.")
+             f"untouched slider states barely supportive evidence rather than none. Disabled "
+             f"when the anomaly is absent: absence is its own observation and updates P(G) "
+             f"through the detection model, not through this index.")
     _neutral = model.strength_at(1.0)
     st.caption(
         "Neutral evidence = "
@@ -775,12 +782,13 @@ def render(n: Numbering | None = None) -> None:
         st.session_state["dhi_in_c_source"] = C_FROM_ATTRIBUTES
     c_source = st.radio(
         "Source of c", [C_STATED, C_FROM_ATTRIBUTES, C_FROM_SCORE], horizontal=True,
-        key="dhi_in_c_source",
+        key="dhi_in_c_source", format_func=lambda v: C_SOURCE_LABELS[v],
         help="Stated: the slider, a value the assessor defends. Graded attributes: the geometric "
-             "mean of the three gradings above, a heuristic. DHI score: Monigle et al.'s (2025) "
-             "rule w = min(2 × score, 0.95), calibrated on their drilled database and not on "
-             "this basin; their score is a five-attribute rating, not the evidence index of "
-             "§2.")
+             "mean of the three gradings above, a heuristic. External reference: Monigle et "
+             "al.'s (2025) column-height weighting practice, w = min(2 × score, 0.95), applied "
+             "to their five-attribute score, an empirical relationship in their database and "
+             "not a calibration of c on this tool's inputs; a comparison, offered so a stated "
+             "c can be held against it.")
     stated_c = st.slider(
         "Contact attribution: given hydrocarbons, is the picked event the HCWC?",
         0.05, 1.0, DEFAULT_CONTACT_GIVEN_HC, 0.01, key="dhi_in_contact_given_hc",
@@ -798,10 +806,11 @@ def render(n: Numbering | None = None) -> None:
              "shipped c of 0.36.")
     score_c = dhi_core.contact_weight_from_score(dhi_score)
     sc2.caption(
-        f"Monigle et al.'s rule gives c = {score_c:.2f} from a score of {dhi_score:.2f}: "
-        f"w = min(2 × score, {dhi_core.CONTACT_WEIGHT_CEILING:.2f}), calibrated on 400+ drilled "
-        f"DHI prospects in their database. The rule is theirs and the basin is not; a score "
-        f"above 0.475 reaches the ceiling. Method: see 8.1.7."
+        f"Monigle et al.'s weighting practice gives c = {score_c:.2f} from a score of "
+        f"{dhi_score:.2f}: w = min(2 × score, {dhi_core.CONTACT_WEIGHT_CEILING:.2f}), an "
+        f"empirical relationship in their drilled database, on their score and their "
+        f"scenario construction, not a calibration of this tool's c. The score is typed; the "
+        f"tool cannot place its own inputs on their scale. Method: see 8.1.7."
     )
     _lev["c"] = st.empty()
     contact_given_hc = {C_STATED: stated_c, C_FROM_ATTRIBUTES: suggested_c,
@@ -823,8 +832,8 @@ def render(n: Numbering | None = None) -> None:
         "Anchors for the slider. These are judgements, not measurements, and the spacing "
         "matters more than the exact value.\n\n"
         "- 0.9 and up: a flat, conformable event that cuts dipping structure, with a clear "
-        "fluid contact reflection. 0.95 is the calibrated ceiling on the contact weight (Hood "
-        "2019; Monigle et al. 2025).\n"
+        "fluid contact reflection. 0.95 is the ceiling both Hood (2019) and Monigle et al. "
+        "(2025) use in practice for the contact weight.\n"
         "- 0.6 to 0.8: conformable and plausibly a contact, with something missing: no FCR, or "
         "terminations that are not sharp.\n"
         "- 0.3 to 0.5: the event is there and flat, and so is a plausible lithological "
@@ -893,7 +902,7 @@ def render(n: Numbering | None = None) -> None:
         figc.add_shape(type="line", x0=x0, x1=x1, y0=0.95, y1=0.95, row=1, col=col,
                        line=dict(color="#2F6B3F", width=1.2, dash="dashdot"))
     figc.add_annotation(x=_lr_lo + 0.02, y=0.95, yshift=-9, xanchor="left",
-                        text="0.95: calibrated ceiling (Hood 2019; Monigle et al. 2025)",
+                        text="0.95: the ceiling used in practice (Hood 2019; Monigle et al. 2025)",
                         showarrow=False, font=dict(size=9.5, color="#2F6B3F"), row=1, col=2)
 
     # -- right: the plane. Simm's bands on R. --------------------------------------------------

@@ -340,6 +340,50 @@ def dhi_evidence(posterior, current: EngineResult | None = None) -> Check:
     )
 
 
+#: A limit whose active draws put more than this share within CREST_BAND_M of the apex is a
+#: crest failure entered as a limit: it fails the element where the element chance on tab 2.0
+#: should carry it, and its realisations pile up as contacts at the apex.
+CREST_BAND_M = 5.0
+CREST_SHARE_WATCH = 0.05
+CREST_SHARE_STOP = 0.25
+
+
+def crest_failure(result: EngineResult) -> Check:
+    """Does any limit fail the trap at the crest rather than limit the column below it?
+
+    A limit is a mechanism that acts below the crest, given the accumulation (8.1.2, 8.1.3). A
+    column distribution with mass at zero says the mechanism sometimes acts *at* the crest,
+    which is a failure of the element and belongs in ``P(G)``; left here it double counts with
+    the element chance and draws a spike of contacts at the apex that reads as geology.
+    """
+    worst_name, worst_share = "", 0.0
+    for j, limit in enumerate(result.limit_set.limits):
+        active = result.active[:, j]
+        if not active.any():
+            continue
+        share = float(np.mean(result.sampled_m[active, j] <= CREST_BAND_M))
+        if share > worst_share:
+            worst_name, worst_share = limit.name, share
+    level = _level(worst_share, CREST_SHARE_WATCH, CREST_SHARE_STOP)
+    if worst_share == 0.0:
+        return Check("Limits act below the crest", "ok",
+                     f"No limit puts an active draw within {CREST_BAND_M:.0f} m of the apex.",
+                     "Every limit limits the column; none fails the element at the crest.")
+    return Check(
+        name="Limits act below the crest",
+        level=level,
+        finding=f"{worst_name} acts within {CREST_BAND_M:.0f} m of the apex in {worst_share:.1%} "
+                f"of the realisations in which it is present.",
+        meaning=("A small share at the crest is the tail of a capacity distribution."
+                 if level == "ok" else
+                 f"A mechanism that acts at the crest fails the element rather than limiting the "
+                 f"column. That chance belongs in the element chance on tab 2.0 "
+                 f"({result.limit_set.limits[result.limit_set.names.index(worst_name)].group.value}); "
+                 f"entered here it counts the same failure in P(G) and in F(h), and its "
+                 f"realisations pile up as contacts at the apex. Method: see 8.1.2."),
+    )
+
+
 def review(result: EngineResult, *, posterior=None, other: EngineResult | None = None) -> list[Check]:
     """Every check, in the order they should be read.
 
@@ -354,6 +398,7 @@ def review(result: EngineResult, *, posterior=None, other: EngineResult | None =
         tail_support(result),
         repeatability(result, other),
         concentration(result),
+        crest_failure(result),
         correlation_projection(result),
     ]
     if posterior is not None:

@@ -65,7 +65,9 @@ OPENING_EVIDENCE_INDEX = 5.0
 #: untouched tab shows a stated value beside a graded suggestion that differs from it; the DHI
 #: score route still gives 0.36. Range 0.05 to 1.0 on the slider, clipped to [0.01, 0.99] in use.
 DEFAULT_CONTACT_GIVEN_HC = 0.36
-#: The DHI score whose calibrated rule w = min(2 x score, 0.95) gives the shipped c.
+#: The DHI score at which Monigle et al.'s weighting practice w = min(2 x score, 0.95) returns
+#: the shipped c; it exists so the external-reference route opens in agreement with the stated
+#: value and is not a calibration.
 DEFAULT_DHI_SCORE = 0.18
 #: The picked contact and its one-sigma error, m, the worked prospect's DHI (tab 5.1.1).
 DEFAULT_PICK_M = 2_250.0
@@ -121,7 +123,7 @@ REGISTER: tuple[Parameter, ...] = (
     Parameter("EVIDENCE_INDEX_NOHC_P1_P99", EVIDENCE_INDEX_NOHC_P1_P99, "index (relative)", "f(s | NoHC) as P1, P99 of a Gaussian", "the shipped reference relationship (E-POS defaults)", "-200 to 200"),
     Parameter("OPENING_EVIDENCE_INDEX", OPENING_EVIDENCE_INDEX, "index (relative)", "where the slider opens", "by decision", "the slider's axis, ended where LR reaches 10"),
     Parameter("DEFAULT_CONTACT_GIVEN_HC", DEFAULT_CONTACT_GIVEN_HC, "probability", "c, the contact attribution, stated", "by decision; a cautious stated value", "0.05 to 1.0"),
-    Parameter("DEFAULT_DHI_SCORE", DEFAULT_DHI_SCORE, "score 0 to 1", "Monigle et al.'s DHI score whose rule gives the shipped c", "2 x 0.18 = 0.36", "0 to 1"),
+    Parameter("DEFAULT_DHI_SCORE", DEFAULT_DHI_SCORE, "score 0 to 1", "Monigle et al.'s DHI score at which their weighting practice returns the shipped c", "2 x 0.18 = 0.36; an external reference, not a calibration", "0 to 1"),
     Parameter("DEFAULT_PICK_M", DEFAULT_PICK_M, "m TVDSS", "the picked contact of the worked prospect", "worked prospect", "inside the closure"),
     Parameter("DEFAULT_PICK_SIGMA_M", DEFAULT_PICK_SIGMA_M, "m", "one-sigma pick and depth-conversion error", "worked prospect", "> 0"),
     Parameter("CONTACT_ATTRIBUTES", "table", "score 0 to 1", "score per graded level of the three contact attributes", "elicited after Monigle et al. (2025); heuristic", "0 to 1"),
@@ -132,5 +134,5 @@ REGISTER: tuple[Parameter, ...] = (
     Parameter("DETECTION_FALSE_POSITIVE", DETECTION_FALSE_POSITIVE, "relative to d", "a barren trap's chance of showing, relative to a filled one", "maximum ignorance; uncalibrated", "0 to 1"),
     Parameter("dhi.R_SINGLE_CHANNEL", 10.0, "ratio", "cap on one channel's likelihood ratio either way", "Simm & Bacon 2014; Simm 2020", "defined in hcwc.core.dhi"),
     Parameter("dhi.R_CAP", 50.0, "ratio", "guard on the combined ratio", "above Kjønsberg et al. 2010's 29", "defined in hcwc.core.dhi"),
-    Parameter("dhi.CONTACT_WEIGHT_CEILING", 0.95, "probability", "ceiling on the contact weight", "Hood 2019; Monigle et al. 2025", "defined in hcwc.core.dhi"),
+    Parameter("dhi.CONTACT_WEIGHT_CEILING", 0.95, "probability", "ceiling on the contact weight", "the ceiling Hood 2019 and Monigle et al. 2025 use in practice", "defined in hcwc.core.dhi"),
 )

@@ -35,8 +35,9 @@ hydrocarbon indicators: a step forward in petroleum risk discrimination.* AAPG B
 > **The closest published work to the DHI half of this tool**, from ExxonMobil, with Ken Hood
 > among the editors. Bayesian integration of a DHI score with a geological prior by the same
 > Simm & Bacon update this app uses; absence of an expected anomaly as negative evidence; and
-> an **empirically calibrated contact weight** — `w = min(2 x DHI score, 0.95)` — from 400+
-> drilled DHI prospects. That 0.95 is the external referent the strength axis lacked; see
+> a **column-height weighting practice** — `w = min(2 x DHI score, 0.95)` — reported as an
+> empirical relationship in their drilled-prospect database, on their score. The tool offers it
+> as an external reference for `c`, not as a calibration; see
 > `docs/reviews/MONIGLE_2025_REVIEW.md`. Also states the element-attribution rule as policy.
 
 **Hood, K.C. (2024)** · *Hydrocarbon Column Heights, Part 1* and *Part 2*. Rose & Associates blog,
