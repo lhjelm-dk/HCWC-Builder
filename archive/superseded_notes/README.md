@@ -13,6 +13,13 @@ the method. Kept as written for the record; not rendered by the app and not impo
 | BASE_RATE_NEGLECT.md | 8.1.7 Empirical benchmarks and censoring |
 | BENCHMARK_SOURCES.md | 8.1.7 Empirical benchmarks and censoring |
 
+## The short article (22 September 2026)
+
+`ARTICLE_SHORT_2026-09-22.md` is the 1 850-word article that stood on tab 8.2 until the long-form
+manuscript replaced it. Its argument is in `paper/ARTICLE.md`, which carries the same worked
+prospect at more length and uses the app's own exported exhibits; nothing in the short version is
+lost, and it is kept for the record because the LinkedIn post was written against it.
+
 ## The first article draft (1 September 2026)
 
 `ARTICLE_DRAFT_2026-09-01.md` and `POST_OPTIONS_2026-09-01.md` were the untracked working copies in
