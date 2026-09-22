@@ -289,13 +289,19 @@ valid branch through `D(h)` only.
 `s` is the density of a spurious event over the model's declared contact range, one over the
 support width.
 
-The floor. Since `Pick ≥ 0`, `L / s ≥ 1 − c`, so the geometry can say at most `c / (1 − c)` against
-any contact depth, however sharply the pick is drawn. A bounded pick shape would otherwise assign
-zero below its deepest bound, and no later evidence can revive a zero (Cromwell's rule). Under a
-pick the geology considers implausible, the posterior median follows the pick while the model
-supports it and then returns to the prior, with the effective sample size returning to the full
-count: the model concludes that the event is probably not the contact, rather than that the
-contact is where the pick says.
+The floor. Since `Pick ≥ 0`, `L / s ≥ 1 − c` at every depth: no depth's likelihood falls below
+`1 − c` times the flat alternative, so no depth is excluded, and the posterior share of any
+region of the prior cannot fall below `(1 − c) · s / L_max` of its prior share. That is what `c`
+controls: an attributed contact cannot become certain, however sharply the pick is drawn. It
+does not cap how strongly the geometry discriminates between two depths. The likelihood ratio
+between the best-supported depth and any other is at most `1 + c · D · Pick_max / ((1 − c) · s)`,
+which grows as the pick narrows; on the shipped prospect (`c` 0.36, σ 10 m) it is about 8, and
+at `c` 0.9 and σ 2 m about 600. A bounded pick shape without the floor would assign zero below
+its deepest bound, and no later evidence can revive a zero (Cromwell's rule). Under a pick the
+geology considers implausible, the posterior median follows the pick while the model supports
+it and then returns to the prior, with the effective sample size returning to the full count:
+the model concludes that the event is probably not the contact, rather than that the contact is
+where the pick says.
 
 Absent anomaly. Within `G`, absence enters as `1 − D(h)`, largest at small `h`: where the detection
 threshold falls inside the geological columns, absence reshapes the contact toward the short

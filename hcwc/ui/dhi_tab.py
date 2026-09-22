@@ -48,17 +48,11 @@ OBSERVATIONS = (CONFORMING, PARTIAL, ABSENT)
 #: than a neutral one, which is the property the E-POS default was chosen for.
 OPENING_STRENGTH = defaults.OPENING_EVIDENCE_INDEX
 
-#: Where `p_valid` opens: an even chance that the picked event is a fluid contact.
-#: Deliberately a round number and not `R/(R+1)` at the opening strength, because it is a
-#: judgement about the *event* and the two must be answered separately. See the p_valid
-#: block in `render` for what went wrong when it was derived.
-#: `P(the picked event is the contact | there is hydrocarbon)` — the conditional factor the
-#: geophysicist supplies. `p_valid` is this times the amplitude-updated `P(G)`, so the two
-#: judgements stay separate and the product cannot exceed the chance of any hydrocarbon.
-#: 0.36 since 15 Sep 2026, from 0.70: a cautious opening value. The floor under the
-#: pick is then 0.64, so an untouched slider lets the pick say at most 0.56 : 1 against any
-#: contact depth; a well-conformed event is claimed by moving it. The graded attributes open at
-#: a geometric mean of 0.25 since 20 Sep 2026, so the stated value and the suggestion differ.
+#: Where `c` opens. `c = P(the indicated event is the contact | G, contact attributes)`: the
+#: contact-attribute judgement and nothing else; it carries no `P(G)` and nothing of the
+#: evidence index. The floor under the pick is `1 - c`: no depth is excluded, and an attributed
+#: contact cannot become certain. The graded attributes open at a geometric mean of 0.25, so the
+#: stated value and the suggestion are seen to differ.
 DEFAULT_CONTACT_GIVEN_HC = defaults.DEFAULT_CONTACT_GIVEN_HC
 
 #: The three routes to c on tab 5.1.3, as the radio names them.
@@ -818,9 +812,11 @@ def render(n: Numbering | None = None) -> None:
     pv1.metric("p_valid", f"{p_valid:.2f}", f"floor {1 - p_valid:.2f}", delta_color="off")
     pv2.caption(
         f"The remaining {1 - p_valid:.2f} goes to a branch in which the pick says nothing about "
-        f"depth, so the depth channel can say at most {p_valid / (1 - p_valid):.1f} : 1 against "
-        f"any contact depth. It does not carry the chance of hydrocarbons, which enters once, "
-        f"in §5. Method: see 8.1.7."
+        f"depth, so no depth's likelihood falls below {1 - p_valid:.2f} times the flat "
+        f"alternative: no contact depth is excluded, and the attributed contact cannot become "
+        f"certain. The floor does not cap how strongly the pick discriminates between depths; "
+        f"the pick's width does. c does not carry the chance of hydrocarbons, which enters "
+        f"once, in §5. Method: see 8.1.7."
     )
 
     st.caption(

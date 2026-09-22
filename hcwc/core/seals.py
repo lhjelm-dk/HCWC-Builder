@@ -468,7 +468,8 @@ def fracture_headroom_bar(s_hmin_bar, pore_pressure_bar):
 
     A **negative or zero headroom is not a short column, it is a failed trap**: the aquifer alone
     already satisfies the fracture criterion, with no hydrocarbon buoyancy needed. That is a
-    different finding from "this trap holds fifty metres" and the caller has to say so.
+    different finding from "this trap holds fifty metres": it is a failure of retention, `not G`,
+    and belongs in the element chance on tab 2.0. :func:`mechanical_column_m` refuses it.
     """
     return np.asarray(s_hmin_bar, dtype=float) - np.asarray(pore_pressure_bar, dtype=float)
 
@@ -499,10 +500,20 @@ def mechanical_column_m(s_hmin_bar, pore_pressure_bar, water_density_g_cm3, hc_d
                 - np.asarray(hc_density_g_cm3, dtype=float)) * BAR_PER_M_PER_G_CM3
     with np.errstate(divide="ignore", invalid="ignore"):
         out = np.where(contrast > 0, headroom / contrast, np.nan)
-    # Headroom already spent is a failed trap, and a negative column is not a shallower limit --
-    # it is no column at all. Clipped here so the caller cannot accidentally compete a negative
-    # against the others and win.
-    return np.clip(out, 0.0, None)
+    # Headroom already spent is a failed trap, not a column, and it is refused rather than
+    # clipped: a 0 m column would enter the competition as a contact at the apex, the spike the
+    # engine refuses for a depth-stated limit (red team, 22 Sep 2026). `MechanicalSealInputs`
+    # refuses any range in which it can happen; this guard covers a direct call.
+    out = np.asarray(out, dtype=float)
+    if np.any(out < 0.0):
+        share = float(np.mean(out < 0.0))
+        raise ValueError(
+            f"the minimum stress is at or below the pore pressure in {share:.1%} of the "
+            f"realisations, so in those the trap is at its fracture pressure with no hydrocarbon "
+            f"in it. That is a failed trap, not a 0 m column: carry it as Retention risk on tab "
+            f"2.0 and keep this limit to the range in which the trap holds."
+        )
+    return out
 
 
 @dataclass(frozen=True)
@@ -531,11 +542,21 @@ class MechanicalSealInputs:
                 "the hydrocarbon and water density ranges overlap, so some realisations have "
                 "nothing buoyant"
             )
-        if self.s_hmin_bar[1] <= self.pore_pressure_bar[0]:
+        if self.s_hmin_bar[0] <= self.pore_pressure_bar[1]:
+            # Any overlap of the two ranges puts negative headroom in some realisations. Until
+            # 22 Sep 2026 only total overlap was refused and the partial case was clipped to a
+            # 0 m column, which entered the competition as a contact at the apex (red team).
+            lo_s, hi_s = self.s_hmin_bar
+            lo_p, hi_p = self.pore_pressure_bar
+            every = hi_s <= lo_p
             raise ValueError(
-                "the minimum stress is below the pore pressure in every realisation, so the trap "
-                "is already at its fracture pressure with no hydrocarbon in it. That is a trap "
-                "failure rather than a column limit -- carry it as a risk on Retention, not here"
+                ("the minimum stress is at or below the pore pressure in every realisation"
+                 if every else
+                 f"the minimum stress range ({lo_s:,.0f} to {hi_s:,.0f} bar) overlaps the pore "
+                 f"pressure range ({lo_p:,.0f} to {hi_p:,.0f} bar), so in some realisations")
+                + ", the trap is at its fracture pressure with no hydrocarbon in it. That is a "
+                "failed trap, not a column limit: carry that chance as Retention risk on tab 2.0, "
+                "and keep this limit to a stress range above the pore pressure."
             )
 
 
