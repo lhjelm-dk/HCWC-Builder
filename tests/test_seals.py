@@ -646,3 +646,20 @@ class TestTheMicpRoute:
     def test_a_non_positive_pressure_is_refused(self):
         with pytest.raises(ValueError):
             seals.pore_throat_radius_from_micp_um(0.0)
+
+
+class TestThePoreThroatFitWarnsOutsideItsRange:
+    """Red team, 22 Sep 2026: the quartic is a fit over void ratios 0.1 to 1.0 and said so only
+    in prose; now it says so to the caller."""
+
+    def test_inside_the_range_is_silent(self):
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            seals.pore_throat_radius_nm(0.4)
+
+    def test_outside_the_range_warns_as_an_extrapolation(self):
+        with pytest.warns(UserWarning, match="extrapolation"):
+            seals.pore_throat_radius_nm(0.05)
+        with pytest.warns(UserWarning, match="extrapolation"):
+            seals.pore_throat_radius_nm(1.5)

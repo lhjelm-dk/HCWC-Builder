@@ -227,9 +227,14 @@ def render(name: str, group: Group, *, key: str, default_kind: str = COLUMN,
         c1, c2, c3 = st.columns([1, 1, 2])
         p_active = c1.number_input("P(active)", 0.0, 1.0, default_p_active, 0.05,
                                    key=f"{key}_pa",
-                                   help="The chance the mechanism is present at all. Below 1 the "
-                                        "limit applies in that share of realisations, and its "
-                                        "curve on tab 4.0 flattens at this value.")
+                                   help="The chance this mechanism exists below the crest, given "
+                                        "the accumulation: it limits how far the column extends. "
+                                        "A mechanism that fails the element at the crest is not "
+                                        "a limit; it belongs in the element chance on tab 2.0 "
+                                        f"({group.value}). Below 1 the limit applies in that "
+                                        "share of realisations, drawn independently of every "
+                                        "other limit and of the element chances, and its curve "
+                                        "on tab 4.0 flattens at this value. Method: see 8.1.3.")
         kind = c2.selectbox("Stated as", [COLUMN, DEPTH], key=f"{key}_kind",
                             index=[COLUMN, DEPTH].index(default_kind),
                             format_func=lambda k: ("m column below apex" if k == COLUMN

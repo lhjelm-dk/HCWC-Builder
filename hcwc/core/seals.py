@@ -23,6 +23,7 @@ Sources:
 from __future__ import annotations
 
 import math
+import warnings
 from dataclasses import dataclass
 from typing import Callable
 
@@ -59,10 +60,12 @@ in the hundreds or thousands does not.
 def interfacial_tension_gas_dyne_cm(temperature_c: float) -> float:
     """Gas/water interfacial tension against temperature.
 
-    ``91.657·exp(−0.0126 T)``: 63 dyne/cm at 30 °C, 38 at 70 °C, 23 at 110 °C. Attributed to
-    Aplin & Yang (1998) in the original workbook; that paper carries no such correlation, so the
-    line's source is unknown. It is kept because it sits where measured methane–brine tension
-    sits at reservoir pressure (``archive/development_notes/IFT_CHECK_2026-09-15.md``).
+    ``91.657·exp(−0.0126 T)``: 63 dyne/cm at 30 °C, 38 at 70 °C, 23 at 110 °C. **An empirical
+    default of unrecorded provenance**: the attribution it arrived with (Aplin & Yang 1998) is
+    not supported by that paper, and no source for the line has been found. Its only support is
+    agreement with measured methane–brine tension at reservoir pressure
+    (``archive/development_notes/IFT_CHECK_2026-09-15.md``). The tab labels it so and lets a
+    measured value override it (``SealInputs.gas_tension_dyne_cm``).
     """
     return 91.657 * math.exp(-0.0126 * temperature_c)
 
@@ -90,13 +93,25 @@ def void_ratio_from_porosity(porosity_frac: float) -> float:
     return porosity_frac / (1.0 - porosity_frac)
 
 
+#: The void-ratio range Aplin & Yang's (1998) quartic was fitted over; porosities of about
+#: 9 % to 50 %. Outside it the polynomial is an extrapolation and says so.
+PORE_THROAT_FIT_VOID_RATIO = (0.1, 1.0)
+
+
 def pore_throat_radius_nm(void_ratio: float) -> float:
     """Pore-throat radius in nanometres from void ratio, after Aplin & Yang (1998).
 
-   . A quartic fit, so it is only meaningful over the range it was fitted to —
-    roughly void ratios 0.1 to 1.0, i.e. porosities of about 9 % to 50 %.
+    A quartic fit, meaningful over the range it was fitted to, :data:`PORE_THROAT_FIT_VOID_RATIO`.
+    Outside that range the value is returned with a ``UserWarning`` naming it an extrapolation,
+    so a caller can show it as such rather than as calibrated.
     """
-    e = void_ratio
+    e = float(void_ratio)
+    lo, hi = PORE_THROAT_FIT_VOID_RATIO
+    if not lo <= e <= hi:
+        warnings.warn(
+            f"void ratio {e:.3f} is outside the range the pore-throat fit covers ({lo} to {hi}, "
+            f"porosity about 9 % to 50 %); the radius is an extrapolation, not a calibrated value",
+            UserWarning, stacklevel=2)
     return 393.974 * e**4 + 463.27 * e**3 - 323.62 * e**2 + 89.439 * e + 8.7528
 
 

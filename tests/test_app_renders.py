@@ -1670,7 +1670,7 @@ class TestThePageIsNotAnEssay:
         for phrase in (
             # Both were on tab 1 until 16 Sep 2026; they are stated once now, on tab 8.1.
             "Beha et al. (2012)",                       # 8.1.3, the precedent
-            "two or three limits set",                  # 8.1.3, the ranking
+            "a few mechanisms dominate the share",      # 8.1.3, the ranking
             "A prior and a likelihood are the same kind of object",   # tab 8.1.9, and its worked example
             # Graham's own words moved from tab 6.0 §7 to 8.1.10 on 16 Sep 2026.
             "in the absence of direct hydrocarbon indicators",

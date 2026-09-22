@@ -296,10 +296,11 @@ def render_seal(key: str, n_trials: int, seed: int) -> Handover | None:
         gas_tension = st.slider(
             "Gas–water interfacial tension (dyne/cm)", 10.0, 80.0,
             (float(_line[0]), float(_line[1])), 1.0, key=f"{key}_ift_gas",
-            help="Opens on the temperature line, 91.657·exp(−0.0126 T), read at the ends of the "
-                 "temperature range above: methane–brine at reservoir pressure sits there. The "
-                 "line's provenance is unknown; a measured value for this gas overrides it. Once "
-                 "moved the range is used as it stands, flat in temperature.")
+            help="Opens on the line 91.657·exp(−0.0126 T), read at the ends of the temperature "
+                 "range above: an empirical default of unrecorded provenance, kept because "
+                 "measured methane–brine tension at reservoir pressure sits on it. A measured "
+                 "value for this gas overrides it. Once moved the range is used as it stands, "
+                 "flat in temperature.")
         if tuple(gas_tension) == (float(_line[0]), float(_line[1])):
             gas_tension = None
     if fluid == "Oil":
