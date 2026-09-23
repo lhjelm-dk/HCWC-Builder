@@ -196,10 +196,11 @@ Once that decision is made, the minimum assumes it has already been accounted fo
 ## 3 · Geological mechanisms
 
 The limits should be defined in terms of geological processes rather than as arbitrary statistical
-distributions, and in their own units. A **capacity** — what a seal can hold, what a fault will leak
-past — is naturally stated in metres of column below the apex and does not move when the apex pick
-moves; a **mapped surface** — spill point, juxtaposition window, pinch-out — is naturally stated as
-a depth. The conversion between them uses the apex drawn in the same realisation, and that is where
+distributions. They should ultimately all resolve to the same quantity: metres of hydrocarbon
+column. The input may naturally be either a capacity or a mapped depth. A **capacity** — what a seal
+can hold, what a fault will leak past — is naturally stated in metres of column below the apex and
+does not move when the apex pick moves; a **mapped surface** — spill point, juxtaposition window,
+pinch-out — is naturally stated as a depth. The conversion between them uses the apex drawn in the same realisation, and that is where
 a known bias enters: $H = z_\text{limit} - z_\text{apex}$ subtracts two picks from the same
 depth-converted surface.
 
@@ -250,6 +251,11 @@ headroom between minimum horizontal stress and pore pressure, over the differenc
 The limiting condition is rock failure under stress, not pore-throat entry pressure. Where the
 headroom is spent before any hydrocarbon is added, the trap has failed rather than being limited:
 that is a retention risk at the crest, not a zero-metre column.
+
+A further question is what happens after mechanical failure. Does the seal heal? Is the accumulated
+column lost permanently, or can the system recharge and rebuild it? That is a different problem from
+defining the instantaneous failure limit, and needs to be treated explicitly if it is material to
+the prospect.
 
 ---
 
@@ -503,12 +509,7 @@ guaranteed comparable.
 One boundary has to be drawn before anything is multiplied. The realisations are drawn from
 $p(h \mid G)$, so a likelihood applied to them can only redistribute probability *within* $G$; it
 cannot say whether $G$ holds. That question is answered separately, by the amplitude's character
-(§10), and the prospect chance at a threshold is the product of the two answers:
-
-$$\text{POS}(h_\min) = P(G \mid s) \times P(h \geq h_\min \mid G, \text{geometry})$$
-
-The first factor is the element product updated by a likelihood ratio read off the evidence index;
-the second is read off the reweighted realisations. Each piece of evidence enters once, in the
+(§10), and the two answers multiply as §6.3 sets out. Each piece of evidence enters once, in the
 factor it is evidence about, and the depth curve $P(G \mid s) \times F_\text{post}(h)$ passes
 through the headline at $h_\min$ by identity.
 
@@ -532,11 +533,9 @@ conversion, the second usually larger — say where the column may terminate. Th
 
 **Character.** Amplitude, polarity, conformity, AVO behaviour and consistency with the expected
 fluid response say whether the event is consistent with hydrocarbons at all, which constrains whether
-there is an accumulation. It is read as a position on a **DHI evidence index**: a conceptual,
-relative scale, neutral where two reference distributions of the index — one for hydrocarbon-bearing
-outcomes, one for non-hydrocarbon — cross, their ratio at the reading being the likelihood ratio that
-updates $P(G)$. The shipped reference pair is a reference relationship rather than a basin
-calibration.
+there is an accumulation. It is read as a position on the DHI evidence index of §6.1, whose
+likelihood ratio updates $P(G)$. The shipped reference pair is a reference relationship rather than
+a basin calibration.
 
 The two channels separate experimentally by making one uninformative. On the worked prospect, with
 the pick deliberately vague ($\sigma = 200$ m) so that geometry says nothing:
