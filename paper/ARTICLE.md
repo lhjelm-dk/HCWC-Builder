@@ -163,6 +163,14 @@ possible geological configuration, in which the first effective limiting mechani
 maximum column. Repeating this over many realisations generates the HCWC distribution and the
 statistics of which mechanism controls it.
 
+This is also why a potential leak should not simply be blended into a background column-height
+distribution. A leak changes the outcome only for realisations that reach the leak; it should not
+reduce the probability of shallower columns. The competing-limit formulation does this by
+construction: the background capacity and the geometric limit are sampled separately, and the
+minimum is taken for each realisation. Hood (2019) illustrates the same problem, including cases
+where representing a deep leak by reweighting the background distribution can produce the
+counter-intuitive result of increasing prospect volume.
+
 ![The limiting mechanisms on a common column-height axis](figures/Figure_4.1.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
 > **Figure 1.** The limiting mechanisms for the worked prospect shown on a common column-height
@@ -192,7 +200,7 @@ distributions, and in their own units. A **capacity** — what a seal can hold, 
 past — is naturally stated in metres of column below the apex and does not move when the apex pick
 moves; a **mapped surface** — spill point, juxtaposition window, pinch-out — is naturally stated as
 a depth. The conversion between them uses the apex drawn in the same realisation, and that is where
-a known bias enters (§7): $H = z_\text{limit} - z_\text{apex}$ subtracts two picks from the same
+a known bias enters: $H = z_\text{limit} - z_\text{apex}$ subtracts two picks from the same
 depth-converted surface.
 
 ![Every mechanism that can stop the column, on one section](figures/Figure_1.1a_every-mechanism-that-can-stop-the-column-on.png)
@@ -205,6 +213,13 @@ depth-converted surface.
 **Structural spill** is the maximum column the trap geometry retains. Depth conversion, seismic
 interpretation, and closure, fault and pinch-out geometry all make it a distribution rather than a
 fixed depth.
+
+A related distinction is whether a distribution is **truncated by spill or terminated at spill**.
+Truncating a background column-height distribution with a prospect-specific spill limit leaves the
+probability of smaller columns unchanged and creates filled-to-spill realisations where the
+background capacity exceeds the structural limit. Simply defining the distribution only below spill
+changes the distribution of all smaller columns as well. The competing-limit approach gives the
+former behaviour by construction.
 
 **Charge limitation** applies where the available charge is insufficient to fill the trap to a
 deeper limit. It should not automatically be represented as a contact at the base of the structure:
@@ -240,136 +255,187 @@ that is a retention risk at the crest, not a zero-metre column.
 
 ## 4 · Monte Carlo implementation
 
-For each realisation $j$: sample the uncertain geological parameters, including the apex depth;
-determine which limiting mechanisms are active; calculate the limiting column height for each
-active mechanism; select the minimum; and **record both the resulting column height and the
+For each realisation $j$, sample the uncertain geological parameters, including apex-depth
+uncertainty; determine which limiting mechanisms are active; calculate the limiting column height
+for each active mechanism; select the minimum; and **record both the resulting column height and the
 controlling mechanism**.
 
-The output is therefore not $H_1, H_2, \ldots, H_N$ but the pairs $(H_j, M_j)$, where $M_j$ is the
-mechanism controlling realisation $j$, and the probability that mechanism $i$ controls the column is
-$P(M = i) = N_i / N$. This bookkeeping costs one integer array per realisation and is the point of
-the whole construction. It distinguishes a mechanism that is *uncertain* from one that is
-*controlling* — a different question, and the one that should drive further work.
+The output is therefore not just $H_1,H_2,\ldots,H_N$, but the pairs $(H_j,M_j)$, where $M_j$ is the
+mechanism controlling realisation $j$. The probability that mechanism $i$ controls the column is
 
-Sampling is performed through each limit's quantile function, so correlation between mechanisms
-becomes a question of where the uniform draws come from: a Gaussian copula upstream, with a rank
-correlation stated by the assessor, handles it without any limit definition needing to know.
-Mechanism *presence* is drawn independently; §16 returns to this.
+$$P(M=i)=\frac{N_i}{N}.$$
+
+This bookkeeping costs one integer array per realisation and is the point of the whole construction.
+It distinguishes a mechanism that is *uncertain* from one that is actually *controlling*. Keeping
+that information answers a different question from the HCWC distribution itself, and points directly
+to what should drive further geological work.
+
+Sampling is performed through each limit's quantile function. Correlation is imposed when the random
+draws are generated: a Gaussian copula with a rank-correlation matrix specified by the assessor
+allows correlated limits without requiring the individual limit definitions to know about each
+other. Mechanism presence is treated separately from the correlation of the active limits; the
+implications and limitations of this assumption are discussed later.
 
 ---
 
-## 5 · One curve: contact, risk against depth, and volume
+## 5 · One distribution: contact and risk against depth
 
-The primary output is the probability that the column reaches at least a specified height,
+The primary output is the probability that the hydrocarbon column reaches at least a specified
+height,
 
-$$F(h) = P(H \geq h \mid G)$$
+$$F(h)=P(H\geq h\mid G)$$
 
-conditional on $G$, the event that the geological risk elements — charge, reservoir, closure,
-retention — have all worked. This conditioning is not a technicality: a reservoir that is not there
-has no contact to distribute, so every probability the engine returns is conditional on $G$.
+where $G$ is the event that a hydrocarbon-bearing accumulation exists under the assessed geological
+risk elements.
 
-The survival function represents several quantities usually treated separately. If the apex is at
-$z_\text{apex}$ then $z_\text{HCWC} = z_\text{apex} + H$, so the contact distribution is the same
-object read in depth, and for a well entering at $z$ the chance it finds hydrocarbons is
-$P(G)\,P(z_\text{HCWC} \geq z \mid G)$. If $h_\min$ is the minimum column that counts as a
-discovery,
+This conditioning matters. If there is no accumulation, there is no HCWC to distribute. The column
+distribution therefore describes the **conditional geometry of an accumulation**, while $P(G)$
+describes the chance that such an accumulation exists in the first place.
 
-$$\text{Prospect POS} = P(G) \times F(h_\min)$$
+If the apex is at $z_\text{apex}$,
 
-with $P(G)$ the product of the element chances. **Both terms are necessary.** Reporting
-$F(h_\min)$ alone overstates the prospect by $1/P(G)$ — on the worked example below, by a factor of
-2.5. The two answer different questions: $P(G)$ asks whether there is an accumulation at all,
-$F(h_\min)$ whether it is big enough to count.
+$$z_\text{HCWC}=z_\text{apex}+H$$
+
+so the same realisations can be read directly in depth. For a well entering at depth $z$, the
+corresponding chance of hydrocarbons is
+
+$$P(G)\,P(z_\text{HCWC}\geq z\mid G).$$
+
+If $h_\min$ is the minimum column required by the assessment, then
+
+$$\mathrm{POS} = P(G) \times F(h_\min).$$
+
+Both terms are necessary. $P(G)$ asks whether an accumulation exists; $F(h_\min)$ asks whether that
+accumulation reaches the required column. Reporting $F(h_\min)$ as the prospect POS would therefore
+ignore the geological chance $P(G)$.
 
 ![The chance against depth, and what makes it](figures/Figure_4.1.3a_the-chance-against-depth-and-what-makes-it.png)
 
-> **Figure 3.** One curve, read in three places (tab 4.1.3). Blue is the chance the contact lies at
-> or below each depth, conditional on the elements working; red is that times $P(G)$, the prospect
-> chance; the bars are the controlling limit per depth bin. At the 120 m assessment minimum,
-> $F = 98.7\,\%$ and POS $= 40.3\,\%$; at 2 250 m, the depth of the DHI pick used later,
-> $F = 48.4\,\%$ and POS $= 19.7\,\%$. Because $F$ decreases, a chance quoted without the threshold
-> it was read at means nothing.
+> **Figure 3.** One distribution read in three ways (tab 4.1.3). The conditional curve is the
+> probability that the HCWC lies at or below each depth, given an accumulation; the prospect curve
+> multiplies this by $P(G)$. The bars show the controlling limit by depth bin. In the worked
+> example, $F = 98.7\,\%$ at the 120 m assessment minimum, giving a POS of 40.3 %; at the 2 250 m
+> DHI pick, $F = 48.4\,\%$, giving 19.7 %. A quoted probability is therefore only meaningful
+> together with the depth or column height at which it is read.
 
-**The limits are the risk model.** This is the point that matters most in evaluation, and it is
-easy to miss because the two are usually built separately. The distributions entered as
-column-limiting mechanisms are not only a way of getting a contact: they *are* the statement of how
-the chance falls with depth. The same sampled limits that produce $F(h)$ produce $P(G) \times F(h)$
-at every depth, and the per-element curves come from the group-level minima of those same limits.
-Nothing about depth-dependent risk is elicited twice, and there is nothing to reconcile, because
-there were never two models. An assessor who changes a seal capacity changes the contact, the chance
-at the well and the volume in one move.
+### The limits are the risk model
+
+The important point is that prospect POS and the HCWC distribution are not separate assessments. The
+limits define both. The distributions entered as column-limiting mechanisms are the geological
+statement of how the chance of encountering hydrocarbons decreases with depth.
+
+The same realisations that generate $F(h)$ generate
+
+$$P(G)\,F(h)$$
+
+at every depth. The per-element curves are derived from the same limiting realisations rather than
+being allocated independently. Change a seal capacity, fault limit or spill distribution and the
+contact distribution, well risk and volume range change together.
+
+This avoids building one depth-dependent risk model for POS and another for HCWC and then trying to
+reconcile them afterwards. There was only one model to begin with.
 
 ![Each element's chance against depth](figures/Figure_4.2.2a_each-element-s-chance-curve-derived-from-the.png)
 
 > **Figure 4.** Each element's chance against depth, derived from the shallowest active limit within
-> that element and scaled by its element chance (tab 4.2.2). Under independent limits the product of
-> these curves reproduces the contact distribution, and the implementation tests that identity on
-> every run: a residual near zero says the per-element curves can be handed downstream, a large one
-> says the elements share something. It is the quantity a volumetric tool needs, derived rather than
-> allocated.
+> that element and scaled by its element chance (tab 4.2.2). When the element-level limits are
+> independent, the product of these curves reproduces the overall contact survival function. With
+> correlated elements, that identity does not generally hold; the full Monte Carlo result remains
+> the reference. The curves are therefore derived diagnostics for downstream use, not separately
+> elicited risks.
 
 ---
 
-## 6 · Why the competing-limit formulation differs from blended distributions
+## 6 · DHI evidence and geometry
 
-An individual mechanism may have a broad distribution of possible limiting depths. Combining
-several such distributions by blending or weighted averaging produces a distribution that
-corresponds to no particular geological realisation. For two limits, $H_A \sim f_A(h)$ and
-$H_B \sim f_B(h)$, the competing-limit result is $H = \min(H_A, H_B)$, not a weighted combination.
+### 6.1 · DHI evidence strength
 
-The distinction matters most when a mechanism represents leakage. Merging a leak into a background
-column-height distribution suppresses realisations *above* the leak, which is not what a leak does;
-Hood (2019) reports the consequence that prospect volumes can *increase* when a deep leak is added,
-because the weighting reduces the number of realisations above the geometric spill depth.
+Let $s$ denote a dimensionless DHI evidence index, with zero representing neutral evidence, positive
+values increasingly supporting a hydrocarbon-bearing accumulation and negative values increasingly
+contradicting it.
 
-### 6.1 · Truncating, not terminating
+The evidence model is described by conditional densities,
 
-A related and more common error concerns how a column-height distribution meets the spill point.
-**Terminating** the distribution at spill — defining it over $(0, \text{closure})$ — changes the
-relative distribution of *smaller* columns as well, and assigns essentially zero probability to
-filling to spill, which asserts that the spill point exerts no control at all. **Truncating** a
-background distribution by an independently sampled spill preserves the shape below spill and
-produces filled-to-spill cases at a rate set by the seal capacity. Reproduced in the engine on a
-500 m closure with a uniform seal capacity, the difference is 125 m of mean column and 50 percentage
-points of fill-to-spill, from a modelling choice the assessor may not know they are making.
-Competing limits produce the truncated form by construction.
+$$f(s\mid HC) \qquad\text{and}\qquad f(s\mid NoHC)$$
+
+which give the relative likelihood of observing a given evidence strength under the two states.
+Their ratio gives the likelihood ratio,
+
+$$LR(s)=\frac{f(s\mid HC)}{f(s\mid NoHC)}.$$
+
+Applied to the prior accumulation probability,
+
+$$P(G\mid s)= \frac{LR(s)P(G)}{LR(s)P(G)+1-P(G)}.$$
+
+The evidence index therefore changes the probability of the geological accumulation state. It does
+not directly define an HCWC.
+
+The relationship is an evidence model rather than a universal physical law. The shape and strength
+of the conditional densities depend on the underlying evidence and calibration basis, and should not
+be interpreted outside their intended range.
+
+### 6.2 · DHI geometry
+
+The DHI geometry provides a second piece of information. A picked event at depth $z$ may be
+consistent with a hydrocarbon contact, but both its position and its interpretation are uncertain.
+
+For each geological realisation, the conditional HCWC distribution can therefore be reweighted
+according to how compatible that realisation is with the observed DHI geometry. The result remains a
+distribution of possible contacts rather than a deterministic contact pick.
+
+This distinction is important. A strong DHI may provide strong evidence that hydrocarbons are
+present while leaving substantial uncertainty in the actual HCWC depth. Conversely, a DHI whose
+geometry is consistent with a deep contact may support hydrocarbon presence while still giving a low
+probability that the accumulation reaches the minimum column required at the well.
+
+### 6.3 · Combined DHI result
+
+The two updates address different questions:
+
+$$P(G) \rightarrow P(G\mid s)$$
+
+updates the probability that an accumulation exists, while
+
+$$P(H\geq h\mid G) \rightarrow P(H\geq h\mid G,\mathrm{DHI\ geometry})$$
+
+updates the conditional column-height distribution.
+
+The resulting prospect probability against depth is therefore
+
+$$P_\mathrm{DHI}(z) = P(G\mid s)\, P(z_\mathrm{HCWC}\geq z\mid G,\mathrm{DHI\ geometry}).$$
+
+The same posterior realisations can be used to calculate the DHI-updated HCWC distribution,
+depth-dependent well risk and threshold POS. No separate depth-risk model is required.
 
 ---
 
-## 7 · Calibration and QC against the empirical record
+## 7 · Empirical benchmark and QC
 
-A column-height distribution that no one has checked against observation is an opinion. The value of
-an empirical dataset is as a **QC step**: does the distribution this model produced sit inside the
-range of columns actually found in comparable settings, and if not, which mechanism is responsible?
+The column-height distributions are built from the geological model, not fitted to an empirical
+dataset. An empirical record nevertheless provides a useful QC check: does the resulting range sit
+within what has been observed in comparable settings, and where it does not, which geological
+mechanism might explain the difference?
 
-Edmundson *et al.* (2021) compiled 242 Norwegian Continental Shelf discoveries with column height,
-trap height, burial depth and trap-fill ratio, and released the table openly. It is the reference
-used here. Two properties of discovery data must be carried into the comparison.
+Edmundson *et al.* (2021) compiled 242 Norwegian Continental Shelf discoveries with hydrocarbon
+column height, trap height, burial depth and trap-fill ratio. Their dataset provides a benchmark
+rather than a substitute for prospect-specific geological assessment.
 
 ![Column height against closure height, with the filled-to-spill discoveries marked](figures/Figure_6.2a_column-height-against-closure-height-after.png)
 
-> **Figure 5.** The record, after Edmundson *et al.* Fig. 6A (tab 6.2). The red points lie on the
-> 1:1 line by definition: they record the closure, not the seal. Fitting them as exact measurements
-> of capacity biases the relationship toward structural spill; the censored fit sits below the
-> ordinary least-squares line because it estimates the capacity rather than the observed column.
+> **Figure 5.** Column height versus closure height for the Edmundson *et al.* (2021) dataset.
+> Filled-to-spill discoveries are right-censored: they show that the column reached at least the
+> trap height, but do not measure the maximum column the seal could support. Any empirical benchmark
+> therefore needs to state how these observations were treated.
 
-**Filled-to-spill pools are right-censored.** In this dataset 111 of 242 discoveries — 45.9 % — are
-filled to spill. Such a pool tells you the seal could hold *at least* the trap height; it does not
-measure what the seal could have held. Dropping those points trades censoring bias for truncation
-bias, conditioning on capacity being less than trap height, which manufactures a positive
-relationship a second way; fitting by maximum likelihood with the censoring modelled recovers the
-underlying relationship.
+A filled-to-spill discovery tells us that the observed column reached the structural limit; it does
+not tell us that the seal would have leaked at that depth. This matters when using the dataset as a
+benchmark for seal-supported column height. The comparison should therefore state how filled-to-spill
+observations were treated rather than silently treating them as exact capacity measurements.
 
-**Column height and trap height share the apex pick.** Both are measured downward from the same
-depth-converted surface, so an error in the apex propagates into both with opposite sign. This
-manufactures correlation that no censoring correction can remove, because it is an
-errors-in-variables problem rather than a selection problem.
-
-The implication is not that a corrected relationship is the "true" geological model, but that the
-benchmark a prospect is judged against depends on the treatment of the observations, so a comparison
-drawn without stating the treatment is not a comparison. The practical instruction: **plot the
-modelled distribution against the record, state how the record was treated, and explain any material
-disagreement in terms of a mechanism.**
+The purpose of the comparison is not to identify a "true" empirical column-height distribution. It
+is a QC check on the prospect model. A material disagreement should trigger a geological question:
+is the prospect outside the observed range, or is one of the assumed limiting mechanisms poorly
+constrained?
 
 ---
 
