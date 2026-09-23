@@ -94,7 +94,9 @@ suppresses the realisations above the leak and leaves the rest untouched, so the
 distribution corresponds to no geology, and adding a leak can raise the apparent volume (Hood
 2024). Taking the minimum keeps every realisation a column that some mechanism produces, at a depth
 that mechanism reaches. Drawn on one axis, each limit's exceedance curve flattens at its
-`P(active)`, and the contact is the lower envelope of the active ones.
+`P(active)`, and the contact curve lies below every active limit's curve — below the lowest of
+them, because a column reaches a depth only where every active limit permits it. On the shipped
+prospect the gap to the lowest single curve is 37 points of exceedance at a 254 m column.
 
 Mechanism families. Structural spill is a mapped depth. Charge limitation is the depth at which
 the accumulated pore volume equals the volume the basin model delivered, found by integrating the
@@ -105,14 +107,17 @@ breaching fault tip. Fault seal is a juxtaposition window, a depth, or a leak ca
 Mechanical failure is the column at which the crest pressure reaches the minimum horizontal
 stress, `H = (S_Hmin − P_p) / (grad_w − grad_h)` (Grant 2020).
 
-A limit is a leak point. Each limit's distribution is the depth at which hydrocarbons leave the
-accumulation through that mechanism, conditional on the accumulation existing, so filling stops
-there. It is not the depth at which the mechanism is locally exceeded. A mechanism that gives way
-while the hydrocarbon stays inside the closure does not set the contact: a base seal over a unit
-that is itself closed, a fault at capacity against a dead-end juxtaposition, a four-way closure
-with nowhere for the column to go. Trap style decides it, and the judgement is carried either by
-the mechanism's presence probability, the share of realisations in which an escape path exists,
-or by the depth stated for the limit; the minimum assumes it has been made.
+A limit is not necessarily a leak point. Some mechanisms represent an escape path — structural
+spill, fault leakage, seal failure — and their distribution is the depth at which hydrocarbons
+leave the accumulation, conditional on the accumulation existing. Others cap the column with the
+hydrocarbons staying in the trap: charge insufficient to fill higher, reservoir continuity ending
+the connected pore volume. In both cases the quantity entered is the maximum column the mechanism
+supports in that realisation, not the depth at which it is locally exceeded. A mechanism that gives
+way while the hydrocarbon stays inside the closure does not set the contact: a base seal over a
+unit that is itself closed, a fault at capacity against a dead-end juxtaposition, a four-way
+closure with nowhere for the column to go. Trap style decides it, and the judgement is carried
+either by the mechanism's presence probability, the share of realisations in which an escape path
+exists, or by the depth stated for the limit; the minimum assumes it has been made.
 
 Units. A limit is stated as a column below the apex or as a depth in m TVDSS; the engine converts
 a depth to a column against the apex drawn in the same realisation. A capacity does not move when

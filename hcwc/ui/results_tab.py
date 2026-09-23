@@ -618,14 +618,16 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         theme.subsection(tab, "All limits on one axis")
         st.markdown(
             "The competition drawn. A limit that is only sometimes present flattens at its "
-            "`P(active)`, which can be read off the right-hand end of its curve. The result is the "
-            "lower envelope, because the contact is the shallowest active limit. A curve far to the "
-            "right of the bold line is a mechanism that never controlled."
+            "`P(active)`, which can be read off the right-hand end of its curve. The bold line lies "
+            "below every limit curve, because the contact is the shallowest active limit in each "
+            "realisation, and below the lowest of them, because a column reaches a depth only where "
+            "every active limit permits it. A curve far to the right of the bold line is a "
+            "mechanism that never controlled."
             + (f"\n\nBoth answers are on the axis. The bold red line is the contact "
                f"{theme.evidence_basis()}, the answer on this tab; the dashed blue one is the purely "
                f"geological contact from tab 4.0, kept beside it because the gap between them is "
                f"what the evidence changed. Every thin limit curve is drawn under the same weights, "
-               f"which keeps the lower-envelope reading true."
+               f"which keeps the comparison between them true."
                if given_dhi else ""))
         c1, c2, c3 = st.columns([2, 2, 1])
         space = c1.radio(
@@ -666,7 +668,7 @@ def render(n: Numbering | None = None, *, posterior=None) -> None:
         n.plot(limit_stack.figure(result, space=space, mode=mode, window=window,
                                   every=int(every), posterior=weights),
                "One axis, five views. Exceedance curves is the analytic view: flattening levels are "
-               "`P(active)`, and the bold line is the lower envelope. Violin and half violin show "
+               "`P(active)`, and the bold line lies below every limit curve. Violin and half violin show "
                "where each limit's mass sits, better for overlap and worse for reading a "
                "probability. Histogram is the same unsmoothed, for where a kernel would invent a "
                "shape the samples do not have. Points shows the sample itself."
