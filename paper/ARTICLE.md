@@ -1,6 +1,6 @@
-# Deriving hydrocarbon column-height distributions from competing geological limits and DHI evidence
+# Building hydrocarbon–water contact distributions from competing geological limits and DHI evidence
 
-### A stochastic and Bayesian framework for pre-drill prospect assessment
+### A stochastic framework with probabilistic DHI updating for pre-drill prospect assessment
 
 **Lars Hjelm**
 
@@ -13,87 +13,132 @@ out in full on tab 8.1 of the tool.*
 
 ## Abstract
 
-Hydrocarbon column height is a major source of uncertainty in pre-drill prospect evaluation. It
-affects in-place volume, hydrocarbon–water contact (HCWC) depth, and the probability that a well
-encounters a significant accumulation. In many evaluations that uncertainty is represented by
-specifying a generic distribution for the contact or the column directly. This is practical, and it
-obscures the geological mechanisms that limit the accumulation: the assessor cannot say what the
-distribution *means*.
+Hydrocarbon–water contact (HCWC) depth is a major source of uncertainty in pre-drill prospect
+evaluation and can affect in-place volume estimates by orders of magnitude. The complexity of the
+processes controlling HCWC depth means that many assessments represent the uncertainty with a
+generic distribution for contact depth or column height, based on analogue fields, regional
+statistics, expert judgement, company standards, or a combination. This is practical. But a generic
+distribution may over- or underestimate the potential of an individual prospect and hides which
+geological mechanisms actually control the column.
 
-Here a stochastic framework is presented in which column height is **derived from competing
-geological limits rather than specified**. Top-seal capillary capacity, mechanical top-seal failure,
-structural spill, charge limitation, seal continuity and fault-seal leakage are represented
-explicitly as uncertain limits, each with its own probability of being present. In every Monte Carlo
-realisation the shallowest active limit sets the maximum column, and the identity of that limit is
-recorded — so the output is both a distribution of column height and, for each realisation, the
-mechanism that produced it.
+Here, column-height uncertainty is derived from competing geological limits rather than specified
+directly. Structural spill, charge limitation, top-seal capillary and mechanical capacity, seal
+continuity, fault-seal leakage and reservoir pinch-out are represented as uncertain limits, each
+with its probability of being active and its depth or capacity uncertainty. In each Monte Carlo
+realisation, the shallowest active limit controls the column, and the controlling mechanism is
+retained. The result is therefore both a column-height distribution and a record of what controls
+it.
 
-The result is one object that serves HCWC prediction, depth-dependent probability of success and
-volumetrics: the limits that set the contact are the same limits that set the chance at any depth,
-so risk against depth is not a second elicitation. It also gives a natural place for seismic
-evidence. Rather than substituting a deterministic DHI case for the geological distribution, seismic
-observations are expressed as likelihood functions over column height and used to reweight the
-geological realisations — a self-normalised importance-sampling implementation of Bayes' rule that
-requires no re-simulation and leaves the controlling-mechanism bookkeeping intact. The evidence index
-updates the chance that the elements worked; the picked geometry updates the column given that they
-did; the prospect chance at a threshold is the product. On the worked prospect a moderate anomaly
-raises prospect POS from 40.3 % to 63.9 % and narrows the P90–P10 spread of the contact from 136 m
-to 105 m, on an effective sample of 4 857 of 10 000 realisations. An open-source implementation makes
-the workflow available without requiring a three-dimensional geomodel.
+The same realisations provide the probability of reaching any column height or well depth, linking
+HCWC uncertainty to depth-dependent probability of success and volumetrics without a separate
+depth-risk elicitation.
+
+Where seismic evidence indicates a possible HCWC, the DHI is treated as additional evidence rather
+than as a deterministic contact. The DHI evidence index updates the probability of a
+hydrocarbon-bearing accumulation, while the prospect-specific DHI geometry reweights the
+conditional HCWC distribution. The resulting posterior is used for both HCWC prediction and
+probability of success with depth.
+
+An open-source application implements the workflow and provides the geological assumptions,
+controlling mechanisms, DHI update and empirical benchmark in one assessment.
 
 ---
 
 ## 1 · Introduction
 
-The assumed hydrocarbon column influences both volumetric estimates and the probability that a well
-encounters hydrocarbons above a defined threshold, so uncertainty in column height propagates
-directly into prospect volume, HCWC depth and probability of success (POS). Despite this, it is
-commonly represented by specifying a distribution of possible HCWC depths or column heights
-directly, from analogue fields, regional statistics, expert judgement, company policy, or some
-combination. There is nothing inherently wrong with this. But it leaves one question unanswered:
+The assumed hydrocarbon column uncertainty propagates directly into prospect volume and probability
+of well success. Despite its importance, HCWC is commonly represented by a distribution of possible
+contact depths or column heights derived from analogue fields, regional statistics, expert
+judgement, company policy, or some combination.
 
-> **What geological process is represented by the selected distribution?**
+There is nothing inherently wrong with this approach. But it leaves a basic question unanswered:
 
-A hydrocarbon column does not have a probability distribution because "column height" is a
-geological process. The maximum column is the outcome of one or more mechanisms capable of
-terminating the accumulation: structural spill, insufficient charge, capillary seal capacity, seal
-discontinuity, fault leakage, mechanical top-seal failure, or post-charge processes. So rather than
-asking what the HCWC distribution should be, ask what mechanisms can stop the column and how
-uncertain each is. The distribution then becomes an *output* of the geological model rather than an
-input to it — and, as §5 sets out, so does the chance of success at any depth.
+> What geological process is represented by the selected distribution?
 
-### 1.1 · What is established, and what is offered here
+A hydrocarbon column is not a random variable in isolation. Its maximum extent is the outcome of
+geological processes: structural spill, charge limitation, seal capacity, seal discontinuity, fault
+leakage, reservoir geometry and, in some settings, post-charge processes.
 
-The competing-limits concept is not new. Beha *et al.* (2012) set out a general method for complex
-traps in which several trapping elements must work simultaneously, by enumerating the discrete
-scenarios and collapsing them onto a contact distribution. Hood (2019, 2024) states the stochastic
-form directly — separate the background column-height distribution from the explicit geometric
-limits, sample both, and take the minimum — with the warning that blending them into one input
-distribution produces results that correspond to no geology. Grant (2020) reports column-height
-control statistics from Monte Carlo trap models. The engine of §§2–4 is that construction, and no
-novelty is claimed for it.
+A distribution can of course be derived from statistics of similar prospects. But is that
+distribution appropriate for this prospect?
 
-Three things in what follows do appear to be new:
+The alternative explored here is to represent the geological mechanisms that may limit the column
+and let their competition generate the HCWC distribution. The distribution then becomes an output
+of the geological model rather than an input. The same realisations also provide the probability of
+reaching a given column height or absolute depth, linking HCWC uncertainty to depth-dependent
+probability of success and well risk.
 
-1. **Per-element probability of success as a function of depth**, derived from the group-level
-   minima rather than allocated by judgement, with a built-in identity test that the factorised
-   depth-dependent POS reproduces the direct one (§5) — which is what makes it a derivation rather
-   than an assertion.
-2. **Censoring-corrected calibration against empirical discovery data**, together with the
-   recognition that column height and trap height share the apex pick, so depth-conversion error
-   manufactures a correlation between them that censoring alone cannot remove (§7). Hood names the
-   censoring in words — a pool that filled to spill measures the trap, not the seal — but the
-   statistical treatment does not appear in the published column-height regressions.
-3. **A likelihood formulation of DHI evidence over column height** — a detection function multiplied
-   by a pick likelihood, reweighting the geological realisations with the argmin bookkeeping intact
-   (§§9–15). Hood's own recommendation is the scenario switch, which is honest but discards
-   information: it cannot narrow the distribution, cannot report which mechanism controlled the
-   contact given the DHI, and yields no depth-dependent risk. Monigle *et al.* (2025) integrate a DHI
-   score with a geological prior by the same Bayesian update used here for the evidence channel, and
-   treat an absent anomaly as negative evidence, so neither is new. What does not appear there, or in
-   any other work located, is the likelihood defined **over column height**, which is what makes the
-   evidence reshape the contact distribution and the depth-dependent risk rather than only the
-   chance.
+### 1.1 · From trapping elements to HCWC
+
+The competing-limits concept is not new. Beha *et al.* (2012) described consistent volume assessment
+of complex traps by considering combinations of trapping elements being present or failing and
+deriving the resulting leak points. Hood (2019, 2024) described the stochastic treatment of column
+height by sampling background column height and explicit geometric limits and taking the minimum.
+
+The implementation used here follows the same geological principle, but represents the limiting
+mechanisms as probabilistic depth or capacity distributions. Charge limitation, structural spill,
+fault leakage, seal capacity and continuity, mechanical seal failure and reservoir geometry can
+therefore compete within each Monte Carlo realisation.
+
+The shallowest active limit controls the column. The model retains that controlling mechanism, so
+the result is not only a distribution of HCWC depths but also a record of what controls the column
+and how that control changes with depth.
+
+This is important for risking. The uncertainty is not only described; it is linked to a geological
+mechanism that can be examined, challenged or potentially reduced with additional information.
+
+### 1.2 · Incorporating DHI evidence
+
+A DHI provides a different type of information. Its seismic character may provide evidence for
+hydrocarbon presence, while its geometry may provide information about the position of the HCWC.
+
+These are treated separately.
+
+The DHI evidence index provides an evidence weight for the hydrocarbon-bearing state:
+
+$$LR(s)=\frac{f(s\mid HC)}{f(s\mid NoHC)}$$
+
+where $s$ is a conceptual DHI evidence index. Combined with the geological accumulation probability
+$P(G)$, this gives an updated probability:
+
+$$P(G\mid s)= \frac{LR(s)\,P(G)}{LR(s)\,P(G)+(1-P(G))}$$
+
+The index is relative rather than physical: zero represents neutral evidence, positive values
+increasingly positive evidence, and negative values increasingly negative evidence.
+
+The prospect-specific DHI geometry is treated separately as evidence on column height. The
+geological HCWC realisations are reweighted according to the likelihood of observing the DHI
+geometry for each possible column height:
+
+$$P(H\geq h\mid G,\,DHI)$$
+
+The result is an updated HCWC distribution rather than a deterministic contact placed at the DHI
+depth.
+
+This distinction matters. A strong DHI may provide strong evidence for hydrocarbons while the HCWC
+remains uncertain because of depth conversion, contact attribution, pick uncertainty or the
+possibility that the seismic response is not a contact. Conversely, a deep DHI may support
+hydrocarbon presence while still giving a relatively low probability that the column reaches the
+minimum required at a particular well.
+
+The same posterior realisations are then used to calculate the probability of reaching any depth.
+The DHI therefore affects both the probability of an accumulation and the distribution of where the
+hydrocarbon column may terminate, without creating a separate depth-risk model.
+
+### 1.3 · Scope and contribution
+
+The competing geological limits used here are established concepts rather than a new risking
+principle. The aim is to combine them in a practical workflow in which geological assumptions
+generate the HCWC distribution and the controlling mechanism is retained for each realisation.
+
+The main focus is the integration of DHI evidence with that geological HCWC distribution. DHI
+evidence strength updates the accumulation probability, while prospect-specific DHI geometry
+updates the conditional HCWC distribution. The resulting posterior provides a common basis for HCWC
+prediction, controlling-mechanism analysis and probability of success with depth.
+
+Empirical column-height data are used as a supporting benchmark rather than as a replacement for
+prospect-specific geological reasoning. The application is intended to make the assumptions behind
+HCWC uncertainty explicit, traceable and testable.
 
 ---
 
@@ -101,40 +146,45 @@ Three things in what follows do appear to be new:
 
 Consider a prospect in which several geological mechanisms may limit the hydrocarbon column. For a
 given realisation let $H_\text{charge}$, $H_\text{spill}$, $H_\text{seal}$, $H_\text{continuity}$,
-$H_\text{fault}$ and $H_\text{mech}$ be the maximum columns permitted by charge, structural spill,
-capillary seal capacity, seal continuity, fault or lateral seal, and mechanical top-seal failure. The
-resulting column height is
+$H_\text{fault}$ and $H_\text{mech}$ be the maximum columns consistent with charge, structural
+spill, capillary seal capacity, seal continuity, fault or lateral seal, and mechanical top-seal
+failure.
 
-$$H = \min\left(H_\text{charge},\, H_\text{spill},\, H_\text{seal},\, H_\text{continuity},\, H_\text{fault},\, H_\text{mech},\, \ldots\right)$$
+The resulting column height is
 
-Only mechanisms **active** in that realisation enter the minimum, so each carries two separate
-uncertainties: whether it is present at all, and — given that it is — where it bites. A realisation
-does not contain a weighted average of several possible leak points; it is one possible geological
-history, in which the first effective limiting mechanism determines the maximum column. Repeating it
-over many realisations generates the distribution. At least one limit is always present, since every
-closure has a spill point.
+$$H = \min\left(H_\text{charge},\,H_\text{spill},\,H_\text{seal},\,H_\text{continuity},\,H_\text{fault},\,H_\text{mech},\,\ldots\right)$$
 
-![Each limit's exceedance curve on one axis, with the contact as their lower envelope](figures/Figure_4.1.2e_one-axis-five-views-exceedance-curves-is-the.png)
+Only mechanisms active in that realisation enter the minimum, so each carries two separate
+uncertainties: whether it is active as a limit, and, given that it is, where it bites. An inactive
+mechanism can simply be represented as having no finite limiting height.
 
-> **Figure 1.** The limits of the worked prospect on one axis, as exceedance curves (tab 3.1 of the
-> implementation). Each curve flattens at that limit's probability of being present, and the
-> contact distribution is the lower envelope of the active ones. Sampling and taking the minimum
-> produces that envelope by construction; no curve here was elicited as a contact.
+A realisation does not contain a weighted average of several possible leak points. It is one
+possible geological configuration, in which the first effective limiting mechanism determines the
+maximum column. Repeating this over many realisations generates the HCWC distribution and the
+statistics of which mechanism controls it.
 
-**A limit is a leak point.** Each distribution is the depth at which hydrocarbons leave the
-accumulation through that mechanism, so filling stops there — not the depth at which the mechanism
-is locally exceeded. The distinction is geometric rather than statistical. A base seal whose
-capillary capacity is exceeded at 2 200 m drains the accumulation only if what passes it has
-somewhere to go: over a unit that is itself closed, or in a four-way with no carrier beneath, the
-hydrocarbon re-migrates into the same trap and the contact does not move. The same holds for a fault
-at capacity against a dead-end juxtaposition, or a continuity hole opening into a closed unit. In a
-three-way, a pinch-out or a stratigraphic trap the escape path is usually mapped; in a four-way it
-often does not exist at all. That judgement is carried either by the mechanism's probability of
-presence — the share of realisations in which an escape path exists — or by the depth stated for the
-limit. The minimum assumes it has been made.
+![The limiting mechanisms on a common column-height axis](figures/Figure_4.1.2e_one-axis-five-views-exceedance-curves-is-the.png)
+
+> **Figure 1.** The limiting mechanisms for the worked prospect shown on a common column-height
+> axis (tab 3.1 of the implementation). The HCWC distribution results from taking the minimum of
+> the active limits in each realisation. The plotted limit curves show the corresponding sampled
+> constraints; the resulting contact is their realised minimum. No curve is elicited as an HCWC
+> distribution.
+
+A limit is not necessarily a leak point. Some limits represent an actual escape path, such as
+structural spill, fault leakage or seal failure. Others limit the column without hydrocarbons
+necessarily leaving the trap: charge may be insufficient to fill higher, or reservoir continuity may
+terminate the connected pore volume. In all cases the relevant quantity is the maximum column that
+can be supported in that realisation.
+
+The distinction is about connectivity rather than the statistics of the depth distribution. A seal
+capacity exceeded at 2 200 m only becomes an effective drainage limit if there is a connected escape
+path from the accumulation. If the volume beyond the seal is itself closed, exceeding the local seal
+capacity does not necessarily empty the trap. In the model, this has to be represented explicitly
+through the mechanism activation, the presence of an escape path, or the sampled limiting depth.
+Once that decision is made, the minimum assumes it has already been accounted for.
 
 ---
-
 ## 3 · Geological mechanisms
 
 The limits should be defined in terms of geological processes rather than as arbitrary statistical
@@ -556,11 +606,11 @@ limits are still the risk model, now read at the posterior weights.
 
 ![The limits on one axis, given the DHI](figures/Figure_5.2.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
-> **Figure 12.** Figure 1 after the update (tab 5.2.2): the same limits on the same axis, reweighted
-> by the evidence, with the contact distribution again their lower envelope. Each curve has moved,
-> because the evidence favours the realisations in which the limits ordered themselves to put a
-> contact near the pick. The DHI has not replaced the geological model; it has changed which of its
-> realisations count.
+> **Figure 12.** Figure 1 after the update (tab 5.2.2): the same limits on the same axis,
+> reweighted by the evidence, the contact again the realised minimum of the active limits. Each
+> curve has moved, because the evidence favours the realisations in which the limits ordered
+> themselves to put a contact near the pick. The DHI has not replaced the geological model; it has
+> changed which of its realisations count.
 
 ![The chance against depth given the DHI](figures/Figure_5.2.3a_the-chance-against-depth-and-what-makes-it.png)
 
