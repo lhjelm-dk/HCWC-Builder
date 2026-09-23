@@ -6,10 +6,10 @@
 
 ---
 
-*Every figure is an exhibit of the open-source implementation, exported unchanged by
-`scripts/export_exhibits.py`; the caption names the tab it comes from. Every number is produced
-by `scripts/paper_facts.py` from the shipped prospect at the settings stated. The method is set
-out in full on tab 8.1 of the tool.*
+*This article documents a method and the open-source tool that implements it. Every figure is an
+exhibit of the tool, exported unchanged by `scripts/export_exhibits.py`; the caption names the tab
+it comes from. Every number is produced by `scripts/paper_facts.py` from the shipped prospect at the
+settings stated. The method is set out in full on tab 8.1.*
 
 ## Abstract
 
@@ -75,7 +75,7 @@ of complex traps by considering combinations of trapping elements being present 
 deriving the resulting leak points. Hood (2019, 2024) described the stochastic treatment of column
 height by sampling background column height and explicit geometric limits and taking the minimum.
 
-The implementation used here follows the same geological principle, but represents the limiting
+The tool used here follows the same geological principle, but represents the limiting
 mechanisms as probabilistic depth or capacity distributions. Charge limitation, structural spill,
 fault leakage, seal capacity and continuity, mechanical seal failure and reservoir geometry can
 therefore compete within each Monte Carlo realisation.
@@ -174,7 +174,7 @@ counter-intuitive result of increasing prospect volume.
 ![The limiting mechanisms on a common column-height axis](figures/Figure_4.1.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
 > **Figure 1.** The limiting mechanisms for the worked prospect shown on a common column-height
-> axis (tab 3.1 of the implementation). The HCWC distribution results from taking the minimum of
+> axis (tab 3.1 of the tool). The HCWC distribution results from taking the minimum of
 > the active limits in each realisation. The plotted limit curves show the corresponding sampled
 > constraints; the resulting contact is their realised minimum. No curve is elicited as an HCWC
 > distribution.
@@ -445,21 +445,21 @@ constrained?
 
 ---
 
-## 8 · A worked prospect
+## 8 · A worked prospect example — a practical approach
 
-The implementation ships with a worked prospect: a faulted closure with its apex near 2 050 m TVDSS,
-spill near 2 372 m, a computed charge fill and top-seal capacity, and fault geometry, fault leakage,
-seal continuity and preservation limits. Element chances are charge 0.90, closure 1.00, reservoir
-0.63 and retention 0.72, giving $P(G) = 0.408$; the assessment minimum is 120 m of column. All
-results below are 10 000 realisations at the implementation's default seed.
+The tool ships with a worked conceptual prospect to illustrate the concepts. This tool offers an
+in-app computed charge fill and top-seal capacity, and estimation of fault geometry challenges,
+fault leakage probability and fault seal retention distribution, seal continuity and preservation
+limits. Element chances are charge 0.90, closure 1.00, reservoir 0.63 and retention 0.72, giving
+$P(G) = 0.408$; the assessment minimum is 120 m of column. All results below are 10 000
+realisations at the tool's default seed.
 
 ![Fifty realisations of the competition, and the distribution they belong to](figures/Figure_4.1.1a_the-competition-realisation-by-realisation.png)
 
-> **Figure 6.** The competition, realisation by realisation (tab 4.1.1). Left: fifty consecutive
-> realisations, each coloured dot one limit's sampled depth, the ringed dot the controlling minimum.
-> No limit wins consistently. Right: the contact distribution those minima make, with its exceedance
-> curve on the top axis and P90, P50 and P10 marked. The shape is an output; nothing about it was
-> elicited.
+> **Figure 6.** The competition, realisation by realisation. Left: fifty consecutive realisations,
+> each coloured dot one limit's sampled depth, the ringed dot the controlling minimum. No limit wins
+> consistently. Right: the contact distribution those minima make, with its exceedance curve on the
+> top axis. The shape is an output; nothing about it was elicited.
 
 | | |
 |---|---:|
@@ -471,22 +471,22 @@ results below are 10 000 realisations at the implementation's default seed.
 
 ![The controlling mechanism at each depth](figures/Figure_4.1.2a_the-controlling-mechanism-at-each-depth.png)
 
-> **Figure 7.** The controlling limit at each depth (tab 4.1.2). Left: the contact distribution
-> stacked by the limit that set it, so each depth bin shows which mechanisms stop the column there.
-> Right: the shares over the realisations that meet the assessment minimum — top-seal capillary
-> capacity 33 %, fault leakage 23 %, seal continuity 16 %, fault geometry 14 %, charge 10 % and
-> spill 4 %, the remaining limits under 1 % each. The share is **not constant down the structure**:
-> shallow contacts are almost entirely seal-controlled, deeper ones pass to fault geometry and
-> finally to spill, which is the diagnostic a distribution alone cannot provide.
+> **Figure 7.** The controlling limit at each depth. Left: the contact distribution stacked by the
+> limit that set it, so each depth bin shows which mechanisms stop the column there. Right: the
+> shares over the realisations that meet the assessment minimum — top-seal capillary capacity 33 %,
+> fault leakage 23 %, seal continuity 16 %, fault geometry 14 %, charge 10 % and spill 4 %, the
+> remaining limits under 1 % each. The share is **not constant down the structure**: shallow
+> contacts are almost entirely seal-controlled, deeper ones pass to fault geometry and finally to
+> spill, which is the diagnostic a distribution alone cannot provide.
 
-These are controlling-mechanism statistics — how often each mechanism sets the minimum — and they
-change what refinement is worth doing: refining the preservation model would move very little here,
-because it controls under 1 % of realisations, while refining the seal-capacity elicitation would
-move a great deal. A small overall share is not unimportance, though — Figure 7 shows fault geometry
-controlling a large fraction of the *deep* realisations, which are the ones that carry the volume.
+These are controlling-mechanism statistics and display how often each mechanism sets the minimum.
+They also indicate what refinements are worth doing: refining the preservation model would move very
+little here, because it controls under 1 % of realisations, while refining the seal-capacity
+elicitation would move a great deal. A small overall share is not unimportance, though — Figure 7
+shows fault geometry controlling a large fraction of the *deep* realisations, which are the ones
+that carry the volume.
 
 ---
-
 
 ## 9 · Incorporating seismic evidence
 
@@ -602,7 +602,7 @@ other factor, once (§9).
 
 Monigle *et al.* (2025) report an empirical relationship in their drilled-prospect database between
 their five-attribute score and the weight they give the DHI-indicated contact,
-$w = \min(2 \times \text{score},\, 0.95)$, in a scenario construction. The implementation shows it
+$w = \min(2 \times \text{score},\, 0.95)$, in a scenario construction. The tool shows it
 beside $c$ as a comparison, not as a calibration of $c$ on this tool's inputs.
 
 ### 10.3 · When the detection function is worth arguing about
@@ -707,7 +707,7 @@ the chance a hydrocarbon-filled trap of the modelled geometry shows, 0.90 here �
 chance a barren trap shows an anomaly of the same class, stated *relative* to $d$ so that the ratio
 behaves at the ends and never rises above one: absence never counts *for* hydrocarbons.
 
-$f$ is elicited, and no calibration is known. The implementation opens at the maximum-ignorance
+$f$ is elicited, and no calibration is known. The tool opens at the maximum-ignorance
 $f = 0.5$ and labels it as such, giving $R_\text{absent} = 0.18$ and a prospect POS of 11.0 % against
 40.3 % before; at $f = 0$ it is 6.4 %, and at $f = 1$ the chance is untouched. The narrower claim is
 the column-height route, which the chance axis cannot reproduce: where the detection threshold falls
@@ -798,7 +798,7 @@ was, which is the post-well reading:
 
 ![The outcomes with their chances](figures/Table_5.1.4c_the-outcomes-with-their-chances-summing-to.png)
 
-> **Table 1.** The same outcomes as numbers (tab 5.1.4), at the app's opening settings. The two rows
+> **Table 1.** The same outcomes as numbers (tab 5.1.4), at the tool's opening settings. The two rows
 > within the band are separated by the branch of the likelihood that put the contact there: the
 > posterior attribution — the chance the DHI is the contact, given the geology as well — is 0.47
 > against a stated $c$ of 0.36, because the pick landed where the geology already expected a contact.
@@ -809,7 +809,7 @@ A fluid indicator senses whether a reservoir with hydrocarbons exists and, more 
 fills it. It does **not** identify which of charge, closure, reservoir or retention would otherwise
 have failed. The update may therefore move the total chance and the contact, and may **not**
 re-attribute risk between elements: a bright spot does not retrospectively improve a charge argument.
-In the implementation the element chances are set once, and nothing in the DHI workflow can edit
+In the tool the element chances are set once, and nothing in the DHI workflow can edit
 them.
 
 This is published practice rather than a local convention — Monigle *et al.* (2025) state that
@@ -917,7 +917,7 @@ In summary:
 
 The objective is not a more sophisticated distribution for its own sake. It is to make the
 distribution a consequence of explicit geological assumptions — so that it can be defended, reviewed,
-and corrected after drilling. An open-source implementation applies these concepts during prospect
+and corrected after drilling. An open-source application applies these concepts during prospect
 evaluation without requiring a three-dimensional geomodel. It does not determine whether a prospect
 should be drilled; it gives a transparent representation of one of the key uncertainties informing
 that decision.
