@@ -412,16 +412,20 @@ def render() -> None:
         "change; the checks (3.3) follow them."
     )
     st.info(
-        "**A limit is a leak point.** Each distribution below is the depth at which hydrocarbons "
-        "leave the accumulation through that mechanism, so filling stops there, and not the depth "
-        "at which the mechanism is locally exceeded. Where the mechanism gives way but the "
-        "hydrocarbon stays inside the closure — a base seal over a unit that is itself "
-        "closed, a fault at capacity against a dead-end juxtaposition, a four-way closure with "
-        "nowhere for the column to go — the contact does not move, and the mechanism is not "
-        "a limit at that depth. The trap style decides it: in a three-way, a pinch-out or a "
-        "stratigraphic trap the escape path is usually mapped; in a four-way it often does not "
-        "exist. Carry that judgement in P(active), the share of realisations in which an escape "
-        "path is present, or in the depth stated here. Method: see 8.1.3."
+        "A limit is not necessarily a leak point. Some mechanisms represent an escape path — "
+        "structural spill, fault leakage, seal failure — and the depth entered is where "
+        "hydrocarbons leave the accumulation. Others cap the column with the hydrocarbons staying "
+        "in the trap: charge insufficient to fill higher, or reservoir continuity ending the "
+        "connected pore volume.\n\n"
+        "Each distribution below is the maximum column that mechanism supports in a realisation, "
+        "not the depth at which it is locally exceeded. Where a mechanism gives way but the "
+        "hydrocarbon stays inside the closure — a base seal over a unit that is itself closed, a "
+        "fault at capacity against a dead-end juxtaposition, a four-way closure with nowhere for "
+        "the column to go — the contact does not move.\n\n"
+        "The trap style decides it: in a three-way, a pinch-out or a stratigraphic trap the escape "
+        "path is usually mapped; in a four-way it often does not exist. Carry that judgement in "
+        "P(active), the share of realisations in which an escape path is present, or in the depth "
+        "stated here. Method: see 8.1.3."
     )
 
     summary_slot = st.container()

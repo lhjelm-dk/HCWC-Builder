@@ -9,8 +9,11 @@ display mode is the honest version of all three.
 **Modes, and what each is for.**
 
 * **Exceedance curves** — the analytic view. A limit that is only sometimes present flattens at its
-  ``P(active)``, and the result is the *lower envelope* of the family, because the contact is the
-  shallowest active limit. That relationship is only visible with everything on one axis.
+  ``P(active)``, and the contact curve lies *below every curve in the family*, because the contact
+  is the shallowest active limit in each realisation. It is not their pointwise minimum, and sits
+  well below it: a column reaches a depth only where every active limit permits it, which on the
+  shipped prospect is 37 points of exceedance below the lowest single curve at a 254 m column.
+  That relationship is only visible with everything on one axis.
 * **Violin / half violin** — where each limit's mass actually sits. Better than curves for spotting
   two limits that overlap, worse for reading a probability off.
 * **Histogram** — the same, unsmoothed, for when a kernel would invent a shape the samples do not
@@ -118,15 +121,15 @@ def figure(result, *, space: str = DEPTH, mode: str = "Exceedance curves",
 
 
 def _exceedance_mode(fig, result, space, apex, ranked, colour_of, lo, hi, posterior) -> None:
-    """The analytic view: every limit's exceedance curve, and the contact as their lower envelope.
+    """The analytic view: every limit's exceedance curve, and the contact below all of them.
 
     **Why the whole family is reweighted, not only the answer.** The caption promises that the bold
-    line is the *lower envelope* of the thin ones, and that promise is what makes the figure
-    readable — a curve to the right of the bold line is a mechanism that never mattered. The
-    identity holds under any one weighting (the contact is the shallowest active limit in every
-    realisation, so it is shallower than each of them in every realisation) but it does **not** hold
-    across two: draw the limits geologically and the answer under the posterior and the bold line
-    can cross above a thin one, which the caption then reads as impossible.
+    line lies below every thin one, and that promise is what makes the figure readable — a curve to
+    the right of the bold line is a mechanism that never mattered. The ordering holds under any one
+    weighting (the contact is the shallowest active limit in every realisation, so it is shallower
+    than each of them in every realisation) but it does **not** hold across two: draw the limits
+    geologically and the answer under the posterior and the bold line can cross above a thin one,
+    which the caption then reads as impossible.
 
     The geological contact is kept beside the updated one, thin and in the geological blue, because
     the size of the gap between them *is* what the amplitude bought.
@@ -153,7 +156,7 @@ def _exceedance_mode(fig, result, space, apex, ranked, colour_of, lo, hi, poster
         # depths. Plotly zips to the shorter of the two, so the dashed "with the DHI" curve was the
         # first 260 raw weights read as probabilities: a squiggle between 0.1 % and 2 % pinned to
         # the left edge of a 0-100 % axis. Meanwhile the bold line labelled "Resulting HC depth"
-        # was the *geological* envelope, on a tab whose banner says everything below it carries the
+        # was the *geological* contact curve, on a tab whose banner says everything below it carries the
         # amplitude evidence. Both halves of the figure said the wrong thing.
         weights = np.asarray(posterior, dtype=float)
         updated = deeper @ weights / weights.sum()
