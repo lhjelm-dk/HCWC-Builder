@@ -190,7 +190,7 @@ def render() -> None:
         st.info(
             "Every number in it is computed rather than typed: the worked prospect is the app's "
             "own default read at a 120 m assessment minimum, and the figures are the app's own, "
-            "exported by `scripts/export_exhibits.py`. The long-form manuscript it shortens is "
+            "exported by `scripts/export_exhibits.py`. The manuscript it was cut down from is "
             "kept as `paper/ARTICLE_LONG_2026-09.md`."
         )
         with st.expander("The source: Markdown, for posting or for a document"):
