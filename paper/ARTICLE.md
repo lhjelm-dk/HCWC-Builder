@@ -321,7 +321,7 @@ ignore the geological chance $P(G)$.
 > probability that the HCWC lies at or below each depth, given an accumulation; the prospect curve
 > multiplies this by $P(G)$. The bars show the controlling limit by depth bin. In the worked
 > example, $F = 98.7\,\%$ at the 120 m assessment minimum, giving a POS of 40.3 %; at the 2 250 m
-> DHI pick, $F = 48.4\,\%$, giving 19.7 %. A quoted probability is therefore only meaningful
+> DHI pick, $F = 48.3\,\%$, giving 19.7 %. A quoted probability is therefore only meaningful
 > together with the depth or column height at which it is read.
 
 ### The limits are the risk model
@@ -473,11 +473,11 @@ realisations at the tool's default seed.
 
 ![The controlling mechanism at each depth](figures/Figure_4.1.2a_the-controlling-mechanism-at-each-depth.png)
 
-> **Figure 7.** The controlling limit at each depth. Left: the contact distribution stacked by the
-> limit that set it, so each depth bin shows which mechanisms stop the column there. Right: the
-> shares over the realisations that meet the assessment minimum — top-seal capillary capacity 33 %,
-> fault leakage 23 %, seal continuity 16 %, fault geometry 14 %, charge 10 % and spill 4 %, the
-> remaining limits under 1 % each. The share is **not constant down the structure**: shallow
+> **Figure 7.** The controlling limit at each depth: the contact distribution stacked by the limit
+> that set it, so each depth bin shows which mechanisms stop the column there. Over the realisations
+> that meet the assessment minimum, top-seal capillary capacity sets the contact in 33 %, fault
+> leakage in 23 %, seal continuity in 16 %, fault geometry in 14 %, charge in 10 % and spill in 4 %,
+> the remaining limits in under 1 % each. The share is **not constant down the structure**: shallow
 > contacts are almost entirely seal-controlled, deeper ones pass to fault geometry and finally to
 > spill, which is the diagnostic a distribution alone cannot provide.
 
@@ -696,57 +696,65 @@ for a seen anomaly.
 
 ---
 
-## 11 · Evidence reshapes the distribution rather than scaling it
+## 11 · Evidence reshapes the HCWC distribution rather than scaling it
 
-Seismic evidence does not act as a multiplicative correction to POS. It changes the *shape* of the
-column-height distribution, and so every number read off it.
+A seismic observation does more than simply increase or decrease prospect POS by one factor. The
+character part of the evidence changes the probability that hydrocarbons are present, while the
+geometry part changes which HCWC outcomes are more or less likely.
+
+This means that the seismic update can change the shape of the column-height distribution, not just
+its overall level. A DHI near a particular depth can increase the probability of contacts around
+that depth, while reducing the probability of contacts that are less consistent with the
+observation.
 
 ![The chance against threshold, geological and updated](figures/Figure_5.1.5a_the-chance-against-threshold-p-g-f-h.png)
 
-> **Figure 10.** The update read as a chance against threshold, for a 10 m pick at 2 250 m with
-> contact attribution $c = 0.36$: $P(G) \times F(h)$ geological against
-> $P(G \mid s) \times F(h \mid G, \text{geometry})$ updated. The curve does not merely lift. The
-> evidence index enters only as the factor $P(G \mid s)$, which scales it; the geometry reshapes it,
-> raising the chance near and above the indicated contact and lowering it below.
+> **Figure 10.** The chance of reaching each depth, before and after the seismic update, for a pick
+> centred near 2 250 m with $c = 0.36$: $P(G) \times F(h)$ geological against
+> $P(G \mid s) \times F(h \mid G, \text{geometry})$ updated. The evidence index updates the
+> probability of a hydrocarbon-bearing accumulation, which scales the curve; the geometry then
+> reweights the possible HCWC depths, so realisations compatible with the interpreted event receive
+> more weight and less compatible depths receive less. At the assessment minimum the prospect chance
+> goes from 40 % to 64 %; read off the same curves at 2 230 m, a well entering there goes from 23 %
+> to 49 %.
 
-Read as depth-dependent risk, with a moderate anomaly — evidence index 20, $\sigma$ 10 m,
-$c = 0.36$:
+Read as depth-dependent risk, the effect is no longer a simple upward shift of the POS curve. The
+chance of reaching depths around the interpreted contact increases, while the chance at depths
+beyond the part of the distribution supported by the DHI can decrease.
 
-| chance the contact reaches | geological | given the DHI |
-|---|---:|---:|
-| 2 150 m | 40.8 % | 64.3 % |
-| 2 200 m | 31.5 % | **56.5 %** |
-| 2 250 m | 19.7 % | 32.1 % |
-| 2 300 m | 8.3 % | **6.9 %** |
+That is the important difference from applying a single POS multiplier. A multiplier changes the
+level of the curve but leaves its shape unchanged. A scenario switch has a different problem: it
+replaces one interpretation with another rather than updating the probabilities within the
+geological model.
 
-At the assessment minimum the prospect chance goes from 40 % to 64 %, and at a well entering the
-structure at 2 230 m the chance of finding hydrocarbons goes from 23 % to 49 % — but the chance at
-2 200 m rises by twenty-five points while the chance at 2 300 m falls. **A single POS multiplier
-cannot express that**, and neither can a scenario switch: both move $P(\text{success})$
-without specifying how $P(H \geq h)$ changes with $h$. A likelihood defined on column height does
-both, which is the direct connection between seismic interpretation and depth-dependent prospect
-risk. The distribution also **narrows**, from a 136 m P90–P10 spread to 105 m — evidence should
-sharpen an estimate as well as move it, and a scenario switch, mixing two branches, can only
-broaden.
+The likelihood-based approach does both things in the same calculation: the evidence index changes
+the overall chance of an accumulation, while the DHI geometry changes the conditional distribution
+of possible column heights. The result can therefore move the expected contact, narrow the
+uncertainty, or move and narrow it at the same time.
 
-Because the update is a reweighting rather than a substitution, Section 5's point survives the evidence: the
-limits are still the risk model, now read at the posterior weights.
+The worked prospect shows all three effects depending on the seismic input. In the example shown
+here, the strongest effect is to concentrate the contact distribution around the interpreted event.
+The numerical consequences are read directly from the depth-risk curve in Figure 10.
+
+Because the update is a reweighting rather than a replacement, the geological model remains intact.
+The same geological realisations are still present, with the same competing limits and controlling
+mechanisms; the seismic evidence simply gives some realisations more weight than others. The limits
+are therefore still the risk model, now read at the posterior weights.
 
 ![The limits on one axis, given the DHI](figures/Figure_5.2.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
-> **Figure 11.** Figure 1 after the update: the same limits on the same axis,
-> reweighted by the evidence, the contact again the realised minimum of the active limits. Each
-> curve has moved, because the evidence favours the realisations in which the limits ordered
-> themselves to put a contact near the pick. The DHI has not replaced the geological model; it has
-> changed which of its realisations count.
+> **Figure 11.** The competing limits after the seismic update. The same geological limits and
+> realisations are retained, but they are reweighted according to how well their resulting HCWC is
+> supported by the DHI geometry. The contact is still the minimum of the active limits; the seismic
+> evidence changes the relative weight of the possible geological outcomes.
 
 ![The chance against depth given the DHI](figures/Figure_5.2.3a_the-chance-against-depth-and-what-makes-it.png)
 
-> **Figure 12.** The updated result in the same form as Figure 3, so the two can be read
-> side by side: the chance the contact lies at or below each depth given the evidence, with
-> $P(G \mid s) = 0.644$ in place of $P(G) = 0.408$, and the controlling mechanism per depth bin on the
-> posterior weights. The contact and the risk against depth have moved together, because they are
-> readings of the same object.
+> **Figure 12.** The updated result in the same form as Figure 3, so the geological and DHI-updated
+> results can be compared directly. The conditional HCWC distribution and the probability against
+> depth are derived from the same posterior realisations. They therefore move together: when the
+> seismic evidence changes which contact depths are more likely, it changes both the HCWC
+> distribution and the chance of reaching each depth.
 
 ---
 
@@ -861,7 +869,7 @@ was, which is the post-well reading:
 
 ![The outcomes with their chances](figures/Table_5.1.4c_the-outcomes-with-their-chances-summing-to.png)
 
-> **Table 1.** The same outcomes as numbers, at the tool's opening settings. The two rows
+> **Table 1.** The same outcomes as numbers, at the scenario this paper reads throughout. The two rows
 > within the band are separated by the branch of the likelihood that put the contact there: the
 > posterior attribution — the chance the DHI is the contact, given the geology as well — is 0.47
 > against a stated $c$ of 0.36, because the pick landed where the geology already expected a contact.
