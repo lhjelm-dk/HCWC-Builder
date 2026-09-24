@@ -1,6 +1,13 @@
-"""Every figure and table the app draws, at the current defaults, as PNGs named by number.
+"""Every figure and table the app draws, at the paper's scenario, as PNGs named by number.
 
     python scripts/export_exhibits.py
+
+**The scenario, not the opening state.** The app opens at an assessment minimum of 5 m and an
+evidence index of 5, while `scripts/paper_facts.py` -- the one source of every number the paper
+quotes -- reads the same prospect at 120 m and index 20. Exporting at the opening state put
+figures in the paper whose own markers disagreed with the text beside them: 46.7 % against 63.9 %
+for the prospect chance given the DHI, found 24 Sep 2026. The export therefore sets
+:data:`SCENARIO` before it captures anything. Everything else is the app's own default.
 
 One run of the app through ``AppTest``, then each registered exhibit written to
 ``paper/figures`` as ``Figure_4.1.1a_<slug>.png`` or ``Table_5.1.4c_<slug>.png``, in the aspect
@@ -39,6 +46,13 @@ CONTENT_PX = 1180
 WIDTH_PX = 1400
 #: What Streamlit gives a Plotly figure that states no height of its own.
 DEFAULT_FIG_HEIGHT_PX = 450
+#: What the app is set to before anything is captured, so the exhibits and `paper_facts.py`
+#: describe one prospect. Both differ from the app's opening state; everything else does not.
+SCENARIO = {
+    "min_column_input": 120.0,   # the assessment minimum the paper reads at; the app opens at 5 m
+    "dhi_in_strength": 20.0,     # the evidence index the paper reads at; the app opens at 5
+}
+
 #: Tab 1's two figures, which the registry does not carry.
 TAB_ONE = (
     ("Figure 1.0a", ROOT / "docs" / "figures" / "fig0_workflow_guide.svg",
@@ -162,6 +176,16 @@ def main() -> None:
         at.run()
     assert not at.exception, "\n".join(str(e.value) for e in at.exception)
 
+    # The paper's scenario, drawn a second time: the widgets exist only after the first run.
+    for key, value in SCENARIO.items():
+        at.session_state[key] = value
+    with contextlib.redirect_stderr(_io.StringIO()):
+        at.run()
+    assert not at.exception, "\n".join(str(e.value) for e in at.exception)
+    live = at.session_state["limit_set"].min_column_m
+    assert live == SCENARIO["min_column_input"], (
+        f"the assessment minimum did not take: {live} m, not {SCENARIO['min_column_input']} m")
+
     figures = at.session_state[numbering.FIGURES_KEY] or {}
     tables = at.session_state[numbering.TABLES_KEY] or {}
     captions = "\n".join(str(c.value) for c in at.caption) + "\n" + \
@@ -200,7 +224,8 @@ def main() -> None:
         print(f"  {name}")
 
     manifest.write(OUT / "MANIFEST.md", entries, {
-        "prospect": "the app's defaults (Tiramisu-C4), `paper/figures/prospect.json`",
+        "prospect": ("the app's defaults (Tiramisu-C4) at the paper's scenario -- assessment "
+                     "minimum 120 m, evidence index 20 -- `paper/figures/prospect.json`"),
         "seed": 20260825, "realisations": 10_000,
         "export": f"{WIDTH_PX} px wide at scale 2, the browser's ratio "
                   f"({CONTENT_PX} px content column)",
