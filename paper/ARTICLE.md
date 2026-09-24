@@ -7,9 +7,9 @@
 ---
 
 *This article documents a method and the open-source tool that implements it. Every figure is an
-exhibit of the tool, exported unchanged by `scripts/export_exhibits.py`; the caption names the tab
-it comes from. Every number is produced by `scripts/paper_facts.py` from the shipped prospect at the
-settings stated. The method is set out in full on tab 8.1.*
+exhibit of the tool, exported unchanged by `scripts/export_exhibits.py`. Every number is produced by
+`scripts/paper_facts.py` from the shipped prospect at the settings stated. The method is set out in
+full in the tool's theory notes.*
 
 ## Abstract
 
@@ -174,7 +174,7 @@ counter-intuitive result of increasing prospect volume.
 ![The limiting mechanisms on a common column-height axis](figures/Figure_4.1.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
 > **Figure 1.** The limiting mechanisms for the worked prospect shown on a common column-height
-> axis (tab 3.1 of the tool). The HCWC distribution results from taking the minimum of
+> axis. The HCWC distribution results from taking the minimum of
 > the active limits in each realisation. The plotted limit curves show the corresponding sampled
 > constraints; the resulting contact is their realised minimum. No curve is elicited as an HCWC
 > distribution.
@@ -207,7 +207,7 @@ depth-converted surface.
 ![Every mechanism that can stop the column, on one section](figures/Figure_1.1a_every-mechanism-that-can-stop-the-column-on.png)
 
 > **Figure 2.** The mechanisms on one section, each with the distribution of the depth at which it
-> acts (tab 1.1). Charge enters from below and fills downward from the apex, so every capacity is
+> acts. Charge enters from below and fills downward from the apex, so every capacity is
 > measured from the apex. The figure is the elicitation: a limit is entered where its mechanism
 > acts, not where a contact is wanted.
 
@@ -317,7 +317,7 @@ ignore the geological chance $P(G)$.
 
 ![The chance against depth, and what makes it](figures/Figure_4.1.3a_the-chance-against-depth-and-what-makes-it.png)
 
-> **Figure 3.** One distribution read in three ways (tab 4.1.3). The conditional curve is the
+> **Figure 3.** One distribution read in three ways. The conditional curve is the
 > probability that the HCWC lies at or below each depth, given an accumulation; the prospect curve
 > multiplies this by $P(G)$. The bars show the controlling limit by depth bin. In the worked
 > example, $F = 98.7\,\%$ at the 120 m assessment minimum, giving a POS of 40.3 %; at the 2 250 m
@@ -344,7 +344,7 @@ reconcile them afterwards. There was only one model to begin with.
 ![Each element's chance against depth](figures/Figure_4.2.2a_each-element-s-chance-curve-derived-from-the.png)
 
 > **Figure 4.** Each element's chance against depth, derived from the shallowest active limit within
-> that element and scaled by its element chance (tab 4.2.2). When the element-level limits are
+> that element and scaled by its element chance. When the element-level limits are
 > independent, the product of these curves reproduces the overall contact survival function. With
 > correlated elements, that identity does not generally hold; the full Monte Carlo result remains
 > the reference. The curves are therefore derived diagnostics for downstream use, not separately
@@ -553,45 +553,39 @@ updates the chance of hydrocarbons; geometry updates where the column may termin
 
 ## 10 · Seismic geometry and seismic character
 
-A seismic observation carries two conceptually different kinds of information, and collapsing them
-into one "DHI factor" is why teams argue about a single number doing two jobs.
+A seismic indication such as an apparent DHI can provide two different kinds of information. They
+answer two different questions, so treating everything as one "DHI factor" can hide what the seismic
+evidence is actually telling us.
 
-**Geometry.** The interpreted position of a flat event and its uncertainty — pick error plus depth
-conversion, the second usually larger — say where the column may terminate. This constrains $H$.
+**Geometry.** The position of an apparent flat event, together with its picking uncertainty and
+depth-conversion uncertainty, gives information about where the hydrocarbon column may terminate.
+This constrains $H$, the column height.
 
-**Character.** Amplitude, polarity, conformity, AVO behaviour and consistency with the expected
-fluid response say whether the event is consistent with hydrocarbons at all, which constrains whether
-there is an accumulation. It is read as a position on the DHI evidence index of §6.1, whose
-likelihood ratio updates $P(G)$. The shipped reference pair is a reference relationship rather than
-a basin calibration.
+**Character.** Amplitude, polarity / phase, conformity, AVO behaviour and consistency with the
+expected fluid response give information about whether the seismic response is consistent with
+hydrocarbons at all. This constrains the probability of a hydrocarbon-bearing accumulation, $P(G)$,
+through the DHI evidence index described in §6.1.
 
-The two channels separate experimentally by making one uninformative. On the worked prospect, with
-the pick deliberately vague ($\sigma = 200$ m) so that geometry says nothing:
+The distinction is useful because the two types of evidence need not give the same answer. A strong
+seismic response can increase confidence that hydrocarbons are present without fixing the contact
+depth. Conversely, a well-defined flat event can constrain the contact position even when the
+evidence for hydrocarbons is relatively weak.
 
-| | prospect POS | contact P50 | P90–P10 | ESS |
-|---|---:|---:|---:|---:|
-| geological prior | 40.3 % | 2 248 m | 136 m | 10 000 |
-| character only — index 40, $\sigma$ 200 m | **81.5 %** | **2 248 m** | 135 m | 9 999 |
-| geometry only — neutral index, $\sigma$ 5 m | 40.5 % | 2 250 m | **106 m** | 3 006 |
-| both — index 40, $\sigma$ 5 m | 82.0 % | 2 250 m | **106 m** | 3 006 |
+When the geometry is made deliberately uninformative, the DHI character can increase the prospect
+POS significantly while the contact distribution is essentially unchanged. When the character is
+neutral and the geometry is informative, the contact distribution narrows while the overall prospect
+chance changes very little. When both are used, both effects are present. Character and geometry
+often point in the same direction, since both improve with data quality and impedance contrast;
+where they do not, the disagreement is information worth reporting rather than an error to
+reconcile.
 
-**Character moves the chance and leaves the depth alone**: POS rises to 81.5 % while the P50 contact
-does not move, the spread is unchanged, and the effective sample size stays at essentially all
-10 000 realisations — nothing has been reweighted.
-
-**Geometry reshapes the distribution.** Here it barely moves the median, because the pick at 2 250 m
-sits close to the geological P50 of 2 248 m; what it does instead is *narrow*, 136 m to 106 m at
-$c = 0.36$, at the cost of seven tenths of the effective sample. It moves the chance by less than
-half a point, which is also a property of the example: with a 120 m assessment minimum and a pick
-200 m below the apex, almost every realisation clears the minimum before and after. Where the minimum
-fell inside the range of columns the pick favours, the same narrowing would move the chance; where
-the pick sat away from the prior median it would move the median. The separation itself is
-structural: character acts on $P(G)$, geometry on the contact distribution, and the chance at any
-threshold is read off that distribution.
+The distinction is therefore structural rather than just a convenient way of arranging the
+calculation: character updates the chance of an accumulation; geometry updates where the
+hydrocarbon column may terminate.
 
 ![The pick against the geology](figures/Figure_5.1.1a_blue-is-the-geological-contact-distribution.png)
 
-> **Figure 9.** The two inputs of the geometry channel (tab 5.1.1). Blue is the geological contact
+> **Figure 9.** The two inputs of the geometry channel. Blue is the geological contact
 > distribution from the competing limits; red is the interpreted event with its uncertainty. Here the
 > pick is about five times sharper than the geology and sits near its median, which is why it narrows
 > the answer without moving it.
@@ -662,14 +656,14 @@ column-height distribution, and so every number read off it.
 ![The contact distribution before and after the pick](figures/Figure_5.1.4a_where-the-contact-is-before-and-after-the.png)
 
 > **Figure 10.** Where the contact is, before and after a 10 m pick at 2 250 m with contact
-> attribution $c = 0.36$ (tab 5.1.4). Both histograms are conditional on the elements having worked;
+> attribution $c = 0.36$. Both histograms are conditional on the elements having worked;
 > the lines are the percentiles over the realisations above the assessment minimum. The evidence
 > index does not enter this figure: it updates the chance of hydrocarbons, not where the contact is
 > given that there are.
 
 ![The chance against threshold, geological and updated](figures/Figure_5.1.5a_the-chance-against-threshold-p-g-f-h.png)
 
-> **Figure 11.** The same observation read as a chance against threshold (tab 5.1.5):
+> **Figure 11.** The same observation read as a chance against threshold:
 > $P(G) \times F(h)$ geological against $P(G \mid s) \times F(h \mid G, \text{geometry})$ updated.
 > The curve does not merely lift: the index scales it and the geometry reshapes it, raising the
 > chance near and above the indicated contact and lowering it below.
@@ -699,7 +693,7 @@ limits are still the risk model, now read at the posterior weights.
 
 ![The limits on one axis, given the DHI](figures/Figure_5.2.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
-> **Figure 12.** Figure 1 after the update (tab 5.2.2): the same limits on the same axis,
+> **Figure 12.** Figure 1 after the update: the same limits on the same axis,
 > reweighted by the evidence, the contact again the realised minimum of the active limits. Each
 > curve has moved, because the evidence favours the realisations in which the limits ordered
 > themselves to put a contact near the pick. The DHI has not replaced the geological model; it has
@@ -707,7 +701,7 @@ limits are still the risk model, now read at the posterior weights.
 
 ![The chance against depth given the DHI](figures/Figure_5.2.3a_the-chance-against-depth-and-what-makes-it.png)
 
-> **Figure 13.** The updated result in the same form as Figure 3 (tab 5.2.3), so the two can be read
+> **Figure 13.** The updated result in the same form as Figure 3, so the two can be read
 > side by side: the chance the contact lies at or below each depth given the evidence, with
 > $P(G \mid s) = 0.644$ in place of $P(G) = 0.408$, and the controlling mechanism per depth bin on the
 > posterior weights. The contact and the risk against depth have moved together, because they are
@@ -819,14 +813,14 @@ was, which is the post-well reading:
 
 ![What the DHI can turn out to have been](figures/Figure_5.1.4b_the-outcomes-of-a-seen-dhi-in-depth-order-as.png)
 
-> **Figure 14.** The outcomes of a seen DHI in depth order, as shares of all outcomes (tab 5.1.4).
+> **Figure 14.** The outcomes of a seen DHI in depth order, as shares of all outcomes.
 > The first is off the depth axis: no hydrocarbons, the DHI a false hydrocarbon indicator. The four
 > others share $P(G \mid s)$: the contact above the indicated contact band, within it because the DHI
 > is the contact, within it by coincidence, and below it.
 
 ![The outcomes with their chances](figures/Table_5.1.4c_the-outcomes-with-their-chances-summing-to.png)
 
-> **Table 1.** The same outcomes as numbers (tab 5.1.4), at the tool's opening settings. The two rows
+> **Table 1.** The same outcomes as numbers, at the tool's opening settings. The two rows
 > within the band are separated by the branch of the likelihood that put the contact there: the
 > posterior attribution — the chance the DHI is the contact, given the geology as well — is 0.47
 > against a stated $c$ of 0.36, because the pick landed where the geology already expected a contact.
