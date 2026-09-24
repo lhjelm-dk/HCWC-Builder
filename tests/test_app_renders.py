@@ -1917,7 +1917,9 @@ class TestThePaperAgreesWithTheAppItDescribes:
     #: `scripts/export_exhibits.py` and named by number. The documents name the files they use,
     #: so the test reads the references out of the markdown rather than pinning a list that has
     #: to be edited whenever the paper is rewritten.
-    DOCUMENTS = ("paper/ARTICLE.md", "paper/LINKEDIN_POST.md", "paper/ARTICLE_LONG_2026-09.md")
+    #: The manuscript moved to `archive/superseded_notes/` on 24 Sep 2026; nothing under
+    #: `archive/` is rendered, so only the two live documents are checked.
+    DOCUMENTS = ("paper/ARTICLE.md", "paper/LINKEDIN_POST.md")
 
     @staticmethod
     def _root():
