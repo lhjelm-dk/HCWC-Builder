@@ -528,7 +528,7 @@ possibilities.
 There is one important boundary in the calculation. The HCWC realisations describe the column given
 that a hydrocarbon-bearing accumulation exists. The seismic geometry can therefore redistribute
 probability between possible column heights, but it does not by itself determine whether the
-accumulation exists. That question is handled separately by the DHI evidence strength of §6.1.
+accumulation exists. That question is handled separately by the DHI evidence strength of Section 6.1.
 
 The two pieces then combine as
 
@@ -557,94 +557,142 @@ A seismic indication such as an apparent DHI can provide two different kinds of 
 answer two different questions, so treating everything as one "DHI factor" can hide what the seismic
 evidence is actually telling us.
 
-**Geometry.** The position of an apparent flat event, together with its picking uncertainty and
-depth-conversion uncertainty, gives information about where the hydrocarbon column may terminate.
-This constrains $H$, the column height.
+**Geometry.** The position of an apparent flat event, together with its picking and depth-conversion
+uncertainty, gives information about where the hydrocarbon column may terminate. This constrains
+$H$, the column height.
 
-**Character.** Amplitude, polarity / phase, conformity, AVO behaviour and consistency with the
+**Character.** Amplitude, polarity and phase, conformity, AVO behaviour and consistency with the
 expected fluid response give information about whether the seismic response is consistent with
 hydrocarbons at all. This constrains the probability of a hydrocarbon-bearing accumulation, $P(G)$,
-through the DHI evidence index described in §6.1.
+through the DHI evidence index described in Section 6.1.
 
-The distinction is useful because the two types of evidence need not give the same answer. A strong
-seismic response can increase confidence that hydrocarbons are present without fixing the contact
-depth. Conversely, a well-defined flat event can constrain the contact position even when the
-evidence for hydrocarbons is relatively weak.
+The two therefore need not give the same answer. A strong seismic response can increase confidence
+that hydrocarbons are present without fixing the contact depth. Conversely, a well-defined flat
+event can constrain the contact position even when the evidence for hydrocarbons is relatively weak.
 
-When the geometry is made deliberately uninformative, the DHI character can increase the prospect
-POS significantly while the contact distribution is essentially unchanged. When the character is
-neutral and the geometry is informative, the contact distribution narrows while the overall prospect
-chance changes very little. When both are used, both effects are present. Character and geometry
-often point in the same direction, since both improve with data quality and impedance contrast;
-where they do not, the disagreement is information worth reporting rather than an error to
-reconcile.
+To illustrate the separation: when the geometry is made deliberately uninformative, the DHI
+character can increase the prospect POS significantly while the contact distribution is essentially
+unchanged. When the character is neutral and the geometry is informative, the contact distribution
+becomes narrower while the overall prospect chance changes very little. When both are used, both
+effects are present. Character and geometry often point in the same direction, since both improve
+with data quality and impedance contrast; where they do not, the disagreement is information worth
+reporting rather than an error to reconcile.
 
 The distinction is therefore structural rather than just a convenient way of arranging the
-calculation: character updates the chance of an accumulation; geometry updates where the
-hydrocarbon column may terminate.
+calculation: character updates the chance of an accumulation; geometry updates where the column may
+terminate.
 
 ![The pick against the geology](figures/Figure_5.1.1a_blue-is-the-geological-contact-distribution.png)
 
-> **Figure 9.** The two inputs of the geometry channel. Blue is the geological contact
-> distribution from the competing limits; red is the interpreted event with its uncertainty. Here the
-> pick is about five times sharper than the geology and sits near its median, which is why it narrows
-> the answer without moving it.
+> **Figure 9.** The two inputs of the geometry channel. Blue is the geological contact distribution
+> from the competing limits; red is the interpreted event with its uncertainty. Here the pick is
+> about five times sharper than the geology and sits near its median, which is why it narrows the
+> answer without moving it.
 
 ### 10.1 · What the geophysicist has to supply
 
-Three quantities, all already held as opinions: **the depth of the interpreted event and its
-uncertainty**, pick error plus depth conversion; **whether the picked event is the contact at all**,
-written $c$ and the subject of §10.2; and **a detection function $D(h)$**, the chance a column of
-height $h$ produces a mappable anomaly — near zero below tuning thickness, rising through the
-resolution limit, then flat below a ceiling deliberately under one, since a function reaching
-certainty would make an absent anomaly infinitely strong evidence. Its logistic form is a simplified
-detectability model rather than physics. No new risk numbers are required, and the geological model
-is not re-run.
+The tool needs three inputs that are already part of normal seismic interpretation.
+
+First, the depth of the interpreted event and its uncertainty. This includes both picking
+uncertainty and depth-conversion uncertainty. Together they describe where the apparent contact
+might actually be.
+
+Second, the probability that the picked event is the HCWC at all, written $c$. A flat event may be a
+real fluid contact, but it may also be a lithological boundary, processing artefact or another
+seismic event. The parameter $c$ describes this attribution uncertainty given that hydrocarbons are
+present.
+
+Third, a detection function $D(h)$: the probability that a hydrocarbon column of height $h$ would
+produce a mappable seismic anomaly.
+
+The detection function is normally small for columns below seismic resolution, increases as the
+column becomes easier to detect, and eventually approaches a ceiling below 1. It is deliberately not
+allowed to reach certainty. Otherwise, an absent anomaly could become infinitely strong evidence
+against a particular column height.
+
+The tool uses a simple logistic form for $D(h)$. This is a practical detectability model, not a
+physical seismic model. Being monotone, it also cannot represent a response that weakens again with
+thickness, as a Class III sand's can when the top and base responses separate.
+
+No new geological risk elements are required and the geological Monte Carlo simulation is not rerun.
+The seismic information is applied to the existing geological realisations.
 
 ### 10.2 · The second question is not the first one restated
 
-It is tempting to derive $c$ from the amplitude: if the anomaly is bright and conformable, surely
-the event bounding it is likely to be the contact? The temptation is worth resisting, and the reason
-is a split drawn here across the five DHI attributes Monigle *et al.* (2025) grade.
+It is tempting to derive $c$ directly from the strength of the DHI: if the anomaly is bright and
+convincing, surely the event bounding it is also likely to be the HCWC.
 
-**Body attributes** — anomaly strength, lateral amplitude contrast — argue about whether hydrocarbons
-are present, and are what an evidence index or a DHI score grades. **Contact attributes** — fit to
-structure, amplitude terminations, presence of a fluid contact reflection — argue about whether the
-picked event is the base of the column, and are $c$. They are positively dependent, since both
-improve with impedance contrast and data quality, but either can be good while the other is poor: a
-bright body with a ragged, non-conformable termination is a high likelihood ratio with a low $c$; a
-dim body with a flat, conformable event that cuts structure is a low ratio with a high $c$. That
-second case is worth protecting, and any mapping from amplitude to $c$ makes it unsayable.
+The distinction is useful because these are actually two different judgements. The split below is
+drawn here, across the five DHI attributes Monigle *et al.* (2025) grade into a single score.
 
-**The mapping to avoid is the obvious one.** Setting $c = \mathrm{LR}/(\mathrm{LR}+1)$ looks like a
-natural conversion of a likelihood ratio to a probability. It is not one: it is the posterior from an
-*even* prior, and a function of the body attributes. The term $c$ is conditional on hydrocarbons
-being present, so no expression built from the amplitude can supply it; that evidence enters the
-other factor, once (§9).
+Body attributes such as anomaly strength and lateral amplitude contrast mainly address:
 
-Monigle *et al.* (2025) report an empirical relationship in their drilled-prospect database between
-their five-attribute score and the weight they give the DHI-indicated contact,
-$w = \min(2 \times \text{score},\, 0.95)$, in a scenario construction. The tool shows it
-beside $c$ as a comparison, not as a calibration of $c$ on this tool's inputs.
+> Are hydrocarbons likely to be present?
 
-### 10.3 · When the detection function is worth arguing about
+These are the attributes reflected in the DHI evidence index and $P(G\mid s)$.
 
-For a **seen** anomaly, the detection function does much less than its prominence suggests. On the
-worked prospect, replacing $D(h)$ with a constant does not move the exceedance curve at all: with a
-detection midpoint of 25 m and an assessment minimum of 120 m, every realisation that can count sits
-on the function's ceiling. **The likelihood floor does more.** Dropping $L \geq (1-c)\,s$ instead
-moves the same curve by up to 22 points of exceedance at the shipped $c = 0.36$, and by nine at
-$c = 0.70$ — against the intuition that the detection function is the interesting term and the floor
-a safety rail. Wherever the interpreter is less than certain the picked event is a contact, the floor
-is the term doing the work, and §14.1 is why.
+Contact attributes such as fit to structure, flatness, amplitude termination and evidence for a
+fluid-contact reflection address:
 
-It becomes decisive in two recognisable circumstances: when the anomaly is **absent**, since
-$1 - D(h)$ is then the entire likelihood within $G$ (§12); and when the detection threshold falls
-**inside the range of columns the pick favours**, as it does not on the shipped prospect, whose P50
-column of 197 m stands against a midpoint of 25 m. Move that midpoint to 250 m and detectability
-becomes a term of the same size as the floor, worth up to 19 points of exceedance, in the direction
-that having seen an anomaly is then evidence the column is tall. In every case, $c$ is the input to
-check first.
+> Is this particular event likely to be the HCWC?
+
+These determine $c$.
+
+The two judgements are related. Better data and stronger impedance contrast may improve both. But
+they do not have to. A bright anomaly can have a poor or irregular termination and therefore a low
+$c$. A weak anomaly can have an exceptionally flat, conformable event that gives relatively high
+confidence that the event is the contact.
+
+That is why $c$ should not simply be calculated from the DHI likelihood ratio. For example,
+
+$$c=\frac{LR}{LR+1}$$
+
+looks like a natural conversion of likelihood ratio to probability, but it is actually the posterior
+probability from an even prior. $c$ is a different quantity: it is the probability
+that the picked event is the contact conditional on hydrocarbons being present.
+
+The evidence for hydrocarbons therefore belongs in the first part of the calculation, while the
+evidence that the picked event is actually the contact belongs in the second. Keeping the two
+separate prevents the same seismic observation from being counted twice.
+
+Monigle *et al.* (2025) describe an empirical relationship between a multi-attribute DHI score and
+the weight given to a DHI-indicated contact in their own scenario construction. The tool
+shows that relationship as a comparison, not as a calibration of $c$ for the present model.
+
+### 10.3 · When does detectability matter?
+
+The detection function $D(h)$ can look like an important part of the seismic model, but its effect
+depends strongly on the situation.
+
+For a seen anomaly, detectability may add relatively little when all columns of interest are already
+well above the detection threshold. That is the case in the worked prospect: with a detection
+midpoint of 25 m and an assessment minimum of 120 m, essentially all relevant realisations lie on
+the upper part of the detection curve. Changing $D(h)$ therefore has little effect on the result.
+
+In this case, the more important uncertainty is whether the picked event is actually the contact.
+The contact-attribution parameter $c$ determines how strongly the seismic pick is allowed to favour
+some depths over others. On the worked prospect the difference is plain: replacing $D(h)$ with a
+constant leaves the exceedance curve unchanged, while removing the floor that $c$ places under the
+pick likelihood moves it by up to 22 points of exceedance (Section 14.1).
+
+Detectability becomes more important in two situations.
+
+First, when the anomaly is absent. A missing anomaly can then provide negative evidence: a large
+column that should have been easy to detect becomes less likely. Within the hydrocarbon-bearing
+state this is represented by
+
+$$P(\text{no DHI}\mid h,G)=1-D(h).$$
+
+This is discussed further in Section 12.
+
+Second, detectability matters when the detection threshold falls inside the range of column heights
+supported by the geological model. In that situation, seeing an anomaly provides information not
+only about whether hydrocarbons are present, but also about how large the column is likely to be.
+
+The practical point is therefore simple: do not assume that detectability is always the dominant DHI
+uncertainty. Check where the detection threshold sits relative to the geological column-height
+distribution, and check the contact attribution $c$. In the worked prospect, the latter matters more
+for a seen anomaly.
 
 ---
 
@@ -653,20 +701,13 @@ check first.
 Seismic evidence does not act as a multiplicative correction to POS. It changes the *shape* of the
 column-height distribution, and so every number read off it.
 
-![The contact distribution before and after the pick](figures/Figure_5.1.4a_where-the-contact-is-before-and-after-the.png)
-
-> **Figure 10.** Where the contact is, before and after a 10 m pick at 2 250 m with contact
-> attribution $c = 0.36$. Both histograms are conditional on the elements having worked;
-> the lines are the percentiles over the realisations above the assessment minimum. The evidence
-> index does not enter this figure: it updates the chance of hydrocarbons, not where the contact is
-> given that there are.
-
 ![The chance against threshold, geological and updated](figures/Figure_5.1.5a_the-chance-against-threshold-p-g-f-h.png)
 
-> **Figure 11.** The same observation read as a chance against threshold:
-> $P(G) \times F(h)$ geological against $P(G \mid s) \times F(h \mid G, \text{geometry})$ updated.
-> The curve does not merely lift: the index scales it and the geometry reshapes it, raising the
-> chance near and above the indicated contact and lowering it below.
+> **Figure 10.** The update read as a chance against threshold, for a 10 m pick at 2 250 m with
+> contact attribution $c = 0.36$: $P(G) \times F(h)$ geological against
+> $P(G \mid s) \times F(h \mid G, \text{geometry})$ updated. The curve does not merely lift. The
+> evidence index enters only as the factor $P(G \mid s)$, which scales it; the geometry reshapes it,
+> raising the chance near and above the indicated contact and lowering it below.
 
 Read as depth-dependent risk, with a moderate anomaly — evidence index 20, $\sigma$ 10 m,
 $c = 0.36$:
@@ -688,12 +729,12 @@ risk. The distribution also **narrows**, from a 136 m P90–P10 spread to 105 m 
 sharpen an estimate as well as move it, and a scenario switch, mixing two branches, can only
 broaden.
 
-Because the update is a reweighting rather than a substitution, §5's point survives the evidence: the
+Because the update is a reweighting rather than a substitution, Section 5's point survives the evidence: the
 limits are still the risk model, now read at the posterior weights.
 
 ![The limits on one axis, given the DHI](figures/Figure_5.2.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
-> **Figure 12.** Figure 1 after the update: the same limits on the same axis,
+> **Figure 11.** Figure 1 after the update: the same limits on the same axis,
 > reweighted by the evidence, the contact again the realised minimum of the active limits. Each
 > curve has moved, because the evidence favours the realisations in which the limits ordered
 > themselves to put a contact near the pick. The DHI has not replaced the geological model; it has
@@ -701,7 +742,7 @@ limits are still the risk model, now read at the posterior weights.
 
 ![The chance against depth given the DHI](figures/Figure_5.2.3a_the-chance-against-depth-and-what-makes-it.png)
 
-> **Figure 13.** The updated result in the same form as Figure 3, so the two can be read
+> **Figure 12.** The updated result in the same form as Figure 3, so the two can be read
 > side by side: the chance the contact lies at or below each depth given the evidence, with
 > $P(G \mid s) = 0.644$ in place of $P(G) = 0.408$, and the controlling mechanism per depth bin on the
 > posterior weights. The contact and the risk against depth have moved together, because they are
@@ -715,7 +756,7 @@ The detection function is what lets an *absent* anomaly enter the update at all.
 height $h$ should have produced a mappable anomaly and none is present, the likelihood within $G$ is
 $1 - D(h)$, which is largest at small $h$. No special handling is required.
 
-What that can do is bounded by §9: within $G$, absence redistributes probability among column
+What that can do is bounded by Section 9: within $G$, absence redistributes probability among column
 heights and says nothing about whether there are hydrocarbons. On the worked prospect the
 redistribution is nil, every column above the assessment minimum sitting on the detection ceiling;
 move the midpoint to 150 m and the median contact shallows from 2 248 m to 2 197 m, with the
@@ -813,7 +854,7 @@ was, which is the post-well reading:
 
 ![What the DHI can turn out to have been](figures/Figure_5.1.4b_the-outcomes-of-a-seen-dhi-in-depth-order-as.png)
 
-> **Figure 14.** The outcomes of a seen DHI in depth order, as shares of all outcomes.
+> **Figure 13.** The outcomes of a seen DHI in depth order, as shares of all outcomes.
 > The first is off the depth axis: no hydrocarbons, the DHI a false hydrocarbon indicator. The four
 > others share $P(G \mid s)$: the contact above the indicated contact band, within it because the DHI
 > is the contact, within it by coincidence, and below it.
@@ -889,7 +930,7 @@ width, the contact attribution $c$, the uniform density of a spurious event. The
 is exact conditional on that observation model; the model is the assumption. This is why the
 effective sample size and the sensitivity to each seismic input are reported — when a typed
 assumption moves the contact further than the geology does, that is a finding about the assumption —
-and the false-positive rate of §12 is uncalibrated in particular.
+and the false-positive rate of Section 12 is uncalibrated in particular.
 
 These limitations do not invalidate the framework. They define where additional modelling is
 required.
