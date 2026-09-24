@@ -431,7 +431,9 @@ rather than a substitute for prospect-specific geological assessment.
 > **Figure 5.** Column height versus closure height for the Edmundson *et al.* (2021) dataset.
 > Filled-to-spill discoveries are right-censored: they show that the column reached at least the
 > trap height, but do not measure the maximum column the seal could support. Any empirical benchmark
-> therefore needs to state how these observations were treated.
+> therefore needs to state how these observations were treated. The three violins are all at this
+> prospect's closure height; the geological and DHI ones are nudged either side of the empirical
+> prior only so they can be read.
 
 A filled-to-spill discovery tells us that the observed column reached the structural limit; it does
 not tell us that the seal would have leaked at that depth. This matters when using the dataset as a
@@ -490,36 +492,62 @@ that carry the volume.
 
 ## 9 · Incorporating seismic evidence
 
-The common approach to a seismic indication is to define a separate "DHI case" and substitute its
-contact depth, or its volume, for the geological result. It merges late rather than contaminating
-the geological input, which is a real virtue, but it treats the interpretation as a *scenario*
-rather than as *evidence*. The general formulation is Bayesian updating. Let the geological realisations represent the prior
-$P(H)$, and let $D$ be the seismic observation. Then $P(H \mid D) \propto P(D \mid H)\,P(H)$, and
-because the realisations **are** a sample from the prior, the posterior is that same sample with
-weights $w_j \propto P(D \mid H_j)$, normalised to sum to one. This is self-normalised importance
-sampling — for this sample an exact Bayesian update, exact conditional on the observation model,
-which is itself the assumption (§10, §16). No new simulation is required.
+One way to handle a seismic indication such as an apparent DHI is to define a separate "DHI case"
+and substitute its contact depth for the geological HCWC distribution. This keeps the two
+assessments separate, but treats the seismic interpretation as a scenario rather than as evidence.
 
-Two consequences matter more than the computational convenience. **The mechanism information
-survives** — each realisation still carries its controlling limit, so the model can be asked which
-mechanism controls the contact *given the DHI*, which the scenario switch cannot answer at all — and
-**prior and posterior are the same realisations**, so $F_\text{prior}(h)$ and $F_\text{post}(h)$ are
-guaranteed comparable.
+A Bayesian update takes a different approach. The geological model already gives a set of possible
+outcomes, each equally likely by construction. The seismic observation then changes how much weight
+is given to those outcomes. Realisations that are more consistent with the observation become more
+likely; those that are less consistent become less likely.
 
-One boundary has to be drawn before anything is multiplied. The realisations are drawn from
-$p(h \mid G)$, so a likelihood applied to them can only redistribute probability *within* $G$; it
-cannot say whether $G$ holds. That question is answered separately, by the amplitude's character
-(§10), and the two answers multiply as §6.3 sets out. Each piece of evidence enters once, in the
-factor it is evidence about, and the depth curve $P(G \mid s) \times F_\text{post}(h)$ passes
-through the headline at $h_\min$ by identity.
+In simple terms,
+
+$$P(H\mid D)\propto P(D\mid H)\,P(H)$$
+
+where $H$ represents a possible geological outcome and $D$ the seismic observation. The prior term,
+$P(H)$, is what the geological model thought was possible before considering the DHI. The likelihood
+term, $P(D\mid H)$, asks how plausible the observed seismic response would be if that particular
+geological outcome were true.
+
+Because the Monte Carlo realisations are already a sample from the geological model, no new
+geological simulation is needed. Each realisation is simply given a new weight according to how well
+it matches the seismic observation — self-normalised importance sampling, which for this sample is
+an exact Bayesian update conditional on the observation model. The set of possible realisations
+stays the same; only their relative importance changes.
+
+This is useful for more than just producing an updated HCWC distribution. Each realisation still
+carries the geological mechanism that controlled its column. After the DHI update, the model can
+therefore ask not only where the contact is likely to be, but also which geological mechanisms are
+now most likely to control it. A simple "DHI case" cannot provide that information.
+
+The same realisations also make the geological and DHI-updated distributions directly comparable.
+The prior and posterior differ only in their weights, not in the underlying set of geological
+possibilities.
+
+There is one important boundary in the calculation. The HCWC realisations describe the column given
+that a hydrocarbon-bearing accumulation exists. The seismic geometry can therefore redistribute
+probability between possible column heights, but it does not by itself determine whether the
+accumulation exists. That question is handled separately by the DHI evidence strength of §6.1.
+
+The two pieces then combine as
+
+$$P_\mathrm{DHI}(h) = P(G\mid s)\, F_\mathrm{post}(h)$$
+
+where $P(G\mid s)$ is the updated probability of a hydrocarbon-bearing accumulation and
+$F_\mathrm{post}(h)$ is the DHI-updated probability that the column reaches height $h$.
+
+Each piece of seismic evidence is therefore used for the question it actually addresses: character
+updates the chance of hydrocarbons; geometry updates where the column may terminate.
 
 ![The model as two rows: the geological prior, and the DHI as evidence](figures/Figure_8.1.1a_the-model-as-two-rows-the-geological-model.png)
 
-> **Figure 8.** The architecture (tab 8.1.1). The geological model is the prior: element chances
-> give $P(G)$, and given an accumulation the limits compete. The DHI is evidence: the evidence index
-> updates $P(G)$, the contact geometry reweights the same realisations, and each enters once. Both
-> rows end in the same reading — the chance of meeting the threshold, at the assessment minimum and
-> at the well.
+> **Figure 8.** The assessment workflow. The geological model is the prior: element chances give
+> $P(G)$, and given an accumulation the HCWC limits compete. The DHI is evidence: the evidence index
+> — how strongly the amplitude character supports hydrocarbons — updates $P(G)$, and the apparent
+> DHI contact geometry reweights the same realisations, so neither piece of evidence is counted
+> twice. Both rows end in the same reading — the chance of meeting the threshold at the assessment
+> minimum (POS geological, or POS given the DHI) and at any depth.
 
 ---
 
