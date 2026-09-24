@@ -6,7 +6,9 @@
 
 ---
 
-*This article documents a method and the open-source tool that implements it. Every figure is an
+*This article documents a method and the open-source tool that implements it. The tool runs at
+[hcwc-builder.streamlit.app](https://hcwc-builder.streamlit.app/) and its source is at
+[github.com/lhjelm-dk/HCWC-Builder](https://github.com/lhjelm-dk/HCWC-Builder). Every figure is an
 exhibit of the tool, exported unchanged by `scripts/export_exhibits.py`. Every number is produced by
 `scripts/paper_facts.py` from the shipped prospect at the settings stated. The method is set out in
 full in the tool's theory notes.*
@@ -562,8 +564,8 @@ uncertainty, gives information about where the hydrocarbon column may terminate.
 $H$, the column height.
 
 **Character.** Amplitude, polarity and phase, conformity, AVO behaviour and consistency with the
-expected fluid response give information about whether the seismic response is consistent with
-hydrocarbons at all. This constrains the probability of a hydrocarbon-bearing accumulation, $P(G)$,
+expected fluid response — the attributes set out by Simm & Bacon (2014) — give information about
+whether the seismic response is consistent with hydrocarbons at all. This constrains the probability of a hydrocarbon-bearing accumulation, $P(G)$,
 through the DHI evidence index described in Section 6.1.
 
 The two therefore need not give the same answer. A strong seismic response can increase confidence
@@ -760,31 +762,65 @@ are therefore still the risk model, now read at the posterior weights.
 
 ## 12 · Absence as evidence
 
-The detection function is what lets an *absent* anomaly enter the update at all. If a column of
-height $h$ should have produced a mappable anomaly and none is present, the likelihood within $G$ is
-$1 - D(h)$, which is largest at small $h$. No special handling is required.
+A missing DHI can also contain information, but only when the seismic data were good enough that an
+anomaly should reasonably have been visible.
 
-What that can do is bounded by Section 9: within $G$, absence redistributes probability among column
-heights and says nothing about whether there are hydrocarbons. On the worked prospect the
-redistribution is nil, every column above the assessment minimum sitting on the detection ceiling;
-move the midpoint to 150 m and the median contact shallows from 2 248 m to 2 197 m, with the
-effective sample down to 5 243.
+This is the important distinction. No DHI is not the same as evidence against hydrocarbons. A deep
+or poorly resolved column may simply produce no mappable response. In that case, the absence tells
+us very little.
 
-**Absence on the chance needs one more number.** Monigle *et al.* (2025) treat an absent anomaly as
-a negative line of evidence within an integrated chance-of-success framework, while noting that the
-practice "is not consistently applied in industry". The likelihood ratio on $G$ is
-$R_\text{absent} = (1 - d) / (1 - f d)$, where $d$ is $D(h)$ averaged over the geological columns —
-the chance a hydrocarbon-filled trap of the modelled geometry shows, 0.90 here — and $f$ is the
-chance a barren trap shows an anomaly of the same class, stated *relative* to $d$ so that the ratio
-behaves at the ends and never rises above one: absence never counts *for* hydrocarbons.
+Whether a column could display a DHI at all is the real issue. That is a geophysical question and
+it is not resolved here; the detection function $D(h)$ is an attempt to provide the link. It
+describes the probability that a hydrocarbon column of height $h$ would produce a mappable anomaly.
+If no anomaly is observed, the likelihood of that column is therefore
 
-$f$ is elicited, and no calibration is known. The tool opens at the maximum-ignorance
-$f = 0.5$ and labels it as such, giving $R_\text{absent} = 0.18$ and a prospect POS of 11.0 % against
-40.3 % before; at $f = 0$ it is 6.4 %, and at $f = 1$ the chance is untouched. The narrower claim is
-the column-height route, which the chance axis cannot reproduce: where the detection threshold falls
-inside the range of geological columns, absence reshapes the contact distribution toward the short
-columns that would not have shown. A negative reading of the evidence index is a different
-observation again, and the two are not combined.
+$$P(\text{no DHI}\mid h,G)=1-D(h).$$
+
+Within the hydrocarbon-bearing state $G$, this can reshape the HCWC distribution. Large columns that
+should have produced an easily visible anomaly become less likely, while smaller columns that could
+have escaped detection are less affected.
+
+This is the mirror image of the seen DHI in Section 11. Seeing an anomaly favours the parts of the
+geological distribution where the anomaly was likely to occur; not seeing one favours the parts
+where it could reasonably have remained undetected.
+
+There is a second question, however: does the absence of a DHI also reduce the probability that
+hydrocarbons are present at all?
+
+Published practice does treat it that way. Monigle *et al.* (2025) count an absent anomaly as a
+negative line of evidence within an integrated chance-of-success framework, and report a prospect
+carried from a geological 46 % to an integrated 8 % on that basis. They also note that the practice
+"is not consistently applied in industry", which is a fair description of how differently an absent
+anomaly is weighted from one assessment to the next.
+
+That requires another assumption. A dry prospect can still contain seismic anomalies caused by
+lithology, processing, noise or other non-hydrocarbon effects. The strength of the negative evidence
+therefore depends not only on how detectable a real hydrocarbon response would have been, but also
+on how often a similar anomaly could occur without hydrocarbons.
+
+The tool treats this separately from the column-height update. The geometry and detectability part
+can reshape the HCWC distribution within $G$; a separate likelihood ratio can then update $P(G)$
+when the false-positive rate is specified.
+
+The two effects should not be confused. A missing DHI may tell us that the column is probably not
+very large, that hydrocarbons may be less likely altogether, or both. How much it tells us depends
+on the seismic quality, the expected detectability and the assumed false-positive rate.
+
+The worked prospect is deliberately used here to illustrate the principle rather than to provide a
+universal number. With the default detectability assumptions, absence has little effect on the
+column distribution because the relevant columns are already above the detection threshold. Changing
+the detection threshold into the range of plausible column heights makes absence much more
+informative and shifts the HCWC distribution towards shorter columns.
+
+The false-positive assumption is less constrained. The tool opens at a rate of 0.5, the
+maximum-ignorance value, and labels it as such. It is therefore best treated as an explicit
+sensitivity rather than hidden inside the DHI result. A high false-positive rate makes absence
+relatively uninformative; a low false-positive rate makes an absent expected DHI stronger negative
+evidence for $G$.
+
+A negative value on the DHI evidence index is a related but different observation: it represents
+negative seismic character, whereas this section deals with the absence of an expected anomaly. They
+are not automatically combined.
 
 ---
 
