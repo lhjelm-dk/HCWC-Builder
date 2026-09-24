@@ -447,8 +447,8 @@ constrained?
 
 ## 8 · A worked prospect example — a practical approach
 
-The tool ships with a worked conceptual prospect to illustrate the concepts. This tool offers an
-in-app computed charge fill and top-seal capacity, and estimation of fault geometry challenges,
+The tool ships with a worked conceptual prospect to illustrate the concepts. This tool offers a
+computed charge fill and top-seal capacity, and estimation of fault geometry challenges,
 fault leakage probability and fault seal retention distribution, seal continuity and preservation
 limits. Element chances are charge 0.90, closure 1.00, reservoir 0.63 and retention 0.72, giving
 $P(G) = 0.408$; the assessment minimum is 120 m of column. All results below are 10 000
