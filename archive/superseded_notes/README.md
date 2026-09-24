@@ -13,6 +13,13 @@ the method. Kept as written for the record; not rendered by the app and not impo
 | BASE_RATE_NEGLECT.md | 8.1.7 Empirical benchmarks and censoring |
 | BENCHMARK_SOURCES.md | 8.1.7 Empirical benchmarks and censoring |
 
+## The manuscript (September 2026)
+
+`ARTICLE_LONG_2026-09.md` is the 10 000-word manuscript `paper/ARTICLE.md` was cut down from on
+22 Sep 2026. Lars removed it from `paper/` on 24 Sep 2026, once the article had been rewritten
+section by section and the manuscript no longer described it; kept here because it is the source
+the published article descends from.
+
 ## The short article (22 September 2026)
 
 `ARTICLE_SHORT_2026-09-22.md` is the 1 850-word article that stood on tab 8.2 until the long-form
