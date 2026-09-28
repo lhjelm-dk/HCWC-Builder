@@ -181,8 +181,8 @@ Per-element chance. Taking the shallowest active limit within each element, its 
 gives `P_e(z)`, the chance that element permits a contact deeper than `z` (tab 4.2). Under
 independent limits `∏_e P_e(z) = P(z_HCWC > z | G)`, and the product is checked against the
 direct distribution on every run (8.1.10). WellVolPOS computes one location factor and spreads it
-across the elements by a weighting rule; the derived curves say which element binds at that depth,
-which an allocation cannot. Reservoir enters the depth dependence twice: as a base or pinch-out
+across the elements by a weighting rule; the derived curves say which element binds at that
+depth. Reservoir enters the depth dependence twice: as a base or pinch-out
 limit that moves the contact, and as an effectiveness decline (diagenesis, cementation, a
 net-to-gross trend) that lowers the chance without moving it. Only the first is a competing
 limit, and the consistency identity is checked over the contact-controlling elements. An element
@@ -310,15 +310,16 @@ depth, is a censored pick: the normal cumulative where a pick's is the density, 
 on the depth of the response's edge. Both of its branches are probabilities of the event *edge
 recorded above the cutoff*, so its spurious branch is 1 where the picked case's is `s`.
 
-`c = P(the indicated event is the contact | G, contact attributes)`. A flat event can be
+`c = P(the picked event is the contact | G, contact-geometry attributes)`. A flat event can be
 lithology, a diagenetic front, fizz gas or a processing artefact (Roden, Forrest & Holeywell
 2012). Monigle et al. (2025) grade five DHI attributes; this tool reads anomaly strength and
-lateral amplitude contrast as body attributes, which bear on presence and are what the evidence
-index carries, and fit to structure, amplitude terminations and the fluid-contact reflection as
-contact attributes, which bear on whether the indicated event is the base of the column. The split
-is this tool's. `c` is conditional on `G`, because every realisation it weights was drawn on that
-assumption, and carries nothing of the index. It is offered three ways: stated; as the geometric
-mean of three graded attributes, a heuristic. Beside them, as a comparison and not a source,
+lateral amplitude contrast as DHI character attributes, which bear on presence and are what the
+evidence index carries, and fit to structure, amplitude terminations and the fluid-contact
+reflection as contact-geometry attributes, which bear on whether the picked event is the base of
+the column. The split is this tool's. `c` is conditional on `G`, because every realisation it
+weights was drawn on that assumption, and carries nothing of the index. It is offered two ways:
+stated, or as the geometric mean of three graded attributes, a heuristic. Beside them, as a
+comparison and not a source,
 the tab shows what Monigle et al.'s (2025) column-height weighting practice
 `w = min(2 × score, 0.95)` gives from a typed DHI score in their sense: an empirical
 relationship reported for their drilled-prospect database on their five-attribute score and in
@@ -353,9 +354,9 @@ large area does not make the minimum met, and a column that meets the minimum ne
 
 The floor. Since `Pick ≥ 0`, `L / s ≥ 1 − c` at every depth: no depth's likelihood falls below
 `1 − c` times the flat alternative, so no depth is excluded, and the posterior share of any
-region of the prior cannot fall below `(1 − c) · s / L_max` of its prior share. That is what `c`
-controls: an attributed contact cannot become certain, however sharply the pick is drawn. It
-does not cap how strongly the geometry discriminates between two depths. The likelihood ratio
+region of the prior cannot fall below `(1 − c) · s / L_max` of its prior share. An attributed
+contact therefore cannot become certain, however sharply the pick is drawn. The floor does not cap
+how strongly the geometry discriminates between two depths. The likelihood ratio
 between the best-supported depth and any other is at most `1 + c · D · Pick_max / ((1 − c) · s)`,
 which grows as the pick narrows; on the shipped prospect (`c` 0.36, σ 10 m) it is about 8, and
 at `c` 0.9 and σ 2 m about 600. A bounded pick shape without the floor would assign zero below
@@ -375,9 +376,11 @@ between the well's depths and the mapped surface, and a floor of `1 − p_connec
 that the well samples a different accumulation. A pick and a penetration are multiplied as
 independent evidence.
 
-Effective sample size. Kish's `(Σw)² / Σw²` reports how many realisations the posterior rests on.
-A low value does not mean the interpretation is wrong; it means the answer depends on it. It
-reports the geometry channel only; the index channel updates one number and discards nothing.
+Effective sample size. Kish's `(Σw)² / Σw²` reports how much of the original geological ensemble
+the posterior rests on. A low value does not mean the interpretation is wrong; it means the result
+is strongly dependent on a relatively small part of that ensemble, which is worth knowing when the
+result is quoted. It reports the geometry channel only; the index channel updates one number and
+discards no realisations.
 
 Mechanism mix. The evidence moves the depth distribution and, only through it, the mechanism mix.
 Drawn as shares of all realisations, the controlling mechanism by depth differs between the
