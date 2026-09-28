@@ -30,8 +30,8 @@ from hcwc.core.limits import LimitSet  # noqa: E402
 # ---- the scenario, as data --------------------------------------------------------------------
 SEED = 20260825
 N_TRIALS = 10_000
-H_MIN_M = 120.0             #: the article's assessment minimum, m column
-EVIDENCE_INDEX = 20.0       #: the article's DHI evidence index (the app opens at +5)
+H_MIN_M = 5.0               #: the assessment minimum, m column; the app's opening value
+EVIDENCE_INDEX = 5.0        #: the DHI evidence index; the app's opening value
 PICK_M = 2_250.0            #: the indicated contact, m TVDSS
 PICK_SIGMA_M = 10.0         #: one sigma of the pick and depth conversion, m
 CONTACT_ATTRIBUTION = 0.36  #: c = P(the DHI is the contact | G, contact attributes)

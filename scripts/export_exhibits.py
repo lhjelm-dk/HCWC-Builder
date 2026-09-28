@@ -2,12 +2,12 @@
 
     python scripts/export_exhibits.py
 
-**The scenario, not the opening state.** The app opens at an assessment minimum of 5 m and an
-evidence index of 5, while `scripts/paper_facts.py` -- the one source of every number the paper
-quotes -- reads the same prospect at 120 m and index 20. Exporting at the opening state put
-figures in the paper whose own markers disagreed with the text beside them: 46.7 % against 63.9 %
-for the prospect chance given the DHI, found 24 Sep 2026. The export therefore sets
-:data:`SCENARIO` before it captures anything. Everything else is the app's own default.
+**The scenario is read from `paper_facts.py`, not typed here.** The exhibits and the paper's
+numbers have to describe one prospect at one set of settings. They did not once: the export ran at
+the app's opening state while the text quoted a different scenario, and figure 10 carried markers
+saying 46.7 % beside a text saying 63.9 % (found 24 Sep 2026). Since 28 Sep 2026 the scenario is
+the app's own opening state, by Lars's decision, and :data:`SCENARIO` takes its values from
+`paper_facts` so that changing one moves both.
 
 One run of the app through ``AppTest``, then each registered exhibit written to
 ``paper/figures`` as ``Figure_4.1.1a_<slug>.png`` or ``Table_5.1.4c_<slug>.png``, in the aspect
@@ -34,6 +34,8 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import paper_facts as _facts  # noqa: E402  -- the scenario, so the two cannot drift apart
+
 import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
@@ -49,8 +51,8 @@ DEFAULT_FIG_HEIGHT_PX = 450
 #: What the app is set to before anything is captured, so the exhibits and `paper_facts.py`
 #: describe one prospect. Both differ from the app's opening state; everything else does not.
 SCENARIO = {
-    "min_column_input": 120.0,   # the assessment minimum the paper reads at; the app opens at 5 m
-    "dhi_in_strength": 20.0,     # the evidence index the paper reads at; the app opens at 5
+    "min_column_input": _facts.H_MIN_M,
+    "dhi_in_strength": _facts.EVIDENCE_INDEX,
 }
 
 #: Tab 1's two figures, which the registry does not carry.
