@@ -44,3 +44,9 @@ reference/*.xlsm
 # them is a working clone.
 reference/private/
 
+# The working conventions Lars writes for his assistant: tone, numbering, the standing
+# constraints. Untracked from 29 Sep 2026 by his decision -- it is a note to one reader and
+# not part of what the repository publishes. It stays on disk and is still the instruction
+# file; it is simply not committed. Earlier commits still carry it (see docs/REPO_AUDIT.md).
+CLAUDE.md
+

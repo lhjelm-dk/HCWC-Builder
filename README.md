@@ -51,8 +51,9 @@ two-minute subset CI runs on pull requests.
 | `tests/` | the suite; `docs/BASELINE.md` records what it pins |
 | `archive/` | superseded notes and figures, kept and never imported |
 
-`docs/ARCHITECTURE_CURRENT.md` describes the structure; `docs/REPO_AUDIT.md` classifies every
-file; `CLAUDE.md` carries the working conventions (tone, numbering, constraints).
+`docs/ARCHITECTURE_CURRENT.md` describes the structure and `docs/REPO_AUDIT.md` classifies every
+file. The tone of user-facing text, the exhibit numbering and the standing constraints are stated
+in `docs/ASSUMPTIONS.md` and enforced by the tests.
 
 ## Companions
 
