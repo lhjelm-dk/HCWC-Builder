@@ -9,7 +9,7 @@
       "x2": 2051.0
     }
   },
-  "min_column_m": 120.0,
+  "min_column_m": 5.0,
   "limits": [
     {
       "name": "Charge",
