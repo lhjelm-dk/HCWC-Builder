@@ -21,15 +21,16 @@ shallowest active one sets the contact. The distribution is the output, and the 
 which mechanism set it in each realisation.
 
 That second part is the one I use most. On the worked prospect the top seal sets the contact in
-33 % of realisations, a fault leak in 23 %, seal continuity in 16 %. A few mechanisms carry the
+34 % of realisations, a fault leak in 23 %, seal continuity in 16 %. A few mechanisms carry the
 answer in this case; the rest can stay rough. A reviewer can argue with a mechanism instead of a curve.
 
 The DHI is treated as evidence, not as a replacement contact. Its character, placed on an
-evidence index, updates the chance that hydrocarbons are there at all: 40 % to 64 % on the worked
-prospect. Its geometry reweights the same geological realisations: the contact narrows from a
-136 m to a 105 m P90–P10 spread, with an effective sample size of 4 857 of the 10 000. Strong DHI
-evidence can raise P(G) substantially while the contact depth stays uncertain — and a well 180 m
-below the crest reads 49 %, not 64 %, because it also needs the column to reach it.
+evidence index, updates the chance that hydrocarbons are there at all: 41 % to 47 % on the worked
+prospect, at the barely supportive reading the tool opens on. Its geometry reweights the same
+geological realisations: the contact narrows from a 136 m to a 106 m P90–P10 spread, with an
+effective sample size of 4 857 of the 10 000. Strong DHI evidence can raise P(G) substantially
+while the contact depth stays uncertain — and a well 180 m below the crest reads 36 %, not 47 %,
+because it also needs the column to reach it.
 
 The competing-limits idea is Beha, Christensen and Young's (2012); the tool puts it in one place
 with the DHI update and a censoring-aware comparison against the NCS record.

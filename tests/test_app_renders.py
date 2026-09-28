@@ -1994,7 +1994,12 @@ class TestThePaperAgreesWithTheAppItDescribes:
         path = self._root() / "paper" / "figures" / "prospect.json"
         assert path.exists(), "the prospect the figures were drawn from was not written out"
         spec = json.loads(path.read_text(encoding="utf-8"))
-        assert spec["min_column_m"] == 120.0, (
+        import importlib.util
+        spec_facts = importlib.util.spec_from_file_location(
+            "paper_facts", self._root() / "scripts" / "paper_facts.py")
+        facts = importlib.util.module_from_spec(spec_facts)
+        spec_facts.loader.exec_module(facts)
+        assert spec["min_column_m"] == facts.H_MIN_M, (
             "the figures were generated at a different assessment minimum than the paper states")
         assert spec["limits"], "the saved prospect has no limits"
 
@@ -2022,7 +2027,13 @@ class TestThePaperAgreesWithTheAppItDescribes:
         spec.loader.exec_module(module)
         for name in ("figure_5_truncate_vs_terminate", "from_the_app", "HMIN"):
             assert hasattr(module, name), f"scripts/paper_figures.py lost {name}"
-        assert module.HMIN == 120.0
+        # The assessment minimum is `paper_facts.H_MIN_M`, not a number typed twice: it moved from
+        # 120 m to the app's opening 5 m on 28 Sep 2026 and this pin was the only thing left behind.
+        import importlib.util as _u
+        _s = _u.spec_from_file_location("paper_facts", self._root() / "scripts" / "paper_facts.py")
+        _facts = _u.module_from_spec(_s)
+        _s.loader.exec_module(_facts)
+        assert module.HMIN == _facts.H_MIN_M
 
     def test_no_maths_crosses_a_line_break(self):
         """The formatting bug Lars caught on 7 Sep 2026, made into a failing test.
