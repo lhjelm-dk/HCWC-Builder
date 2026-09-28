@@ -675,7 +675,7 @@ In this case, the more important uncertainty is whether the picked event is actu
 The contact-attribution parameter $c$ determines how strongly the seismic pick is allowed to favour
 some depths over others. On the worked prospect the difference is plain: replacing $D(h)$ with a
 constant leaves the exceedance curve unchanged, while removing the floor that $c$ places under the
-pick likelihood moves it by up to 22 points of exceedance (Section 14.1).
+pick likelihood moves it by up to 22 points of exceedance (Section 13.1).
 
 Detectability becomes more important in two situations.
 
@@ -733,6 +733,14 @@ The likelihood-based approach does both things in the same calculation: the evid
 the overall chance of an accumulation, while the DHI geometry changes the conditional distribution
 of possible column heights. The result can therefore move the expected contact, narrow the
 uncertainty, or move and narrow it at the same time.
+
+How much it moves is set by the stated uncertainty of the interpretation. A broad likelihood leaves
+the geological model with substantial influence; a narrow one lets the seismic observation dominate
+the conditional contact distribution. That is not in itself a defect. A well-imaged, conformable
+event at a confidently picked depth is better evidence about where the contact sits than an elicited
+seal capacity, and a model that refused to let it win would be wrong. The requirement is that the
+strength of the update follows from the stated uncertainty of the interpretation rather than from
+declaring a separate DHI case.
 
 The worked prospect shows all three effects depending on the seismic input. In the example shown
 here, the strongest effect is to concentrate the contact distribution around the interpreted event.
@@ -824,42 +832,11 @@ are not automatically combined.
 
 ---
 
-## 13 · Seismic uncertainty and the effective sample size
-
-The influence of the evidence depends on the stated uncertainty of the interpretation: a broad
-likelihood leaves the geological prior substantial influence, while a sharp one concentrates the
-posterior on a narrow range of column heights, and the answer can become dominated by the seismic
-observation.
-
-**That is not a defect.** A well-imaged, conformable flat spot at a confidently picked depth is
-better evidence about where the contact sits than any elicited seal capacity, and a model that
-refused to let it win would be wrong. The requirement is that the displacement be *visible* rather
-than discovered afterwards, and the diagnostic is Kish's effective sample size,
-$\text{ESS} = \left(\sum_i w_i\right)^2 / \sum_i w_i^2$, which reports how many of the original
-realisations the posterior effectively rests on:
-
-| interpretation | prospect POS | contact P50 | P90–P10 | ESS |
-|---|---:|---:|---:|---:|
-| geological prior | 40.3 % | 2 248 m | 136 m | 10 000 |
-| mild — index 5, $\sigma$ 15 m | 46.4 % | 2 251 m | 105 m | 6 163 |
-| moderate — index 20, $\sigma$ 10 m | 63.9 % | 2 250 m | 105 m | 4 857 |
-| strong — index 40, $\sigma$ 5 m | 82.0 % | 2 250 m | 106 m | **3 006** |
-| absent where one was expected, $f = 0.5$ | 11.0 % | 2 248 m | 136 m | 9 978 |
-
-A low ESS does not mean the interpretation is wrong; it means the posterior depends heavily on it.
-At 3 006 the answer rests on under a third of the geological realisations, and the number belongs
-beside the result rather than in an appendix. It reports the geometry channel only: the evidence
-index updates a single number and throws no realisations away, which is why the chance can reach
-82.0 % on the strong row at the ESS of a neutral index at the same pick, and why the absent row moves
-the chance with nothing reweighted at all.
-
----
-
-## 14 · What the evidence cannot override
+## 13 · What the evidence cannot override
 
 Two constraints bound the update, and they are different in kind.
 
-### 14.1 · The likelihood floor
+### 13.1 · The likelihood floor
 
 The pick likelihood carries a floor, $L \geq (1 - c)\,s$, where $c$ is the chance that the picked
 event is the hydrocarbon–water contact given that there is hydrocarbon for it to be the contact of,
@@ -910,7 +887,7 @@ was, which is the post-well reading:
 > posterior attribution — the chance the DHI is the contact, given the geology as well — is 0.47
 > against a stated $c$ of 0.36, because the pick landed where the geology already expected a contact.
 
-### 14.2 · Attribution between risk elements
+### 13.2 · Attribution between risk elements
 
 A fluid indicator senses whether a reservoir with hydrocarbons exists and, more weakly, what fluid
 fills it. It does **not** identify which of charge, closure, reservoir or retention would otherwise
@@ -928,7 +905,7 @@ depth.
 
 ---
 
-## 15 · Dependence between the two channels
+## 14 · Dependence between the two channels
 
 Separating geometry from character raises an apparent problem: the two observations are not
 independent, since a strong anomaly is more likely to produce a clearly mappable termination than a
@@ -952,7 +929,7 @@ amplitude and geometry together; the evidence channel here is bounded at 10 eith
 
 ---
 
-## 16 · Limitations
+## 15 · Limitations
 
 The framework is deliberately simplified and is not a basin or reservoir simulator: hydrodynamic
 gradients, remigration and palaeo-contacts, compartmentalisation, three-dimensional fluid-flow
@@ -972,16 +949,25 @@ construction is not implemented.
 convention or an elicited judgement: the detection function's form and parameters, the pick shape and
 width, the contact attribution $c$, the uniform density of a spurious event. The Bayesian arithmetic
 is exact conditional on that observation model; the model is the assumption. This is why the
-effective sample size and the sensitivity to each seismic input are reported — when a typed
-assumption moves the contact further than the geology does, that is a finding about the assumption —
-and the false-positive rate of Section 12 is uncalibrated in particular.
+sensitivity to each seismic input is reported: when a typed assumption moves the contact further
+than the geology does, that is a finding about the assumption. The false-positive rate of Section 12
+is uncalibrated in particular.
+
+**The effective sample size is a diagnostic, not a verdict.** Reweighting concentrates the weights
+on part of the geological ensemble, and the effective sample size reports how much of that ensemble
+the posterior rests on. On the worked prospect a moderate interpretation narrows the P90–P10 spread
+of the contact from 136 m to 105 m and leaves an effective sample of 4 857 of the 10 000
+realisations. A low value does not mean the interpretation is wrong; it means the posterior depends
+heavily on a relatively small part of the original geological ensemble, which is worth knowing
+before the answer is quoted. It reports the geometry channel alone: the evidence index updates a
+single number and discards no realisations.
 
 These limitations do not invalidate the framework. They define where additional modelling is
 required.
 
 ---
 
-## 17 · Discussion and conclusions
+## 16 · Discussion and conclusions
 
 The principal advantage is conceptual rather than computational. A directly elicited HCWC
 distribution asks the assessor to specify the final uncertainty; the competing-limits approach asks
