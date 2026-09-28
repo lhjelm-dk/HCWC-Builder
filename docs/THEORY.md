@@ -70,7 +70,13 @@ place, and the run checks (8.1.10) flag it.
 
 Limitation. An element chance imported from another tool is read as the chance the element works
 at the crest. If the source's definition carried a minimum volume, the threshold would be applied
-twice.
+twice; if it carried a failure below the crest, that failure is a limit here (8.1.3) and would be
+counted twice.
+
+Limitation. The product above is one way of combining element chances, and not every tool's. A
+combined `P(G)` from a tool that aggregates by evidence-supported logic rather than by
+multiplication is not the product of its element chances, and the four chances rather than the
+combined number are what this tool needs.
 
 ## Competing limits and HCWC
 
@@ -158,7 +164,9 @@ discovery, set on tab 2.0. The prospect chance is
 
 `POS(h_min) = P(G) × F(h_min)`
 
-and the volume criterion enters here and nowhere else. `P(G) × F(h)` at every `h` is the chance
+and the volume criterion enters here and nowhere else. POS is used here for the prospect chance
+read at a threshold, geological or updated; a tool that reserves the word for the DHI-updated
+quantity alone means something narrower by it. `P(G) × F(h)` at every `h` is the chance
 against threshold (tab 4.1.3); the headline is that curve at `h_min`. Every chance on the
 operational tabs carries the threshold it was read at and states whether it includes `P(G)`.
 
@@ -259,7 +267,9 @@ to the inputs. The combined update is guarded above the one published measuremen
 
 Assumptions. The reference distributions the tool ships with are a reference evidence
 relationship, not a calibration for any basin and not a measured quantity; nothing in the
-repository reproduces them from data, and they are editable on tab 5.1.2. They carry no information on contact
+repository reproduces them from data, and they are editable on tab 5.1.2. They are E-POS's custom
+defaults, `f(s | HC)` at P1 −50 and P99 100 and `f(s | NoHC)` at −100 and 50, so the index is the
+same scale in both tools and a reading carries across. They carry no information on contact
 depth, trap height, spill point or assessment minimum: the index informs the probability of
 hydrocarbon presence and does not predict the HCWC. The two channels are two information channels
 from one observation, not two independent observations; their overlap is handled by the
