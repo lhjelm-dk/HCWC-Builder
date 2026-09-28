@@ -36,8 +36,8 @@ HCWC uncertainty to depth-dependent probability of success and volumetrics witho
 depth-risk elicitation.
 
 Where seismic evidence indicates a possible HCWC, the DHI is treated as additional evidence rather
-than as a deterministic contact. The DHI evidence index updates the probability of a
-hydrocarbon-bearing accumulation, while the prospect-specific DHI geometry reweights the
+than as a deterministic contact. The DHI evidence index updates the probability that a
+hydrocarbon-bearing accumulation exists, while the prospect-specific DHI geometry reweights the
 conditional HCWC distribution. The resulting posterior is used for both HCWC prediction and
 probability of success with depth.
 
@@ -202,9 +202,9 @@ distributions. They should ultimately all resolve to the same quantity: metres o
 column. The input may naturally be either a capacity or a mapped depth. A **capacity** — what a seal
 can hold, what a fault will leak past — is naturally stated in metres of column below the apex and
 does not move when the apex pick moves; a **mapped surface** — spill point, juxtaposition window,
-pinch-out — is naturally stated as a depth. The conversion between them uses the apex drawn in the same realisation, and that is where
-a known bias enters: $H = z_\text{limit} - z_\text{apex}$ subtracts two picks from the same
-depth-converted surface.
+pinch-out — is naturally stated as a depth. The conversion between them uses the apex drawn in the
+same realisation, and that is where a known bias enters: $H = z_\text{limit} - z_\text{apex}$
+subtracts two picks from the same depth-converted surface.
 
 ![Every mechanism that can stop the column, on one section](figures/Figure_1.1a_every-mechanism-that-can-stop-the-column-on.png)
 
@@ -502,7 +502,7 @@ that carry the volume.
 
 ---
 
-## 9 · Incorporating seismic evidence
+## 9 · Incorporating seismic evidence: the Bayesian update
 
 One way to handle a seismic indication such as an apparent DHI is to define a separate "DHI case"
 and substitute its contact depth for the geological HCWC distribution. This keeps the two
@@ -565,7 +565,7 @@ updates the chance of hydrocarbons; geometry updates where the column may termin
 
 ## 10 · Seismic geometry and seismic character
 
-A seismic indication such as an apparent DHI can provide two different kinds of information. They
+The Bayesian update separates two different kinds of DHI information: character and geometry. They
 answer two different questions, so treating everything as one "DHI factor" can hide what the seismic
 evidence is actually telling us.
 
@@ -575,8 +575,9 @@ $H$, the column height.
 
 **Character.** Amplitude, polarity and phase, conformity, AVO behaviour and consistency with the
 expected fluid response — the attributes set out by Simm & Bacon (2014) — give information about
-whether the seismic response is consistent with hydrocarbons at all. This constrains the probability of a hydrocarbon-bearing accumulation, $P(G)$,
-through the DHI evidence index described in Section 6.1.
+whether the seismic response is consistent with hydrocarbons at all. This constrains the
+probability of a hydrocarbon-bearing accumulation, $P(G)$, through the DHI evidence index described
+in Section 6.1.
 
 The two therefore need not give the same answer. A strong seismic response can increase confidence
 that hydrocarbons are present without fixing the contact depth. Conversely, a well-defined flat
@@ -637,14 +638,14 @@ convincing, surely the event bounding it is also likely to be the HCWC.
 The distinction is useful because these are actually two different judgements. The split below is
 drawn here, across the five DHI attributes Monigle *et al.* (2025) grade into a single score.
 
-Body attributes such as anomaly strength and lateral amplitude contrast mainly address:
+DHI character attributes such as anomaly strength and lateral amplitude contrast mainly address:
 
 > Are hydrocarbons likely to be present?
 
 These are the attributes reflected in the DHI evidence index and $P(G\mid s)$.
 
-Contact attributes such as fit to structure, flatness, amplitude termination and evidence for a
-fluid-contact reflection address:
+Contact-geometry attributes such as fit to structure, flatness, amplitude termination and evidence
+for a fluid-contact reflection address:
 
 > Is this particular event likely to be the HCWC?
 
@@ -957,8 +958,8 @@ and
 
 $$P(z_\mathrm{HCWC}\geq z\mid G,\mathrm{DHI\ geometry}),$$
 
-where $s$ is the evidence index of Section 6.1. The final spatial probability combines these two
-pieces, as Section 6.3 sets out:
+where $s$ is the evidence index of Section 6.1. The final depth-dependent probability combines
+these two pieces, as Section 6.3 sets out:
 
 $$P(G\mid s)\, P(z_\mathrm{HCWC}\geq z\mid G,\mathrm{DHI\ geometry}).$$
 
@@ -1045,8 +1046,8 @@ Several inputs therefore involve interpretation or specified assumptions: the fo
 the detection function, the uncertainty around the picked event, the probability that the event is
 actually the HCWC, and the assumed probability of a spurious event.
 
-The Bayesian calculation is exact conditional on those assumptions. The uncertainty lies in the
-assumptions themselves.
+The Bayesian update is exact conditional on the specified observation model. The uncertainty lies
+in the assumptions themselves.
 
 This is why the seismic inputs should be exposed and tested rather than hidden in the model. If
 changing an assumed pick uncertainty, detection threshold or contact-attribution probability moves
@@ -1087,8 +1088,9 @@ and seismic evidence.
 
 More detailed basin, pressure, fluid-flow or seismic models can supply better constraints where they
 are available. The purpose here is to provide a way of carrying those constraints through to the
-HCWC distribution and the resulting spatial probability of finding hydrocarbons without replacing
-the underlying geological uncertainty with a single deterministic DHI interpretation.
+HCWC distribution and the resulting probability of finding hydrocarbons as a function of depth,
+without replacing the underlying geological uncertainty with a single deterministic DHI
+interpretation.
 
 ---
 
@@ -1097,8 +1099,8 @@ the underlying geological uncertainty with a single deterministic DHI interpreta
 The principal advantage is conceptual rather than computational. A directly elicited HCWC
 distribution asks the assessor to specify the final uncertainty; the competing-limits approach asks
 them to specify the mechanisms that produce it. These mechanisms mean different things — geometry,
-retention against buoyancy and leakage, lateral containment, petroleum-system uncertainty, or a
-stress-related condition. Once represented as competing limits, the contact distribution becomes an
+retention against buoyancy and leakage, lateral containment, petroleum-system uncertainty, or
+mechanical seal failure. Once represented as competing limits, the contact distribution becomes an
 emergent property of the model rather than an input to it. The probability of achieving a given
 column height is likewise derived from the same model.
 
@@ -1121,9 +1123,9 @@ In summary:
    set by the shallowest active geological limit, and the HCWC distribution is the output of the
    model.
 2. **The HCWC limits are also the risk model.** HCWC depth, the probability of achieving a specified
-   column height, and the commercial discovery probability are different readings of the same
-   underlying model. With a geological success term $P(G)$ and a minimum required column height
-   $h_{\min}$, $\mathrm{POS} = P(G) \times F(h_{\min})$, where $F(h_{\min})$ is the conditional
+   column height, and the prospect POS are different readings of the same underlying model. With a
+   geological success term $P(G)$ and a minimum required column height $h_{\min}$,
+   $\mathrm{POS} = P(G) \times F(h_{\min})$, where $F(h_{\min})$ is the conditional
    probability of achieving the required column given the geological conditions represented by the
    HCWC model. Using the conditional term alone would therefore overstate the prospect by a factor
    of $1/P(G)$, because it implicitly assumes the geological conditions represented by $G$ occur
