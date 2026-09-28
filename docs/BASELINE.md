@@ -16,32 +16,34 @@ and locally, and skipped on pull requests by CI). No pre-existing failures. Runt
 
 ## Shipped prospect, Tiramisu-C4 (the app's default; `docs/figures/prospect.json`)
 
-Seed 20260825, n = 10 000, assessment minimum h_min = 120 m, element chances 0.90 × 1.00 ×
-0.63 × 0.72.
+Seed 20260825, n = 10 000, assessment minimum h_min = 5 m, element chances 0.90 × 1.00 ×
+0.63 × 0.72. The minimum and the evidence index below are the app's own opening values: the paper
+followed them on 28 Sep 2026, and `scripts/paper_facts.py` is where both are set.
 
 | quantity | value | pinned by |
 |---|---:|---|
 | P(G) | 0.4082 | `test_app_renders`, article numbers |
-| F(h_min) = P(H ≥ 120 m \| G) | 0.9874 | `test_trust`, article |
-| POS geological = P(G) × F(h_min) | 0.4031 | `TestThePaperAgreesWithTheAppItDescribes` |
-| contact P90 / P50 / P10, h ≥ h_min, Hazen | 2 191.3 / 2 247.7 / 2 327.3 m | article (2 191 / 2 248 / 2 327) |
-| the same by `np.percentile`, all realisations | 2 190.6 / 2 246.5 / 2 326.7 m | — (the linear estimator; see risk R2) |
+| F(h_min) = P(H ≥ 5 m \| G) | 1.0000 | `test_trust`, article |
+| POS geological = P(G) × F(h_min) | 0.4082 | `TestThePaperAgreesWithTheAppItDescribes` |
+| contact P90 / P50 / P10, h ≥ h_min, Hazen | 2 190.6 / 2 246.5 / 2 326.7 m | article (2 191 / 2 246 / 2 327) |
+| the same by `np.percentile`, all realisations | identical at this minimum | no realisation has a column under 5 m, so the two estimators see the same sample |
 | controlling shares, all | top seal capillary 0.336, fault leakage 0.230, top seal continuity 0.159, fault geometry 0.133, charge 0.100, spill 0.035, preservation 0.006 | article, manuscript Figure 2 |
-| controlling shares, h ≥ h_min | 0.334 / 0.233 / 0.156 / 0.135 / 0.099 / 0.036 / 0.007 | `test_engine` |
+| controlling shares, h ≥ h_min | identical to the row above, for the same reason | `test_engine` |
 
-## DHI on the shipped prospect (index 20, σ 10 m, pick 2 250 m, c 0.36, detection defaults)
+## DHI on the shipped prospect (index 5, σ 10 m, pick 2 250 m, c 0.36, detection defaults)
 
 | quantity | value | pinned by |
 |---|---:|---|
-| LR(s) at index 20 | 2.6172 | `test_dhi` (strength model) |
-| P(G \| s) | 0.6436 | `test_dhi_audit` |
-| F_post(h_min) | 0.9933 | |
-| POS given the DHI = P(G \| s) × F_post(h_min) | 0.6393 | article (40 → 64 %) |
+| LR(s) at index 5 | 1.2719 | the paper's reading |
+| LR(s) at index 20 | 2.6172 | `test_dhi` (strength model), not a reading the paper quotes |
+| P(G \| s) | 0.4674 | `test_dhi_audit` |
+| F_post(h_min) | 1.0000 | |
+| POS given the DHI = P(G \| s) × F_post(h_min) | 0.4674 | article (41 → 47 %) |
 | POS(h_min) equals the curve at h_min | true (to 1e-12) | `test_dhi_audit` identity |
-| posterior P90 / P50 / P10 | 2 197.7 / 2 250.3 / 2 302.8 m | article (spread 136 → 105 m) |
+| posterior P90 / P50 / P10 | 2 196.7 / 2 250.0 / 2 302.7 m | article (spread 136 → 106 m) |
 | effective sample size | 4 857.1 | article and post, 4 857 |
 | controlling shares given the DHI, all | top seal capillary 0.417, top seal continuity 0.204, charge 0.133, fault leakage 0.122, fault geometry 0.101, spill 0.019 | 5.2.2 |
-| well at z_entry 2 230 m: P(z_HCWC > z_entry \| G), geological / given the DHI | 0.5719 / 0.7721 | article (23 → 50 % with P(G)) |
+| well at z_entry 2 230 m: P(z_HCWC > z_entry \| G), geological / given the DHI | 0.5750 / 0.7655 | article (23 → 36 % with P(G)) |
 
 ## Core fixture (`limits.reference_prospect()`, seed 20260825, n 10 000)
 

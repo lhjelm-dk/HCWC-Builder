@@ -309,12 +309,12 @@ corresponding chance of hydrocarbons is
 
 $$P(G)\,P(z_\text{HCWC}\geq z\mid G).$$
 
-If $h_\min$ is the minimum column required by the assessment, then
+If $h_{\min}$ is the minimum column required by the assessment, then
 
-$$\mathrm{POS} = P(G) \times F(h_\min).$$
+$$\mathrm{POS} = P(G) \times F(h_{\min}).$$
 
-Both terms are necessary. $P(G)$ asks whether an accumulation exists; $F(h_\min)$ asks whether that
-accumulation reaches the required column. Reporting $F(h_\min)$ as the prospect POS would therefore
+Both terms are necessary. $P(G)$ asks whether an accumulation exists; $F(h_{\min})$ asks whether that
+accumulation reaches the required column. Reporting $F(h_{\min})$ as the prospect POS would therefore
 ignore the geological chance $P(G)$.
 
 ![The chance against depth, and what makes it](figures/Figure_4.1.3a_the-chance-against-depth-and-what-makes-it.png)
@@ -478,7 +478,7 @@ All results below are 10 000 realisations at the tool's default seed.
 | | |
 |---|---:|
 | $P(G)$, element product | 0.408 |
-| $F(h_\min)$ at 5 m | 1.000 |
+| $F(h_{\min})$ at 5 m | 1.000 |
 | **Prospect POS** | **40.8 %** |
 | HCWC P90 / P50 / P10 | 2 191 / 2 246 / 2 327 m |
 | P(filled to spill) | 3.5 % |
@@ -951,15 +951,16 @@ possible HCWC depths, conditional on hydrocarbons being present.
 
 The two updates are therefore applied to different parts of the model:
 
-$$P(G \mid \text{DHI character})$$
+$$P(G\mid s)$$
 
 and
 
-$$P(\text{HCWC} \mid G,\ \text{DHI geometry}).$$
+$$P(z_\mathrm{HCWC}\geq z\mid G,\mathrm{DHI\ geometry}),$$
 
-The final spatial probability combines these two pieces:
+where $s$ is the evidence index of Section 6.1. The final spatial probability combines these two
+pieces, as Section 6.3 sets out:
 
-$$P(G \mid \text{DHI character}) \times P(\text{HCWC} \mid G,\ \text{DHI geometry}).$$
+$$P(G\mid s)\, P(z_\mathrm{HCWC}\geq z\mid G,\mathrm{DHI\ geometry}).$$
 
 This is not an assumption that the two observations are independent. It is a way of keeping two
 different inferences separate and avoiding applying the same evidence twice.
@@ -991,41 +992,103 @@ Character informs whether hydrocarbons are present; geometry informs where the H
 
 ---
 
-## 15 · Limitations
+## 15 · Limitations and scope
 
-The framework is deliberately simplified and is not a basin or reservoir simulator: hydrodynamic
-gradients, remigration and palaeo-contacts, compartmentalisation, three-dimensional fluid-flow
-simulation and pressure-history modelling are not represented.
+The framework is deliberately simplified. It is not a substitute for basin modelling, hydrodynamic
+modelling, remigration and palaeo-contact reconstruction, compartmentalisation, three-dimensional
+fluid-flow simulation or pressure-history modelling.
 
-**Mechanism presence is drawn independently.** Limit *depths* can be correlated through the copula,
-but whether a mechanism is present is an independent Bernoulli draw per limit — a strong assumption
-where the presence of one implies another, as with faults sharing a reactivation history. The element
-chances are likewise multiplied as conditionally independent inputs.
+Instead, it provides a probabilistic framework for combining geological limits and seismic evidence
+once the relevant geological information is available.
 
-**Two-phase columns are handled through charge, not through seal capacity.** Where both a gas–oil
-and an oil–water contact are controlled by capillary leak, one top seal is in contact with gas at the
-crest and oil on the flanks, and the two legs are limited by different entry pressures. That
-construction is not implemented.
+More detailed external models can therefore be used to provide inputs to the framework. For example,
+a basin or hydrodynamic model may provide a range of possible fluid-potential limits, migration
+effects or palaeo-contacts. These can then be represented as one of the geological limits
+controlling the HCWC distribution. The framework does not need to reproduce the underlying process
+if a suitable probabilistic description of its resulting limit can be supplied.
 
-**The seismic likelihood is a modelling assumption, not a measurement.** Every term in it is a
-convention or an elicited judgement: the detection function's form and parameters, the pick shape and
-width, the contact attribution $c$, the uniform density of a spurious event. The Bayesian arithmetic
-is exact conditional on that observation model; the model is the assumption. This is why the
-sensitivity to each seismic input is reported: when a typed assumption moves the contact further
-than the geology does, that is a finding about the assumption. The false-positive rate of Section 12
-is uncalibrated in particular.
+### 15.1 · Dependence between geological mechanisms
 
-**The effective sample size is a diagnostic, not a verdict.** Reweighting concentrates the weights
-on part of the geological ensemble, and the effective sample size reports how much of that ensemble
-the posterior rests on. On the worked prospect a moderate interpretation narrows the P90–P10 spread
-of the contact from 136 m to 106 m and leaves an effective sample of 4 857 of the 10 000
-realisations. A low value does not mean the interpretation is wrong; it means the posterior depends
-heavily on a relatively small part of the original geological ensemble, which is worth knowing
-before the answer is quoted. It reports the geometry channel alone: the evidence index updates a
-single number and discards no realisations.
+Mechanism presence is currently drawn independently. The uncertainty in the depth of a limit can be
+correlated, so that related geological uncertainties move together, but the model currently treats
+the question of whether each mechanism is present as a separate probability.
 
-These limitations do not invalidate the framework. They define where additional modelling is
-required.
+This is a simplification. In reality, the presence of one mechanism may provide information about
+another. Faults may share a reactivation history, for example, or several trapping elements may be
+controlled by the same structural event.
+
+The element chances used to calculate the geological POS are likewise treated as conditionally
+independent when they are combined. These dependencies are therefore an area where a more integrated
+geological model could improve the framework.
+
+### 15.2 · Multiphase columns
+
+The current implementation treats the HCWC through the charge and limiting mechanisms rather than
+explicitly modelling separate gas–oil and oil–water columns.
+
+This becomes more complicated when several fluid phases are present. A gas–oil contact near the
+crest and an oil–water contact deeper in the structure may be controlled by different capillary
+entry pressures. The top seal may therefore be exposed to gas in one part of the structure and oil
+in another, with different leakage limits for each phase.
+
+A future extension could therefore treat phase-specific columns and limiting mechanisms, rather than
+using a single HCWC distribution. This would also allow the same framework to be used to assess the
+spatial probability of gas, oil and water separately.
+
+### 15.3 · The seismic likelihood is a modelling assumption
+
+The seismic update is only as good as the observation model behind it. The likelihood is not a
+measurement of certainty; it is a way of representing how compatible different geological outcomes
+are with the seismic observation.
+
+Several inputs therefore involve interpretation or specified assumptions: the form and parameters of
+the detection function, the uncertainty around the picked event, the probability that the event is
+actually the HCWC, and the assumed probability of a spurious event.
+
+The Bayesian calculation is exact conditional on those assumptions. The uncertainty lies in the
+assumptions themselves.
+
+This is why the seismic inputs should be exposed and tested rather than hidden in the model. If
+changing an assumed pick uncertainty, detection threshold or contact-attribution probability moves
+the result more than the geological uncertainties do, that is itself useful information about the
+assessment.
+
+The treatment of DHI evidence will also differ between companies and interpreters. A useful direction
+for future development is therefore to replace the single generic evidence relationship with
+likelihoods tied more explicitly to individual geological risk elements or groups of elements. For
+example, evidence relating primarily to source and charge could be represented separately from
+evidence relating to reservoir presence or retention. This would allow the seismic evidence model to
+reflect the way different organisations already assess DHI evidence, while keeping the underlying
+geological risk model explicit — which is the explicit dependency model Section 13.2 requires before
+evidence is allowed to touch individual elements.
+
+### 15.4 · Effective sample size
+
+The effective sample size (ESS) is a diagnostic of the seismic geometry update, not a verdict on the
+interpretation.
+
+The reweighting can concentrate the posterior on part of the original geological ensemble. ESS
+indicates how much of that ensemble the result effectively depends on. A low ESS does not mean that
+the interpretation is wrong; it means that the result is strongly dependent on a relatively small
+part of the original geological ensemble.
+
+This is useful to know when quoting the result, particularly when a very precise seismic
+interpretation has strongly reshaped the geological distribution. On the worked prospect the
+geometry narrows the P90–P10 spread of the contact from 136 m to 106 m on an effective sample of
+4 857 of the 10 000 realisations. ESS applies to the geometry reweighting only; the DHI evidence
+index updates the overall probability of hydrocarbon presence without discarding geological
+realisations.
+
+### 15.5 · Where this leaves the framework
+
+These limitations define the intended scope rather than invalidate the approach. The framework is
+designed to provide a common probabilistic layer between geological understanding, HCWC uncertainty
+and seismic evidence.
+
+More detailed basin, pressure, fluid-flow or seismic models can supply better constraints where they
+are available. The purpose here is to provide a way of carrying those constraints through to the
+HCWC distribution and the resulting spatial probability of finding hydrocarbons without replacing
+the underlying geological uncertainty with a single deterministic DHI interpretation.
 
 ---
 
@@ -1033,49 +1096,63 @@ required.
 
 The principal advantage is conceptual rather than computational. A directly elicited HCWC
 distribution asks the assessor to specify the final uncertainty; the competing-limits approach asks
-them to specify the mechanisms that produce it, and those mechanisms mean different things —
-geometry, retention against buoyancy, lateral containment, petroleum-system uncertainty, a stress
-condition. Once each is a competing limit, the contact distribution is an emergent property of the
-model rather than an input to it, and so is the chance of success at every depth.
+them to specify the mechanisms that produce it. These mechanisms mean different things — geometry,
+retention against buoyancy and leakage, lateral containment, petroleum-system uncertainty, or a
+stress-related condition. Once represented as competing limits, the contact distribution becomes an
+emergent property of the model rather than an input to it. The probability of achieving a given
+column height is likewise derived from the same model.
 
-The construction separates *what is uncertain* from *what controls the outcome*: a mechanism may
-carry considerable uncertainty and little influence, if it rarely provides the minimum, while a
-narrow uncertainty in a dominant mechanism moves the whole distribution. The assessment therefore
-retains an explanation of its own answer, which makes it defensible under review and auditable after
-drilling, when a dry hole or an unexpectedly small discovery can be evaluated in terms of the
-mechanism that was misassessed rather than by asking why an HCWC distribution was too deep.
+The construction separates what is uncertain from what controls the outcome. A mechanism may carry
+considerable uncertainty but have little influence if it rarely provides the minimum, while a
+relatively narrow uncertainty in a dominant mechanism can move the whole distribution. The
+assessment therefore retains an explanation of its own answer, making it more defensible under
+review and more auditable after drilling. A dry hole or unexpectedly small discovery can then be
+evaluated in terms of the geological mechanism that was misassessed, rather than simply by asking
+why the HCWC distribution was too deep.
 
-The seismic extension follows the same principle. A DHI is not a distribution over the contact; it
-is an *observation* of one, and treating it as a likelihood over column height keeps the geological
-model intact underneath while making the extent of its influence a reported number.
+The seismic extension follows the same principle. A DHI is evidence about the subsurface fluid
+distribution, not a new HCWC model. Treating the DHI as a likelihood over column height allows the
+evidence to update the existing geological model while keeping the underlying mechanisms intact. The
+extent of the update can then be reported explicitly rather than hidden in an adjusted POS.
 
 In summary:
 
 1. **Column height can be derived rather than specified.** The maximum column in each realisation is
-   set by the shallowest active geological limit, and the distribution is the output.
-2. **The limits are also the risk model.** HCWC depth, the chance at any depth and the commercial
-   discovery probability are readings of one curve, with $\text{POS} = P(G) \times F(h_\min)$, and
-   the per-element curves come from the same limits. The conditional term alone overstates the
-   prospect by $1/P(G)$.
-3. **Controlling mechanisms can be identified explicitly.** Recording the argmin turns a distribution
-   into a diagnostic of which uncertainties influence the assessment, and how that changes with depth.
+   set by the shallowest active geological limit, and the HCWC distribution is the output of the
+   model.
+2. **The HCWC limits are also the risk model.** HCWC depth, the probability of achieving a specified
+   column height, and the commercial discovery probability are different readings of the same
+   underlying model. With a geological success term $P(G)$ and a minimum required column height
+   $h_{\min}$, $\mathrm{POS} = P(G) \times F(h_{\min})$, where $F(h_{\min})$ is the conditional
+   probability of achieving the required column given the geological conditions represented by the
+   HCWC model. Using the conditional term alone would therefore overstate the prospect by a factor
+   of $1/P(G)$, because it implicitly assumes the geological conditions represented by $G$ occur
+   with certainty.
+3. **Controlling mechanisms can be identified explicitly.** Recording the argmin turns a
+   distribution into a diagnostic of which uncertainties control the assessment, and how their
+   influence changes with depth.
 4. **How the distribution meets the spill point is consequential.** Truncating a background
-   distribution by an independently sampled spill produces filled-to-spill cases at a rate the seal
-   implies; terminating it at spill does not.
-5. **Empirical discovery data require care.** Filled-to-spill discoveries are lower bounds on seal
-   capacity rather than measurements of it, and column height and trap height share the apex pick.
-6. **Seismic evidence can be incorporated as evidence.** Likelihood weighting requires no
-   re-simulation, preserves the mechanism attribution, and reshapes the depth-dependent risk rather
-   than scaling it. Each piece of evidence enters once, in the factor it is evidence about; the
-   effective sample size reports how far the geometry has displaced the geology; and the floor
-   ensures that one interpretation can never rule the geology out.
+   column-height distribution by an independently sampled spill point produces filled-to-spill cases
+   at a rate determined by the competing seal and spill uncertainties. Simply terminating the
+   distribution at spill removes that distinction and assigns essentially no probability to filling
+   to spill.
+5. **Empirical discovery data require care.** Filled-to-spill discoveries provide evidence that the
+   observed column can be retained, but they are lower bounds on seal capacity rather than
+   measurements of it. In addition, both column height and trap height depend on the interpretation
+   of the structural apex, so empirical constraints are not independent of structural uncertainty.
+6. **Seismic DHI evidence can be incorporated as evidence.** Likelihood weighting requires no
+   re-simulation, preserves the attribution of the underlying geological mechanisms, and reshapes
+   the depth-dependent risk rather than simply scaling it. Each piece of evidence should enter once,
+   in the factor it is evidence about. The effective sample size provides a diagnostic of how
+   strongly the DHI has displaced the geological prior, while the likelihood floor prevents a single
+   interpretation from completely excluding the geological model.
 
 The objective is not a more sophisticated distribution for its own sake. It is to make the
-distribution a consequence of explicit geological assumptions — so that it can be defended, reviewed,
-and corrected after drilling. An open-source application applies these concepts during prospect
-evaluation without requiring a three-dimensional geomodel. It does not determine whether a prospect
-should be drilled; it gives a transparent representation of one of the key uncertainties informing
-that decision.
+distribution a consequence of explicit geological assumptions — so that it can be defended,
+reviewed, and corrected after drilling. An open-source application implements these concepts during
+prospect evaluation without requiring a three-dimensional geomodel. It does not determine whether a
+prospect should be drilled; it provides a transparent representation of one of the key uncertainties
+informing that decision.
 
 ---
 

@@ -2035,6 +2035,32 @@ class TestThePaperAgreesWithTheAppItDescribes:
         _s.loader.exec_module(_facts)
         assert module.HMIN == _facts.H_MIN_M
 
+    def test_no_subscript_is_a_bare_katex_function(self):
+        """Lars saw red text on tab 8.2 on 28 Sep 2026: eight expressions failed to render.
+
+        KaTeX is stricter than LaTeX. ``h_\\min`` is valid TeX but KaTeX refuses it --
+        *"Got function '\\min' with no arguments as subscript"* -- and prints the source in red
+        instead. Braces fix it: ``h_{\\min}``. Nothing else caught this, because the markdown is
+        well formed and the failure happens in the browser.
+
+        Operators that take limits are the ones to watch; ``_\\text{...}`` and ``_\\mathrm{...}``
+        are fine, since they consume an argument.
+        """
+        import re
+
+        bare = re.compile(r"_\\(?:min|max|lim|sup|inf|log|sin|cos|tan|exp|det|deg|arg|gcd)\b")
+        offenders = []
+        for document in self.DOCUMENTS + ("docs/THEORY.md", "docs/REFERENCES.md"):
+            path = self._root() / document
+            if not path.exists():
+                continue
+            for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if bare.search(line):
+                    offenders.append(f"{document}:{number}: {line.strip()[:70]}")
+        assert not offenders, (
+            "KaTeX renders these as red source rather than maths; brace the subscript, "
+            f"as in h_{{\\min}}: {offenders}")
+
     def test_no_maths_crosses_a_line_break(self):
         """The formatting bug Lars caught on 7 Sep 2026, made into a failing test.
 
