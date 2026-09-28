@@ -36,17 +36,20 @@ directly — whether from a company standard or by choosing a statistically deri
 Instead, model the geological mechanisms that can limit the hydrocarbon column: structural spill,
 seal capacity and continuity, fault leakage, charge limitation, mechanical failure.
 
-Each mechanism defines a possible limit. In each Monte Carlo realisation, the shallowest active
-limit controls the maximum column. The HCWC distribution is therefore not an input to the model; it
-emerges from the competing geological limits.
+Each mechanism defines a possible range of limiting HCWC depths. In each Monte Carlo realisation,
+all limits are sampled, and the shallowest active limit becomes the HCWC for that realisation. The
+HCWC distribution is therefore not specified beforehand; it emerges from the competition between the
+geological limits.
 
-That also means the same model describes which geological mechanism is controlling, the probability
-of achieving a given column height, and the resulting geological POS against depth.
+That means the model describes three things at the same time: (a) which geological mechanism
+controls the HCWC, (b) the probability of achieving a given column height, and (c) the resulting
+geological POS as a function of depth.
 
-The apparent DHI can then be treated as evidence that updates both the geological HCWC model and the
-resulting POS. It need not be perfect evidence: its likelihood reweights the existing ensemble of
-geological possibilities, so the strength of the DHI decides how far the HCWC distribution is drawn
-towards the observed depth — without discarding the geological assumptions behind it.
+The apparent DHI can be considered as evidence that, via Bayesian updating, can modify the prospect
+POS given its strength. It is seldom perfect evidence, but its likelihood can be used to reweight
+the existing ensemble of geological possibilities, so that the strength of the DHI decides how far
+the HCWC distribution is drawn towards the observed DHI depths, without discarding the geological
+HCWC assumptions behind it.
 
 It is all rather complicated, so I've built a small open-source tool around the idea and written up
 the thinking behind it.
