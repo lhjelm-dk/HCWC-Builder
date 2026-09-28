@@ -1968,12 +1968,11 @@ class TestThePaperAgreesWithTheAppItDescribes:
         spec.loader.exec_module(module)
         f = module.facts()
         article = self._text()
-        post = (self._root() / "paper" / "LINKEDIN_POST.md").read_text(encoding="utf-8")
 
         def pct(x):
             return f"{100 * x:.0f} %"
 
-        for text in (article, post):
+        for text in (article,):
             assert pct(f["POS geological"]) in text and pct(f["POS given the DHI"]) in text
             assert f"{f['prior P90-P10 spread (m)']:.0f} m" in text
             assert f"{f['posterior P90-P10 spread (m)']:.0f} m" in text
@@ -1987,6 +1986,24 @@ class TestThePaperAgreesWithTheAppItDescribes:
             if share > 0.03:
                 assert pct(share) in article, f"{name} at {pct(share)} is not in the article"
         assert pct(f["P(well) given the DHI"]) in article
+
+    def test_the_post_quotes_no_numbers_of_its_own(self):
+        """The post used to carry the headline figures, and drifted from them twice: it still said
+        40 % to 64 % after the scenario moved to the app's opening state on 28 Sep 2026.
+
+        Since the rewrite of 29 Sep 2026 it carries none, on the argument that the maths belongs in
+        the article. That is only safe while it stays true, so this is the guard that replaced the
+        numeric pins: a percentage or a depth in the post is either stale or unpinned, and both are
+        worth failing for. A year in a citation is fine; a figure with a unit is not.
+        """
+        import re
+
+        post = (self._root() / "paper" / "LINKEDIN_POST.md").read_text(encoding="utf-8")
+        body = post.split("## Images")[0]
+        quoted = re.findall(r"\d[\d\s]*\s?(?:%|m\b)", body)
+        assert not quoted, (
+            "the post carries figures again; either keep them out, or pin them to "
+            f"scripts/paper_facts.py the way the article is pinned: {quoted}")
 
     def test_the_worked_prospect_is_reproducible(self):
         """The prospect definition ships beside the figures, so the numbers can be re-derived."""
