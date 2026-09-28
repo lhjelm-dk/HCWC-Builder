@@ -11,48 +11,55 @@ otherwise); the repository must be public before `GITHUB_URL` is used anywhere. 
 
 ## Post text
 
-Where is the hydrocarbon–water contact?
+**Where is the hydrocarbon–water contact?**
 
 Just like most of you, I have also spent sleepless nights wondering about the perplexities of
-combining the geological Probability of Success (POS) for an oil and gas prospect with a
-distribution of where the Hydrocarbon–Water Contact (HCWC) might actually be. And then, adding
-complexity, a DHI comes along and modifies the POS, while the apparent HCWC sits somewhere quite
-different from the minimum volume criterion used in the geological risking.
+figuring out how the Hydrocarbon–Water Contact (HCWC) distribution should look for an oil and gas
+prospect, and especially how to combine it with a geological Probability of Success (POS) — and
+then adding another layer of complexity when an apparent DHI modifies the POS, while the contact it
+indicates sits somewhere quite different from the minimum volume criterion used in the geological
+risking.
 
 "What if? Could you perhaps? But then if… when should you not…?" 🤯
 
-I know — it's the stuff of nightmares.
+I know — it's the stuff of nightmares!
 
-Ultimately, what you want is a coherent picture of how the probability of finding a commercial
-volume changes with hydrocarbon column height, without quietly throwing away the geological
-uncertainty when the DHI arrives.
-
-So how do you combine the two without simply making a "DHI case" and replacing the geological
-uncertainty with a much more optimistic contact?
+Ultimately, what you want is a coherent picture of how the probability of finding hydrocarbons
+varies with depth, without quietly throwing away the geological uncertainty when a DHI is observed,
+or simply replacing it with a potentially much more optimistic "DHI case".
 
 Well, I think I might have found a way I am comfortable with.
 
 The basic idea is to stop treating the HCWC distribution as something that has to be specified
-directly, from a standard or a statistical distribution. Instead, model the geological mechanisms
-that can limit the column: geometry, retention (seal), lateral containment, charge uncertainty and
-the rest. The HCWC distribution then emerges from the competing limits.
+directly — whether from a company standard or by choosing a statistically derived distribution.
 
-That also means the same model describes which mechanism is controlling, the probability of
-achieving a given column height, and the resulting geological POS at any depth.
+Instead, model the geological mechanisms that can limit the hydrocarbon column: structural spill,
+seal capacity and continuity, fault leakage, charge limitation, mechanical failure.
 
-The DHI can then be treated as evidence rather than as a replacement model. Its likelihood updates
-the existing geological HCWC limits, with the strength of the update made explicit.
+Each mechanism defines a possible range of limiting HCWC depths. In each Monte Carlo realisation,
+all limits are sampled, and the shallowest active limit becomes the HCWC for that realisation. The
+HCWC distribution is therefore not specified beforehand; it emerges from the competition between the
+geological limits.
 
-So I've built a small open-source tool around the idea, and written up the thinking behind it.
+That means the model describes three things at the same time: (a) which geological mechanism
+controls the HCWC, (b) the probability of achieving a given column height, and (c) the resulting
+geological POS as a function of depth.
+
+The apparent DHI can be considered as evidence that, via Bayesian updating, can modify the prospect
+POS given its strength. It is seldom perfect evidence, but its likelihood can be used to reweight
+the existing ensemble of geological possibilities, so that the strength of the DHI decides how far
+the HCWC distribution is drawn towards the observed DHI depths, without discarding the geological
+HCWC assumptions behind it.
+
+It is all rather complicated, so I've built a small open-source tool around the idea and written up
+the thinking behind it.
 
 I'm sharing both because I'd genuinely like to hear how others handle this problem — particularly
-if you have input on the connection between HCWC uncertainty, geological POS and DHI evidence.
+your thoughts on the connection between HCWC uncertainty, geological POS and DHI evidence.
 
-The article is here: ARTICLE_URL
+ARTICLE_URL
 
-And the tool is here: APP_URL
-
-Feedback, criticism and alternative approaches are very welcome.
+APP_URL
 
 ---
 
