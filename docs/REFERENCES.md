@@ -289,7 +289,7 @@ https://factpages.sodir.no/public?/Factpages/external/tableview/<REPORT>&rs:Comm
 
 - **E-POS** — evidence-supported probability of success, ESL/Italian-flag, Bayesian DFI update.
   Supplies the element chances on tab 2.0; the DHI strength model on tab 5.1 is adapted from its
-  custom-R tool. App https://e-pos.streamlit.app · code https://github.com/lhjelm-dk/E-POS
+  custom-R tool. App https://lhjelm-e-pos.streamlit.app · code https://github.com/lhjelm-dk/E-POS
 - **SCOPE-HC** — probabilistic volumes from GRV, reservoir and fluid inputs; the resource column
   the WellVolPOS export on tab 7.0 leaves out. Planned: reading the 101-percentile contact
   distribution exported there. App https://scope-hc.streamlit.app · code

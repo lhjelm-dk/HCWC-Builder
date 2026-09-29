@@ -91,7 +91,7 @@ def render() -> None:
             "Limitations: see 8.1.10."
         )
         st.markdown(
-            "Related tools: [E-POS](https://e-pos.streamlit.app) supplies the element chances on "
+            "Related tools: [E-POS](https://lhjelm-e-pos.streamlit.app) supplies the element chances on "
             "tab 2.0; [SCOPE-HC](https://scope-hc.streamlit.app) computes the volumes; "
             "[WellVolPOS](https://wellvolpos.streamlit.app) turns the export on tab 7.0 into "
             "well-location chance and volume. See 8.1.11."
