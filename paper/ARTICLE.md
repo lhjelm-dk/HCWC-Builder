@@ -76,6 +76,9 @@ The competing-limits concept is not new. Beha *et al.* (2012) described consiste
 of complex traps by considering combinations of trapping elements being present or failing and
 deriving the resulting leak points. Hood (2019, 2024) described the stochastic treatment of column
 height by sampling background column height and explicit geometric limits and taking the minimum.
+Chance as a function of column height is older still: Lowry *et al.* (2005) built a variable risk
+array across column heights for the case this paper is written around, a mapped closure whose seal
+capacity may limit the column to less than fill-to-spill.
 
 The tool used here follows the same geological principle, but represents the limiting
 mechanisms as probabilistic depth or capacity distributions. Charge limitation, structural spill,
@@ -1063,6 +1066,15 @@ reflect the way different organisations already assess DHI evidence, while keepi
 geological risk model explicit — which is the explicit dependency model Section 13.2 requires before
 evidence is allowed to touch individual elements.
 
+A second direction concerns the inputs rather than the evidence. Every elicited number in the model
+carries an unstated confidence: a seal capacity read from one analogue and one read from a
+calibrated dataset enter the same distribution and are treated alike. Lowry *et al.* (2005) rate
+how well a factor is known separately from the probability assigned to it, so that an extreme
+probability supported by thin evidence is visible as such. Carrying a comparable rating on each
+elicited limit, and reporting it beside the result, would say how much of the answer rests on
+well-constrained inputs — a question the effective sample size answers only for the seismic
+update.
+
 ### 15.4 · Effective sample size
 
 The effective sample size (ESS) is a diagnostic of the seismic geometry update, not a verdict on the
@@ -1178,6 +1190,9 @@ Hood, K. C. (2024). *Hydrocarbon column heights*, Parts 1 and 2. Rose & Associat
 
 Kjønsberg, H., Hauge, R., Kolbjørnsen, O. & Buland, A. (2010). Bayesian Monte Carlo method for
 seismic predrill prospect assessment. *Geophysics* **75**(2), O9–O19.
+
+Lowry, D. C., Suttill, R. J. & Taylor, R. J. (2005). Advances in risking exploration prospects.
+*The APPEA Journal* **45**(1), 143–158. doi:10.1071/AJ04012.
 
 Monigle, P. W., Hedayati, T. S. & Goulding, F. J. (2025). Integrated and improved direct hydrocarbon
 indicators: a step forward in petroleum risk discrimination. *AAPG Bulletin* **109**(5), 617–636.

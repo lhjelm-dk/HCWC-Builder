@@ -74,6 +74,44 @@ incremental *risked NPV* per column-height slice, summed to an EMV. Ours is a **
 > work adds is the correction of the empirical column-height record for right-censoring by
 > fill-to-spill discoveries.
 
+## A secondary account, 29 Sep 2026
+
+Lars supplied a long summary of the paper's method: 19 geological risk factors, a Level of Knowledge
+rating beside each probability, the variable risk array, incremental risked NPV by layer, and an EMV
+sensitivity to the chance of success.
+
+**It is second-hand, and it says so.** It hedges throughout — "I have not found evidence that the
+paper presents a full formal Bayesian network", "the exact risk factors should be read from the
+original article's tables" — and its most specific claims, the 19 factors and the
+knowledge-against-probability plot, are attributed to *later papers citing Lowry* rather than to
+Lowry. It therefore **does not close the four questions below**, and nothing in it may be written
+into the manuscript as a statement about what the paper does. If anything it deepens the doubt on
+question 1: it describes the array as *stated per band*, which is the assembled form, but only from
+secondary sources.
+
+Two ideas in it are worth keeping on their own merits, whoever they belong to.
+
+**Monotonicity is an argument for a derived array.** A chance-against-column-height array must be
+non-increasing: `P(H ≥ h₂) ≤ P(H ≥ h₁)` for `h₂ > h₁`, since a column that reaches the deeper level
+has reached the shallower one. Ours has that property by construction, because it is read off one
+sample of `min(active limits)`. An array assembled band by band, a risk stated for each
+column-height slice, can violate it without the assessor noticing. That is a cleaner argument for
+deriving the array than the ones in 8.1.3, and it costs a sentence.
+
+**Level of Knowledge is the one idea this tool has no equivalent of.** The tool labels each
+assumption elicited, heuristic or a modelling choice (5.1.6), which says *what kind* of number it
+is, and reports an effective sample size, which says how far the *seismic* update displaced the
+geology. Neither says how well an elicited input is known. A seal capacity from one analogue and one
+from a calibrated dataset enter the same distribution and are treated alike. Carried per limit, a
+knowledge rating would let the run checks flag an extreme probability resting on thin evidence,
+which is the failure the LOK idea exists to prevent. Recorded as future work in the paper's
+Section 15.3.
+
+The rest — the 19-factor taxonomy, the NPV and EMV arithmetic, the oil-against-gas optimism finding
+— is outside what this tool does. The volume and value handoff is deliberate (see above), and the
+taxonomy question is already answered here by the element-against-limit table of 8.1.2, which exists
+to stop one uncertainty being entered as several.
+
 ## What to check when the PDF arrives
 
 1. **Is the array derived from competing mechanisms, or stated per band?** The one that matters.
