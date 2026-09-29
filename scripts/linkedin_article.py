@@ -12,8 +12,13 @@ This writes `paper/ARTICLE_LINKEDIN.html` with the maths already flattened to Un
 turned into lines, and a marker where each figure goes. Open it in a browser, select all, and paste
 into the editor: the formatting survives and every formula appears once.
 
-Nothing here is a second copy of the article. The page is generated from `paper/ARTICLE.md` on
-every run, so the article stays the one source.
+It also writes `paper/LINKEDIN_POST.html` from `paper/LINKEDIN_POST.md`. That one is for the feed
+composer rather than the article editor, and the composer is plain text: a rich-text paste arrives
+with its bold stripped. The headline is therefore converted to the Unicode sans-serif bold block,
+which survives because it is characters rather than formatting.
+
+Nothing here is a second copy of the article or the post. Every page is generated from its Markdown
+source on every run, so the source stays the one source.
 """
 from __future__ import annotations
 
@@ -28,6 +33,15 @@ PAGES = [
     (ROOT / "paper" / "ARTICLE.md", ROOT / "paper" / "ARTICLE_LINKEDIN.html"),
     (ROOT / "paper" / "ARTICLE_SHORT.md", ROOT / "paper" / "ARTICLE_LINKEDIN_SHORT.html"),
 ]
+
+#: The feed post, which is written and pasted separately from the article.
+POST = (ROOT / "paper" / "LINKEDIN_POST.md", ROOT / "paper" / "LINKEDIN_POST.html")
+
+#: Unicode sans-serif bold. The feed composer keeps no formatting, so a headline that has to read
+#: as a headline has to be spelled in characters that are already bold.
+BOLD = {**{chr(ord("A") + i): chr(0x1D5D4 + i) for i in range(26)},
+        **{chr(ord("a") + i): chr(0x1D5EE + i) for i in range(26)},
+        **{chr(ord("0") + i): chr(0x1D7EC + i) for i in range(10)}}
 
 #: Unicode subscripts, for the few subscripts whose characters all exist. An uppercase subscript
 #: has no Unicode form at all, so `z_HCWC` keeps its underscore rather than losing the structure.
@@ -159,10 +173,86 @@ def convert(markdown: str) -> str:
     return "\n".join(out)
 
 
+def unicode_bold(text: str) -> str:
+    """One run of text in the Unicode bold alphabet. Anything outside it is left as it is."""
+    return "".join(BOLD.get(character, character) for character in text)
+
+
+def section(markdown: str, heading: str) -> str:
+    """The body under one `## ` heading, to the next heading or horizontal rule."""
+    lines = markdown.splitlines()
+    try:
+        start = next(i for i, line in enumerate(lines) if line.strip() == heading) + 1
+    except StopIteration:
+        return ""
+    body: list[str] = []
+    for line in lines[start:]:
+        if line.startswith("## ") or line.strip() == "---":
+            break
+        body.append(line)
+    return "\n".join(body).strip()
+
+
+def convert_post(markdown: str) -> str:
+    """The post text as HTML paragraphs, with `**bold**` spelled in bold characters.
+
+    No `<strong>`: the composer would drop it. The paragraphs are `<p>` only so that copying the
+    block keeps the blank line between them, which the composer does preserve.
+    """
+    out: list[str] = []
+    for block in re.split(r"\n\s*\n", section(markdown, "## Post text")):
+        block = " ".join(line.strip() for line in block.splitlines() if line.strip())
+        if not block:
+            continue
+        block = re.sub(r"\*\*([^*]+)\*\*", lambda m: unicode_bold(m.group(1)), block)
+        out.append("<p>" + html.escape(block) + "</p>")
+    return "\n".join(out)
+
+
+#: What the feed composer allows. It counts UTF-16 code units, so every bold headline character
+#: costs two: the Unicode bold block sits outside the basic plane.
+POST_LIMIT = 3000
+
+
+def post_length(markdown: str) -> int:
+    """The post as the composer will count it, with the placeholder replaced by the real link."""
+    text = re.sub(r"<[^>]+>", "", convert_post(markdown).replace("</p>", "\n\n"))
+    text = html.unescape(text).replace("APP_URL", "https://hcwc-builder.streamlit.app").strip()
+    return len(text.encode("utf-16-le")) // 2
+
+
+def write_post(source: pathlib.Path, OUT: pathlib.Path) -> None:
+    markdown = source.read_text(encoding="utf-8")
+    comment = " ".join(line.strip() for line in section(
+        markdown, "## First comment (post immediately after publishing)").splitlines())
+    OUT.write_text(
+        "<!doctype html><meta charset='utf-8'>"
+        "<title>HCWC post, for the LinkedIn composer</title>"
+        "<body style='font:16px/1.6 -apple-system,Segoe UI,sans-serif;max-width:40em;margin:2em auto'>"
+        "<p style='background:#e7f3ff;padding:10px'><strong>How to use this page.</strong> "
+        "Select the boxed post below and copy it, then paste into LinkedIn\u2019s post composer. "
+        "The composer keeps no formatting, so the headline is written in Unicode bold characters "
+        "and arrives bold. Replace <code>ARTICLE_URL</code> and <code>APP_URL</code>, add the three "
+        "images named in <code>LINKEDIN_POST.md</code>, and post the second box as the first "
+        "comment. Generated from <code>" + source.name + "</code>; regenerate rather than editing "
+        "this file.</p>\n"
+        "<div style='border:1px solid #bbb;padding:1em'>\n" + convert_post(markdown) + "\n</div>\n"
+        "<p style='background:#e7f3ff;padding:10px'><strong>First comment</strong>, posted "
+        "immediately after publishing.</p>\n"
+        "<div style='border:1px solid #bbb;padding:1em'><p>" + html.escape(comment) + "</p></div>"
+        "</body>",
+        encoding="utf-8")
+    length = post_length(markdown)
+    over = "" if length <= POST_LIMIT else f"  OVER THE LIMIT by {length - POST_LIMIT}"
+    print(f"  {OUT.relative_to(ROOT)}  ({length} of {POST_LIMIT} characters){over}")
+
+
 def main() -> None:
     for source, out in PAGES:
         if source.exists():
             write(source, out)
+    if POST[0].exists():
+        write_post(*POST)
 
 
 def write(source: pathlib.Path, OUT: pathlib.Path) -> None:

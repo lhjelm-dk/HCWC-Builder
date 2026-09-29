@@ -176,13 +176,13 @@ minimum is taken for each realisation. Hood (2019) illustrates the same problem,
 where representing a deep leak by reweighting the background distribution can produce the
 counter-intuitive result of increasing prospect volume.
 
-![The limiting mechanisms on a common column-height axis](figures/Figure_4.1.2e_one-axis-five-views-exceedance-curves-is-the.png)
+![The limiting mechanisms on a common depth axis](figures/Figure_4.1.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
-> **Figure 1.** The limiting mechanisms for the worked prospect shown on a common column-height
-> axis. The HCWC distribution results from taking the minimum of
-> the active limits in each realisation. The plotted limit curves show the corresponding sampled
-> constraints; the resulting contact is their realised minimum. No curve is elicited as an HCWC
-> distribution.
+> **Figure 1.** The limiting mechanisms for the worked prospect drawn as violins on a common depth
+> axis, with the structural apex and the spill point marked. Each violin is the sampled constraint
+> for that mechanism. The HCWC distribution on the right results from taking the minimum of the
+> active limits in each realisation, which is why it sits shallower than the bulk of the individual
+> limits. No limit is elicited as an HCWC distribution.
 
 A limit is not necessarily a leak point. Some limits represent an actual escape path, such as
 structural spill, fault leakage or seal failure. Others limit the column without hydrocarbons
@@ -230,7 +230,8 @@ former behaviour by construction.
 **Charge limitation** applies where the available charge is insufficient to fill the trap to a
 deeper limit. It should not automatically be represented as a contact at the base of the structure:
 if charge fills the structure, it imposes no contact at all. Its column-height distribution can be
-computed from an area–depth integration rather than elicited.
+computed from an area–depth integration rather than elicited, where basin modelling supplies the
+volume potentially available to charge the prospect.
 
 **Capillary seal capacity** gives another maximum column. In a Schowalter-type formulation,
 
@@ -775,10 +776,14 @@ are therefore still the risk model, now read at the posterior weights.
 
 ![The limits on one axis, given the DHI](figures/Figure_5.2.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
-> **Figure 11.** The competing limits after the seismic update. The same geological limits and
-> realisations are retained, but they are reweighted according to how well their resulting HCWC is
-> supported by the DHI geometry. The contact is still the minimum of the active limits; the seismic
-> evidence changes the relative weight of the possible geological outcomes.
+> **Figure 11.** The competing limits after the seismic update, drawn as violins on a common depth
+> axis. The same geological limits and realisations are retained, but they are reweighted according
+> to how well their resulting HCWC is supported by the DHI geometry. The middle lane is the evidence
+> on its own, drawn hollow because it is a likelihood rather than a count of realisations, so its
+> shape carries the information and its area does not; the result on the right shows the geological
+> HCWC distribution and the one given the DHI side by side. The contact is still the minimum of the
+> active limits; the seismic evidence changes the relative weight of the possible geological
+> outcomes.
 
 ![The chance against depth given the DHI](figures/Figure_5.2.3a_the-chance-against-depth-and-what-makes-it.png)
 
