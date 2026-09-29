@@ -1,11 +1,12 @@
-# Two sizes of run, because the account's Actions minutes are the scarce resource.
+# Two sizes of run: a pull request wants a fast answer, main wants a complete one.
 #
 # A pull request runs the unit half of the suite, `-m "not render"`: 830 tests in about two
 # minutes. A push to main runs everything, the 181 tests that render app.py through AppTest
-# included, on both supported Pythons: about ten minutes a job. Until 16 Sep 2026 every pull
-# request ran the full suite, which spent the month's minutes in a fortnight. The full suite is
-# run locally before every PR in any case (CLAUDE.md); CI on the PR is the fast confirmation and
-# CI on main is the complete one.
+# included, on both supported Pythons: about ten minutes a job. The split was introduced on
+# 16 Sep 2026 because the account's Actions minutes were the scarce resource, and every pull
+# request running the full suite spent the month's allowance in a fortnight. Minutes have been
+# free since the repository was made public on 29 Sep 2026, and the split is kept for the speed
+# rather than the cost. The full suite is run locally before every pull request in any case.
 name: tests
 
 on:
