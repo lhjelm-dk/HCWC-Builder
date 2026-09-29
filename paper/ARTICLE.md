@@ -346,6 +346,13 @@ contact distribution, well risk and volume range change together.
 This avoids building one depth-dependent risk model for POS and another for HCWC and then trying to
 reconcile them afterwards. There was only one model to begin with.
 
+A derived array also cannot contradict itself. The chance of reaching a given column height cannot
+rise with that height, since a column that reaches the deeper level has already reached the
+shallower one, so $F(h)$ is non-increasing by construction: it is read off one sample of the
+competing minima. An array assembled band by band, with a risk stated for each column-height slice,
+carries no such guarantee, and a violation is easy to miss because each band looks reasonable on its
+own.
+
 ![Each element's chance against depth](figures/Figure_4.2.2a_each-element-s-chance-curve-derived-from-the.png)
 
 > **Figure 4.** Each element's chance against depth, derived from the shallowest active limit within

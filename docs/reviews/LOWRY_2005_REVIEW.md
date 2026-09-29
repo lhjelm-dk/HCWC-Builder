@@ -96,7 +96,9 @@ non-increasing: `P(H ≥ h₂) ≤ P(H ≥ h₁)` for `h₂ > h₁`, since a col
 has reached the shallower one. Ours has that property by construction, because it is read off one
 sample of `min(active limits)`. An array assembled band by band, a risk stated for each
 column-height slice, can violate it without the assessor noticing. That is a cleaner argument for
-deriving the array than the ones in 8.1.3, and it costs a sentence.
+deriving the array than the ones in 8.1.3, and it costs a sentence. Written into the paper's
+section 5 on 29 Sep 2026, beside the claim that the limits are the risk model, which is where the
+array is claimed as one.
 
 **Level of Knowledge is the one idea this tool has no equivalent of.** The tool labels each
 assumption elicited, heuristic or a modelling choice (5.1.6), which says *what kind* of number it
