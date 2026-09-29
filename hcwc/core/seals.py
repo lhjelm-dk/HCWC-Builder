@@ -12,7 +12,7 @@ Sources:
 * **Yang & Aplin (1998)** — pore-throat radius against void ratio. The gas–water tension line
   below is of unknown provenance and is consistent with methane–brine data; the oil–water line
   that stood beside it was not, and was replaced on 15 Sep 2026 by an elicited range
-  (``archive/development_notes/IFT_CHECK_2026-09-15.md``).
+  (the interfacial-tension check of 15 September 2026).
 * **Schowalter (1979)**, **Buckley & Fan (2005)**, **Hjelmeland & Larrondo (1986)** — the
   oil–water tension range and its weak temperature dependence.
 * **Hansen (1996)** — the porosity–depth calibration.
@@ -64,7 +64,7 @@ def interfacial_tension_gas_dyne_cm(temperature_c: float) -> float:
     default of unrecorded provenance**: the attribution it arrived with (Aplin & Yang 1998) is
     not supported by that paper, and no source for the line has been found. Its only support is
     agreement with measured methane–brine tension at reservoir pressure
-    (``archive/development_notes/IFT_CHECK_2026-09-15.md``). The tab labels it so and lets a
+    (the interfacial-tension check of 15 September 2026). The tab labels it so and lets a
     measured value override it (``SealInputs.gas_tension_dyne_cm``).
     """
     return 91.657 * math.exp(-0.0126 * temperature_c)

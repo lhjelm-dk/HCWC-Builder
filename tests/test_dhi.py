@@ -1,4 +1,4 @@
-"""The DHI update, and the claim `archive/development_notes/DHI_alignment.md` was written to make.
+"""The DHI update, and the claim the signed note of 25 August 2026 was written to make.
 
 That claim is testable in one line: the updated POS and the updated contact distribution must be
 the *same object*, read at different thresholds. If `pos()` is ever anything other than

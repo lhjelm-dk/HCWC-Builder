@@ -27,7 +27,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Tests, with the anaconda interpreter this repository is developed on:
+Tests:
 
 ```bash
 python -m pytest -q
@@ -45,15 +45,13 @@ two-minute subset CI runs on pull requests.
 | `hcwc/ui/` | the tabs |
 | `hcwc/io/` | prospect files, imports, exports, the report, reference data loaders |
 | `reference/` | shipped data: Edmundson (2021) columns, area–depth table, examples |
-| `docs/` | theory (8.1, the references as 8.1.11), audits, reviews, plans, the workflow SVGs |
+| `docs/` | theory (8.1, the references as 8.1.11), the architecture, the assumptions, the numerical baseline, the workflow SVGs |
 | `paper/` | the article (8.2), the manuscript, the post, their figures and images |
 | `scripts/` | figure and image generators, censoring analysis |
 | `tests/` | the suite; `docs/BASELINE.md` records what it pins |
-| `archive/` | superseded notes and figures, kept and never imported |
 
-`docs/ARCHITECTURE_CURRENT.md` describes the structure and `docs/REPO_AUDIT.md` classifies every
-file. The tone of user-facing text, the exhibit numbering and the standing constraints are stated
-in `docs/ASSUMPTIONS.md` and enforced by the tests.
+`docs/ARCHITECTURE_CURRENT.md` describes the structure. The tone of user-facing text, the exhibit
+numbering and the standing constraints are stated in `docs/ASSUMPTIONS.md` and enforced by the tests.
 
 ## Companions
 

@@ -189,15 +189,39 @@ def render() -> None:
         _paper_text = _paper.read_text(encoding="utf-8")
         st.info(
             "Every number in it is computed rather than typed: the worked prospect is the app's "
-            "own default read at a 120 m assessment minimum, and the figures are the app's own, "
-            "exported by `scripts/export_exhibits.py`. The manuscript it was cut down from is "
-            "kept in `archive/superseded_notes/`."
+            "own default, read at the settings the app opens on, and the figures are the app's "
+            "own, exported by `scripts/export_exhibits.py`."
         )
         with st.expander("The source: Markdown, for posting or for a document"):
             st.code(_paper_text, language="markdown")
+        _cover = PAPER / "figures" / "HCWC-builder.jpg"
+        if _cover.exists():
+            st.image(str(_cover), width="stretch")
         render_with_figures(_paper_text, PAPER, demote=2)
     else:
         st.info("`paper/ARTICLE.md` not found in this checkout.")
+
+    theme.heading(8, "3 · The short version")
+    st.markdown(
+        "The same argument at a fifth of the length, for a reader who will not open 8.2: the "
+        "contact as an output rather than an input, what the controlling mechanism adds, and the "
+        "two channels a DHI carries. It states one equation, Bayes' rule, and otherwise sends the "
+        "reader here for the arithmetic."
+    )
+    _short = PAPER / "ARTICLE_SHORT.md"
+    if _short.exists():
+        _short_text = _short.read_text(encoding="utf-8")
+        st.info(
+            "Written for posting rather than for this tab, so it carries no notation and no "
+            "derivations. `paper/ARTICLE_LINKEDIN_SHORT.html`, written by "
+            "`scripts/linkedin_article.py`, is the same text as a page that can be pasted into an "
+            "editor with its formatting intact."
+        )
+        with st.expander("The source: Markdown, for posting"):
+            st.code(_short_text, language="markdown")
+        render_with_figures(_short_text, PAPER, demote=2)
+    else:
+        st.info("`paper/ARTICLE_SHORT.md` not found in this checkout.")
 
 
 def _render_references() -> None:

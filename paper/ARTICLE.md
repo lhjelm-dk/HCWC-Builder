@@ -76,6 +76,9 @@ The competing-limits concept is not new. Beha *et al.* (2012) described consiste
 of complex traps by considering combinations of trapping elements being present or failing and
 deriving the resulting leak points. Hood (2019, 2024) described the stochastic treatment of column
 height by sampling background column height and explicit geometric limits and taking the minimum.
+Chance as a function of column height is older still: Lowry *et al.* (2005) built a variable risk
+array across column heights for the case this paper is written around, a mapped closure whose seal
+capacity may limit the column to less than fill-to-spill.
 
 The tool used here follows the same geological principle, but represents the limiting
 mechanisms as probabilistic depth or capacity distributions. Charge limitation, structural spill,
@@ -173,13 +176,13 @@ minimum is taken for each realisation. Hood (2019) illustrates the same problem,
 where representing a deep leak by reweighting the background distribution can produce the
 counter-intuitive result of increasing prospect volume.
 
-![The limiting mechanisms on a common column-height axis](figures/Figure_4.1.2e_one-axis-five-views-exceedance-curves-is-the.png)
+![The limiting mechanisms on a common depth axis](figures/Figure_4.1.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
-> **Figure 1.** The limiting mechanisms for the worked prospect shown on a common column-height
-> axis. The HCWC distribution results from taking the minimum of
-> the active limits in each realisation. The plotted limit curves show the corresponding sampled
-> constraints; the resulting contact is their realised minimum. No curve is elicited as an HCWC
-> distribution.
+> **Figure 1.** The limiting mechanisms for the worked prospect drawn as violins on a common depth
+> axis, with the structural apex and the spill point marked. Each violin is the sampled constraint
+> for that mechanism. The HCWC distribution on the right results from taking the minimum of the
+> active limits in each realisation, which is why it sits shallower than the bulk of the individual
+> limits. No limit is elicited as an HCWC distribution.
 
 A limit is not necessarily a leak point. Some limits represent an actual escape path, such as
 structural spill, fault leakage or seal failure. Others limit the column without hydrocarbons
@@ -227,7 +230,8 @@ former behaviour by construction.
 **Charge limitation** applies where the available charge is insufficient to fill the trap to a
 deeper limit. It should not automatically be represented as a contact at the base of the structure:
 if charge fills the structure, it imposes no contact at all. Its column-height distribution can be
-computed from an area–depth integration rather than elicited.
+computed from an area–depth integration rather than elicited, where basin modelling supplies the
+volume potentially available to charge the prospect.
 
 **Capillary seal capacity** gives another maximum column. In a Schowalter-type formulation,
 
@@ -342,6 +346,13 @@ contact distribution, well risk and volume range change together.
 
 This avoids building one depth-dependent risk model for POS and another for HCWC and then trying to
 reconcile them afterwards. There was only one model to begin with.
+
+A derived array also cannot contradict itself. The chance of reaching a given column height cannot
+rise with that height, since a column that reaches the deeper level has already reached the
+shallower one, so $F(h)$ is non-increasing by construction: it is read off one sample of the
+competing minima. An array assembled band by band, with a risk stated for each column-height slice,
+carries no such guarantee, and a violation is easy to miss because each band looks reasonable on its
+own.
 
 ![Each element's chance against depth](figures/Figure_4.2.2a_each-element-s-chance-curve-derived-from-the.png)
 
@@ -765,10 +776,14 @@ are therefore still the risk model, now read at the posterior weights.
 
 ![The limits on one axis, given the DHI](figures/Figure_5.2.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
-> **Figure 11.** The competing limits after the seismic update. The same geological limits and
-> realisations are retained, but they are reweighted according to how well their resulting HCWC is
-> supported by the DHI geometry. The contact is still the minimum of the active limits; the seismic
-> evidence changes the relative weight of the possible geological outcomes.
+> **Figure 11.** The competing limits after the seismic update, drawn as violins on a common depth
+> axis. The same geological limits and realisations are retained, but they are reweighted according
+> to how well their resulting HCWC is supported by the DHI geometry. The middle lane is the evidence
+> on its own, drawn hollow because it is a likelihood rather than a count of realisations, so its
+> shape carries the information and its area does not; the result on the right shows the geological
+> HCWC distribution and the one given the DHI side by side. The contact is still the minimum of the
+> active limits; the seismic evidence changes the relative weight of the possible geological
+> outcomes.
 
 ![The chance against depth given the DHI](figures/Figure_5.2.3a_the-chance-against-depth-and-what-makes-it.png)
 
@@ -1063,6 +1078,15 @@ reflect the way different organisations already assess DHI evidence, while keepi
 geological risk model explicit — which is the explicit dependency model Section 13.2 requires before
 evidence is allowed to touch individual elements.
 
+A second direction concerns the inputs rather than the evidence. Every elicited number in the model
+carries an unstated confidence: a seal capacity read from one analogue and one read from a
+calibrated dataset enter the same distribution and are treated alike. Lowry *et al.* (2005) rate
+how well a factor is known separately from the probability assigned to it, so that an extreme
+probability supported by thin evidence is visible as such. Carrying a comparable rating on each
+elicited limit, and reporting it beside the result, would say how much of the answer rests on
+well-constrained inputs — a question the effective sample size answers only for the seismic
+update.
+
 ### 15.4 · Effective sample size
 
 The effective sample size (ESS) is a diagnostic of the seismic geometry update, not a verdict on the
@@ -1178,6 +1202,9 @@ Hood, K. C. (2024). *Hydrocarbon column heights*, Parts 1 and 2. Rose & Associat
 
 Kjønsberg, H., Hauge, R., Kolbjørnsen, O. & Buland, A. (2010). Bayesian Monte Carlo method for
 seismic predrill prospect assessment. *Geophysics* **75**(2), O9–O19.
+
+Lowry, D. C., Suttill, R. J. & Taylor, R. J. (2005). Advances in risking exploration prospects.
+*The APPEA Journal* **45**(1), 143–158. doi:10.1071/AJ04012.
 
 Monigle, P. W., Hedayati, T. S. & Goulding, F. J. (2025). Integrated and improved direct hydrocarbon
 indicators: a step forward in petroleum risk discrimination. *AAPG Bulletin* **109**(5), 617–636.

@@ -22,7 +22,7 @@ claimed better).
 | Calculator inputs are independent uniforms (seal, mechanical, charge) | modelling choice | `core/seals`, `core/charge`, `ui/sources` | 8.1.5, 8.1.10 |
 | The apex is shared by every element in a realisation; `z_HCWC = z_apex + H` | convention | `EngineResult.contact_m` | 8.1.4 |
 | One fluid at a time; no two-phase column, no hydrodynamics, no compartments | modelling choice (limitation) | `core/seals` (physics present, not wired), `docs/PLAN_DUAL_PHASE_SEAL.md` | 8.1.10 |
-| Oil–water interfacial tension 18–28 dyne/cm, flat in temperature; gas–water on a temperature line agreeing with methane–brine data | elicited / modelling choice | `core/seals` | 8.1.10, `archive/development_notes/IFT_CHECK_2026-09-15.md` |
+| Oil–water interfacial tension 18–28 dyne/cm, flat in temperature; gas–water on a temperature line agreeing with methane–brine data | elicited / modelling choice | `core/seals` | 8.1.10, the interfacial-tension check of 15 Sep 2026 |
 | Percentiles are exceedance percentiles (P100 shallowest), Hazen plotting positions on the weighted sample, reported conditional on `h ≥ h_min` | convention | `core/engine.weighted_percentiles`, `EngineResult.percentiles`, `DhiPosterior.percentiles` | 8.1.4 |
 | Depth axes under column-space curves sit at the median apex | convention (drawing) | `core/pos.depth_axis` and the figures | 8.1.4 |
 

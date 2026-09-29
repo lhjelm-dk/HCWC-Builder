@@ -727,11 +727,11 @@ two names; their term is kept where their data are quoted. Method: see 8.1.9.
 
     if imported is not None and source == imported_label(imported):
         st.info(
-            "What this series is. The C&C and ExxonMobil families are the same banded model, "
-            "sharing the same fill-to-spill weight. They differ in one thing: the distribution "
-            "drawn when the closure does not fill to spill. ExxonMobil draws uniformly between a "
-            "20 m floor and the relief; C&C draws a strongly top-weighted shape over the same "
-            "range.\n\n"
+            "What this series is. The top-weighted and the ExxonMobil families are the same "
+            "banded model, sharing the same fill-to-spill weight. They differ in one thing: the "
+            "distribution drawn when the closure does not fill to spill. ExxonMobil draws "
+            "uniformly between a 20 m floor and the relief; the top-weighted family concentrates "
+            "the same range near the top.\n\n"
             "It is not a second dataset. It is one modelling choice, and the fill fractions in the "
             "table above against Graham's show how much that choice moves the answer. The "
             "parameters are held outside the repository, and the series does not appear on a "

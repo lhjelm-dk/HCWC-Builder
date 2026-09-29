@@ -7,6 +7,7 @@ repo is a contract asserted against my reading; this one asks the consumer.
 from __future__ import annotations
 
 import dataclasses
+import os
 import sys
 from pathlib import Path
 
@@ -18,7 +19,11 @@ from hcwc.core.limits import Group, reference_prospect
 from hcwc.io import epos
 from hcwc.io import wellvolpos as wvp
 
-WELLVOLPOS = Path("D:/Dokumenter/Lars/Pythonscripts/WellVolPOS")
+#: The consumer repository, if it is on this machine: a sibling checkout by default, which is the
+#: usual layout, or wherever `WELLVOLPOS_REPO` says. The contract test below skips when it is not
+#: there, so a clone without it is a working clone.
+WELLVOLPOS = Path(os.environ.get("WELLVOLPOS_REPO",
+                                 Path(__file__).resolve().parent.parent.parent / "WellVolPOS"))
 
 
 @pytest.fixture(scope="module")

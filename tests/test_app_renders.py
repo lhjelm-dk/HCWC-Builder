@@ -525,7 +525,7 @@ class TestTheSealDensitiesAreInSitu:
         calculator is still what the *Computed* source runs.
 
         Until 15 Sep 2026 these were 79 / 148 / 433 m, from an oil-water tension line that gave
-        11.7 dyne/cm at 70 C; the elicited 18-28 dyne/cm that replaced it (archive/development_notes/IFT_CHECK_2026-09-15.md)
+        11.7 dyne/cm at 70 C; the elicited 18-28 dyne/cm that replaced it (the check of 15 Sep 2026)
         roughly doubles the capacity, which is the finding.
         """
         at = _run(**TOP_SEAL_COMPUTED)
@@ -1702,7 +1702,7 @@ class TestTheArgumentsLiveInDocuments:
     """The docs split, 5 Sep 2026, moved three essays that were pure reasoning out of the tabs
     into `docs/`. On 15 Sep 2026 they and the other theory notes were folded into one document,
     `docs/THEORY.md`, rendered on tab 8 as 8.1 and 8.1.2 to 8.1.10, with the superseded notes kept
-    under `archive/superseded_notes/`. The tabs state a conclusion and point at a number.
+    off-repository with the superseded notes. The tabs state a conclusion and point at a number.
 
     **The viewer fails silently by design.** A missing file gets *"not found in this checkout"*
     rather than an exception, which is right for a deployment without the docs folder and wrong as
@@ -1770,16 +1770,22 @@ class TestTheArgumentsLiveInDocuments:
 
     def test_the_superseded_notes_are_kept_off_screen(self):
         """*Files are moved, not deleted.* The five notes 8.1 replaced stay readable in
-        archive/superseded_notes/, indexed by a README, and none is registered on tab 8 any more."""
+        _private/archive/superseded_notes/, indexed by a README, and none is registered on tab 8."""
         import pathlib
 
         root = pathlib.Path(__file__).resolve().parent.parent
         notes = ["COMPETING_LIMITS.md", "LIKELIHOOD_OR_PRIOR.md", "WEIGHT_NOT_BAYES.md",
                  "BASE_RATE_NEGLECT.md", "BENCHMARK_SOURCES.md"]
-        missing = [n for n in notes if not (root / "archive" / "superseded_notes" / n).exists()]
-        assert not missing, f"a superseded note was deleted rather than moved: {missing}"
-        readme = (root / "archive" / "superseded_notes" / "README.md").read_text(encoding="utf-8")
-        assert all(n in readme for n in notes), "archive/superseded_notes/README.md does not list every note"
+        # The archive left the repository on 29 Sep 2026: nothing in it is imported, and a clone
+        # should not pay for the history of a draft. The guard still runs where the notes live.
+        kept = root / "_private" / "archive" / "superseded_notes"
+        if kept.exists():
+            missing = [n for n in notes if not (kept / n).exists()]
+            assert not missing, f"a superseded note was deleted rather than moved: {missing}"
+            readme = (kept / "README.md").read_text(encoding="utf-8")
+            assert all(n in readme for n in notes), "the index does not list every note"
+        assert not (root / "archive").exists(), (
+            "the archive is back in the repository, which publishes it")
         source = "\n".join((root / f).read_text(encoding="utf-8")
                            for f in ("app.py", "hcwc/ui/theory.py", "hcwc/ui/concept.py"))
         assert not [n for n in notes if n in source], "a superseded note is back on screen"
@@ -1818,8 +1824,15 @@ class TestTheArgumentsLiveInDocuments:
         root = pathlib.Path(__file__).resolve().parent.parent
         reviews = ["BEHA_2012_REVIEW.md", "HOOD_2019_REVIEW.md", "MONIGLE_2025_REVIEW.md",
                    "LOWRY_2005_REVIEW.md", "SEAL_CAPACITY_REVIEW.md"]
-        missing = [n for n in reviews if not (root / "docs" / "reviews" / n).exists()]
-        assert not missing, f"a review was deleted rather than kept: {missing}"
+        # They left the repository on 29 Sep 2026: they audit other people's published work, and
+        # the repository is meant to go public. The guard still runs where they live, and a clone
+        # without them is a working clone.
+        kept = root / "_private" / "development_notes" / "reviews"
+        if kept.exists():
+            missing = [n for n in reviews if not (kept / n).exists()]
+            assert not missing, f"a review was deleted rather than kept: {missing}"
+        assert not (root / "docs" / "reviews").exists(), (
+            "the reviews are back in the repository, which publishes them")
 
         source = "\n".join((root / f).read_text(encoding="utf-8")
                            for f in ("app.py", "hcwc/ui/theory.py", "hcwc/ui/concept.py"))
@@ -1917,8 +1930,8 @@ class TestThePaperAgreesWithTheAppItDescribes:
     #: `scripts/export_exhibits.py` and named by number. The documents name the files they use,
     #: so the test reads the references out of the markdown rather than pinning a list that has
     #: to be edited whenever the paper is rewritten.
-    #: The manuscript moved to `archive/superseded_notes/` on 24 Sep 2026; nothing under
-    #: `archive/` is rendered, so only the two live documents are checked.
+    #: The manuscript moved to the superseded notes on 24 Sep 2026, and those left the
+    #: repository on 29 Sep 2026, so only the two live documents are checked.
     DOCUMENTS = ("paper/ARTICLE.md", "paper/LINKEDIN_POST.md")
 
     @staticmethod
@@ -2004,6 +2017,44 @@ class TestThePaperAgreesWithTheAppItDescribes:
         assert not quoted, (
             "the post carries figures again; either keep them out, or pin them to "
             f"scripts/paper_facts.py the way the article is pinned: {quoted}")
+
+    def test_the_linkedin_page_is_current(self):
+        """`paper/ARTICLE_LINKEDIN.html` is the article with its maths flattened, for pasting into
+        LinkedIn's editor, and is generated by `scripts/linkedin_article.py`.
+
+        It is committed so it is there when wanted, which means it can go stale the moment the
+        article is edited. Regenerating is one command; this fails until it is run.
+        """
+        import importlib.util
+
+        root = self._root()
+        spec = importlib.util.spec_from_file_location(
+            "linkedin_article", root / "scripts" / "linkedin_article.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        for source, page in module.PAGES:
+            body = module.convert(source.read_text(encoding="utf-8"))
+            assert body in page.read_text(encoding="utf-8"), (
+                f"{page.name} is behind {source.name}; run scripts/linkedin_article.py")
+
+    def test_the_linkedin_post_page_is_current(self):
+        """`paper/LINKEDIN_POST.html` is the post with its headline in Unicode bold, for pasting
+        into the feed composer, which keeps no formatting from a rich-text paste.
+
+        Committed for the same reason as the article page, and stale for the same reason: one
+        command regenerates it, and this fails until it is run.
+        """
+        import importlib.util
+
+        root = self._root()
+        spec = importlib.util.spec_from_file_location(
+            'linkedin_article', root / 'scripts' / 'linkedin_article.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        source, page = module.POST
+        body = module.convert_post(source.read_text(encoding='utf-8'))
+        assert body in page.read_text(encoding='utf-8'), (
+            f'{page.name} is behind {source.name}; run scripts/linkedin_article.py')
 
     def test_the_worked_prospect_is_reproducible(self):
         """The prospect definition ships beside the figures, so the numbers can be re-derived."""
