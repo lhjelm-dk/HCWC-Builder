@@ -22,8 +22,12 @@ import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-SOURCE = ROOT / "paper" / "ARTICLE.md"
-OUT = ROOT / "paper" / "ARTICLE_LINKEDIN.html"
+#: Each article and the page written from it. The short one is what goes to LinkedIn; the long one
+#: is kept paste-ready because it is occasionally wanted as a document.
+PAGES = [
+    (ROOT / "paper" / "ARTICLE.md", ROOT / "paper" / "ARTICLE_LINKEDIN.html"),
+    (ROOT / "paper" / "ARTICLE_SHORT.md", ROOT / "paper" / "ARTICLE_LINKEDIN_SHORT.html"),
+]
 
 #: Unicode subscripts, for the few subscripts whose characters all exist. An uppercase subscript
 #: has no Unicode form at all, so `z_HCWC` keeps its underscore rather than losing the structure.
@@ -156,12 +160,18 @@ def convert(markdown: str) -> str:
 
 
 def main() -> None:
-    body = convert(SOURCE.read_text(encoding="utf-8"))
+    for source, out in PAGES:
+        if source.exists():
+            write(source, out)
+
+
+def write(source: pathlib.Path, OUT: pathlib.Path) -> None:
+    body = convert(source.read_text(encoding="utf-8"))
     # A LaTeX command the table above does not know would reach LinkedIn as source. Say so rather
     # than let it through: the article gains expressions over time and this file lags them.
     unknown = sorted(set(re.findall(r"\\[a-zA-Z]+", re.sub(r"<[^>]+>", "", body))))
     if unknown:
-        print("  unhandled LaTeX, add it to COMMANDS:", ", ".join(unknown))
+        print(f"  unhandled LaTeX in {source.name}, add it to COMMANDS:", ", ".join(unknown))
     OUT.write_text(
         "<!doctype html><meta charset='utf-8'>"
         "<title>HCWC article, for the LinkedIn editor</title>"
@@ -170,7 +180,7 @@ def main() -> None:
         "Select all and copy, then paste into LinkedIn's article editor: headings, bold, italics "
         "and links survive, and every formula is plain text so it arrives once. Where a yellow "
         "line names a file, upload that figure from <code>paper/figures/</code> and put the "
-        "italic line under it as the caption. Generated from <code>paper/ARTICLE.md</code>; "
+        "italic line under it as the caption. Generated from <code>" + source.name + "</code>; "
         "regenerate rather than editing this file.</p>\n" + body + "</body>",
         encoding="utf-8")
     print(f"  {OUT.relative_to(ROOT)}")

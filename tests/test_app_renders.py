@@ -2019,10 +2019,10 @@ class TestThePaperAgreesWithTheAppItDescribes:
             "linkedin_article", root / "scripts" / "linkedin_article.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        body = module.convert((root / "paper" / "ARTICLE.md").read_text(encoding="utf-8"))
-        page = (root / "paper" / "ARTICLE_LINKEDIN.html").read_text(encoding="utf-8")
-        assert body in page, (
-            "the LinkedIn page is behind the article; run scripts/linkedin_article.py")
+        for source, page in module.PAGES:
+            body = module.convert(source.read_text(encoding="utf-8"))
+            assert body in page.read_text(encoding="utf-8"), (
+                f"{page.name} is behind {source.name}; run scripts/linkedin_article.py")
 
     def test_the_worked_prospect_is_reproducible(self):
         """The prospect definition ships beside the figures, so the numbers can be re-derived."""
