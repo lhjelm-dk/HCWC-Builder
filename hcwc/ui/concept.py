@@ -84,7 +84,7 @@ def render() -> None:
 
         # Trimmed 16 Sep 2026 to the operational statement. The argument for reading the chance
         # off the contact distribution, the ranking of effort, the precedent and the limitations
-        # are stated once, on tab 8.1 (archive/development_notes/EXPLANATION_MAP_2026-09-16.md, tab 1).
+        # are stated once, on tab 8.1 (the explanation map of 16 Sep 2026, tab 1).
         st.markdown(
             "A discovery is a column of at least the assessment minimum set on **2.0 Prospect**; the "
             "chance that the well finds hydrocarbons is the contact distribution read at that depth. Method: see 8.1.4. "

@@ -1,7 +1,7 @@
 # Architecture, as it is (Phase 1, 18 September 2026)
 
-Developer-facing. Describes the repository before the clean-up; `docs/REPO_AUDIT.md` classifies
-every file, `docs/BASELINE.md` records the numbers the refactor must reproduce.
+Developer-facing. Describes the repository before the clean-up; `docs/BASELINE.md` records the
+numbers the refactor must reproduce.
 
 ## 1 · Layers
 

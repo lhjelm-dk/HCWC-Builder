@@ -59,7 +59,7 @@ class DetectionFunction:
     ⚠ **The shape is a modelling choice, not physics.** A Class III sand can become *less* visible
     when very thick, as the top and base responses separate; that is a humped function, not a
     monotone one. The logistic is exposed rather than hard-coded for that reason, and
-    ``archive/development_notes/DHI_alignment.md`` §9 flags it as worth a geophysicist's opinion.
+    The signed working note of 25 August 2026, §9, flags it as worth a geophysicist's opinion.
 
     ``false_positive`` is the detector's other property: how often a trap with **no** hydrocarbons
     shows an anomaly of the class being looked for, stated relative to how often a

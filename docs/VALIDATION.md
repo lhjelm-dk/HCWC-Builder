@@ -38,16 +38,20 @@ minutes). Core and io import without Streamlit, so the numerical tests need no U
 
 ## Audits on record
 
-- `docs/AUDIT_2026-09-14.md`: the eleven core modules end to end; two defects fixed the same day.
-- `docs/DHI_AUDIT_2026-09-16.md`: the DHI chain against 8.1.6–8.1.8; no inconsistency found.
-- The conversation audit of 18 Sep 2026 (summarised in `docs/REPO_AUDIT.md` §8): P(G) is the
+The audit documents are working notes and are held off-repository; what they found is in the
+tests and in 8.1.8.
+
+- The numerical audit of 14 Sep 2026: the eleven core modules end to end; two defects fixed the
+  same day.
+- The DHI audit of 16 Sep 2026: the DHI chain against 8.1.6–8.1.8; no inconsistency found.
+- The conversation audit of 18 Sep 2026: P(G) is the
   accumulation chance everywhere; the threshold enters once; each channel updates one factor;
   one weight array reads every posterior quantity.
 
 ## Numerical baseline
 
-`docs/BASELINE.md` pins the shipped prospect (P(G) 0.4082, F(h_min) 0.9874, POS 0.4031, the
-percentiles and shares), the DHI case (LR 2.6172, P(G | s) 0.6436, POS 0.6394, the posterior
-percentiles, ESS 4 872.3) and the core fixture. `docs/REFACTOR_VALIDATION.md` records what the
-clean-up changed numerically: the percentile estimator only, by the last digit;
-`docs/FINAL_VALIDATION_2026-09.md` records the final review of 21 Sep 2026, which changed no number.
+`docs/BASELINE.md` pins the shipped prospect (P(G) 0.4082, F(h_min) 1.0000, POS 0.4082, the
+percentiles and shares), the DHI case at the app's opening settings (LR 1.2719, P(G | s) 0.4674,
+POS 0.4674, the posterior percentiles, ESS 4 857.1) and the core fixture. The clean-up of 18–20 Sep 2026 changed one
+number, the percentile estimator's last digit; the final review of 21 Sep 2026 changed none.
+Both are recorded in the working notes held off-repository.

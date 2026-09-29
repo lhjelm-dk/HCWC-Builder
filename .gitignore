@@ -38,6 +38,11 @@ pytest*.xml
 reference/*.xlsx
 reference/*.xlsm
 
+# Superseded notes, old figures and the dated working notes. Kept on this machine, out of the
+# repository from 29 Sep 2026: the application reads none of them, and a clone should not pay
+# several megabytes for the history of a draft.
+/archive/
+
 # Non-public benchmark data. The "C&C" reservoir statistics come from an
 # unpublished study and must not leave this machine. The app reads them from here
 # if present and silently omits that comparison series if not, so a clone without
@@ -47,6 +52,6 @@ reference/private/
 # The working conventions Lars writes for his assistant: tone, numbering, the standing
 # constraints. Untracked from 29 Sep 2026 by his decision -- it is a note to one reader and
 # not part of what the repository publishes. It stays on disk and is still the instruction
-# file; it is simply not committed. Earlier commits still carry it (see docs/REPO_AUDIT.md).
+# file; it is simply not committed.
 CLAUDE.md
 

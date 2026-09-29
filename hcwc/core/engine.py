@@ -16,7 +16,7 @@ answer about *mechanism*, which is what the per-element depth decomposition is b
 
 **The assessment minimum is applied as a flag, not a filter.** Realisations below it stay in the
 array marked as failures, because `POS = P(column >= h_min)` is a reading of the same object as the
-contact distribution — see ``archive/development_notes/DHI_alignment.md``. Dropping them would make the two impossible to
+contact distribution — see the signed working note of 25 August 2026. Dropping them would make the two impossible to
 reconcile, which is the confusion that note exists to resolve.
 """
 from __future__ import annotations

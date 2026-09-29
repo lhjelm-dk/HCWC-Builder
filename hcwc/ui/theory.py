@@ -190,8 +190,7 @@ def render() -> None:
         st.info(
             "Every number in it is computed rather than typed: the worked prospect is the app's "
             "own default, read at the settings the app opens on, and the figures are the app's "
-            "own, exported by `scripts/export_exhibits.py`. The manuscript it was cut down from "
-            "is kept in `archive/superseded_notes/`."
+            "own, exported by `scripts/export_exhibits.py`."
         )
         with st.expander("The source: Markdown, for posting or for a document"):
             st.code(_paper_text, language="markdown")

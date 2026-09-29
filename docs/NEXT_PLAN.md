@@ -40,7 +40,7 @@ where a lab MICP exists it is the number the assessor has. Small.
 
 **Capillary-controlled two-phase columns** — the one real gap the Hood (2019) review found (`docs/reviews/HOOD_2019_REVIEW.md`). The app has no seal-capacity route to a gas–oil contact, and the charge-driven route exists in `hcwc.core.charge` but is wired to no widget. Fully planned in **`docs/PLAN_DUAL_PHASE_SEAL.md`**, including the one thing to settle first: the derivation gives a 45 % gas cap on this app's own interfacial-tension correlations where Hood quotes 20 %, and the disagreement is entirely in oil–water tension.
 
-Its cheap sibling — commodity scenarios from realisation proportions, Hood's slide 19 — needs no new physics and would go first. Both wait: Lars, 15 Sep 2026, does not want the two-phase seal implemented yet, and step 0 (the oil–water tension) is closed by `archive/development_notes/IFT_CHECK_2026-09-15.md`.
+Its cheap sibling — commodity scenarios from realisation proportions, Hood's slide 19 — needs no new physics and would go first. Both wait: Lars, 15 Sep 2026, does not want the two-phase seal implemented yet, and step 0 (the oil–water tension) is closed by the interfacial-tension check of 15 Sep 2026.
 
 ---
 
@@ -50,16 +50,17 @@ Lars's call on 7 Sep 2026, restructuring tab 8.0: a user browsing the theory tab
 five documents auditing other people's papers. They are **not deleted** — they are the working
 behind several of the app's design decisions, and each one changed something. They are indexed
 here because `NEXT_PLAN.md` is the internal document by design and is deliberately not offered in
-the app.
+the app. Since 29 September 2026 they are held off-repository as well, in
+`_private/development_notes/reviews/`.
 
 | | What it settles |
 |---|---|
 | `BEHA_2012_REVIEW.md` | The closest published precedent to the engine, and what can still be claimed as new. Scenario enumeration, not min-of-samples — the distinction the paper's §1.1 draws. |
 | `HOOD_2019_REVIEW.md` | The source deck the engine is built on, read in full rather than through the Rose blog. Truncating vs terminating; fill-to-spill as an output. One real gap found: capillary-controlled two-phase columns, planned in `PLAN_DUAL_PHASE_SEAL.md`. |
-| `AUDIT_2026-09-14.md` | Full numerical audit of the eleven core modules. Two defects found and fixed the same day (the derived P(well) dropped the Reservoir chance; the recommended Apex|spill correlation crashed the trust panel); fifteen limitations and polish items recorded with proposed fixes and the test each needs. |
+| `AUDIT_2026-09-14.md` (off-repository) | Full numerical audit of the eleven core modules. Two defects found and fixed the same day (the derived P(well) dropped the Reservoir chance; the recommended Apex|spill correlation crashed the trust panel); fifteen limitations and polish items recorded with proposed fixes and the test each needs. |
 | `LINKEDIN_POST.md` | The post that links to the article: text, eleven images from `paper/post/` (exported from the app by `scripts/post_images.py`), captions and posting notes. Placeholders for the three URLs. |
 | `ARTICLE_LONG_2026-09.md` | The 9 700-word manuscript the LinkedIn article (`ARTICLE.md`, tab 8.2) was shortened from on 16 Sep 2026; kept for a journal version. Its five figures stay in `docs/figures/`. |
-| `DHI_AUDIT_2026-09-16.md` | Mathematical audit of the DHI chain (p_valid, seen/partial/absent likelihoods, strength, dependence, limiting cases, the POS identity). No inconsistency found; three documentation defects corrected; 22 tests added in `tests/test_dhi_audit.py`. |
+| `DHI_AUDIT_2026-09-16.md` (off-repository) | Mathematical audit of the DHI chain (p_valid, seen/partial/absent likelihoods, strength, dependence, limiting cases, the POS identity). No inconsistency found; three documentation defects corrected; 22 tests added in `tests/test_dhi_audit.py`. |
 | `MONIGLE_2025_REVIEW.md` | The closest published work to the DHI half. Supplies the empirically calibrated contact weight `min(2 x DHI score, 0.95)` — the external referent the strength axis lacked — and the question of whether `R_CAP = 50` should come down — settled 9 Sep 2026 by splitting it into a single-channel ceiling of 10 and a combination guard of 50, since the one constant was bounding two different quantities. |
 | `LOWRY_2005_REVIEW.md` | What the paper behind the DHI update settles and what it does not. |
 | `SEAL_CAPACITY_REVIEW.md` | Whether the capillary maths in `hcwc/core/seals.py` is right, including the two unit traps. |
@@ -79,7 +80,7 @@ the engine and prior art for the level above it. **Buy or borrow it before the m
 paper.** The review lists the four things to check when it arrives.
 
 **A second public benchmark: answered, and the answer is no.** Searched 28 Aug 2026 — see
-`archive/superseded_notes/BENCHMARK_SOURCES.md` (now 8.1.8 of `docs/THEORY.md`). Edmundson appears to be the only openly redistributable dataset
+the superseded note on benchmark sources (now 8.1.8 of `docs/THEORY.md`). Edmundson appears to be the only openly redistributable dataset
 relating column height to closure height, for a structural reason rather than an accidental one:
 closure height needs an apex and a spill picked off depth-converted 3D per field, which is months
 of interpretation rather than a database query. **Do not repeat the search without new

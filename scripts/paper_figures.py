@@ -4,7 +4,7 @@ Run:  python scripts/paper_figures.py
 
 Since 17 Sep 2026 the article's other figures are the app's own, exported by
 ``scripts/export_exhibits.py`` with the same look as the tabs; the matplotlib set this script drew
-before is kept as ``archive/old_figures/paper_figures_mpl_2026-09-17.py``. What stays here is the
+before is kept off-repository as ``paper_figures_mpl_2026-09-17.py``. What stays here is the
 figure that has no app counterpart, the terminating-versus-truncating sketch, and the prospect
 written beside the figures so the inputs travel with the outputs.
 
@@ -138,7 +138,7 @@ def main() -> None:
     # `scripts/export_exhibits.py`, which writes every figure and table to `paper/figures` at the
     # browser's ratio, named by number. `figure_5_truncate_vs_terminate` and
     # `hcwc/plotting/paper/figures.py` stay here for reuse and are not run by this script; their
-    # output is in `archive/old_figures/superseded_2026-09-22/`.
+    # output is kept off-repository, among the superseded figures.
 
     result = engine.run(limit_set, n=N, seed=SEED)
     f = float((result.column_m >= HMIN).mean())
