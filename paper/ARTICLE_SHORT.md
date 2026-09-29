@@ -36,15 +36,15 @@ realisations.
 
 ## The problem this addresses
 
-In most evaluations the contact uncertainty is a distribution somebody chose: uniform from apex to
-spill, a three-point estimate, a company standard, a fit to analogue fields. The number may be
-perfectly reasonable. What it cannot say is which geological process it represents, and therefore
+In many evaluations, the HCWC uncertainty is represented by a distribution chosen directly:
+uniform from apex to spill, a three-point estimate, a company standard, or a fit to regional
+statistics. The number may be perfectly reasonable. What it cannot say is which geological process it represents, and therefore
 what evidence would change it.
 
 The awkwardness shows when the pieces are assembled. The geological probability of success is
 assessed element by element — charge, reservoir, closure, retention — and arrives as one number. The
 contact distribution is assessed separately and arrives as another. Then a direct hydrocarbon
-indicator appears, modifies the chance by some factor, and indicates a contact at a depth quite
+indicator appears, modifies the probability by some factor, and indicates a contact at a depth
 different from the minimum column the economics were built around.
 
 Three numbers, three provenances, and no principled way to reconcile them. Worse, the assessment
@@ -63,8 +63,8 @@ and was that the mechanism we spent the money studying?
 Each mechanism is a geological statement, and each is already held as an opinion somewhere in the
 team.
 
-Structural spill is the maximum column the trap geometry retains. It is a mapped surface, so depth
-conversion and interpretation make it a distribution rather than a fixed depth.
+Structural spill is the maximum hydrocarbon column permitted by the trap geometry. It is a mapped
+surface, so depth conversion and interpretation make it a distribution rather than a fixed depth.
 
 Charge limitation applies where the available charge is insufficient to fill the trap to a deeper
 limit. It should not be represented as a contact at the base of the structure by default: if charge
@@ -116,7 +116,7 @@ That is why the limits are sampled and the minimum taken, rather than blended.
 
 The distinction matters most for a leak. Merging a leak into a background column distribution
 suppresses the realisations above the leak and leaves the rest untouched, which is not what a leak
-does; the blended distribution then corresponds to no geology at all. The published consequence is
+does; the blended distribution then corresponds to no geology at all. A counter-intuitive consequence is
 that adding a deep leak can make a prospect look larger.
 
 The same reasoning applies at the spill point. Truncating a background distribution with an
@@ -155,46 +155,75 @@ overall but dominate the deep ones — and those are the realisations that carry
 ![The limits on one axis](figures/Figure_4.1.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
 > Figure 4. The same limits drawn as exceedance curves on one axis. Each flattens at that limit's
-> probability of being present. The contact curve lies below all of them, because a column reaches a
-> given depth only where every active limit permits it.
+> probability of being present. The contact exceedance curve lies below all of them, because a
+> column reaches a given depth only where every active limit permits it.
 
-## One model for the contact and the risk against depth
+## One model for the HCWC distribution and the probability of success against depth
 
-Because the contact distribution is built from limits rather than chosen, it is simultaneously a
-statement of how the chance of finding hydrocarbons falls with depth. The two are readings of one
-object rather than two assessments that have to agree.
+The competing limits do not only produce an HCWC distribution. The same realisations produce a
+probability-of-success curve against depth, and this is the result the framework exists for.
 
-The chance that a well finds hydrocarbons at a given depth is the chance that an accumulation exists
-at all, multiplied by the chance that the column reaches that depth. The first factor is the
-geological risk assessment, unchanged and unchallenged. The second is read off the contact
-distribution. Both terms are necessary: quoting the conditional term alone treats the accumulation
-as certain and overstates the prospect substantially.
+Three quantities have to be kept apart, and most of the confusion in this area comes from merging
+them.
+
+The first is the probability that a hydrocarbon accumulation exists at all — that charge, reservoir,
+closure and retention have worked at the crest. This is the geological POS. Nothing in the contact
+model changes it.
+
+The second is the probability that the column reaches a given depth, conditional on an accumulation
+existing. This is what the competing limits produce. Every realisation in the model assumes the
+elements worked, so the exceedance curve read off them is conditional throughout.
+
+The third is what an explorer wants: the probability of finding hydrocarbons at a given depth. It
+is the product of the other two. Read at one particular depth — the shallowest contact that would
+still make the well a discovery, the assessment minimum — it is the prospect POS that is usually
+quoted as a single number.
+
+    probability of success at depth h
+        = geological POS × probability the column reaches h, given an accumulation
+
+The distinction is not pedantic. The HCWC exceedance curve is conditional on an accumulation
+existing, so it is not, by itself, the prospect probability of finding hydrocarbons at depth.
+Quoting it as one implicitly sets the geological POS to unity and overstates the prospect by the
+reciprocal of that POS — on the worked prospect, a factor of about two and a half.
 
 ![The chance against depth, and what makes it](figures/Figure_4.1.3a_the-chance-against-depth-and-what-makes-it.png)
 
-> Figure 5. One distribution read three ways: the chance the contact lies at or below each depth
-> given an accumulation, the same multiplied by the chance an accumulation exists, and the
-> controlling limit in each depth bin. Because the curve falls with depth, a probability quoted
-> without the depth or column height it was read at means very little.
+> Figure 5. One distribution read three ways: the probability that the HCWC lies at or below each
+> depth given an accumulation, the same multiplied by the geological POS, and the controlling limit
+> in each depth bin. The first curve is conditional; only the second is the prospect probability of
+> success at that depth. Because both fall with depth, a probability quoted without the depth or
+> column height it was read at means very little.
 
-An array built this way cannot contradict itself. The chance of reaching a deeper contact cannot
-exceed the chance of reaching a shallower one, since a column that reaches the deeper level has
-already passed the shallower. That is guaranteed by construction here, because every point on the
-curve is read off the same sample. An array assembled band by band, with a risk stated for each
-column-height slice, carries no such guarantee, and a violation is easy to miss because each band
-looks reasonable on its own.
+This is why the framework ties HCWC uncertainty to the geological POS rather than carrying the
+contact as a separate distribution to be reconciled afterwards. The limits that set the contact are
+the same limits that set the probability at every depth, so there is no second elicitation and
+nothing to reconcile.
 
-The same construction gives the risk element by element.
+An array built this way is internally monotonic by construction. The probability of reaching a
+deeper contact cannot exceed the probability of reaching a shallower one, since a column that
+reaches the deeper level has already passed the shallower, and every point on the curve is read off
+the same sample. An array assembled band by band, with a probability stated for each column-height
+slice, carries no such guarantee, and a violation is easy to miss because each band looks reasonable
+on its own.
+
+The same construction gives the probability element by element.
 
 ![Each element's chance against depth](figures/Figure_4.2.2a_each-element-s-chance-curve-derived-from-the.png)
 
-> Figure 6. The same information per risk element — charge, reservoir, closure, retention — derived
-> from the shallowest active limit within each element rather than allocated by judgement. This is
-> the form a volumetric tool needs, and the tool checks on every run that the per-element curves
-> still multiply back to the contact distribution.
+> Figure 6. The same information shown per risk element — charge, reservoir, closure and retention
+> — derived from the shallowest active limit within each element rather than allocated by judgement.
+> This is the form a volumetric tool needs, and the tool checks on every run that the per-element
+> curves still multiply back to the HCWC distribution.
 
-Change a seal capacity, a fault limit or a spill distribution, and the contact, the chance at the
-well and the volume range all move together, consistently, because they were never separate.
+Read in that order, the model is a chain. The geological risk elements carry the limits; the
+competing limits produce the HCWC distribution; the HCWC distribution read against depth and
+multiplied by the geological POS is the probability of success at depth. Each step is visible, and
+each can be argued with on geological grounds.
+
+Change a seal capacity, a fault limit or a spill distribution, and the HCWC distribution, the
+probability at a well and the volume range all move together, consistently, because they were never
+separate.
 
 ## Checking against what has been found
 
@@ -233,9 +262,9 @@ finding about the spill and seal inputs, and it should be explained by a mechani
 ## A seismic indication as evidence, not as a second model
 
 A direct hydrocarbon indicator is usually handled by defining a separate case and substituting its
-contact depth, or its volume, for the geological result. That merges late, which is a real virtue,
-but it treats an observation as a scenario — and a scenario cannot be argued with in geological
-terms.
+contact depth, or its volume, for the geological result. That is simple to implement late in the workflow, which
+is a real virtue, but it treats an observation as a scenario — and a scenario cannot be argued with
+in geological terms.
 
 The alternative is to treat the indication as evidence about the model that already exists. The
 geological realisations are a sample of what the model considers possible. The seismic observation
@@ -250,29 +279,29 @@ so they are directly comparable rather than being two unrelated answers.
 
 ![The model as two rows](figures/Figure_8.1.1a_the-model-as-two-rows-the-geological-model.png)
 
-> Figure 8. The whole workflow. The geological model is the prior: element chances give the chance
-> of an accumulation, and given an accumulation the limits compete. The seismic indication enters as
-> evidence in two separate channels. Both rows end in the same reading: the chance of meeting the
-> threshold, at the assessment minimum and at a well.
+> Figure 8. The whole workflow. The geological model is the prior: the element chances give the
+> geological POS, and given an accumulation the limits compete. The seismic indication enters as
+> evidence in two separate channels. Both rows end in the same reading: the probability of meeting
+> the threshold, at the assessment minimum and at a well.
 
 The essential move is to separate what the indication tells us about *whether* hydrocarbons are
 present from what it tells us about *where the column ends*. These are different questions, they are
 supported by different attributes, and collapsing them into one DHI factor is why a single number is
 so often argued about.
 
-## What the character channel does to the chance
+## What the character channel does to the probability of an accumulation
 
 Amplitude strength, polarity, conformity, behaviour with offset and consistency with the expected
 fluid response are evidence about whether the response is consistent with hydrocarbons at all. They
 say nothing directly about contact depth.
 
 In the tool this reading is placed on a DHI evidence index: a relative scale, neutral in the middle,
-increasingly supportive above and increasingly contradictory below. Two reference distributions —
-one for hydrocarbon-bearing outcomes, one for non-hydrocarbon — give the weight of evidence at any
-reading, and that weight updates the probability that an accumulation exists.
+increasingly supportive above and increasingly contradictory below. Two reference likelihood
+distributions — one for hydrocarbon-bearing outcomes, one for non-hydrocarbon — give the weight of
+evidence at any reading, and that weight updates the probability that an accumulation exists.
 
-The index moves the chance and leaves the contact distribution alone. On the worked prospect a
-moderately supportive reading takes the prospect chance from roughly four in ten to nearly five in
+The index moves the geological POS and leaves the HCWC distribution alone. On the worked prospect
+a moderately supportive reading takes the prospect POS from roughly four in ten to nearly five in
 ten, while the median contact does not move at all and the spread is unchanged. Nothing has been
 reweighted, because the character of the response is not evidence about depth.
 
@@ -295,7 +324,8 @@ already been used in the other channel.
 
 Keeping the two apart protects a case worth protecting: a dim body with a flat, conformable event
 that cuts structure is weak evidence for hydrocarbons and strong evidence about where the contact
-would be, and a method that derives one judgement from the other cannot say so.
+would be, and a method that derives one judgement from the other cannot represent that
+distinction.
 
 ![The pick against the geology](figures/Figure_5.1.1a_blue-is-the-geological-contact-distribution.png)
 
@@ -305,26 +335,32 @@ would be, and a method that derives one judgement from the other cannot say so.
 
 The result is that the seismic evidence reshapes the distribution rather than scaling it. A single
 multiplier on the probability of success changes the level of a curve and leaves its shape alone. An
-observation about depth cannot do that: it must raise the chance at some depths and lower it at
-others.
+observation about depth cannot do that: it must raise the probability at some depths and lower it
+at others.
 
 ![The chance against threshold, before and after](figures/Figure_5.1.5a_the-chance-against-threshold-p-g-f-h.png)
 
-> Figure 10. The chance of reaching each depth before and after the update. The curve does not
-> simply lift. The character scales it; the geometry reshapes it, raising the chance near and above
-> the indicated contact and lowering it below, because the evidence moves probability toward the
-> depths the interpreted event supports.
+> Figure 10. The prospect probability of success against depth — the geological POS times the
+> conditional exceedance — before and after the update. The curve does not simply lift. The character channel scales it; the geometry channel reshapes it, raising the
+> probability near and above the indicated contact and lowering it below, because the evidence moves
+> probability toward the depths the interpreted event supports.
 
 How far the evidence moves the answer is set by the uncertainty the interpreter states. A broad
 likelihood leaves the geological model with most of the influence; a narrow one lets the seismic
 observation dominate the contact distribution. That is not a defect — a well-imaged, conformable
-flat spot at a confidently picked depth is better evidence about the contact than any elicited seal
-capacity — provided the strength of the update follows from the stated uncertainty rather than from
-a decision to believe the DHI.
+flat spot at a confidently picked depth can provide much stronger evidence about HCWC depth than an
+elicited seal-capacity distribution — provided the strength of the update follows from the stated
+uncertainty rather than from a decision to believe the DHI.
 
-The tool reports how much of the original geological ensemble the answer now rests on. A low value
-does not mean the interpretation is wrong; it means the result depends heavily on a small part of
-the ensemble, which is worth knowing before the number is quoted.
+The tool reports how concentrated the posterior weighting has become relative to the original
+geological ensemble. A low value does not mean the interpretation is wrong; it means the result
+depends heavily on a small part of that ensemble, which is worth knowing before the number is
+quoted.
+
+Because the update is a reweighting of the same realisations rather than a second model, the
+geological figures have updated counterparts that can be read directly against them: Figure 11 is
+Figure 4 after the update, and Figure 12 is Figure 5. Each pair shows what the evidence changed and
+what it left alone.
 
 ![The limits on one axis, given the DHI](figures/Figure_5.2.2e_one-axis-five-views-exceedance-curves-is-the.png)
 
@@ -334,9 +370,9 @@ the ensemble, which is worth knowing before the number is quoted.
 
 ![The chance against depth given the DHI](figures/Figure_5.2.3a_the-chance-against-depth-and-what-makes-it.png)
 
-> Figure 12. Figure 5 after the update, so the two can be read side by side. The contact
-> distribution and the risk against depth have moved together, because they are readings of the same
-> object. The controlling mechanism per depth bin has moved with them.
+> Figure 12. Figure 5 after the update, so the two can be read side by side. The HCWC distribution
+> and the probability of success against depth have moved together, because they are readings of the
+> same object. The controlling mechanism per depth bin has moved with them.
 
 ## Absence as evidence
 
@@ -345,12 +381,12 @@ something should have been visible.
 
 No DHI is not the same as evidence against hydrocarbons. A thin or poorly imaged column may simply
 produce no mappable response, in which case its absence says very little. Whether a column could
-have shown at all is a geophysical judgement, and the tool asks for it explicitly as the chance that
-a column of a given height produces a mappable anomaly.
+have shown at all is a geophysical judgement, and the tool asks for it explicitly as the
+probability that a column of a given height produces a mappable anomaly.
 
 Where that judgement bites, absence reshapes the contact distribution toward the shorter columns
-that would not have shown. Whether it also lowers the chance that hydrocarbons are present at all
-requires one further assumption: how often a barren trap produces a similar-looking response. That
+that would not have shown. Whether it also lowers the probability that hydrocarbons are present at
+all requires one further assumption: how often a barren trap produces a similar-looking response. That
 rate is elicited rather than calibrated, so it belongs in an explicit sensitivity rather than hidden
 inside a result.
 
@@ -379,8 +415,9 @@ and has to be handled there, by being explicit about what each judgement is mean
 ![What the DHI can turn out to have been](figures/Figure_5.1.4b_the-outcomes-of-a-seen-dhi-in-depth-order-as.png)
 
 > Figure 13. What an indication can turn out to have been, as shares of all outcomes: no
-> hydrocarbons at all, a contact above the indicated band, a contact within it because the
-> indication is the contact, a contact within it by coincidence, and a contact below it.
+> hydrocarbons at all, a contact above the indicated band, a contact within the band because the
+> indication is the contact, a geological contact within the indicated band by coincidence, and a
+> contact below it.
 
 ![The outcomes with their chances](figures/Table_5.1.4c_the-outcomes-with-their-chances-summing-to.png)
 
@@ -402,9 +439,9 @@ constraint — and be carried through to the contact distribution with everythin
 is an integration layer between geological understanding, contact uncertainty and seismic evidence,
 not a competitor to the models that produce better constraints.
 
-Two simplifications are worth naming. Whether a mechanism is present is drawn independently of every
-other mechanism, so two faults that leak at correlated depths can be expressed while two faults that
-stand or fall together cannot. And a single contact is modelled at a time: a gas–oil contact and an
+Two simplifications are worth naming. Whether a mechanism is present is sampled independently of
+the other mechanisms, so two faults that leak at correlated depths can be expressed while two faults
+that stand or fall together cannot. And a single contact is modelled at a time: a gas–oil contact and an
 oil–water contact under the same seal are limited by different entry pressures, and that construction
 is not implemented.
 
@@ -422,9 +459,10 @@ corrected after drilling.
 
 A directly elicited contact distribution asks the assessor to specify the final uncertainty. The
 competing-limits approach asks them to specify the mechanisms that produce it — and those mechanisms
-mean different things: geometry, retention against buoyancy, lateral containment, petroleum-system
-uncertainty, a stress condition. Once each is a competing limit, the contact distribution and the
-chance of success at every depth are properties of the model rather than inputs to it.
+mean different things: geometry, retention against buoyancy-driven leakage, lateral containment,
+petroleum-system uncertainty and mechanical seal failure. Once each is a competing limit, the HCWC
+distribution and the probability of success at every depth are properties of the model rather than
+inputs to it.
 
 A dry hole or an unexpectedly small discovery can then be examined in terms of the mechanism that
 was misassessed, instead of the unanswerable question of why the contact distribution was too deep.
