@@ -15,7 +15,7 @@ dependencies = [
     "pandas>=2.2",
     "scipy>=1.14",
     "plotly>=5.24",
-    "streamlit>=1.56",
+    "streamlit>=1.56,<1.63",  # ceiling explained in requirements.txt
     "openpyxl>=3.1",
     "kaleido>=1.0",
 ]

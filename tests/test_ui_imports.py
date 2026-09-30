@@ -394,22 +394,29 @@ def test_every_widget_in_the_shared_depth_risk_function_is_keyed():
 
 def test_pyproject_mirrors_requirements():
     """Audit P2-3, 21 Sep 2026: requirements.txt is the canonical list and pyproject.toml must
-    carry the same floors, kaleido included. Two lists that disagree is one too many."""
+    carry the same constraints, kaleido included. Two lists that disagree is one too many.
+
+    The whole specifier is compared, not only the floor: since 30 Sep 2026 one of them carries a
+    ceiling as well, and a ceiling that reached one file and not the other would let the
+    deployment install a version the tests refuse.
+    """
     import pathlib
     import re
     import tomllib
 
+    def _specifiers(lines) -> dict:
+        found = {}
+        for line in lines:
+            line = line.split("#")[0].strip().strip(",").strip('"')
+            if line:
+                found[re.match(r"([A-Za-z0-9_-]+)", line).group(1).lower()] = line
+        return found
+
     root = pathlib.Path(__file__).resolve().parent.parent
-    req = {}
-    for line in (root / "requirements.txt").read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line and not line.startswith("#"):
-            name, floor = re.match(r"([A-Za-z0-9_-]+)>=([0-9.]+)", line).groups()
-            req[name.lower()] = floor
+    req = _specifiers(
+        line for line in (root / "requirements.txt").read_text(encoding="utf-8").splitlines()
+        if not line.strip().startswith("#"))
     proj = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
-    pyp = {}
-    for dep in proj["project"]["dependencies"]:
-        name, floor = re.match(r"([A-Za-z0-9_-]+)>=([0-9.]+)", dep).groups()
-        pyp[name.lower()] = floor
+    pyp = _specifiers(proj["project"]["dependencies"])
     assert pyp == req, f"pyproject {pyp} differs from requirements.txt {req}"
     assert "kaleido" in req

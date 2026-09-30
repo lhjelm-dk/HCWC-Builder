@@ -13,7 +13,12 @@ scipy>=1.14
 plotly>=5.24
 # 1.56 is the floor because `st.iframe` first appears there; it replaces
 # `st.components.v1.html`, whose stated removal date has already passed.
-streamlit>=1.56
+# A ceiling, against the rule above, from 30 Sep 2026: `SafeSessionState.filtered_state`
+# is gone by 1.64, and `hcwc/io/prospect.py` reads it to save a prospect while seven tests
+# read it to check the round trip. 1.62 is the newest version the suite is known to pass
+# on. Raise the ceiling with the fix, not before: the deployment installs this file, so an
+# open range lets Community Cloud upgrade into the breakage.
+streamlit>=1.56,<1.63
 openpyxl>=3.1
 # Server-side figure rendering for the 'every figure as PNG' export on tab 7. The
 # per-figure camera button needs nothing -- it renders in the browser -- so a
