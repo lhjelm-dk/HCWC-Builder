@@ -55,6 +55,7 @@ if _pending is not None:
         st.session_state["_loaded_name"] = _pending.get("prospect_name", "prospect")
 
 st.title("HCWC Distribution Builder")
+st.caption("*by Lars Hjelm*")
 st.caption(
     "Where is the hydrocarbon–water contact, why is it there, and what does that mean for the risk?"
 )
