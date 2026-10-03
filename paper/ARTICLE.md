@@ -1185,11 +1185,11 @@ informing that decision.
 ## References
 
 Beha, A., Christensen, J. E. & Young, R. (2012). A general method for the consistent volume
-assessment of complex hydrocarbon traps. *Journal of Petroleum Geology* **35**(1), 85–98.
+assessment of complex hydrocarbon traps. *Journal of Petroleum Geology* **35**(1), 85–97. doi:10.1111/j.1747-5457.2012.00520.x
 
 Edmundson, I., Davies, R., Frette, L. U., Mackie, S., Kavli, E. A., Rotevatn, A., Yielding, G. &
 Dunbar, A. (2021). An empirical approach to estimating hydrocarbon column heights for improved
-pre-drill volume prediction in hydrocarbon exploration. *AAPG Bulletin* **105**(12), 2381–2403.
+predrill volume prediction in hydrocarbon exploration. *AAPG Bulletin* **105**(12), 2381–2403.
 doi:10.1306/03122119223. Data: https://osf.io/6ysbv/ (CC-BY 4.0).
 
 Grant, N. T. (2020). Using Monte Carlo models to predict hydrocarbon column heights and to assess

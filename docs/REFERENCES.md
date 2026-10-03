@@ -13,7 +13,8 @@ situation this project is in.
 ## Method — how to represent column height
 
 **Beha, A., Christensen, J. E. & Young, R. (2012)** · *A general method for the consistent volume assessment of complex hydrocarbon traps.*
-**Journal of Petroleum Geology 35(1), 85–98.** DONG E&P and Rose & Associates.
+**Journal of Petroleum Geology 35(1), 85–97.** DONG E&P and Rose & Associates.
+doi:[10.1111/j.1747-5457.2012.00520.x](https://doi.org/10.1111/j.1747-5457.2012.00520.x)
 
 **The closest published precedent to this tool's engine.** Enumerates every combination of trapping
 elements working or failing, weights each scenario, and collapses the result onto leak-point
@@ -151,7 +152,7 @@ prospect risk assessment applied to the Otway Basin, Australia.* ASEG Extended A
 
 **Edmundson, I., Davies, R., Frette, L.U., Mackie, S., Kavli, E.A., Rotevatn, A., Yielding, G. &
 Dunbar, A. (2021)** · *An empirical approach to estimating hydrocarbon column heights for improved
-pre-drill volume prediction in hydrocarbon exploration.* AAPG Bulletin **105**(12), 2381–2403.
+predrill volume prediction in hydrocarbon exploration.* AAPG Bulletin **105**(12), 2381–2403.
 doi:[10.1306/03122119223](https://doi.org/10.1306/03122119223)
 🟢 **Preprint free:** doi:[10.31223/osf.io/zsakb](https://doi.org/10.31223/osf.io/zsakb) ·
 🟢 **DATA FREE, CC-BY 4.0:** https://osf.io/6ysbv/ (project https://osf.io/953cy)
