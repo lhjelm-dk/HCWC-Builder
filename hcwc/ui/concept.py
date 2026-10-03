@@ -4,7 +4,7 @@ from __future__ import annotations
 import streamlit as st
 
 from hcwc.paths import DOCS, REFERENCE
-from hcwc.ui import prospect_tab, theme
+from hcwc.ui import cheatsheet, prospect_tab, theme
 from hcwc.ui.numbering import Numbering
 
 
@@ -27,6 +27,11 @@ def render() -> None:
     empirical data and updated with DHI or well evidence. Method: see 8.1.
             """
         )
+
+        cheatsheet.render(
+            where="concept",
+            lead="A quick look at the whole method: one page, nine panels, every figure the app's "
+                 "own. The same sheet is above 8.1.1.")
 
         st.markdown("---\n\nNew here? The figure is the model with the tab each box lives on; the "
                     "tabs follow it left to right, top to bottom.")

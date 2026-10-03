@@ -525,7 +525,7 @@ class TestBeha2012PublishedExample:
     """Parity against a **published, independently computed** competing-limits case.
 
     Beha, Christensen & Young (2012), *A general method for the consistent volume assessment of
-    complex hydrocarbon traps*, J. Petroleum Geology 35(1), 85–98. DONG E&P and Rose & Associates.
+    complex hydrocarbon traps*, J. Petroleum Geology 35(1), 85–97. DONG E&P and Rose & Associates.
 
     Their worked example is a faulted four-way closure with a crest at 2000 m:
 

@@ -1,0 +1,452 @@
+<title>HCWC Method Cheat Sheet</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+@page{ size:A3 landscape; margin:7mm }
+
+:root{
+  --navy:#0e2a44; --navy-2:#154470; --ground:#e9f1f8; --card:#ffffff;
+  --ink:#12283c; --muted:#4e6579; --faint:#7d93a4;
+  --rule:#d2e0ec; --rule-soft:#e6eef5; --tint:#f3f8fc;
+  --accent:#1f6fb2; --accent-ink:#0e4e85;
+  /* the app's own element hues: salmon charge, blue closure, yellow reservoir, green retention */
+  --charge:#e8836a; --closure:#5b8fc9; --reservoir:#dcae3c; --retention:#6fae6b;
+  --shadow:0 1px 2px rgba(14,42,68,.07), 0 4px 14px rgba(14,42,68,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --navy:#081a2b; --navy-2:#0d304f; --ground:#0c151e; --card:#15212c;
+    --ink:#e6eef4; --muted:#a2b5c4; --faint:#7f94a4;
+    --rule:#26384a; --rule-soft:#1d2b39; --tint:#18242f;
+    --accent:#5aa3dd; --accent-ink:#8cc3ee;
+    --charge:#ef9a84; --closure:#7faadb; --reservoir:#e8c162; --retention:#8bc287;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.28);
+  }
+}
+:root[data-theme="dark"]{
+  --navy:#081a2b; --navy-2:#0d304f; --ground:#0c151e; --card:#15212c;
+  --ink:#e6eef4; --muted:#a2b5c4; --faint:#7f94a4;
+  --rule:#26384a; --rule-soft:#1d2b39; --tint:#18242f;
+  --accent:#5aa3dd; --accent-ink:#8cc3ee;
+  --charge:#ef9a84; --closure:#7faadb; --reservoir:#e8c162; --retention:#8bc287;
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.28);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font:400 14px/1.45 "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  padding:0; -webkit-font-smoothing:antialiased;
+}
+.sheet{max-width:1560px; margin:0 auto; padding:0 16px 40px}
+code,.m{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.93em; white-space:nowrap}
+.m{background:var(--rule-soft); padding:1px 4px; border-radius:3px}
+
+/* ---------------- masthead ---------------- */
+.mast{
+  background:linear-gradient(100deg, var(--navy) 0%, var(--navy-2) 100%);
+  color:#eaf3fb; border-radius:0 0 10px 10px;
+  padding:26px clamp(18px,2.4vw,34px);
+  display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1.25fr) auto;
+  gap:clamp(16px,2.6vw,38px); align-items:center;
+  margin:0 -16px 18px;
+}
+.mast h1{
+  font:800 clamp(27px,3.2vw,43px)/1.02 "Archivo",sans-serif; margin:0 0 7px;
+  letter-spacing:-.022em; color:#fff; text-wrap:balance;
+}
+.mast .sub{font-size:clamp(12.5px,1.18vw,16px); color:#b4cfe6; margin:0; white-space:nowrap}
+@media (max-width:900px){ .mast .sub{white-space:normal} }
+.mast .props{
+  border-left:1px solid rgba(255,255,255,.22); padding-left:clamp(16px,2.2vw,30px);
+  display:grid; gap:7px; font-size:clamp(12.5px,1.15vw,15px); color:#dcebf7;
+}
+.mast .props span{display:block}
+.mark{
+  border-left:1px solid rgba(255,255,255,.22); padding-left:clamp(16px,2.2vw,30px);
+  text-align:center; color:#fff;
+}
+.mark .wm{font:700 12px/1 "Archivo",sans-serif; letter-spacing:.16em; margin-top:8px}
+
+/* ---------------- grid ---------------- */
+.row{display:grid; gap:14px; margin-bottom:14px}
+.r3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.r2a{grid-template-columns:minmax(0,1.06fr) minmax(0,1fr)}
+@media (max-width:1180px){ .r3{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:760px){ .r3,.r2a{grid-template-columns:minmax(0,1fr)} }
+
+.panel{
+  background:var(--card); border:1px solid var(--rule); border-radius:10px;
+  padding:16px 18px 18px; box-shadow:var(--shadow); min-width:0;
+  display:flex; flex-direction:column;
+}
+.ph{display:flex; align-items:center; gap:11px; margin-bottom:12px}
+.badge{
+  width:28px; height:28px; border-radius:50%; flex:none;
+  background:var(--navy); color:#fff; display:grid; place-items:center;
+  font:700 14px/1 "Archivo",sans-serif;
+}
+.ph h2{font:700 clamp(16px,1.45vw,20px)/1.15 "Archivo",sans-serif; margin:0; letter-spacing:-.01em}
+.claim{font:600 14.5px/1.35 "IBM Plex Sans",sans-serif; margin:0 0 9px; color:var(--accent-ink)}
+.panel p{margin:0 0 9px; font-size:13.2px; color:var(--muted); line-height:1.47}
+.panel p.ink{color:var(--ink)}
+.panel p:last-child{margin-bottom:0}
+
+figure{margin:10px 0 0; min-width:0}
+figure img{width:100%; height:auto; display:block; border:1px solid var(--rule); border-radius:6px; background:#fff}
+figcaption{font-size:11.4px; line-height:1.4; color:var(--faint); margin-top:6px}
+
+/* ---------------- numbered steps ---------------- */
+.steps{display:grid; gap:11px; margin:4px 0 0}
+.step{display:grid; grid-template-columns:24px minmax(0,1fr); gap:10px; align-items:start}
+.sn{
+  width:24px; height:24px; border-radius:50%; display:grid; place-items:center;
+  font:700 12px/1 "IBM Plex Mono",monospace; color:#fff;
+}
+.step h4{font:600 13.8px/1.25 "IBM Plex Sans",sans-serif; margin:3px 0 3px}
+.step p{font-size:12.6px; margin:0}
+
+/* ---------------- legend ---------------- */
+.legend{display:grid; gap:6px; margin-top:10px}
+.lg{display:grid; grid-template-columns:11px minmax(0,1fr); gap:9px; align-items:start; font-size:12.5px}
+.chip{width:11px; height:11px; border-radius:3px; margin-top:4px}
+.lg b{font-weight:600; color:var(--ink)}
+.lg em{font-style:normal; color:var(--faint)}
+.eltag{
+  font:600 10px/1 "IBM Plex Mono",monospace; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--faint);
+}
+
+/* ---------------- equation ---------------- */
+.eq{
+  background:var(--tint); border:1px solid var(--rule); border-radius:7px;
+  padding:11px 13px; margin:10px 0 0; overflow-x:auto;
+}
+.eq .l{font-family:"IBM Plex Mono",monospace; font-size:13.2px; display:block; padding:3px 0; white-space:nowrap}
+.eq .c{font-size:11.8px; color:var(--faint); margin-top:6px; white-space:normal}
+
+/* ---------------- two channels ---------------- */
+.chs{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:11px; margin-top:4px}
+.ch{border:1px solid var(--rule); border-radius:7px; padding:12px 13px; background:var(--tint)}
+.ch .t{font:600 10.5px/1 "IBM Plex Mono",monospace; letter-spacing:.1em; text-transform:uppercase; margin-bottom:7px}
+.ch.a .t{color:var(--charge)} .ch.b .t{color:var(--closure)}
+.ch h4{font:700 15px/1.2 "Archivo",sans-serif; margin:0 0 6px}
+.ch p{font-size:12.5px; margin:0 0 7px}
+.ch .f{font-family:"IBM Plex Mono",monospace; font-size:11.6px; color:var(--ink); padding-top:7px; border-top:1px dashed var(--rule); overflow-x:auto}
+
+/* ---------------- callout ---------------- */
+.note{
+  border-left:3px solid var(--accent); background:var(--tint);
+  padding:10px 12px; border-radius:0 6px 6px 0; margin-top:10px;
+}
+.note p{margin:0; font-size:12.6px; color:var(--ink)}
+.note b{font-weight:600}
+
+/* ---------------- principles ---------------- */
+.prin{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:12px; margin-top:4px}
+.pr{display:grid; grid-template-columns:30px minmax(0,1fr); gap:10px; align-items:start}
+.pico{
+  width:30px; height:30px; border-radius:7px; background:var(--tint);
+  border:1px solid var(--rule); display:grid; place-items:center;
+  font:700 13px/1 "IBM Plex Mono",monospace; color:var(--accent-ink);
+}
+.pr h4{font:600 13.4px/1.25 "IBM Plex Sans",sans-serif; margin:4px 0 3px}
+.pr p{font-size:12.3px; margin:0}
+
+/* ---------------- quantity table ---------------- */
+.tw{overflow-x:auto; border:1px solid var(--rule); border-radius:7px; margin-top:4px}
+table{border-collapse:collapse; width:100%; font-size:12.6px; min-width:400px}
+th,td{padding:8px 11px; text-align:left; border-bottom:1px solid var(--rule-soft); vertical-align:top}
+th{font:600 10px/1 "IBM Plex Mono",monospace; letter-spacing:.09em; text-transform:uppercase; color:var(--faint); background:var(--rule-soft)}
+tr:last-child td{border-bottom:none}
+td.q{font-family:"IBM Plex Mono",monospace; white-space:nowrap; color:var(--ink)}
+
+/* ---------------- chain ---------------- */
+.chain{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:4px}
+.cn{border:1px solid var(--rule); border-radius:7px; padding:11px 12px; background:var(--tint); border-top:3px solid var(--accent)}
+.cn .h{font:700 12.8px/1.2 "Archivo",sans-serif; margin-bottom:5px}
+.cn p{font-size:11.9px; margin:0}
+.cn .f{font-family:"IBM Plex Mono",monospace; font-size:11.4px; margin-top:7px; padding-top:7px; border-top:1px dashed var(--rule); color:var(--ink); overflow-x:auto}
+
+/* ---------------- bullets ---------------- */
+ul.b{margin:4px 0 0; padding:0; list-style:none; display:grid; gap:6px}
+ul.b li{
+  position:relative; padding-left:14px; font-size:12.9px; line-height:1.42; color:var(--muted);
+}
+ul.b li::before{
+  content:""; position:absolute; left:0; top:7px; width:5px; height:5px;
+  border-radius:50%; background:var(--accent);
+}
+ul.b li b{color:var(--ink); font-weight:600}
+
+footer{
+  margin-top:4px; background:var(--card); border:1px solid var(--rule); border-radius:10px;
+  padding:14px 18px; box-shadow:var(--shadow);
+  font-size:12px; color:var(--faint);
+}
+footer a{color:var(--accent); text-decoration:none; border-bottom:1px solid currentColor}
+footer p{margin:0 0 7px; max-width:none}
+footer p:last-child{margin:0}
+
+@media print{
+  *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  body{background:#fff; font-size:7.4px}
+  .sheet{max-width:none; width:100%; padding:0}
+  /* The print layout viewport is narrower than the sheet, so the screen breakpoints fire and
+     stack every panel into one column. State the grid again here, after them. */
+  .r3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .r2a{grid-template-columns:1.08fr .92fr}
+  .legend{grid-template-columns:1fr 1fr; column-gap:4mm}
+  .mast{margin:0 0 3mm; border-radius:0; padding:3.5mm 4mm}
+  .mast h1{font-size:19pt} .mast .sub{font-size:8.4pt} .mast .props{font-size:7.6pt; gap:3px}
+  .row{gap:3mm; margin-bottom:3mm}
+  .panel{box-shadow:none; padding:3mm 3.4mm; break-inside:auto}
+  figure,.note,.eq,.ch,.cn,.pr,.step{break-inside:avoid}
+  .ph{margin-bottom:2mm} .ph h2{font-size:11pt} .badge{width:6mm; height:6mm; font-size:8.5pt}
+  .claim{font-size:8.4pt; margin-bottom:1.6mm}
+  .panel p, ul.b li, .lg, .step p, .cn p{font-size:7.1pt; line-height:1.34}
+  .panel p{margin-bottom:1.6mm}
+  ul.b{gap:1mm} .legend{gap:0.9mm; margin-top:2mm}
+  .steps{gap:1.8mm} .step h4{font-size:7.6pt} .sn{width:4.6mm; height:4.6mm; font-size:6.6pt}
+  figure{margin-top:2mm}
+  figure img{max-height:23mm; width:auto; max-width:100%; margin:0 auto}
+  figcaption{font-size:6.2pt; line-height:1.3; margin-top:1mm}
+  .eq{padding:1.8mm 2.2mm; margin-top:2mm} .eq .l{font-size:7.4pt} .eq .c{font-size:6.3pt}
+  .note{padding:1.8mm 2.2mm; margin-top:2mm} .note p{font-size:6.8pt}
+  .ch{padding:2mm 2.2mm} .ch h4{font-size:8.2pt} .ch p{font-size:6.9pt} .ch .f{font-size:6.2pt}
+  .prin{gap:2mm} .pr h4{font-size:7.4pt} .pr p{font-size:6.6pt} .pico{width:6mm; height:6mm; font-size:7pt}
+  table{font-size:6.9pt; min-width:0} th,td{padding:1.2mm 1.6mm}
+  .cn{padding:2mm} .cn .h{font-size:7.6pt} .cn .f{font-size:6.3pt}
+  footer{padding:2.2mm 3mm; font-size:6.1pt; margin-top:0}
+}
+</style>
+
+<div class="sheet">
+
+<div class="mast">
+  <div>
+    <h1>HCWC Distribution Builder</h1>
+    <p class="sub">From geological mechanisms to contact, risk and DHI — in one model.</p>
+  </div>
+  <div class="props">
+    <span>Build the HCWC distribution from competing geological limits.</span>
+    <span>Read the probability of success at every depth off the same sample.</span>
+    <span>Update with DHI evidence without discarding the geology.</span>
+  </div>
+  <div class="mark">
+    <svg width="54" height="42" viewBox="0 0 54 42" aria-hidden="true">
+      <path d="M4 10c9 0 9 7 18 7s9-7 18-7 9 7 10 7" fill="none" stroke="#9fc6e6" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M4 20c9 0 9 7 18 7s9-7 18-7 9 7 10 7" fill="none" stroke="#6fa8d6" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M27 31c4.4 5 6.6 7.6 6.6 10a6.6 6.6 0 1 1-13.2 0c0-2.4 2.2-5 6.6-10z" fill="#eaf3fb"/>
+    </svg>
+    <div class="wm">HCWC BUILDER</div>
+  </div>
+</div>
+
+<!-- ============ ROW 1 ============ -->
+<div class="row r3">
+
+  <section class="panel">
+    <div class="ph"><div class="badge">1</div><h2>The idea</h2></div>
+    <p class="claim">Don't specify the HCWC — derive it from the geology.</p>
+    <ul class="b">
+      <li>The tool models the <b>mechanisms that can stop a column</b>. Each defines its own limit.</li>
+      <li>In every realisation all limits are sampled; the <b>shallowest active one</b> sets the contact.</li>
+      <li>Across many realisations the distribution emerges from the competition — not from a shape somebody chose.</li>
+    </ul>
+    <figure>
+      <img src="figures/Figure_1.1a_every-mechanism-that-can-stop-the-column-on.png" alt="A geological section showing every mechanism that can stop the column, each with the distribution of the depth at which it acts.">
+      <figcaption>Every mechanism on one section, with the depth distribution at which it acts. Capacities are measured from the apex. Figure by Lars Hjelm.</figcaption>
+    </figure>
+    <div class="legend">
+      <div class="eltag">Limits, coloured by the risk element they belong to</div>
+      <div class="lg"><span class="chip" style="background:var(--closure)"></span><span><b>Structural spill</b> · <em>closure</em> — what the trap geometry permits</span></div>
+      <div class="lg"><span class="chip" style="background:var(--closure)"></span><span><b>Fault geometry</b> · <em>closure</em> — juxtaposition across the bounding fault</span></div>
+      <div class="lg"><span class="chip" style="background:var(--charge)"></span><span><b>Charge limitation</b> · <em>charge</em> — not enough charge to fill deeper</span></div>
+      <div class="lg"><span class="chip" style="background:var(--retention)"></span><span><b>Capillary seal capacity</b> · <em>retention</em> — the column held before breakthrough</span></div>
+      <div class="lg"><span class="chip" style="background:var(--retention)"></span><span><b>Seal continuity</b> · <em>retention</em> — a channel, window or thinning</span></div>
+      <div class="lg"><span class="chip" style="background:var(--retention)"></span><span><b>Fault leakage</b> · <em>retention</em> — gouge, fault-rock, reactivation</span></div>
+      <div class="lg"><span class="chip" style="background:var(--retention)"></span><span><b>Mechanical failure</b> · <em>retention</em> — stress headroom, not entry pressure</span></div>
+      <div class="lg"><span class="chip" style="background:var(--reservoir)"></span><span><b>Reservoir pinch-out</b> · <em>reservoir</em> — connected pore volume ends</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="ph"><div class="badge">2</div><h2>How the tool works</h2></div>
+    <div class="steps">
+      <div class="step"><div class="sn" style="background:var(--closure)">1</div><div>
+        <h4>Define the prospect</h4>
+        <p>Apex, spill, the element chances giving <span class="m">P(G)</span>, the assessment minimum, the well. Tab&nbsp;2.0.</p></div></div>
+      <div class="step"><div class="sn" style="background:var(--charge)">2</div><div>
+        <h4>Elicit each limit</h4>
+        <p>A capacity in metres below the crest, a mapped surface as a depth — whichever the geologist knows. Tab&nbsp;3.0.</p></div></div>
+      <div class="step"><div class="sn" style="background:var(--retention)">3</div><div>
+        <h4>Run the competition</h4>
+        <p>Each limit drawn for presence and depth; the shallowest active one sets the contact <b>and is recorded</b>. Tab&nbsp;4.0.</p></div></div>
+      <div class="step"><div class="sn" style="background:var(--reservoir)">4</div><div>
+        <h4>Add DHI evidence — optional</h4>
+        <p>The same realisations are reweighted. No second model, no arbitrary "DHI case". Tab&nbsp;5.0.</p></div></div>
+    </div>
+    <figure>
+      <img src="figures/Figure_4.1.1a_the-competition-realisation-by-realisation.png" alt="Left: every active limit's sampled depth in fifty realisations, the shallowest ringed. Right: the whole contact distribution with its exceedance curve.">
+      <figcaption>The competition, realisation by realisation: every limit's sampled depth, the shallowest ringed in its own colour, and the distribution those minima make.</figcaption>
+    </figure>
+    <div class="eq">
+      <span class="l">H = min{ h&#8201;ᵢ : limit i active }</span>
+      <p class="c">Minimum, not a blend — a limit only changes realisations that reach it. Blending a deep leak into a background distribution can make a prospect look <em>larger</em>.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="ph"><div class="badge">3</div><h2>Key outputs</h2></div>
+    <ul class="b">
+      <li><b>The HCWC distribution</b>, and which mechanism controlled each realisation.</li>
+      <li><b>Probability of success at every depth</b>, read at the assessment minimum and at the well.</li>
+      <li><b>A curve per risk element</b>, for the volumetric tool downstream.</li>
+      <li>All of it off <b>one sample</b>, so there is nothing to reconcile afterwards.</li>
+    </ul>
+    <figure>
+      <img src="figures/Figure_4.1.3a_the-chance-against-depth-and-what-makes-it.png" alt="Blue is the chance the contact lies at or below each depth; red is that multiplied by P(G); bars are the controlling limit per depth bin.">
+      <figcaption>Blue is <span class="m">P(z_HCWC ≥ z | G)</span>; red is the prospect chance, <span class="m">P(G)</span> times it — the gap is the element risk. Bars are the controlling limit per depth bin.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/Figure_4.2.2a_each-element-s-chance-curve-derived-from-the.png" alt="One chance-versus-depth curve per risk element.">
+      <figcaption>Each element's curve, derived from its own shallowest active limit rather than allocated by judgement.</figcaption>
+    </figure>
+  </section>
+
+</div>
+
+<!-- ============ ROW 2 ============ -->
+<div class="row r3">
+
+  <section class="panel">
+    <div class="ph"><div class="badge">4</div><h2>DHI — update, don't replace</h2></div>
+    <p class="claim">A seismic indication is evidence, not a separate case.</p>
+    <ul class="b">
+      <li>The existing geological realisations are <b>reweighted</b>, not re-simulated.</li>
+      <li>Each keeps its controlling limit, so prior and posterior are comparable figure for figure.</li>
+      <li>How far the answer moves follows from <b>the strength of evidence stated</b>, not from a decision to believe the DHI.</li>
+    </ul>
+    <figure>
+      <img src="figures/Figure_5.1.5a_the-chance-against-threshold-p-g-f-h.png" alt="The chance against threshold, geological and updated, with the posterior median marked.">
+      <figcaption>The chance against threshold, geological and updated. The index <em>scales</em> the curve; the geometry <em>reshapes</em> it. The open circle is the posterior median, landing on the pick.</figcaption>
+    </figure>
+    <div class="eq">
+      <span class="l">w&#8201;ⱼ ∝ L(D | h&#8201;ⱼ, G)</span>
+      <p class="c">Self-normalised importance sampling: the posterior is the same sample, reweighted.</p>
+    </div>
+    <div class="note"><p><b>What it is not.</b> Substituting a DHI contact depth treats an observation as a scenario — and a scenario cannot be argued with on geological grounds.</p></div>
+  </section>
+
+  <section class="panel">
+    <div class="ph"><div class="badge">5</div><h2>Character vs geometry</h2></div>
+    <p class="claim">One observation, two kinds of evidence — each updating exactly one factor.</p>
+    <div class="chs">
+      <div class="ch a">
+        <div class="t">Channel 1 · character</div>
+        <h4>Are hydrocarbons present?</h4>
+        <p>Amplitude, polarity, conformity, offset behaviour, placed on the evidence index. Updates the chance; <b>never moves the contact</b>.</p>
+        <div class="f">LR(s) = f(s|HC) / f(s|NoHC)</div>
+      </div>
+      <div class="ch b">
+        <div class="t">Channel 2 · geometry</div>
+        <h4>Where does the column end?</h4>
+        <p>The picked depth and the confidence in it, as a likelihood over realisations already drawn. Reshapes the contact; <b>never moves <span class="m">P(G)</span></b>.</p>
+        <div class="f">L = c·D(h)·Pick(z) + (1−c)·s</div>
+      </div>
+    </div>
+    <figure>
+      <img src="figures/Figure_5.1.2a_the-dhi-evidence-strength-model-the-two.png" alt="The two reference distributions on the DHI evidence index, read at the observed value.">
+      <figcaption>The two reference distributions on the index. The likelihood ratio is the ratio of the two marked heights — which is why the axis units do not matter.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/Figure_5.1.2b_left-the-likelihood-ratio-against-the-index.png" alt="The likelihood ratio against the index, the posterior it gives, and the update as a function of the prior.">
+      <figcaption>The ratio against the index, the posterior it gives, and the same update across priors — neutral evidence returning the prior on the diagonal.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/Figure_8.1.8b_two-questions-one-product-d-h-asks-whether-a.png" alt="The detection function, the pick likelihood, and their product against column height.">
+      <figcaption><span class="m">D(h)</span> asks whether a column that size would have shown at all; the pick likelihood asks whether it would have terminated where the observed one did. Their product is the geometry evidence.</figcaption>
+    </figure>
+  </section>
+
+  <section class="panel">
+    <div class="ph"><div class="badge">6</div><h2>The empirical check</h2></div>
+    <p class="claim">Filled-to-spill discoveries are right-censored, not measurements.</p>
+    <ul class="b">
+      <li>Such a pool says the seal held <b>at least</b> the trap height — not what it could have held.</li>
+      <li>Treated as exact values they bias a fit toward structural spill; <b>dropping them trades one bias for another</b>.</li>
+      <li>The record is <b>compared, never joined</b>. A disagreement is a finding to explain, not a correction to apply.</li>
+    </ul>
+    <figure>
+      <img src="figures/Figure_6.2a_column-height-against-closure-height-after.png" alt="Column height against closure height in the discovery record, with an ordinary fit and a censoring-corrected fit.">
+      <figcaption>Red diamonds lie on the 1:1 line by definition — they record the closure, not the seal. The censored fit sits below the ordinary one because it estimates seal capacity.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/Figure_6.7a_orange-is-the-prospect-built-on-tab-3-0-the.png" alt="The prospect's exceedance curve against the benchmark at the same structural relief, inside the family of benchmark curves.">
+      <figcaption>Orange is the prospect; the dashed grey beside it is the benchmark at the same relief. Those two are the pair — the coloured curves are the family it sits inside, not its comparators.</figcaption>
+    </figure>
+    <figure>
+      <img src="figures/Figure_6.8b.1_the-same-comparison-as-one-number-at-every.png" alt="The model-to-record ratio at every exceedance percentile, against a parity line and a fifteen per cent band.">
+      <figcaption><b>The slope is the finding, not the level.</b> A flat curve off parity is one correctable bias; a tilt is a disagreement about shape, which no single correction fixes.</figcaption>
+    </figure>
+  </section>
+
+</div>
+
+<!-- ============ ROW 3 ============ -->
+<div class="row r2a">
+
+  <section class="panel">
+    <div class="ph"><div class="badge">7</div><h2>Keep these three apart</h2></div>
+    <p>Merging them is where most of the confusion in this area comes from. Every probability the app prints says which it is, whether it includes <span class="m">P(G)</span>, and the threshold it was read at.</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Quantity</th><th>What it is</th><th>Conditional on</th></tr></thead>
+        <tbody>
+          <tr><td class="q">P(G)</td><td>An accumulation exists at all — the elements worked at the crest.</td><td>Nothing</td></tr>
+          <tr><td class="q">F(h) = P(H ≥ h | G)</td><td>The column reaches <em>h</em>, given an accumulation. What the limits produce.</td><td>An accumulation</td></tr>
+          <tr><td class="q">POS(h) = P(G) × F(h)</td><td>Hydrocarbons found at that depth — the product, and what an explorer wants.</td><td>Nothing</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><p><b>The commonest error.</b> Quoting the conditional curve as the prospect's chance sets <span class="m">P(G)</span> to 1 and overstates the prospect by <span class="m">1 / P(G)</span> — largest exactly where the geology is least certain.</p></div>
+
+    <div class="prin" style="margin-top:14px">
+      <div class="pr"><div class="pico">↓</div><div>
+        <h4>Monotonic by construction</h4>
+        <p>A deeper contact cannot be likelier than a shallower one — every point is read off one sample. A band-by-band array has no such guarantee.</p></div></div>
+      <div class="pr"><div class="pico">≠</div><div>
+        <h4>Uncertainty is not influence</h4>
+        <p>A wide range can rarely decide the answer; a narrow one that usually decides it moves everything. Both are reported, separately.</p></div></div>
+      <div class="pr"><div class="pico">ESS</div><div>
+        <h4>Know what the answer rests on</h4>
+        <p>Effective sample size says how concentrated the weighting became. A low value is not wrongness — it means the result leans on few realisations.</p></div></div>
+      <div class="pr"><div class="pico">D</div><div>
+        <h4>Absence is evidence, conditionally</h4>
+        <p>A missing anomaly counts only in so far as that column would have been detectable. The ceiling on <span class="m">D(h)</span> is below 1 by construction.</p></div></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="ph"><div class="badge">8</div><h2>The whole model, in one line</h2></div>
+    <div class="chain">
+      <div class="cn"><div class="h">Risk elements</div><p>Charge, reservoir, closure, retention.</p><div class="f">P(G) = ∏ Pₑ</div></div>
+      <div class="cn"><div class="h">Competing limits</div><p>Spill, charge, seal capacity and continuity, fault leakage, mechanical failure, pinch-out.</p><div class="f">H = min{hᵢ}</div></div>
+      <div class="cn"><div class="h">HCWC distribution</div><p>Emerges from the competition, with the controlling mechanism recorded.</p><div class="f">F(h) = P(H ≥ h | G)</div></div>
+      <div class="cn"><div class="h">Probability of success</div><p>The product, read at the minimum and at the well — then updated by evidence.</p><div class="f">POS(h) = P(G)·F(h)</div></div>
+    </div>
+    <figure>
+      <img src="figures/Figure_8.1.1a_the-model-as-two-rows-the-geological-model.png" alt="The model as two rows: the geological prior and the DHI evidence, both ending in the probability of meeting the threshold.">
+      <figcaption>The geological model is the prior; the DHI is evidence. The index never moves the contact, the geometry never moves <span class="m">P(G)</span>, each enters once, and one weighted sample reads every posterior quantity.</figcaption>
+    </figure>
+    <div class="note"><p><b>What it is not.</b> Not a basin, hydrodynamic or 3D flow model. Where a more detailed model exists, its output enters as <em>one more competing limit</em>.</p></div>
+  </section>
+
+</div>
+
+<footer>
+  <p><b>Notation.</b> <span class="m">G</span> the accumulation state · <span class="m">H</span> column height, m · <span class="m">z_apex</span> apex depth, m TVDSS · <span class="m">z_HCWC = z_apex + H</span> contact depth, increasing downward · <span class="m">h_min</span> the assessment minimum · <span class="m">s</span> the DHI evidence index · <span class="m">c</span> the contact attribution. A probability written <span class="m">| G</span> is conditional on the accumulation.</p>
+  <p>Every figure on this sheet is the app's own output, exported by <span class="m">scripts/export_exhibits.py</span> from the worked prospect that ships with the tool. The construction follows Beha, Christensen &amp; Young (2012) and Hood (2019, 2024), run here as a continuous, correlated Monte Carlo; the per-element depth-dependent chance, the likelihood form of DHI evidence and the censoring correction are not in that literature. Derivations, worked numbers and references: tab 8.2. · Tool: <a href="https://hcwc-builder.streamlit.app/">hcwc-builder.streamlit.app</a> · Source: <a href="https://github.com/lhjelm-dk/HCWC-Builder">github.com/lhjelm-dk/HCWC-Builder</a> · Lars Hjelm</p>
+</footer>
+
+</div>

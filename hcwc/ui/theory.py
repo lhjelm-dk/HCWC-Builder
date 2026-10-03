@@ -7,7 +7,7 @@ import streamlit as st
 
 from hcwc.io import benchmarks
 from hcwc.paths import DOCS, PAPER
-from hcwc.ui import dhi_walkthrough, theme
+from hcwc.ui import cheatsheet, dhi_walkthrough, theme
 from hcwc.ui import run as engine_run
 from hcwc.ui.markdown import render_with_figures
 from hcwc.ui.numbering import Numbering
@@ -19,6 +19,13 @@ def render() -> None:
         "runs. The operational tabs refer here by section number. The paper is the long-form "
         "version and the bibliography carries the sources."
     )
+
+    cheatsheet.render(
+        where="theory",
+        lead="Before the sections: the whole method on one page, in nine panels built from the "
+             "app's own figures — the competing limits, the two channels a DHI enters by, the "
+             "comparison against the discovery record, and where the elicitation effort belongs. "
+             "It is a summary and the sections below are the method.")
 
     # 8.1 is docs/THEORY.md: one `## ` section per numbered part, rendered in order, 8.1.2
     # Model overview to 8.1.11 References. The document's H1 is the 8.1 heading; the italic
